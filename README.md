@@ -1,40 +1,131 @@
-# nix-rensa — spike
+# nix-rensa
 
-Evaluating whether [rensa](https://gitlab.com/rensa-nix/) should replace
-divnix/hive for `test-vm`. **Not production.** `test-vm` remains the live
-configuration and osgiliath stays deployable from it.
+A port of **osgiliath** — the KVM VPS that serves <https://hisilo.me> — from
+`divnix/hive` to the [rensa](https://gitlab.com/rensa-nix/) stack, kept beside
+`test-vm` rather than replacing it.
 
-Plan: `test-vm/.sisyphus/plans/iteration-14-rensa-spike.md`
+Two questions, answered separately:
 
-## Results
+1. **Does rensa work for us?** — three spikes, below. Answered before any port.
+2. **Does the port reproduce the machine we already run?** — measured against
+   the incumbent, below.
+
+## 1. Spikes
+
+Each spike has a control, so a pass means something.
 
 | Spike | Question | Result |
-| ----- | -------- | ------ |
-| A | Does `rageImportEncrypted` survive rensa's `call-flake`? | **PASS** — decrypts inside a cell block |
-| C | Is cell-flake laziness real? | **PASS** — a cell with an unfetchable input does not block others |
-| B | Can colmena be driven from `utils.mkSystem`? | **PASS** — `colmena build` succeeds on a hand-emitted schema |
+| --- | --- | --- |
+| **A** | Does `rageImportEncrypted` survive `call-flake`? | **PASS** — decrypts inside a cell block |
+| **B** | Can colmena be driven from `utils.mkSystem`? | **PASS** — `colmena build` reaches "All done!" |
+| **C** | Is per-cell laziness real? | **PASS** — a cell with an unfetchable input fails to evaluate; its neighbour succeeds |
 
-Each has a control: A was re-run after a false negative traced to NIX_CONFIG
-mangling; C's heavy cell genuinely fails to evaluate; B fails on an undefined
-option.
+Spike A nearly produced a false negative: the first run reported
+`hasFunction: false`, which would have read as "rensa breaks extra-builtins"
+and killed the design. The cause was a `NIX_CONFIG` reconstruction inside
+nested quoting, not rensa.
 
-## Confirmed about rensa
+## 2. Does the port reproduce osgiliath?
 
-- block signature is `{ inputs, cell, system }`
-- `inputs.self` is **sourceInfo only** — anything defined in the soil is unreachable
-- `transformInputs` injects a single `pkgs` per system, and works
-- cell flakes need their **own committed `flake.lock`**; without one, inputs
-  resolve to an empty lockfile *silently* (`call-flake.nix:26-29`)
-- `__schema` can be read from the pinned colmena, so the pairing cannot drift
+Yes. Compared against `test-vm`'s `colmenaHive.toplevel.nixos-osgiliath`, with
+both pinned to the same nixpkgs:
 
-## Running
+| Measure | Result |
+| --- | --- |
+| `nix store diff-closures` | empty |
+| Closure size | 4,494,911,208 bytes — **equal** |
+| Closure paths | 1207 vs 1207 — **equal** |
+| Files present on one side only | **0** |
+| Files differing byte-for-byte | 16 |
+| Files still differing once store hashes are masked | **0** |
+| Semantic config surface (15 keys: 77 systemd services, filesystems, persistence, firewall, nginx, openssh, bootloader, users, tmpfiles, packages) | **identical** |
+| colmena `deploymentConfig` (10 fields) | **identical** |
 
-Requires `test-vm`'s devshell for the nix-plugins/nix_2_31 pairing:
+The 16 files differ only because this repo is a different directory, so the
+flake's source hash differs and propagates into anything referencing it. The
+site derivation is a case in point: a different store path, byte-identical
+content.
 
-```sh
-cd ~/workspace/playground/test-vm && nix develop
-cd ~/workspace/playground/nix-rensa
-nix eval --json .#probe          # spike A
-nix eval --json .#heavy          # spike C control: MUST fail
-colmena build --on spike-host    # spike B
+### Two measurement traps, both hit
+
+- **Comparing across different nixpkgs.** The first comparison showed hundreds
+  of package differences and a spurious `fuse`. Both repos were on different
+  nixpkgs; `programs.fuse.enable` defaulted to `true` in 26.05 and `false` in
+  26.11. Pinning both to the same revision removed every difference.
+- **Reading `flake.lock` node *names* instead of the root node's input map.**
+  The node called `nixpkgs` belongs to a dependency. test-vm's actual nixpkgs
+  is `d233902` (26.05), reached via the node named `nixpkgs_5`.
+
+A closing check nearly went unmade: the first file-by-file diff counted only
+files that *differ*, not files present on one side alone. Adding that check is
+what surfaced hive's `/etc/nixos/configuration.nix` guard.
+
+## 3. What the port measures about isolation
+
+| | test-vm | nix-rensa |
+| --- | --- | --- |
+| Root inputs | 16 | 3 |
+| Total locked nodes | 109 | 24 |
+
+Not a like-for-like comparison — test-vm also carries the workstation, and
+nix-rensa does not yet. The structural claim is the one spike C proved: adding
+a workstation cell will not change what the *server* fetches. osgiliath's cells
+declare `impermanence, utils, disko, colmena` and never see `lanzaboote`,
+`nix-cachyos-kernel`, `himmelblau`, `home-manager`, `tuigreet`,
+`nixos-extra-modules`, `agenix`, or `agenix-rekey`.
+
+## 4. Porting differences worth knowing
+
+Measured, not read off the documentation:
+
+- Block signature is `{ inputs, cell, system }` — hive's was exactly
+  `{ inputs, cell }`, so every block file needs an ellipsis.
+- **`inputs.self` is sourceInfo only.** test-vm's `inputs.self.secretsConfig`
+  is unreachable by construction, so `secretsConfig` became its own block.
+- **`inputs.nixpkgs` is the flake, not a package set.** Under hive it arrived
+  instantiated. `inputs.nixpkgs.lib` still resolves (deSystemize flattens
+  `legacyPackages`), so the failure surfaces late as a missing
+  `writeShellApplication`. Use `inputs.pkgs`, from `transformInputs`.
+- **Cell-flake outputs land directly in `inputs`**, while `inputs.cells.<c>`
+  holds that cell's *blocks*. Reading the latter from inside the same cell is
+  infinite recursion.
+- **Cell flakes need their own committed `flake.lock`** or their inputs
+  silently resolve to an empty lockfile.
+- `utils.importModules` applies its `args` unconditionally, so it cannot load
+  hive's plain-NixOS-module profiles. `cells/*/profiles/default.nix` detects
+  the shape with `builtins.functionArgs` instead.
+- `mkDisk`'s freeform type is `diskoLib.toplevel`, so a disk is declared as
+  `disk.main`, not `disko.devices.disk.main`.
+- Colmena defaults `deployment.targetHost` to the node name via
+  `_module.args.name`, which its own evaluator supplies. Importing its modules
+  into a plain `nixosSystem` requires setting that, or every `config.deployment`
+  read fails with `attribute 'name' missing`.
+- Flake metadata is not on `self` inside `outputs`: `inherit (self) description`
+  is a missing attribute.
+- hive's colmena transformer adds an `/etc/nixos/configuration.nix` guard that
+  colmena itself does not. Ported explicitly.
+
+## 5. What this does not settle
+
+That rensa is technically viable is settled. Whether to move is not:
+
+- `utils` last saw a commit in April; bus factor is one.
+- `utils/lib/mkHome.nix:25` has a `bee.home` bug that blocks the vm-zfs port
+  (it uses home-manager). Not yet reported upstream.
+- `colmenaHive` here is hand-written rather than emitted by a transformer. It
+  reads `__schema` from the pinned colmena so it cannot drift, but it is ~25
+  lines this repo now owns.
+
+## Running it
+
+Everything that evaluates `globals` must run inside the devshell — the
+encrypted half is decrypted at eval time by `rageImportEncrypted`, which needs
+nix-plugins:
+
+```bash
+nix develop
+nix build .#colmenaHive.toplevel.osgiliath
+colmena build --on osgiliath
 ```
+
+`colmena apply` is deliberately not run from here.

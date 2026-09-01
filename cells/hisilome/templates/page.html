@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block title %}{{ page.title }} — {{ config.title }}{% endblock title %}
+{% block description %}<meta name="description" content="{{ page.description }}">{% endblock description %}
+
+{% block content %}
+<h1>{{ page.title }}</h1>
+{{ macros::post_meta(page=page) }}
+
+{{ page.content | safe }}
+
+<p><a href="/">&larr; back to all posts</a></p>
+{% endblock content %}

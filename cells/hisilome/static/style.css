@@ -1,0 +1,1150 @@
+/* Subset Iosevka from bin/build-fonts.sh. Self-hosted: a Google Fonts link
+   would be a third-party request on a site whose point is making none. */
+@font-face {
+  font-family: "Iosevka Web";
+  src: url("/fonts/iosevka-regular.woff2") format("woff2");
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Iosevka Web";
+  src: url("/fonts/iosevka-bold.woff2") format("woff2");
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* Kanagawa "wave", verbatim from rebelot/kanagawa.nvim. Named tier first,
+   semantic roles second, so roles re-point without hunting hex codes. */
+:root {
+  --sumi-ink-0: #16161d;
+  --sumi-ink-3: #1f1f28;
+  --sumi-ink-4: #2a2a37;
+  --sumi-ink-5: #363646;
+  --fuji-white: #dcd7ba;
+  --fuji-gray: #727169;
+  --crystal-blue: #7e9cd8;
+  --oni-violet: #957fb8;
+  --spring-green: #98bb6c;
+  --sakura-pink: #d27e99;
+  --carp-yellow: #e6c384;
+
+  /* The panel is this tall AND pushes content by this. Derived, not eyeballed:
+     a fixed height stops matching the moment the row count changes.
+     --sc-rows must match rows_wanted in radio.liq. */
+  --sc-rows: 11;
+  /* Fixed, and pinned onto .sc-list li - NOT derived from font metrics. The
+     browser rounds each flex row up to a whole pixel (19.968 + 3.84 -> 24), so
+     a derived height was 0.192px short per row and the panel scrolled. */
+  --sc-row-h: 24px;
+  --sc-body-pad: 1rem;         /* .sc-body padding, top + bottom */
+  /* +1px for .sc-frame's bottom border, which border-box takes off the inside */
+  --panel-h: calc(var(--sc-rows) * var(--sc-row-h) + var(--sc-body-pad) + 1px);
+
+  /* semantic roles */
+  --bg: var(--sumi-ink-3);
+  --bg-dim: var(--sumi-ink-0);
+  --fg: var(--fuji-white);
+  --muted: var(--fuji-gray);
+  --link: var(--crystal-blue);
+  --hover: var(--oni-violet);
+  --accent: var(--spring-green);
+  --border: var(--sumi-ink-5);
+
+  /* glows, as rgb triples so they can take an alpha */
+  --accent-rgb: 152, 187, 108;
+  --sakura-rgb: 210, 126, 153;
+  --link-rgb: 126, 156, 216;
+  --carp-rgb: 230, 195, 132;
+
+  /* Renders native widgets dark, and stops DarkReader re-processing an
+     already-dark page -- which is what washed the colours out. */
+  color-scheme: dark;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  /* The "screen". LIGHTEST ink, not darkest - the card sits darker on top, and
+     under black scanlines a darker tone washes the Kanagawa navy out to grey. */
+  background-color: var(--sumi-ink-4);
+
+  /* Vignette, scanlines, aperture grille. All static: flicker is the one CRT
+     trait deliberately left out. Grille stays ~2% or it reads as colour noise. */
+  background-image:
+    radial-gradient(
+      ellipse at 50% 50%,
+      rgba(0, 0, 0, 0) 42%,
+      rgba(0, 0, 0, 0.55) 100%
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      rgba(0, 0, 0, 0.15) 0px,
+      rgba(0, 0, 0, 0.15) 1px,
+      transparent 1px,
+      transparent 3px
+    ),
+    repeating-linear-gradient(
+      to right,
+      rgba(255, 0, 0, 0.02) 0px,
+      rgba(255, 0, 0, 0.02) 1px,
+      rgba(0, 255, 0, 0.02) 1px,
+      rgba(0, 255, 0, 0.02) 2px,
+      rgba(0, 0, 255, 0.02) 2px,
+      rgba(0, 0, 255, 0.02) 3px
+    );
+  background-attachment: fixed, scroll, scroll;
+  color: var(--fg);
+  font-family: "Iosevka Web", ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+a {
+  color: var(--link);
+  text-decoration: none;
+}
+
+a:hover {
+  color: var(--hover);
+}
+
+/* Ubuntu PS1 convention - user@host green, path blue - so it reads as a
+   terminal rather than decoration. */
+.topbar {
+  margin: 0;
+  padding: 0 0 0.9rem;
+  display: flex;
+  align-items: center;
+  /* ~one character; 1rem was two and split the prompt into separate chips */
+  gap: 0.5rem;
+}
+
+.prompt {
+  border: 1px solid var(--accent);
+  color: var(--accent);
+  padding: 0.15rem 0.6rem;
+  border-radius: 3px;
+  font-weight: 700;
+  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.18);
+}
+
+.cmd {
+  color: var(--muted);
+}
+
+.topbar nav a {
+  color: var(--link);
+  /* :last-child below, or the trailing gap pushes the cursor off the command */
+  margin-right: 0.5rem;
+  text-decoration: underline;
+}
+
+.topbar nav a:last-child {
+  margin-right: 0;
+}
+
+.topbar nav a:hover {
+  color: var(--hover);
+}
+
+.layout {
+  margin: 1.25rem 0 0;
+  padding: 0;
+  display: flex;
+  gap: 2.5rem;
+  align-items: flex-start;
+}
+
+main {
+  flex: 1;
+  min-width: 0;
+}
+
+h1:before {
+  content: "# ";
+  color: var(--muted);
+}
+
+h2:before {
+  content: "## ";
+  color: var(--muted);
+}
+
+h3:before {
+  content: "### ";
+  color: var(--muted);
+}
+
+/* At a single 1rem the prefixes did ALL the work and h2/h3 were
+   indistinguishable. h3 stays body size - it is also the archive post title. */
+h1 {
+  font-size: 1.4rem;
+  font-weight: 700;
+}
+
+h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+h3 {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* the global reset zeroes margins, leaving headings flush against the text */
+main h1,
+main h2,
+main h3 {
+  margin-top: 1.9rem;
+  margin-bottom: 0.5rem;
+}
+
+main > h1:first-child,
+main > h2:first-child {
+  margin-top: 0;
+}
+
+/* .post-list li already spaces entries */
+.post-list h3 {
+  margin: 0 0 0.35rem;
+}
+
+.post-list {
+  list-style: none;
+}
+
+.post-list li {
+  margin-bottom: 1.75rem;
+}
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.1rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 0.4rem;
+}
+
+.meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.meta svg {
+  width: 13px;
+  height: 13px;
+  fill: var(--muted);
+}
+
+.meta a {
+  color: var(--muted);
+  text-decoration: underline;
+}
+
+.meta a:hover {
+  color: var(--hover);
+}
+
+.summary {
+  color: var(--muted);
+}
+
+p {
+  margin-bottom: 1rem;
+}
+
+pre {
+  background: var(--bg-dim);
+  border: 1px solid var(--border);
+  padding: 1rem;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  border-radius: 4px;
+}
+
+code {
+  font-family: inherit;
+  background: var(--bg-dim);
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+
+main ul,
+main ol {
+  margin: 0 0 1rem 1.25rem;
+}
+
+main li {
+  margin-bottom: 0.3rem;
+}
+
+blockquote {
+  border-left: 2px solid var(--border);
+  color: var(--muted);
+  padding-left: 1rem;
+  margin-bottom: 1rem;
+}
+
+table {
+  border-collapse: collapse;
+  width: 100%;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+}
+
+th,
+td {
+  border: 1px solid var(--border);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+th {
+  color: var(--fg);
+  background: var(--bg-dim);
+}
+
+main img {
+  max-width: 100%;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+del {
+  color: var(--muted);
+}
+
+.footnotes {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+.footnotes hr {
+  display: none;
+}
+
+.footnote-back {
+  margin-left: 0.3rem;
+}
+
+pre code {
+  padding: 0;
+  background: none;
+}
+
+.socials {
+  display: flex;
+  gap: 0.85rem;
+  margin: 0;
+}
+
+.topbar .socials {
+  margin-left: auto;
+}
+
+/* own flex item, so .topbar's gap cannot split user@host */
+.ident {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.15rem;
+  color: var(--muted);
+}
+
+.cursor {
+  color: var(--link);
+  font-weight: 700;
+}
+
+/* Two hard stops so it snaps rather than fades. 1.1s is the classic terminal
+   rate, well under the 3Hz photosensitivity threshold. */
+@keyframes cursor-blink {
+  0%,
+  49.9% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+.cursor-blink {
+  animation: cursor-blink 1.1s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cursor-blink {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .topbar {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  .topbar .socials {
+    margin-left: 0;
+  }
+}
+
+.socials svg {
+  width: 16px;
+  height: 16px;
+  fill: var(--muted);
+}
+
+.socials a:hover svg {
+  fill: var(--hover);
+}
+
+footer {
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.neon-audio {
+  flex: 0 0 auto;
+  width: 130px;
+  outline: none;
+  border-radius: 4px;
+  /* No invert filter: color-scheme:dark already darkens native controls, and
+     stacking a filter on top made them read as flat grey. */
+}
+
+/* ---- radio mode shell (/listen.html) ---------------------------------- */
+
+.shell-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  height: 100vh;
+  height: 100dvh; /* mobile browser chrome */
+  overflow: hidden;
+  /* No background: the shorthand resets background-image, and a class beats the
+     `body` element selector - which silently erased the page scanlines. */
+}
+
+.shell-content {
+  flex: 1 1 auto;
+  width: 100%;
+  border: 0;
+  background: var(--bg);
+}
+
+/* compact: in a fixed-height shell every px here costs the content frame */
+.shell-footer {
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 0.5rem 1.25rem 0.6rem;
+}
+
+.shell-footer .lain-tribute-text {
+  margin-bottom: 0.15rem;
+}
+
+.shell-footer .lain-tribute-quote {
+  margin-bottom: 0;
+}
+
+.lain-tribute {
+  max-width: 980px;
+  margin: 3rem auto 0;
+  padding: 1.25rem 1.25rem 2rem;
+  text-align: center;
+  border-top: 1px solid var(--border);
+}
+
+.lain-tribute-text {
+  color: var(--muted);
+  font-size: 0.75rem;
+  margin-bottom: 0.35rem;
+}
+
+.lain-tribute-text a {
+  color: var(--sakura-pink);
+}
+
+.lain-tribute-text a:hover {
+  color: var(--hover);
+}
+
+.lain-tribute-quote {
+  /* not var(--border): 1.38:1 on the card, effectively invisible */
+  color: var(--muted);
+  font-size: 0.7rem;
+  font-style: italic;
+}
+
+
+
+/* ---- the card ------------------------------------------------------------ */
+
+/* In the shell this also contains the content iframe, which is why the framed
+   document must not paint a background of its own. */
+.frame {
+  max-width: 1080px;
+  margin: 1.5rem auto;
+  padding: 1.5rem;
+  background: var(--bg);
+  border: 1px solid var(--sumi-ink-5);
+  border-radius: 10px;
+  /* the faint violet bleed reads as phosphor glow, not a drop shadow */
+  box-shadow:
+    0 0 60px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(149, 127, 184, 0.06);
+}
+
+.shell-body > .frame {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  /* required: align-items:center on the parent would shrink-to-fit this box */
+  width: 100%;
+  margin: 1.25rem 0;
+  overflow: hidden;
+}
+
+/* framed pages sit inside the card, so no texture of their own */
+body.framed {
+  background-image: none;
+  background-color: transparent;
+}
+
+/* ---- console: lainon.life's information design, Kanagawa palette --------- */
+
+/* This is the CRT; the page texture behind it is the room it sits in. */
+.console {
+  width: 100%;
+  margin: 0;
+  border-radius: 10px;
+
+  /* Gradient border via two clips: border-image ignores border-radius and would
+     square the corners. Content layers clip to padding-box, one gradient clips
+     to border-box. The base tone must be a gradient too - background-color
+     always fills to the border box and would cover the ring. */
+  border: 1px solid transparent;
+  background:
+    repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.18) 0px,
+        rgba(0, 0, 0, 0.18) 1px,
+        transparent 1px,
+        transparent 3px
+      )
+      padding-box,
+    linear-gradient(var(--bg-dim), var(--bg-dim)) padding-box,
+    linear-gradient(
+        115deg,
+        rgba(149, 127, 184, 0.5),
+        rgba(126, 156, 216, 0.5) 50%,
+        rgba(149, 127, 184, 0.5)
+      )
+      border-box;
+  box-shadow: inset 0 0 45px rgba(0, 0, 0, 0.6);
+}
+
+.console-head {
+  --player-w: 160px;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.6rem 1rem 0.4rem;
+}
+
+.console-head { position: relative; }
+
+.console-live {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 92px;
+  border: 0;
+  background: transparent;
+}
+
+/* Absolute so the live frame gets the full console width: the bar runs edge to
+   edge and the title centres on the console, not on the space beside it. */
+.console-play {
+  position: absolute;
+  right: 1rem;
+  top: 0.35rem;
+}
+
+/* No filter: grayscale(1) flattened Chrome's dark control into a mid-grey pill
+   with MORE contrast, so it out-shouted the title. Opacity is the honest fix.
+   160px, not 130: below ~150px Chrome drops the volume slider for a kebab. */
+.console-audio {
+  width: var(--player-w);
+  outline: none;
+  opacity: 0.6;
+}
+
+.console-audio:hover,
+.console-audio:focus,
+.console-audio:focus-within {
+  opacity: 1;
+}
+
+/* The kebab cannot be hidden: ::-internal-media-controls-overflow-button is not
+   author-targetable and has no -webkit- alias. It stays. */
+.console-audio::-webkit-media-controls-timeline,
+.console-audio::-webkit-media-controls-current-time-display,
+.console-audio::-webkit-media-controls-time-remaining-display {
+  display: none;
+}
+
+/* Outside the live frame: the toggle must not be destroyed on every refresh. */
+.console-meta {
+  margin: 0;
+  padding: 0.4rem 1rem 0.6rem;
+  border-top: 1px solid rgba(149, 127, 184, 0.18);
+  font-size: 0.75rem;
+  color: var(--muted);
+  text-align: center;
+}
+
+.rc-br { color: var(--oni-violet); }
+/* Not a link: in the shell an href="/" reloads the outer document and cuts the
+   audio. Restore the dimmed .rc-off partner when a second channel exists. */
+.rc-on { color: var(--carp-yellow); }
+.console-meta a { color: var(--link); text-decoration: underline; }
+.console-meta a:hover { color: var(--hover); }
+
+/* ---- schedule disclosure ------------------------------------------------ */
+
+/* The panel overlays the frame rather than pushing it: the shell is a
+   fixed-height flex column, so growing the console shrinks reading area. */
+.console { position: relative; }
+
+/* A background layer cannot be blurred on its own, so this is a second copy of
+   the gradient behind the panel, blurred to bleed a few px past the edge. */
+.console::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+  z-index: -1;
+  border-radius: 15px;
+  pointer-events: none;
+  background: linear-gradient(
+    115deg,
+    var(--oni-violet),
+    var(--crystal-blue) 50%,
+    var(--oni-violet)
+  );
+  filter: blur(9px);
+  opacity: 0.45;
+}
+
+.sc-toggle { display: inline; }
+
+/* the whole bracket group is the summary, so none can be orphaned on wrap */
+.sc-toggle > summary {
+  display: inline;
+  cursor: pointer;
+  color: var(--muted);
+  list-style: none;
+  white-space: nowrap;
+}
+
+.sc-word {
+  color: var(--link);
+  text-decoration: underline;
+}
+
+.sc-toggle > summary:hover .sc-word { color: var(--hover); }
+.sc-toggle[open] > summary .sc-word { color: var(--carp-yellow); }
+
+.sc-toggle > summary::-webkit-details-marker { display: none; }
+.sc-toggle > summary::marker { content: ""; }
+
+/* A wrapper, not the iframe: <iframe> is a replaced element and generates no
+   ::before. Kept TRANSPARENT because z-index here forms a stacking context that
+   traps a z-index:-1 child - over an opaque background it would flood the
+   panel. Background and gradient border live on the iframe instead. */
+.sc-panel {
+  position: absolute;
+  left: -1px;
+  top: 100%;
+  width: calc(100% + 2px);
+  height: var(--panel-h);
+  z-index: 5;
+  background: none;
+
+  /* <details> content is display:none when closed. `allow-discrete` lets
+     display join the transition so the element survives the exit, and
+     @starting-style supplies the entry's missing from-state. */
+  opacity: 1;
+  transform: translateY(0);
+  /* One duration for all three: if display finished first the panel would
+     vanish mid-fade on close. Expo-out reads better here than a linear ease. */
+  transition:
+    opacity 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    transform 320ms cubic-bezier(0.16, 1, 0.3, 1),
+    display 320ms allow-discrete;
+}
+
+@starting-style {
+  .sc-toggle[open] .sc-panel {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+}
+
+.sc-toggle:not([open]) .sc-panel {
+  opacity: 0;
+  transform: translateY(-14px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sc-panel {
+    transition: none;
+    transform: none;
+  }
+  .sc-toggle:not([open]) .sc-panel {
+    transform: none;
+  }
+}
+
+
+.sc-frame {
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px solid transparent;
+  border-top: 0;
+  border-radius: 0 0 10px 10px;
+  background:
+    linear-gradient(var(--bg-dim), var(--bg-dim)) padding-box,
+    linear-gradient(
+        115deg,
+        rgba(149, 127, 184, 0.5),
+        rgba(126, 156, 216, 0.5) 50%,
+        rgba(149, 127, 184, 0.5)
+      )
+      border-box;
+}
+
+/* square the console's bottom corners, or its radius notches the panel's edge */
+.console:has(.sc-toggle[open]) {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* stop the glow at the seam, or it haloes across the join */
+.console:has(.sc-toggle[open])::before {
+  bottom: 0;
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+/* ---- inside schedule.html ------------------------------------------------ */
+
+.sc-body {
+  margin: 0;
+  padding: 0.5rem 1rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: 0.78rem;
+}
+
+.sc-list { list-style: none; margin: 0; padding: 0; }
+
+.sc-list li {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  height: var(--sc-row-h);
+  padding: 0.12rem 0;
+}
+
+.sc-t {
+  flex: 1 1 auto;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.sc-w {
+  flex: 0 0 auto;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.sc-now { color: var(--carp-yellow); font-weight: 700; }
+.sc-now .sc-w { color: var(--carp-yellow); }
+.sc-now .sc-t::before { content: "\25B8\00A0"; }
+
+/* Inside .sc-t on purpose: title and album then ellipsise as one string instead
+   of the album shoving the time column off a narrow row. */
+.sc-a { color: var(--muted); }
+.sc-now .sc-a { color: var(--carp-yellow); font-weight: 400; opacity: 0.72; }
+
+/* ---- inside live.html ---------------------------------------------------- */
+
+.rc-body {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+  overflow: hidden;
+  text-align: center;
+}
+
+.rc-title {
+  margin: 0;
+  color: var(--carp-yellow);
+  font-size: 1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rc-sub {
+  margin: 0.1rem 0 0;
+  color: var(--link);
+  font-size: 0.75rem;
+}
+
+/* darkest ink: sumiInk5 let the unfilled half out-glow the yellow fill */
+.rc-bar {
+  margin: 0.5rem 0 0.25rem;
+  height: 10px;
+  background: var(--sumi-ink-0);
+  border: 1px solid rgba(149, 127, 184, 0.45);
+  overflow: hidden;
+}
+
+/* A negative animation-delay starts it partway through, so the bar renders
+   already-advanced. --dur/--elapsed come from liquidsoap's style attribute. */
+.rc-fill {
+  display: block;
+  height: 100%;
+  width: 0;
+  background-color: var(--carp-yellow);
+  /* Beam head, so the bar reads as painted rather than grown. Static gradient
+     on an already-moving element; fixed px so it does not stretch. */
+  background-image: linear-gradient(
+    to right,
+    rgba(255, 255, 255, 0) calc(100% - 18px),
+    rgba(255, 255, 255, 0.38) 100%
+  );
+  /* width and colour on the same clock: same duration, same negative delay */
+  animation:
+    rc-fill var(--dur, 0s) linear var(--elapsed, 0s) forwards,
+    rc-heat var(--dur, 0s) linear var(--elapsed, 0s) forwards;
+}
+
+/* Information, not decoration: a warm bar means the next entry is about to
+   become "now". Sakura appears nowhere else, so the signal stays unambiguous. */
+@keyframes rc-heat {
+  0%,
+  88% {
+    background-color: var(--carp-yellow);
+  }
+  100% {
+    background-color: var(--sakura-pink);
+  }
+}
+
+@keyframes rc-fill {
+  from { width: 0; }
+  to   { width: 100%; }
+}
+
+/* Pause, not disable: a paused animation still renders at its negative-delay
+   offset, so the bar shows the true position. animation:none leaves it empty. */
+@media (prefers-reduced-motion: reduce) {
+  .rc-fill { animation-play-state: paused; }
+}
+
+.rc-clock {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
+/* Text clears the floating player; the bar does not, so it still spans the
+   console. Symmetric so the title stays centred. */
+.rc-title,
+.rc-sub,
+.rc-clock {
+  padding: 0 180px;
+}
+
+@media (max-width: 640px) {
+  .rc-title,
+  .rc-sub,
+  .rc-clock {
+    padding: 0;
+  }
+}
+
+/* animated integer counters: a per-second clock with no document reload */
+@property --m { syntax: "<integer>"; initial-value: 0; inherits: false; }
+@property --s { syntax: "<integer>"; initial-value: 0; inherits: false; }
+.rc-m { counter-reset: m var(--m); }
+.rc-m::after { content: counter(m); }
+.rc-m.rc-static::after { content: none; }
+.rc-s { counter-reset: s var(--s); }
+.rc-s::after { content: counter(s, decimal-leading-zero); }
+@keyframes rc-min { from { --m: 0; } to { --m: var(--tm); } }
+@keyframes rc-sec { from { --s: 0; } to { --s: 60; } }
+@media (prefers-reduced-motion: reduce) {
+  .rc-m, .rc-s { animation-play-state: paused; }
+}
+
+@media (max-width: 640px) {
+  /* The 180px title padding is dropped at this width, so an absolute player
+     would land on top of the title. Stack them instead. */
+  .console-head {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+  .console-play {
+    position: static;
+    align-self: center;
+  }
+  .console-live { height: 84px; }
+}
+
+/* cap the measure: the full column is ~110 monospace characters */
+.layout > main {
+  max-width: 72ch;
+}
+
+/* the sidebar block renders nothing, so centre rather than sit hard left */
+.layout > main:only-child {
+  margin: 0 auto;
+}
+
+@media (max-width: 560px) {
+  .console { height: auto; flex-wrap: wrap; }
+  .console-play { border-right: 0; padding-right: 0; }
+  .console-live { min-height: 3rem; }
+}
+
+/* ---- scrollbars ---------------------------------------------------------- */
+
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sumi-ink-5) transparent;
+}
+
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--sumi-ink-5);
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--oni-violet);
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* ---- opening the schedule pushes the content down ------------------------ */
+
+.shell-content,
+.layout {
+  transition: margin-top 320ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.frame:has(.sc-toggle[open]) .shell-content {
+  margin-top: var(--panel-h);
+}
+
+.frame:has(.sc-toggle[open]) .layout {
+  margin-top: calc(1.25rem + var(--panel-h));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shell-content,
+  .layout {
+    transition: none;
+  }
+}
+
+/* ---- article text fades out as it reaches the player --------------------- */
+
+/* A fixed band, not a per-element range: with view() the fade lasted as long as
+   each element took to leave, so tall blocks crawled and short ones snapped.
+   body.framed exists only inside the iframe, so plain pages are unaffected. */
+@property --fade-h {
+  syntax: "<length>";
+  initial-value: 0px;
+  inherits: false;
+}
+
+@supports (animation-timeline: scroll(self)) {
+  /* body is only a scroll container if the ROOT's overflow is not `visible`;
+     otherwise the UA propagates it to the viewport and scroll(self) has no
+     scroller, so the animation silently never runs. */
+  html:has(body.framed) {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body.framed {
+    height: 100%;
+    overflow-y: auto;
+    /* grows from zero on scroll, so the top lines are not permanently dimmed */
+    mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-h));
+    animation: fade-band linear both;
+    animation-timeline: scroll(self block);
+    animation-range: 0 150px;
+  }
+
+  @keyframes fade-band {
+    to {
+      /* 150px, not 96: the band's top is fully transparent, so the visible ramp
+         is only its lower part - 96px fitted the whole gradient in ~1.5 lines */
+      --fade-h: 150px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    body.framed {
+      mask-image: none;
+      animation: none;
+    }
+  }
+}
+
+/* ---- tag cloud ----------------------------------------------------------- */
+
+/* --t is a 0..1 weight from post count, computed in the template. Glow ramps
+   harder than size: on a young archive the counts are close, and a few px of
+   bloom separates them where a few px of type size does not. */
+.tagcloud {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem 1.7rem;
+  padding: 2.2rem 0 1.4rem;
+}
+
+.tag {
+  position: relative;
+  /* z-index, not just position: relative. Without it .tag forms NO stacking
+     context, the z-index:-1 fringe below escapes upward and paints behind
+     .frame's opaque background - invisible on the real page. 0 traps the
+     clones inside the tag: behind its text, in front of the card. */
+  z-index: 0;
+  font-size: calc(0.95rem + 1.05rem * var(--t, 0));
+  line-height: 1.15;
+  color: var(--link);
+  text-shadow: 0 0 calc(4px + 16px * var(--t, 0))
+    rgba(var(--link-rgb), calc(0.18 + 0.5 * var(--t, 0)));
+  transition: color 160ms, text-shadow 160ms;
+}
+
+/* Chromatic aberration: two colour-separated clones of the word sitting behind
+   it, offset in opposite directions. This is the page background's aperture
+   grille applied to type rather than a new idea imported for effect - a beam
+   that cannot quite converge.
+   The offset scales with --t, so the heaviest tag fringes hardest: the split
+   carries the same information the size and glow do, instead of decorating. */
+.tag::before,
+.tag::after {
+  content: attr(data-name);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  pointer-events: none;
+  text-shadow: none;
+  opacity: calc(0.25 + 0.45 * var(--t, 0));
+}
+
+.tag::before {
+  color: #ff3b5c;
+  transform: translateX(calc(-0.5px - 1.6px * var(--t, 0)));
+}
+
+.tag::after {
+  color: #3bf0ff;
+  transform: translateX(calc(0.5px + 1.6px * var(--t, 0)));
+}
+
+.tag:hover {
+  color: var(--carp-yellow);
+  text-shadow: 0 0 calc(9px + 20px * var(--t, 0)) rgba(var(--carp-rgb), 0.7);
+}
+
+/* Signal loss on hover: the channels tear into horizontal bands and snap
+   between them. steps(1, end) is doing the work - interpolated, this reads as
+   a smooth wobble; snapped, it reads as a broken scanline. Hover only, and it
+   ends: the resting page still has no motion in it. */
+.tag:hover::before {
+  opacity: 0.85;
+  animation: tag-tear-r 420ms steps(1, end) 1;
+}
+
+.tag:hover::after {
+  opacity: 0.85;
+  animation: tag-tear-c 420ms steps(1, end) 1;
+}
+
+@keyframes tag-tear-r {
+  0%   { transform: translate(-1px, 0);    clip-path: inset(0 0 0 0); }
+  20%  { transform: translate(-4px, 1px);  clip-path: inset(8% 0 58% 0); }
+  40%  { transform: translate(3px, -1px);  clip-path: inset(62% 0 12% 0); }
+  60%  { transform: translate(-3px, 1px);  clip-path: inset(28% 0 44% 0); }
+  80%  { transform: translate(2px, 0);     clip-path: inset(74% 0 4% 0); }
+  100% { transform: translate(-1px, 0);    clip-path: inset(0 0 0 0); }
+}
+
+@keyframes tag-tear-c {
+  0%   { transform: translate(1px, 0);     clip-path: inset(0 0 0 0); }
+  20%  { transform: translate(4px, -1px);  clip-path: inset(52% 0 16% 0); }
+  40%  { transform: translate(-3px, 1px);  clip-path: inset(14% 0 66% 0); }
+  60%  { transform: translate(3px, -1px);  clip-path: inset(40% 0 30% 0); }
+  80%  { transform: translate(-2px, 0);    clip-path: inset(2% 0 78% 0); }
+  100% { transform: translate(1px, 0);     clip-path: inset(0 0 0 0); }
+}
+
+/* The exact count, because between 1 and 2 posts the size difference alone is
+   not readable. Never glows - it is an annotation, not part of the word. */
+.tag-n {
+  font-size: 0.6em;
+  vertical-align: super;
+  margin-left: 0.15em;
+  color: var(--muted);
+  text-shadow: none;
+}
+
+/* The fringe is static and stays; only the tearing is motion. */
+@media (prefers-reduced-motion: reduce) {
+  .tag { transition: none; }
+  .tag:hover::before,
+  .tag:hover::after { animation: none; }
+}

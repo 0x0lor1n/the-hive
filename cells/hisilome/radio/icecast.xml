@@ -1,0 +1,49 @@
+<icecast>
+    <limits>
+        <clients>100</clients>
+        <sources>2</sources>
+        <queue-size>524288</queue-size>
+        <client-timeout>30</client-timeout>
+        <header-timeout>15</header-timeout>
+        <source-timeout>10</source-timeout>
+        <!-- Startup-latency dial: audio handed to a new listener at once, so a
+             small burst means a longer wait before sound. It is also how far
+             behind the encoder every listener stays - radio.liq's
+             stream_latency must match. Must stay well under <queue-size>, and
+             never 0 or the mp3 decoder has no header run-in. -->
+        <burst-size>131072</burst-size>   <!-- 128 KiB = 8.192s at 128 kbps -->
+    </limits>
+    <!-- CHANGE BEFORE THE LISTEN-SOCKET BINDS ANYTHING BUT LOOPBACK. Safe only
+         because <bind-address> is 127.0.0.1; the source password is what stops
+         a stranger broadcasting over the station. Terminate at nginx instead,
+         as radio/nginx.conf already does for /stream.mp3. -->
+    <authentication>
+        <source-password>hackme</source-password>
+        <relay-password>hackme</relay-password>
+        <admin-user>admin</admin-user>
+        <admin-password>hackme</admin-password>
+    </authentication>
+    <hostname>127.0.0.1</hostname>
+    <listen-socket>
+        <port>8000</port>
+        <bind-address>127.0.0.1</bind-address>
+    </listen-socket>
+    <paths>
+        <basedir>./radio/state</basedir>
+        <logdir>./radio/state/logs</logdir>
+        <!-- Store paths: pinned to one build, will not resolve elsewhere or
+             after a GC. Only icecast's own status pages, which nginx never
+             proxies, so a stale path is harmless - but re-point when moving. -->
+        <webroot>/nix/store/ywd949qjdi35ks685ala4vdh86w1vp1i-icecast-2.5.0/share/icecast/web</webroot>
+        <adminroot>/nix/store/ywd949qjdi35ks685ala4vdh86w1vp1i-icecast-2.5.0/share/icecast/admin</adminroot>
+        <alias source="/" destination="/status.xsl"/>
+    </paths>
+    <logging>
+        <accesslog>access.log</accesslog>
+        <errorlog>error.log</errorlog>
+        <loglevel>3</loglevel>
+    </logging>
+    <security>
+        <chroot>0</chroot>
+    </security>
+</icecast>

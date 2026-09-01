@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block content %}
+<ul class="post-list">
+{% for page in section.pages %}
+<li>
+<h3><a href="{{ page.path | safe }}">{{ page.title }}</a></h3>
+{{ macros::post_meta(page=page) }}
+<p class="summary">{{ page.description }}</p>
+</li>
+{% endfor %}
+</ul>
+{% endblock content %}

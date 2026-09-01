@@ -1,0 +1,10 @@
+base_url = "https://hisilo.me"
+title = "Hísilómë"
+description = "Self-taught web developer and Dev[Sec]Ops engineer with a passion for internet research. Dedicated Nix evangelist and cybersecurity enthusiast."
+
+generate_feeds = true
+feed_filenames = ["rss.xml"]
+
+taxonomies = [
+    { name = "tags", rss = true },
+]

@@ -1,0 +1,21 @@
+# ~1.1 GB of commercial releases, and not mine to redistribute. The station is
+# radio/ and bin/; the library is local data.
+music/
+
+# zola output, regenerated on every start
+public/
+
+# Queue, logs, and the fragments liquidsoap rewrites every second. Outside
+# public/ so `zola build` cannot wipe a running station's state.
+radio/state/
+
+.direnv/
+result
+result-*
+
+# trailing slash, no leading slash: also catches the copy under content/
+.omc/
+
+*.swp
+*~
+.DS_Store

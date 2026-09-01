@@ -1,0 +1,58 @@
+version: "0.5"
+processes:
+  build-site:
+    command: "zola build"
+
+  # No-op on an unchanged library. Keeps liquidsoap from analysing at resolve
+  # time (~5s), which on a single-core box competes with the encoder.
+  tag-music:
+    command: "tag-replaygain music"
+
+  # Must complete before liquidsoap: the playlist file will not exist otherwise.
+  build-queue:
+    command: "build-queue --rounds 8 music"
+    depends_on:
+      tag-music:
+        condition: process_completed_successfully
+
+  # The queue is finite and loops in the same order, so reshuffle daily. Picked
+  # up by reload_mode="watch", which resets playback position - hence daily.
+  queue-refresh:
+    command: "while true; do sleep 86400; build-queue --rounds 8 music; done"
+    depends_on:
+      build-queue:
+        condition: process_completed_successfully
+
+  icecast:
+    command: "icecast -c radio/icecast.xml"
+    readiness_probe:
+      http_get:
+        host: "127.0.0.1"
+        port: 8000
+        path: "/status-json.xsl"
+      initial_delay_seconds: 2
+      period_seconds: 2
+
+  liquidsoap:
+    command: "liquidsoap radio/radio.liq"
+    depends_on:
+      icecast:
+        condition: process_healthy
+      build-site:
+        condition: process_completed_successfully
+      build-queue:
+        condition: process_completed_successfully
+
+  listeners:
+    command: "listener-count"
+    depends_on:
+      icecast:
+        condition: process_healthy
+
+  nginx:
+    command: "nginx -c $(pwd)/radio/nginx.conf -p $(pwd)"
+    depends_on:
+      build-site:
+        condition: process_completed_successfully
+      icecast:
+        condition: process_healthy

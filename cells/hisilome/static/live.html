@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="dark" />
+    <meta http-equiv="refresh" content="10" />
+    <title>Now playing</title>
+    <!-- Styles are INLINE, not a <link>. This document reloads every second;
+         linking the full stylesheet meant re-fetching and re-applying ~11KB on
+         every tick, and the browser paints an unstyled frame in between - which
+         is exactly the flicker. Inline means nothing external to wait for.
+         These few rules are duplicated from style.css by necessity. -->
+    <style>
+      @font-face {
+        font-family: "Iosevka Web";
+        src: url("/fonts/iosevka-regular.woff2") format("woff2");
+        font-weight: 400;
+        font-display: swap;
+      }
+      @font-face {
+        font-family: "Iosevka Web";
+        src: url("/fonts/iosevka-bold.woff2") format("woff2");
+        font-weight: 700;
+        font-display: swap;
+      }
+      :root {
+        --bg-dim: #16161d;
+        --sumi-ink-0: #16161d;
+        --muted: #727169;
+        --border: #363646;
+        --link: #7e9cd8;
+        --oni-violet: #957fb8;
+        --sumi-ink-5: #363646;
+        --carp-yellow: #e6c384;
+        --sakura-pink: #d27e99;
+        color-scheme: dark;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        background: transparent;
+        overflow: hidden;
+        text-align: center;
+        font-family: "Iosevka Web", ui-monospace, "SF Mono", Consolas, monospace;
+        font-size: 15px;
+        line-height: 1.6;
+      }
+      .rc-title {
+        color: var(--carp-yellow);
+        font-size: 1rem;
+        font-weight: 700;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+      .rc-sub { margin-top: 0.1rem; color: var(--link); font-size: 0.75rem; }
+      /* keep in sync with style.css: darkest track so the yellow fill leads */
+      .rc-bar {
+        margin: 0.5rem 0 0.25rem;
+        height: 10px;
+        background: var(--sumi-ink-0);
+        border: 1px solid rgba(149, 127, 184, 0.45);
+        overflow: hidden;
+      }
+      /* keep in sync with style.css */
+      .rc-fill {
+        display: block;
+        height: 100%;
+        width: 0;
+        background-color: var(--carp-yellow);
+        background-image: linear-gradient(
+          to right,
+          rgba(255, 255, 255, 0) calc(100% - 18px),
+          rgba(255, 255, 255, 0.38) 100%
+        );
+        animation:
+          rc-fill var(--dur, 0s) linear var(--elapsed, 0s) forwards,
+          rc-heat var(--dur, 0s) linear var(--elapsed, 0s) forwards;
+      }
+      @keyframes rc-heat {
+        0%, 88% { background-color: var(--carp-yellow); }
+        100% { background-color: var(--sakura-pink); }
+      }
+      @keyframes rc-fill { from { width: 0; } to { width: 100%; } }
+      @media (prefers-reduced-motion: reduce) {
+        .rc-fill { animation-play-state: paused; }
+      }
+      .rc-clock { color: var(--muted); font-size: 0.75rem; }
+      /* keeps clear of the player floating over the frame's right edge; the
+         bar has no padding so it still spans the full console width */
+      .rc-title,
+      .rc-sub,
+      .rc-clock { padding: 0 180px; }
+      @media (max-width: 640px) {
+        .rc-title, .rc-sub, .rc-clock { padding: 0; }
+      }
+
+
+      /* Clock digits are CSS counters driven by animated <integer> custom
+         properties, so they tick every second with NO document reload. The
+         animation declarations (durations, step counts, negative delays) are
+         written per-track by liquidsoap into the style attribute. */
+      @property --m { syntax: "<integer>"; initial-value: 0; inherits: false; }
+      @property --s { syntax: "<integer>"; initial-value: 0; inherits: false; }
+      .rc-m { counter-reset: m var(--m); }
+      .rc-m::after { content: counter(m); }
+      .rc-m.rc-static::after { content: none; }
+      .rc-s { counter-reset: s var(--s); }
+      .rc-s::after { content: counter(s, decimal-leading-zero); }
+      @keyframes rc-min { from { --m: 0; } to { --m: var(--tm); } }
+      @keyframes rc-sec { from { --s: 0; } to { --s: 60; } }
+      @media (prefers-reduced-motion: reduce) {
+        .rc-m, .rc-s { animation-play-state: paused; }
+      }
+
+    </style>
+  </head>
+  <!--
+  The volatile half of the console: title, channel, progress bar, clock and
+  listener count. Reloads every 10s - only the track title needs it, since the clock
+  animates itself. Fewer reloads means fewer chances to paint a blank frame,
+  which is what the flicker was. This is why the <audio> element and the
+  <details> tracklist both live in the shell instead - anything stateful in
+  here would be destroyed on every reload.
+
+  The whole block is one include written by liquidsoap, so the values are
+  always from the same instant and cannot disagree with each other.
+-->
+  <body class="rc-body">
+    <!--#include virtual="/console.html" -->
+  </body>
+</html>

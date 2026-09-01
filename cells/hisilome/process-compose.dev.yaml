@@ -1,0 +1,57 @@
+version: "0.5"
+
+# Dev-only overlay. Layered on top of the production stack:
+#
+#   process-compose up -f process-compose.yaml -f process-compose.dev.yaml
+#
+# Kept in a separate file rather than behind a flag because process-compose has
+# no profile mechanism - a `disabled` process still shows in the TUI, and
+# namespaces run by default. A file you have to name cannot start by accident.
+processes:
+  # zola build wipes public/ and regenerates it, which is safe only because
+  # radio/state/ lives outside that directory. Do not move it back.
+  #
+  # queue, not restart: a build killed halfway leaves public/ half-written and
+  # nginx serving 404s until the next save.
+  watch-site:
+    command: >
+      watchexec
+      --watch content --watch templates --watch static --watch config.toml
+      --debounce 300ms --on-busy-update=queue
+      -- zola build
+    depends_on:
+      build-site:
+        condition: process_completed_successfully
+
+  # Liquidsoap reads its script once at startup and has no reload, so the whole
+  # process has to go. The stream drops for about a second and listeners
+  # reconnect; icecast keeps running, so the mount survives.
+  watch-radio:
+    command: >
+      watchexec
+      --watch radio/radio.liq
+      --debounce 500ms --on-busy-update=restart
+      -- process-compose process restart liquidsoap
+    depends_on:
+      liquidsoap:
+        condition: process_started
+
+  # A graceful reload: old workers finish their connections, so an in-flight
+  # /stream.mp3 is not cut. Config errors are reported without killing nginx.
+  watch-nginx:
+    command: >
+      watchexec
+      --watch radio/nginx.conf
+      --debounce 500ms --on-busy-update=queue
+      -- nginx -s reload -c "$(pwd)/radio/nginx.conf" -p "$(pwd)"
+    depends_on:
+      nginx:
+        condition: process_started
+
+  # NOT watched:
+  #   radio/icecast.xml - a restart drops every listener AND liquidsoap's source
+  #                       connection. Rare enough to do by hand.
+  #   bin/*.sh          - process-compose calls these by name, so they resolve to
+  #                       the nix wrapper frozen when the devshell was entered.
+  #                       Editing one needs `direnv reload`, which no watcher can
+  #                       do for you.

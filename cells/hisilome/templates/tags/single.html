@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "macros.html" as macros %}
+
+{% block title %}{{ term.name }} — {{ config.title }}{% endblock title %}
+{% block description %}{% endblock description %}
+
+{% block content %}
+<h1>Tag: {{ term.name }}</h1>
+<ul class="post-list">
+{% for page in term.pages %}
+<li>
+<h3><a href="{{ page.path | safe }}">{{ page.title }}</a></h3>
+{{ macros::post_meta(page=page) }}
+</li>
+{% endfor %}
+</ul>
+{% endblock content %}

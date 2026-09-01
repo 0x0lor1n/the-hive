@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+
+{% block title %}Tags — {{ config.title }}{% endblock title %}
+{% block description %}{% endblock description %}
+
+{% block content %}
+<h1>Tags</h1>
+
+{#- Normalised weight is computed HERE, not in CSS: dividing by a var() inside
+    calc() is the same class of trick as steps(var()), which this project
+    already found does not reliably parse. Tera hands CSS a plain 0..1 number.
+    span is floored at 1 so an archive where every tag has the same count
+    divides by 1 rather than 0.
+    Counts are bound to a variable before any arithmetic - Tera reads
+    `x | length - 1` as a filter call and fails to parse the subtraction. -#}
+{%- set_global wmax = 1 -%}
+{%- for term in terms -%}
+  {%- set n = term.pages | length -%}
+  {%- if n > wmax -%}{%- set_global wmax = n -%}{%- endif -%}
+{%- endfor -%}
+{%- set span = wmax - 1 -%}
+{%- if span < 1 -%}{%- set span = 1 -%}{%- endif -%}
+
+<nav class="tagcloud">
+{%- for term in terms %}
+{%- set n = term.pages | length %}
+{#- data-name feeds the two colour-fringe clones via content: attr(). It holds
+    only the name, so the clones never duplicate the count superscript. -#}
+<a class="tag" href="{{ term.path | safe }}" style="--t: {{ (n - 1) / span }}"
+   data-name="{{ term.name }}"
+   title="{{ n }} post{% if n != 1 %}s{% endif %}"
+>{{ term.name }}<span class="tag-n">{{ n }}</span></a>
+{%- endfor %}
+</nav>
+{% endblock content %}
