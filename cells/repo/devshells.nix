@@ -30,7 +30,7 @@
 
       rage -d \
         -i "$root/secrets/jarvis-nix-rage.pub" \
-        "$root/secrets/deploy/osgiliath-deploy.age" \
+        "$root/secrets/deploy.age" \
         | ssh-add -t 900 -
 
       echo "deploy-key: loaded, expires in 15 minutes."

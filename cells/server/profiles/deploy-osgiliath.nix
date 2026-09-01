@@ -19,7 +19,7 @@
       "-d"
       "-i"
       "${inputs.self}/secrets/jarvis-nopin-rage.pub"
-      "${inputs.self}/secrets/deploy/${file}.age"
+      "${inputs.self}/secrets/hisilome/${file}.age"
     ];
     destDir = "/run/keys";
     user = "hisilome";

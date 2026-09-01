@@ -13,7 +13,7 @@
   };
 
   users.users.root.openssh.authorizedKeys.keyFiles = [
-    (inputs.self.outPath + "/secrets/deploy/osgiliath-deploy.pub")
+    (inputs.self.outPath + "/secrets/deploy.pub")
   ];
 
   # An internet-facing host must not inherit the fleet root password.
