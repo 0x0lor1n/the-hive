@@ -1,5 +1,5 @@
 # Host-facing half of Hísilómë: domain, cert, secrets, firewall. The service
-# itself is cells/hisilome/nixosModules.nix.
+# itself is cells/hisilome/nixosModules/.
 {
   inputs,
   cell,

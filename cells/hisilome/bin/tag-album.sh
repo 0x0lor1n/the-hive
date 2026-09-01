@@ -1,11 +1,6 @@
 #!/usr/bin/env bash
-# Write ALBUM into every track, naming the work it came from: the game, the
-# film, or the record. The console shows it under the track title.
-#
-# Taken from the filename's bracket prefix, since most of the library carries no
-# tags: "[Silent Hill 2] - 28 Akira Yamaoka - Overdose Delusion.flac".
-#
-# Idempotent: already-tagged files are skipped unless --force.
+# ALBUM tag from the filename's bracket prefix ("[Work] - NN Artist - Title"),
+# since most of the library carries no tags. Skips tagged files unless --force.
 
 set -euo pipefail
 

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% import "macros.html" as m %}
+
+{% block title %}{{ config.title }} — radio{% endblock title %}
+
+{#- The shell: topbar and console live here and only the middle frame
+    navigates, so a link never destroys the <audio> element. -#}
+{% block body %}
+<body class="shell-body">
+<div class="frame">
+{{ m::shell_topbar(ext=true) }}
+{{ m::shell_console(ext=true) }}
+<iframe class="shell-content" src="/" name="content" title="{{ config.title }}"></iframe>
+{{ m::shell_footer(ext=true) }}
+</div>
+</body>
+{% endblock body %}

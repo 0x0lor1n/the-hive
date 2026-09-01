@@ -1,12 +1,7 @@
 #!/usr/bin/env bash
-# Poll Icecast for the listener count of one mount and write a display string
-# for the console's live region to include via SSI.
-#
-# Scoped to a single mount on purpose: with more than one mount Icecast's
-# status-json "source" field becomes an array, so a naive '"listeners":' match
-# would report whichever station happened to serialise first.
-#
-# Writes atomically (temp + rename) because nginx may read the file at any time.
+# Listener count for one mount, as a display string for the console.
+# Single mount: with several, status-json's "source" becomes an array and a
+# naive '"listeners":' match reports whichever serialised first.
 
 set -euo pipefail
 
@@ -34,8 +29,7 @@ count_listeners() {
 
 render() {
   local n="${1%%|*}" peak="${1##*|}"
-  # A counter reading 1 advertises emptiness. Below 2, say "connected"
-  # instead - true at any count, and it reads as presence rather than census.
+  # A counter reading 1 advertises emptiness.
   if [ -n "$n" ] && [ "$n" -ge 2 ] 2>/dev/null; then
     printf '%s listening' "$n"
     [ -n "$peak" ] && [ "$peak" -gt "$n" ] 2>/dev/null && printf ' (peak %s)' "$peak"

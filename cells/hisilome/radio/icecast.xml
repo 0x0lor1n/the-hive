@@ -6,17 +6,12 @@
         <client-timeout>30</client-timeout>
         <header-timeout>15</header-timeout>
         <source-timeout>10</source-timeout>
-        <!-- Startup-latency dial: audio handed to a new listener at once, so a
-             small burst means a longer wait before sound. It is also how far
-             behind the encoder every listener stays - radio.liq's
-             stream_latency must match. Must stay well under <queue-size>, and
-             never 0 or the mp3 decoder has no header run-in. -->
+        <!-- radio.liq's stream_latency must match. Under <queue-size>; never
+             0 or the mp3 decoder has no header run-in. -->
         <burst-size>131072</burst-size>   <!-- 128 KiB = 8.192s at 128 kbps -->
     </limits>
-    <!-- CHANGE BEFORE THE LISTEN-SOCKET BINDS ANYTHING BUT LOOPBACK. Safe only
-         because <bind-address> is 127.0.0.1; the source password is what stops
-         a stranger broadcasting over the station. Terminate at nginx instead,
-         as radio/nginx.conf already does for /stream.mp3. -->
+    <!-- Dev values; safe only while <bind-address> is 127.0.0.1. Production
+         renders real ones in (nixosModules/setup.nix). -->
     <authentication>
         <source-password>hackme</source-password>
         <relay-password>hackme</relay-password>
@@ -35,9 +30,8 @@
     <paths>
         <basedir>./radio/state</basedir>
         <logdir>./radio/state/logs</logdir>
-        <!-- Store paths: pinned to one build, will not resolve elsewhere or
-             after a GC. Only icecast's own status pages, which nginx never
-             proxies, so a stale path is harmless - but re-point when moving. -->
+        <!-- Only icecast's own status pages, never proxied; production
+             re-points these. -->
         <webroot>/nix/store/ywd949qjdi35ks685ala4vdh86w1vp1i-icecast-2.5.0/share/icecast/web</webroot>
         <adminroot>/nix/store/ywd949qjdi35ks685ala4vdh86w1vp1i-icecast-2.5.0/share/icecast/admin</adminroot>
         <alias source="/" destination="/status.xsl"/>
