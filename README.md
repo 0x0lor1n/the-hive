@@ -146,8 +146,7 @@ the tag and the hash.
 ### Switchable devshells
 
 The `.envrc` above reads `.ren/devshell` (rensa's `read_state`) to choose which
-cell's shell to load. `dev`, a shell function in every cell's shellHook, is the
-switch:
+cell's shell to load. `dev` is the switch:
 
 ```bash
 dev            # back to the deploy shell (repo/devshells/default), cd repo root
@@ -158,12 +157,17 @@ dev hisilome   # the site + radio shell (zola, liquidsoap, process-compose),
 `dev <cell>` is *not* `nix develop`. It writes the cell name to `.ren/devshell`,
 `cd`s into the cell dir, and runs `direnv reload`, so the environment is layered
 into **your current shell** — zsh stays zsh, no spawned bash — and rensa's
-watches and gcroots are preserved. It is a shell *function* (sourced from
-`nix/dev-switch.sh` into each shellHook), not a packaged binary, because a child
-process cannot `cd` its parent; sharing it across cells is what lets `dev` switch
-*back* from a service shell. The choice persists in `.ren/` across `cd` out and
-back. There is deliberately no per-cell `.envrc`: the root one plus `dev` is the
-single source of truth for which shell is active.
+watches and gcroots are preserved. `dev` with no cell returns to the deploy
+shell. The choice persists in `.ren/` across `cd` out and back.
+
+`dev` is a **zsh function**, not a devshell package or shellHook snippet: direnv
+marshals environment *variables* into the interactive shell but not shell
+*functions*, so a hook-defined `dev` never reaches zsh, and a packaged binary
+could not `cd` its parent. It lives in the workstation's home-manager config
+(`nixos-config`, `users/shared/cli/zsh/config/functions.zsh`) and is generic —
+it works in any rensa repo with `cells/<cell>/devshells.nix`. There is
+deliberately no per-cell `.envrc`: the root one plus `dev` is the single source
+of truth for which shell is active.
 
 Dev shells are keyed to a **service cell**, not a host — a machine is deployed,
 not developed. `cells/hisilome` has a shell because the site runs locally; a

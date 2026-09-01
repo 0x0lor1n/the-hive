@@ -106,17 +106,6 @@ in {
       echo "nix-rensa devshell — colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
       echo "  dev <cell>      switch devshell + cd into the cell (e.g. dev hisilome)"
-
-      # The `dev` switcher. A shell function, sourced here so it can cd the
-      # interactive shell; shared with every service cell's shellHook so `dev`
-      # also exists there to switch back. Sourced from the WORKING TREE (git
-      # root), not ''${inputs.self.outPath}: it is a repo-local dev tool, so it
-      # should reflect live edits and not vanish when the tree is dirty and the
-      # file is not yet in the flake's store snapshot.
-      if _root=$(git rev-parse --show-toplevel 2>/dev/null); then
-        # shellcheck disable=SC1091
-        source "$_root/nix/dev-switch.sh"
-      fi
     '';
   };
 }
