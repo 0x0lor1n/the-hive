@@ -1,2 +1,5 @@
 .ren/
 .omc/
+# Hermes runtime state; only project skills are tracked.
+.hermes/*
+!.hermes/skills/
