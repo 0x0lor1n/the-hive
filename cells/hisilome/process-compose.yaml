@@ -44,7 +44,12 @@ processes:
         condition: process_completed_successfully
 
   icecast:
-    command: "icecast -c radio/icecast.xml"
+    # icecast opens <logdir>/access.log and error.log at startup and exits 1 if
+    # the directory is missing. radio/state/logs is gitignored runtime state, so
+    # it is absent on a fresh checkout -- create it here rather than depend on
+    # another process having made it. `exec` so process-compose supervises the
+    # real icecast, not the shell wrapper.
+    command: "mkdir -p radio/state/logs && exec icecast -c radio/icecast.xml"
     readiness_probe:
       http_get:
         host: "127.0.0.1"
