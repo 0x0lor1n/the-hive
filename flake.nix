@@ -2,7 +2,7 @@
   description = "This is my take on one-flake-to-rule-them-all";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/d233902339c02a9c334e7e593de68855ad26c4cb";
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     ren.url = "gitlab:rensa-nix/core/v0.2.0?dir=lib";
     # root-level too, so the soil can read colmena's __schema constant
     colmena.url = "github:zhaofengli/colmena/dc22786a43315b212eeafe13409a7203328e5a30";
