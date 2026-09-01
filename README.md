@@ -149,23 +149,25 @@ The `.envrc` above reads `.ren/devshell` (rensa's `read_state`) to choose which
 cell's shell to load. `dev` is the switch:
 
 ```bash
-dev            # back to the deploy shell (repo/devshells/default), cd repo root
-dev hisilome   # the site + radio shell (zola, liquidsoap, process-compose),
-               #   cd cells/hisilome
+dev                   # back to the deploy shell (repo/devshells/default)
+dev hisilome          # the site + radio shell (zola, liquidsoap, process-compose)
+cd "$(dev hisilome)"  # switch AND cd into cells/hisilome
 ```
 
-`dev <cell>` is *not* `nix develop`. It writes the cell name to `.ren/devshell`,
-`cd`s into the cell dir, and runs `direnv reload`, so the environment is layered
-into **your current shell** — zsh stays zsh, no spawned bash — and rensa's
-watches and gcroots are preserved. `dev` with no cell returns to the deploy
-shell. The choice persists in `.ren/` across `cd` out and back.
+`dev <cell>` is *not* `nix develop`. It writes the cell name to `.ren/devshell`
+and runs `direnv reload`, so the environment is layered into **your current
+shell** — zsh stays zsh, no spawned bash — and rensa's watches and gcroots are
+preserved. `dev` with no cell returns to the deploy shell. The choice persists
+in `.ren/` across `cd` out and back.
 
-`dev` is a **zsh function**, not a devshell package or shellHook snippet: direnv
-marshals environment *variables* into the interactive shell but not shell
-*functions*, so a hook-defined `dev` never reaches zsh, and a packaged binary
-could not `cd` its parent. It lives in the workstation's home-manager config
-(`nixos-config`, `users/shared/cli/zsh/config/functions.zsh`) and is generic —
-it works in any rensa repo with `cells/<cell>/devshells.nix`. There is
+`dev` is a **PATH binary** shipped in every cell's devshell (from `nix/dev.sh`),
+not a shellHook function: direnv marshals environment *variables* (including
+`PATH`) into the interactive shell but not shell *functions*, so a hook-defined
+`dev` never reaches zsh — a binary on `PATH` does. The one cost is that a child
+process cannot `cd` its parent, so `dev` prints the target dir instead of
+changing to it; `cd "$(dev <cell>)"` opts into the cd. This keeps the switcher
+entirely inside the repo — no workstation shell config to touch — and it is
+generic across any rensa repo with `cells/<cell>/devshells.nix`. There is
 deliberately no per-cell `.envrc`: the root one plus `dev` is the single source
 of truth for which shell is active.
 

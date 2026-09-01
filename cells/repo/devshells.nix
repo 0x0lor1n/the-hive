@@ -54,6 +54,15 @@
       echo "deploy-key: loaded, expires in 15 minutes."
     '';
   };
+
+  # `dev [<cell>]` -- switch which cell's devshell direnv loads. Shared script
+  # so it also exists in service shells to switch back; see nix/dev.sh for why
+  # it is a PATH binary and not a shellHook function.
+  dev = pkgs.writeShellApplication {
+    name = "dev";
+    runtimeInputs = with pkgs; [git direnv coreutils];
+    text = builtins.readFile "${inputs.self.outPath}/nix/dev.sh";
+  };
 in {
   default = pkgs.mkShell {
     name = "nix-rensa";
@@ -77,9 +86,10 @@ in {
       # Installs a fresh machine; reads nixosConfigurations.<name>.
       pkgs.nixos-anywhere
 
-      # The single fleet-wide deploy-key loader. (`dev` is a shell function
-      # from the shellHook below, not a package -- it must cd the parent shell.)
+      # The single fleet-wide deploy-key loader, and the `dev <cell>` devshell
+      # switcher (a PATH binary -- see its definition for why not a function).
       deploy-key
+      dev
 
       # `dev` reloads direnv; keep a direnv on PATH so it works regardless of
       # how the ambient one was installed.
@@ -105,7 +115,7 @@ in {
       "
       echo "nix-rensa devshell — colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
-      echo "  dev <cell>      switch devshell + cd into the cell (e.g. dev hisilome)"
+      echo "  dev <cell>      switch devshell (e.g. dev hisilome); cd \"\$(dev <cell>)\" to also cd"
     '';
   };
 }
