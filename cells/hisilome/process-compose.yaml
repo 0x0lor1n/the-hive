@@ -1,5 +1,22 @@
 version: "0.5"
 processes:
+  # Preflight: the music library is ~1.1 GB of out-of-band data, gitignored and
+  # rsynced in separately -- it is NOT in a fresh checkout. Without this gate the
+  # first thing to run is `tag-replaygain music`, which dies with a bare
+  # "not a directory: music" and -- because tag-music -> build-queue ->
+  # liquidsoap is a process_completed_successfully chain -- wedges the whole
+  # stack with no hint why. Fail loud, first, with the fix.
+  check-music:
+    command: |
+      if [ ! -d music ] || [ -z "$(find music -type f -print -quit 2>/dev/null)" ]; then
+        echo "process-compose: music/ is missing or empty." >&2
+        echo "  The radio needs a music library, which is not in the repo" >&2
+        echo "  (~1.1 GB, gitignored, rsynced in separately)." >&2
+        echo "  Put audio files under cells/hisilome/music/ and retry." >&2
+        exit 1
+      fi
+      echo "check-music: $(find music -type f | wc -l) files present."
+
   build-site:
     command: "zola build"
 
@@ -7,6 +24,9 @@ processes:
   # time (~5s), which on a single-core box competes with the encoder.
   tag-music:
     command: "tag-replaygain music"
+    depends_on:
+      check-music:
+        condition: process_completed_successfully
 
   # Must complete before liquidsoap: the playlist file will not exist otherwise.
   build-queue:
