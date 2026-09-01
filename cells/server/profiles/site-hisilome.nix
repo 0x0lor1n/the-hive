@@ -51,11 +51,12 @@
     "+${pkgs.coreutils}/bin/install -d -o acme -g acme -m 0755 /var/lib/acme/acme-challenge/.well-known/acme-challenge"
   ];
 
-  # 80 is needed for HTTP-01, not just the redirect.
+  # 80 is needed for HTTP-01, not just the redirect. UDP 443 is QUIC.
   networking.firewall.allowedTCPPorts = [
     80
     443
   ];
+  networking.firewall.allowedUDPPorts = [443];
 
   services.nginx.virtualHosts."hisilo.me".serverAliases = ["www.hisilo.me"];
 }
