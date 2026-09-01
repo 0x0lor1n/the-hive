@@ -23,6 +23,34 @@
   nixPlugins = pkgs.nix-plugins.override {
     nixComponents = pkgs.nixVersions.nixComponents_2_31;
   };
+
+  # Loads the colmena deploy key into the running ssh-agent.
+  #
+  # PROMPTS FOR THE TPM PIN, every time, by design: the key is encrypted to the
+  # PIN-protected identity, not the PIN-less one, so no unattended process can
+  # deploy osgiliath. Do not "fix" this.
+  osgiliath-key = pkgs.writeShellApplication {
+    name = "osgiliath-key";
+    runtimeInputs = with pkgs; [git rage age-plugin-tpm openssh];
+    text = ''
+      root=$(git rev-parse --show-toplevel)
+
+      if [ -z "''${SSH_AUTH_SOCK:-}" ]; then
+        echo "osgiliath-key: no ssh-agent in this shell." >&2
+        echo "  run:  eval \$(ssh-agent)" >&2
+        exit 1
+      fi
+
+      # -t 900: the agent drops it after 15 minutes rather than holding it for
+      # the whole session. The private half never touches disk.
+      rage -d \
+        -i "$root/secrets/jarvis-nix-rage.pub" \
+        "$root/secrets/deploy/osgiliath-deploy.age" \
+        | ssh-add -t 900 -
+
+      echo "osgiliath-key: loaded, expires in 15 minutes."
+    '';
+  };
 in {
   default = pkgs.mkShell {
     name = "nix-rensa";
@@ -45,6 +73,8 @@ in {
 
       # Installs a fresh machine; reads nixosConfigurations.<name>.
       pkgs.nixos-anywhere
+
+      osgiliath-key
 
       pkgs.alejandra
     ];
