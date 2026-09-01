@@ -116,6 +116,46 @@ That rensa is technically viable is settled. Whether to move is not:
   reads `__schema` from the pinned colmena so it cannot drift, but it is ~25
   lines this repo now owns.
 
+## Direnv
+
+`.envrc` uses rensa's own [direnv integration](https://gitlab.com/rensa-nix/direnv),
+pinned to `v0.3.0` by content hash (verified against the tag before pinning):
+
+```bash
+source "$(fetchurl https://gitlab.com/rensa-nix/direnv/-/raw/v0.3.0/direnvrc sha256-...)"
+use ren //repo/devshells/default
+```
+
+`use ren //<cell>/<block>/<target>` resolves to the **raw rensa output tree** --
+`.#x86_64-linux.repo.devshells.default` -- not the flake's `devShells`
+passthrough, and it watches only that cell. Measured watch set:
+
+```
+.envrc  flake.nix  flake.lock  cells/repo/flake.nix  cells/repo/devshells.nix
+```
+
+So editing `cells/server`, `cells/hisilome` or any host does not reload the
+shell. State (profiles, gcroots, `PRJ_*`) lives in a gitignored `.ren/`.
+
+Bumping the version means re-running `direnv fetchurl <url>` and replacing both
+the tag and the hash.
+
+### What wiring it up caught
+
+`cells/repo` declared a `colmena` input but had no committed `flake.lock`, so
+that input resolved to an **empty lockfile** and silently fell through to the
+root's `colmena`. It worked only because both pinned the same revision.
+
+The fix was not to add a lock but to remove the duplicate pin: the root's
+colmena is the one `colmenaHive` reads `__schema` from, and the CLI asserts that
+schema equals its own constant. One pin makes the mismatch impossible instead of
+merely unlikely. `cells/server` lost its `colmena` declaration for the same
+reason -- its `nixosModules` must come from the pin the schema is read from. The
+toplevel is byte-identical across that change.
+
+`cells/common` and `cells/server` do have committed locks; `cells/hisilome` and
+`cells/repo` declare no inputs, so they need none.
+
 ## Running it
 
 Everything that evaluates `globals` must run inside the devshell — the

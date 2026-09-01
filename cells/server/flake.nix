@@ -5,7 +5,10 @@
   inputs = {
     utils.url = "gitlab:rensa-nix/utils/v0.1.2?dir=lib";
     disko.url = "github:nix-community/disko/65fb947964bd44fc0008faf77d1fcb7a9f40bb32";
-    colmena.url = "github:zhaofengli/colmena/dc22786a43315b212eeafe13409a7203328e5a30";
+    # colmena is NOT declared here: its nixosModules must come from the same pin
+    # the root reads `__schema` from, or the deployed modules and the CLI schema
+    # can drift apart. Cell blocks see root inputs, so `inputs.colmena` resolves
+    # to that one pin.
   };
 
   outputs = i:
