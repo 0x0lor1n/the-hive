@@ -123,15 +123,18 @@ pinned to `v0.3.0` by content hash (verified against the tag before pinning):
 
 ```bash
 source "$(fetchurl https://gitlab.com/rensa-nix/direnv/-/raw/v0.3.0/direnvrc sha256-...)"
-use ren //repo/devshells/default
+cell="$(read_state devshell)"
+use ren //"${cell:-repo}"/devshells/"${cell:-repo}"   # repo -> //repo/devshells/default
 ```
 
 `use ren //<cell>/<block>/<target>` resolves to the **raw rensa output tree** --
 `.#x86_64-linux.repo.devshells.default` -- not the flake's `devShells`
-passthrough, and it watches only that cell. Measured watch set:
+passthrough, and it watches only that cell. Measured watch set for the deploy
+shell:
 
 ```
-.envrc  flake.nix  flake.lock  cells/repo/flake.nix  cells/repo/devshells.nix
+.envrc  flake.nix  flake.lock
+cells/repo/flake.nix  cells/repo/flake.lock  cells/repo/devshells.nix
 ```
 
 So editing `cells/server`, `cells/hisilome` or any host does not reload the
@@ -139,6 +142,33 @@ shell. State (profiles, gcroots, `PRJ_*`) lives in a gitignored `.ren/`.
 
 Bumping the version means re-running `direnv fetchurl <url>` and replacing both
 the tag and the hash.
+
+### Switchable devshells
+
+The `.envrc` above reads `.ren/devshell` (rensa's `read_state`) to choose which
+cell's shell to load. `dev`, a shell function in every cell's shellHook, is the
+switch:
+
+```bash
+dev            # back to the deploy shell (repo/devshells/default), cd repo root
+dev hisilome   # the site + radio shell (zola, liquidsoap, process-compose),
+               #   cd cells/hisilome
+```
+
+`dev <cell>` is *not* `nix develop`. It writes the cell name to `.ren/devshell`,
+`cd`s into the cell dir, and runs `direnv reload`, so the environment is layered
+into **your current shell** — zsh stays zsh, no spawned bash — and rensa's
+watches and gcroots are preserved. It is a shell *function* (sourced from
+`nix/dev-switch.sh` into each shellHook), not a packaged binary, because a child
+process cannot `cd` its parent; sharing it across cells is what lets `dev` switch
+*back* from a service shell. The choice persists in `.ren/` across `cd` out and
+back. There is deliberately no per-cell `.envrc`: the root one plus `dev` is the
+single source of truth for which shell is active.
+
+Dev shells are keyed to a **service cell**, not a host — a machine is deployed,
+not developed. `cells/hisilome` has a shell because the site runs locally; a
+headless host cell has none. This is the std/paisano convention: a devshell is
+a target inside a cell's `devshells` block, grouped with that cell's concern.
 
 ### What wiring it up caught
 
@@ -153,19 +183,50 @@ merely unlikely. `cells/server` lost its `colmena` declaration for the same
 reason -- its `nixosModules` must come from the pin the schema is read from. The
 toplevel is byte-identical across that change.
 
-`cells/common` and `cells/server` do have committed locks; `cells/hisilome` and
-`cells/repo` declare no inputs, so they need none.
+`cells/common`, `cells/server` and `cells/repo` have committed locks;
+`cells/hisilome` declares no inputs, so it needs none.
+
+## The devshell's own inputs
+
+`cells/repo` declares `llm-agents` (numtide), which supplies `hermes-agent` —
+on `PATH` as `hermes`. It sits in this cell rather than the root precisely
+because a root input is visible to *every* cell: `cells/server` would then
+carry an LLM agent in a headless VPS's fetch set. Measured after adding it:
+
+| | before | after |
+| --- | --- | --- |
+| Root inputs / locked nodes | 3 / 11 | **3 / 11** — unchanged |
+| `osgiliath` toplevel `drvPath` | `mx5by7mx…` | **`mx5by7mx…`** — identical |
+
+That is the isolation claim of §3 exercised in the one direction that matters:
+adding tooling changed nothing about the machine.
+
+`llm-agents` deliberately does **not** `follows` our nixpkgs. Forcing it aborts
+evaluation — its package set references `nodejs_26`, which our pin lacks, and
+touching any single package forces the whole set (the abort surfaces from the
+unrelated `hermes-desktop`). Its own nixpkgs also lets numtide's cache serve
+these prebuilt. `test-vm`'s flake carries the same note for the same input.
 
 ## Running it
 
-Everything that evaluates `globals` must run inside the devshell — the
+Everything that evaluates `globals` must run inside the deploy shell — the
 encrypted half is decrypted at eval time by `rageImportEncrypted`, which needs
-nix-plugins:
+nix-plugins. `nix develop`, or direnv drops you in automatically:
 
 ```bash
-nix develop
-nix build .#colmenaHive.toplevel.osgiliath
-colmena build --on osgiliath
+nix build .#colmenaHive.toplevel.osgiliath   # build the machine
+colmena build --on osgiliath                  # or via colmena
+
+deploy-key                                    # load THE fleet deploy key
+                                              #   (TPM PIN, 15-min TTL)
+colmena apply switch --on osgiliath           # cut over
 ```
 
-`colmena apply` is deliberately not run from here.
+`deploy-key` is the single fleet-wide loader (renamed from the earlier
+per-host `osgiliath-key`): one PIN-gated identity authenticates every colmena
+target, so a second host adds a `--on <host>` argument, not a second key. The
+PIN prompt is by design — no unattended process can deploy.
+
+osgiliath was cut over from the old `divnix/hive` repo (`test-vm`) to this one
+with `colmena apply switch`; because the closure is byte-identical, the switch
+was a no-op at the system level. This repo now manages the machine.
