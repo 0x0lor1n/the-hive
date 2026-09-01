@@ -1,5 +1,5 @@
 {
-  description = "osgiliath on rensa — evaluating a replacement for divnix/hive";
+  description = "This is my take on one-flake-to-rule-them-all";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/d233902339c02a9c334e7e593de68855ad26c4cb";

@@ -24,19 +24,22 @@
     nixComponents = pkgs.nixVersions.nixComponents_2_31;
   };
 
-  # Loads the colmena deploy key into the running ssh-agent.
+  # Loads THE deploy key into the running ssh-agent -- one key for the whole
+  # fleet, not per-host. Every colmena target authenticates with this identity
+  # (osgiliath-deploy.age); a machine that needs a different key would carry it
+  # in its own host profile, not here.
   #
   # PROMPTS FOR THE TPM PIN, every time, by design: the key is encrypted to the
   # PIN-protected identity, not the PIN-less one, so no unattended process can
-  # deploy osgiliath. Do not "fix" this.
-  osgiliath-key = pkgs.writeShellApplication {
-    name = "osgiliath-key";
+  # deploy. Do not "fix" this.
+  deploy-key = pkgs.writeShellApplication {
+    name = "deploy-key";
     runtimeInputs = with pkgs; [git rage age-plugin-tpm openssh];
     text = ''
       root=$(git rev-parse --show-toplevel)
 
       if [ -z "''${SSH_AUTH_SOCK:-}" ]; then
-        echo "osgiliath-key: no ssh-agent in this shell." >&2
+        echo "deploy-key: no ssh-agent in this shell." >&2
         echo "  run:  eval \$(ssh-agent)" >&2
         exit 1
       fi
@@ -48,7 +51,7 @@
         "$root/secrets/deploy/osgiliath-deploy.age" \
         | ssh-add -t 900 -
 
-      echo "osgiliath-key: loaded, expires in 15 minutes."
+      echo "deploy-key: loaded, expires in 15 minutes."
     '';
   };
 in {
@@ -74,7 +77,21 @@ in {
       # Installs a fresh machine; reads nixosConfigurations.<name>.
       pkgs.nixos-anywhere
 
-      osgiliath-key
+      # The single fleet-wide deploy-key loader. (`dev` is a shell function
+      # from the shellHook below, not a package -- it must cd the parent shell.)
+      deploy-key
+
+      # `dev` reloads direnv; keep a direnv on PATH so it works regardless of
+      # how the ambient one was installed.
+      pkgs.direnv
+
+      # Nous Research's self-improving coding agent. From THIS CELL's
+      # llm-agents input, not the root's -- see cells/repo/flake.nix for why
+      # that distinction matters. Same attrpath idiom as colmena above: the
+      # flattened `inputs.llm-agents.hermes-agent` that deSystemize also
+      # provides would work, but naming the system keeps the two pinned-input
+      # packages reading the same way.
+      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hermes-agent
 
       pkgs.alejandra
     ];
@@ -87,6 +104,19 @@ in {
         extra-builtins-file = ${inputs.self.outPath}/nix/extra-builtins.nix
       "
       echo "nix-rensa devshell — colmena, nixos-anywhere, rage, extra-builtins loaded"
+      echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
+      echo "  dev <cell>      switch devshell + cd into the cell (e.g. dev hisilome)"
+
+      # The `dev` switcher. A shell function, sourced here so it can cd the
+      # interactive shell; shared with every service cell's shellHook so `dev`
+      # also exists there to switch back. Sourced from the WORKING TREE (git
+      # root), not ''${inputs.self.outPath}: it is a repo-local dev tool, so it
+      # should reflect live edits and not vanish when the tree is dirty and the
+      # file is not yet in the flake's store snapshot.
+      if _root=$(git rev-parse --show-toplevel 2>/dev/null); then
+        # shellcheck disable=SC1091
+        source "$_root/nix/dev-switch.sh"
+      fi
     '';
   };
 }
