@@ -138,10 +138,9 @@ source_password = environment.get(default="hackme", "ICECAST_SOURCE_PASSWORD")
 output.icecast(%mp3, host="127.0.0.1", port=8000,
                password=source_password, mount="/stream.mp3", radio)
 
-# Opus at 96 kbps: better than the mp3 at 128, but no Safari/iOS. Listed second
-# in the <audio> elements so those fall through to mp3. Its per-mount burst in
-# icecast.xml is sized to the same 8.192 s so stream_latency holds for both.
-output.icecast(%opus(bitrate=96), format="audio/ogg", host="127.0.0.1", port=8000,
+# No Safari/iOS: listed first in <audio>, those fall through to mp3. Per-mount
+# burst in icecast.xml matches 8.192 s so stream_latency holds for both.
+output.icecast(%opus(bitrate=128), format="audio/ogg", host="127.0.0.1", port=8000,
                password=source_password, mount="/stream.opus", radio)
 
 # Where the LISTENER is: queue index and seconds into that track. While the

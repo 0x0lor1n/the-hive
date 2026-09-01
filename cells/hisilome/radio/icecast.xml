@@ -30,7 +30,7 @@
     </listen-socket>
     <mount type="normal">
         <mount-name>/stream.opus</mount-name>
-        <burst-size>98304</burst-size>   <!-- 96 KiB = 8.192s at 96 kbps -->
+        <burst-size>131072</burst-size>  <!-- 128 KiB = 8.192s at 128 kbps -->
     </mount>
     <paths>
         <basedir>./radio/state</basedir>
