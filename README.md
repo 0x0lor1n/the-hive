@@ -53,10 +53,10 @@ gitignored and rsynced in.
 
 ## Secrets
 
-`secrets/globals.nix.age` holds the encrypted half of `globals` (IPs, password
-hashes), encrypted to the PIN-less identity so eval is non-interactive.
-`secrets/deploy/*.age` are encrypted to the PIN-protected identity: the deploy
-key and colmena `deployment.keys` for icecast. Host pubkeys are public.
+`secrets/globals.nix.age` is the encrypted half of `globals` (IPs, password
+hashes), to the PIN-less identity so eval is non-interactive. `secrets/deploy.age`
+is the fleet deploy key, to the PIN-protected identity. `secrets/<cell>/*.age`
+are that service's colmena `deployment.keys`. Pubkeys are public.
 
 ## Traps, measured
 
