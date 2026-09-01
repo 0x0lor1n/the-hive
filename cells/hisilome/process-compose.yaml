@@ -1,11 +1,8 @@
 version: "0.5"
 processes:
-  # Preflight: the music library is ~1.1 GB of out-of-band data, gitignored and
-  # rsynced in separately -- it is NOT in a fresh checkout. Without this gate the
-  # first thing to run is `tag-replaygain music`, which dies with a bare
-  # "not a directory: music" and -- because tag-music -> build-queue ->
-  # liquidsoap is a process_completed_successfully chain -- wedges the whole
-  # stack with no hint why. Fail loud, first, with the fix.
+  # music/ is gitignored and rsynced in; without it tag-music dies with a bare
+  # "not a directory" and the process_completed_successfully chain to liquidsoap
+  # wedges silently.
   check-music:
     command: |
       if [ ! -d music ] || [ -z "$(find music -type f -print -quit 2>/dev/null)" ]; then
@@ -44,11 +41,7 @@ processes:
         condition: process_completed_successfully
 
   icecast:
-    # icecast opens <logdir>/access.log and error.log at startup and exits 1 if
-    # the directory is missing. radio/state/logs is gitignored runtime state, so
-    # it is absent on a fresh checkout -- create it here rather than depend on
-    # another process having made it. `exec` so process-compose supervises the
-    # real icecast, not the shell wrapper.
+    # <logdir> is gitignored runtime state; icecast exits 1 if it is missing.
     command: "mkdir -p radio/state/logs && exec icecast -c radio/icecast.xml"
     readiness_probe:
       http_get:

@@ -1,238 +1,72 @@
 # nix-rensa
 
-A port of **osgiliath** — the KVM VPS that serves <https://hisilo.me> — from
-`divnix/hive` to the [rensa](https://gitlab.com/rensa-nix/) stack, kept beside
-`test-vm` rather than replacing it.
+One flake for the fleet, on [rensa](https://gitlab.com/rensa-nix/). Ported from
+`divnix/hive`. First host: **osgiliath**, the VPS serving <https://hisilo.me>.
 
-Two questions, answered separately:
+## Layout
 
-1. **Does rensa work for us?** — three spikes, below. Answered before any port.
-2. **Does the port reproduce the machine we already run?** — measured against
-   the incumbent, below.
+```
+cells/common     globals (public schema + encrypted values), shared profiles
+cells/server     hosts: nixosConfigurations, disks, server profiles
+cells/hisilome   the site + radio station: NixOS module, packages, dev stack
+cells/repo       the deploy shell
+```
 
-## 1. Spikes
+Blocks are `{ inputs, cell, system, ... }`. `inputs.pkgs` is the one nixpkgs
+instantiation (root `transformInputs`); `inputs.nixpkgs` is the flake, not a
+package set. `inputs.self` is sourceInfo only. `inputs.cells.<c>.<block>` reads
+another cell; a cell's own siblings are `cell.<block>`.
 
-Each spike has a control, so a pass means something.
+## Running
 
-| Spike | Question | Result |
-| --- | --- | --- |
-| **A** | Does `rageImportEncrypted` survive `call-flake`? | **PASS** — decrypts inside a cell block |
-| **B** | Can colmena be driven from `utils.mkSystem`? | **PASS** — `colmena build` reaches "All done!" |
-| **C** | Is per-cell laziness real? | **PASS** — a cell with an unfetchable input fails to evaluate; its neighbour succeeds |
-
-Spike A nearly produced a false negative: the first run reported
-`hasFunction: false`, which would have read as "rensa breaks extra-builtins"
-and killed the design. The cause was a `NIX_CONFIG` reconstruction inside
-nested quoting, not rensa.
-
-## 2. Does the port reproduce osgiliath?
-
-Yes. Compared against `test-vm`'s `colmenaHive.toplevel.nixos-osgiliath`, with
-both pinned to the same nixpkgs:
-
-| Measure | Result |
-| --- | --- |
-| `nix store diff-closures` | empty |
-| Closure size | 4,494,911,208 bytes — **equal** |
-| Closure paths | 1207 vs 1207 — **equal** |
-| Files present on one side only | **0** |
-| Files differing byte-for-byte | 16 |
-| Files still differing once store hashes are masked | **0** |
-| Semantic config surface (15 keys: 77 systemd services, filesystems, persistence, firewall, nginx, openssh, bootloader, users, tmpfiles, packages) | **identical** |
-| colmena `deploymentConfig` (10 fields) | **identical** |
-
-The 16 files differ only because this repo is a different directory, so the
-flake's source hash differs and propagates into anything referencing it. The
-site derivation is a case in point: a different store path, byte-identical
-content.
-
-### Two measurement traps, both hit
-
-- **Comparing across different nixpkgs.** The first comparison showed hundreds
-  of package differences and a spurious `fuse`. Both repos were on different
-  nixpkgs; `programs.fuse.enable` defaulted to `true` in 26.05 and `false` in
-  26.11. Pinning both to the same revision removed every difference.
-- **Reading `flake.lock` node *names* instead of the root node's input map.**
-  The node called `nixpkgs` belongs to a dependency. test-vm's actual nixpkgs
-  is `d233902` (26.05), reached via the node named `nixpkgs_5`.
-
-A closing check nearly went unmade: the first file-by-file diff counted only
-files that *differ*, not files present on one side alone. Adding that check is
-what surfaced hive's `/etc/nixos/configuration.nix` guard.
-
-## 3. What the port measures about isolation
-
-| | test-vm | nix-rensa |
-| --- | --- | --- |
-| Root inputs | 16 | 3 |
-| Total locked nodes | 109 | 24 |
-
-Not a like-for-like comparison — test-vm also carries the workstation, and
-nix-rensa does not yet. The structural claim is the one spike C proved: adding
-a workstation cell will not change what the *server* fetches. osgiliath's cells
-declare `impermanence, utils, disko, colmena` and never see `lanzaboote`,
-`nix-cachyos-kernel`, `himmelblau`, `home-manager`, `tuigreet`,
-`nixos-extra-modules`, `agenix`, or `agenix-rekey`.
-
-## 4. Porting differences worth knowing
-
-Measured, not read off the documentation:
-
-- Block signature is `{ inputs, cell, system }` — hive's was exactly
-  `{ inputs, cell }`, so every block file needs an ellipsis.
-- **`inputs.self` is sourceInfo only.** test-vm's `inputs.self.secretsConfig`
-  is unreachable by construction, so `secretsConfig` became its own block.
-- **`inputs.nixpkgs` is the flake, not a package set.** Under hive it arrived
-  instantiated. `inputs.nixpkgs.lib` still resolves (deSystemize flattens
-  `legacyPackages`), so the failure surfaces late as a missing
-  `writeShellApplication`. Use `inputs.pkgs`, from `transformInputs`.
-- **Cell-flake outputs land directly in `inputs`**, while `inputs.cells.<c>`
-  holds that cell's *blocks*. Reading the latter from inside the same cell is
-  infinite recursion.
-- **Cell flakes need their own committed `flake.lock`** or their inputs
-  silently resolve to an empty lockfile.
-- `utils.importModules` applies its `args` unconditionally, so it cannot load
-  hive's plain-NixOS-module profiles. `cells/*/profiles/default.nix` detects
-  the shape with `builtins.functionArgs` instead.
-- `mkDisk`'s freeform type is `diskoLib.toplevel`, so a disk is declared as
-  `disk.main`, not `disko.devices.disk.main`.
-- Colmena defaults `deployment.targetHost` to the node name via
-  `_module.args.name`, which its own evaluator supplies. Importing its modules
-  into a plain `nixosSystem` requires setting that, or every `config.deployment`
-  read fails with `attribute 'name' missing`.
-- Flake metadata is not on `self` inside `outputs`: `inherit (self) description`
-  is a missing attribute.
-- hive's colmena transformer adds an `/etc/nixos/configuration.nix` guard that
-  colmena itself does not. Ported explicitly.
-
-## 5. What this does not settle
-
-That rensa is technically viable is settled. Whether to move is not:
-
-- `utils` last saw a commit in April; bus factor is one.
-- `utils/lib/mkHome.nix:25` has a `bee.home` bug that blocks the vm-zfs port
-  (it uses home-manager). Not yet reported upstream.
-- `colmenaHive` here is hand-written rather than emitted by a transformer. It
-  reads `__schema` from the pinned colmena so it cannot drift, but it is ~25
-  lines this repo now owns.
-
-## Direnv
-
-`.envrc` uses rensa's own [direnv integration](https://gitlab.com/rensa-nix/direnv),
-pinned to `v0.3.0` by content hash (verified against the tag before pinning):
+Everything that evaluates `globals` needs the deploy shell: the encrypted half
+is decrypted at eval time by a nix-plugins extra-builtin, which the shell's
+`NIX_CONFIG` loads. direnv enters it automatically.
 
 ```bash
-source "$(fetchurl https://gitlab.com/rensa-nix/direnv/-/raw/v0.3.0/direnvrc sha256-...)"
-cell="$(read_state devshell)"
-use ren //"${cell:-repo}"/devshells/"${cell:-repo}"   # repo -> //repo/devshells/default
+nix build .#colmenaHive.toplevel.osgiliath
+deploy-key                                # TPM PIN, 15-min TTL
+colmena apply switch --on osgiliath
 ```
 
-`use ren //<cell>/<block>/<target>` resolves to the **raw rensa output tree** --
-`.#x86_64-linux.repo.devshells.default` -- not the flake's `devShells`
-passthrough, and it watches only that cell. Measured watch set for the deploy
-shell:
+`colmenaHive` is hand-written in `flake.nix` -- rensa has no colmena block. Its
+`__schema` is read from the pinned colmena input and the CLI (same input) asserts
+equality, which is why colmena is pinned by rev and declared only at the root.
 
-```
-.envrc  flake.nix  flake.lock
-cells/repo/flake.nix  cells/repo/flake.lock  cells/repo/devshells.nix
-```
+## Devshells
 
-So editing `cells/server`, `cells/hisilome` or any host does not reload the
-shell. State (profiles, gcroots, `PRJ_*`) lives in a gitignored `.ren/`.
-
-Bumping the version means re-running `direnv fetchurl <url>` and replacing both
-the tag and the hash.
-
-### Switchable devshells
-
-The `.envrc` above reads `.ren/devshell` (rensa's `read_state`) to choose which
-cell's shell to load. `dev` is the switch:
+`.envrc` reads `.ren/devshell` to pick a cell; `dev` writes it and reloads:
 
 ```bash
-dev                   # back to the deploy shell (repo/devshells/default)
-dev hisilome          # the site + radio shell (zola, liquidsoap, process-compose)
-cd "$(dev hisilome)"  # switch AND cd into cells/hisilome
+dev                    # deploy shell
+dev hisilome           # site + radio: zola, liquidsoap, icecast, process-compose
+cd "$(dev hisilome)"   # also cd into the cell
 ```
 
-`dev <cell>` is *not* `nix develop`. It writes the cell name to `.ren/devshell`
-and runs `direnv reload`, so the environment is layered into **your current
-shell** — zsh stays zsh, no spawned bash — and rensa's watches and gcroots are
-preserved. `dev` with no cell returns to the deploy shell. The choice persists
-in `.ren/` across `cd` out and back.
+`dev` is a PATH binary in every cell's shell (`nix/dev.sh`), not a shellHook
+function: direnv exports env vars, not functions. A child cannot cd its parent,
+hence the printed path. Dev shells are per service cell, not per host.
 
-`dev` is a **PATH binary** shipped in every cell's devshell (from `nix/dev.sh`),
-not a shellHook function: direnv marshals environment *variables* (including
-`PATH`) into the interactive shell but not shell *functions*, so a hook-defined
-`dev` never reaches zsh — a binary on `PATH` does. The one cost is that a child
-process cannot `cd` its parent, so `dev` prints the target dir instead of
-changing to it; `cd "$(dev <cell>)"` opts into the cd. This keeps the switcher
-entirely inside the repo — no workstation shell config to touch — and it is
-generic across any rensa repo with `cells/<cell>/devshells.nix`. There is
-deliberately no per-cell `.envrc`: the root one plus `dev` is the single source
-of truth for which shell is active.
+Local station: `cd cells/hisilome && process-compose up -f process-compose.yaml`
+(add `-f process-compose.dev.yaml` for file watchers). Needs `music/`, which is
+gitignored and rsynced in.
 
-Dev shells are keyed to a **service cell**, not a host — a machine is deployed,
-not developed. `cells/hisilome` has a shell because the site runs locally; a
-headless host cell has none. This is the std/paisano convention: a devshell is
-a target inside a cell's `devshells` block, grouped with that cell's concern.
+## Secrets
 
-### What wiring it up caught
+`secrets/globals.nix.age` holds the encrypted half of `globals` (IPs, password
+hashes), encrypted to the PIN-less identity so eval is non-interactive.
+`secrets/deploy/*.age` are encrypted to the PIN-protected identity: the deploy
+key and colmena `deployment.keys` for icecast. Host pubkeys are public.
 
-`cells/repo` declared a `colmena` input but had no committed `flake.lock`, so
-that input resolved to an **empty lockfile** and silently fell through to the
-root's `colmena`. It worked only because both pinned the same revision.
+## Traps, measured
 
-The fix was not to add a lock but to remove the duplicate pin: the root's
-colmena is the one `colmenaHive` reads `__schema` from, and the CLI asserts that
-schema equals its own constant. One pin makes the mismatch impossible instead of
-merely unlikely. `cells/server` lost its `colmena` declaration for the same
-reason -- its `nixosModules` must come from the pin the schema is read from. The
-toplevel is byte-identical across that change.
-
-`cells/common`, `cells/server` and `cells/repo` have committed locks;
-`cells/hisilome` declares no inputs, so it needs none.
-
-## The devshell's own inputs
-
-`cells/repo` declares `llm-agents` (numtide), which supplies `hermes-agent` —
-on `PATH` as `hermes`. It sits in this cell rather than the root precisely
-because a root input is visible to *every* cell: `cells/server` would then
-carry an LLM agent in a headless VPS's fetch set. Measured after adding it:
-
-| | before | after |
-| --- | --- | --- |
-| Root inputs / locked nodes | 3 / 11 | **3 / 11** — unchanged |
-| `osgiliath` toplevel `drvPath` | `mx5by7mx…` | **`mx5by7mx…`** — identical |
-
-That is the isolation claim of §3 exercised in the one direction that matters:
-adding tooling changed nothing about the machine.
-
-`llm-agents` deliberately does **not** `follows` our nixpkgs. Forcing it aborts
-evaluation — its package set references `nodejs_26`, which our pin lacks, and
-touching any single package forces the whole set (the abort surfaces from the
-unrelated `hermes-desktop`). Its own nixpkgs also lets numtide's cache serve
-these prebuilt. `test-vm`'s flake carries the same note for the same input.
-
-## Running it
-
-Everything that evaluates `globals` must run inside the deploy shell — the
-encrypted half is decrypted at eval time by `rageImportEncrypted`, which needs
-nix-plugins. `nix develop`, or direnv drops you in automatically:
-
-```bash
-nix build .#colmenaHive.toplevel.osgiliath   # build the machine
-colmena build --on osgiliath                  # or via colmena
-
-deploy-key                                    # load THE fleet deploy key
-                                              #   (TPM PIN, 15-min TTL)
-colmena apply switch --on osgiliath           # cut over
-```
-
-`deploy-key` is the single fleet-wide loader (renamed from the earlier
-per-host `osgiliath-key`): one PIN-gated identity authenticates every colmena
-target, so a second host adds a `--on <host>` argument, not a second key. The
-PIN prompt is by design — no unattended process can deploy.
-
-osgiliath was cut over from the old `divnix/hive` repo (`test-vm`) to this one
-with `colmena apply switch`; because the closure is byte-identical, the switch
-was a no-op at the system level. This repo now manages the machine.
+- A cell flake declaring inputs with no committed `flake.lock` resolves to an
+  empty lockfile and silently uses the root input of the same name.
+- `utils.importModules` applies `args` unconditionally; plain NixOS modules
+  need `cells/*/profiles/default.nix`'s `functionArgs` dispatch.
+- `mkDisk`'s freeform type is `diskoLib.toplevel`: declare `disk.main`, not
+  `disko.devices.disk.main`.
+- Colmena's modules read `_module.args.name`; set it when importing them into
+  a plain system.
+- `rensa-nix/utils` `mkHome.nix:25` references `config.bee.home`, which does not
+  exist in `ren-module.nix`; `mkHome` is unusable until fixed upstream.
