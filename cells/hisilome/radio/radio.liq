@@ -4,16 +4,10 @@ ignore(file.mkdir(perms=0o755, "radio/state/tmp-nowplaying"))
 ignore(file.mkdir(perms=0o755, "radio/state/tmp-console"))
 ignore(file.mkdir(perms=0o755, "radio/state/tmp-schedule"))
 
-# How far behind the encoder a listener is. source.elapsed() is the ENCODER's
-# position, so without this the console runs ahead of what anyone hears: icecast
-# hands each new client <burst-size> bytes at once and they stay that far back
-# for the session. Keep in sync with radio/icecast.xml.
-#
-# Only the burst is corrected. Liquidsoap's output queue and the browser's own
-# jitter buffer put the listener a further ~1.5s back, but that is not
-# derivable - the browser sizes its buffer itself and differently per client -
-# so it is left alone rather than tuned to one browser and wrong for every
-# other. The burst was worth correcting because it is the same for everyone.
+# source.elapsed() is the encoder's position; icecast hands each new client
+# <burst-size> bytes at once and they stay that far behind for the session.
+# Keep in sync with icecast.xml. The browser's own ~1.5s jitter buffer is not
+# derivable and is left alone.
 stream_latency = 131072. / (128000. / 8.)   # 128 KiB at 128 kbps = 8.192s
 
 # "[Album] - NN Artist - Title.ext" or "kebab-case-name.ext". Fallback for
@@ -112,20 +106,19 @@ def write_now_playing(m) =
       current_index := found()
     end
   end
-  # NOT public/ -- zola build wipes it, breaking the atomic temp write.
+  # Not public/: zola build wipes it mid-write.
   write = file.write.stream(atomic=true, temp_dir="radio/state/tmp-nowplaying", "radio/state/now-playing.txt")
   write(title)
   write(null)
 end
 
-# mode="normal" over a pre-shuffled queue, NOT mode="randomize": randomize
-# decides one track ahead, leaving no future to put in the schedule.
+# Pre-shuffled queue, not mode="randomize": randomize decides one track ahead,
+# leaving no future for the schedule.
 radio = playlist(prefix="replaygain:", mode="normal", reload_mode="watch",
                  "radio/state/queue.m3u")
 
-# Per-track, not album-level: the library spans 9.0 LU and Silent Hill 2 alone
-# spans 8.8. Tags are pre-written by `tag-replaygain`, so this reads a value
-# (~2ms) rather than analysing the file (~5s).
+# Per-track: the library spans 9.0 LU and one album alone 8.8. Tags are
+# pre-written by tag-replaygain (~2ms read vs ~5s analysis).
 radio = normalize_track_gain(radio)
 
 radio = mksafe(radio)
@@ -143,10 +136,9 @@ output.icecast(%mp3, host="127.0.0.1", port=8000,
 output.icecast(%opus(bitrate=128), format="audio/ogg", host="127.0.0.1", port=8000,
                password=source_password, mount="/stream.opus", radio)
 
-# Where the LISTENER is: queue index and seconds into that track. While the
-# encoder is less than stream_latency into a track, the listener is still
-# hearing the tail of the previous one, so report that instead of clamping to
-# zero - otherwise the title changes 8s early and the bar sits at 0 meanwhile.
+# Listener position: while the encoder is under stream_latency into a track the
+# listener still hears the previous one; report that rather than clamp to 0,
+# else the title flips 8s early.
 def listener_pos() =
   rows = queue_rows()
   here = current_index()
@@ -161,19 +153,16 @@ def listener_pos() =
   end
 end
 
-# HTML rather than plain values because the progress bar carries its position in
-# a style attribute: a NEGATIVE animation-delay starts the CSS animation partway
-# through, so the bar renders already-advanced and then moves on its own.
+# HTML, not values: the bar's position is a negative animation-delay in a style
+# attribute, so it renders already-advanced and moves on its own.
 def write_console() =
-  # Load-bearing: thread.run does not restart a thread whose body raised, so one
-  # transient error would silently kill this writer for the life of the process.
+  # thread.run does not restart a thread whose body raised.
   try
     let (idx, el, du) = listener_pos()
     rows = queue_rows()
     on_prev = idx >= 0 and idx != current_index() and list.length(rows) > idx
 
-    # The refs hold real tag metadata; the queue row only has a filename, so
-    # prefer the refs whenever the listener is on the current track.
+    # Refs hold tag metadata; a queue row only has a filename.
     title =
       if on_prev then html_escape(derive_title(row_path(list.nth(rows, idx))))
       else html_escape(current_title()) end
@@ -189,9 +178,7 @@ def write_console() =
       else
         ''
       end
-    # Two CSS-animated counters so the digits tick without reloading the frame;
-    # reloading at 1Hz is what caused visible flicker. Step counts are literals
-    # because var() inside steps() does not reliably parse.
+    # Step counts are literals: var() inside steps() does not reliably parse.
     esec = int_of_float(el)
     tmin = int_of_float(du) / 60
     smod = esec mod 60
@@ -209,8 +196,7 @@ def write_console() =
 
     clock_text = if du > 0. then elapsed_html ^ ' / ' ^ mmss(du) else '' end
 
-    # Spliced in here so the whole volatile block is ONE include and the values
-    # cannot disagree.
+    # One include, so the values are from the same instant.
     listeners =
       if file.exists("radio/state/listeners.txt") then
         file.contents("radio/state/listeners.txt")
@@ -233,13 +219,10 @@ def write_console() =
   end
 end
 
-# 1s sets the clock's resolution; the frame reload rate is irrelevant if the
-# file behind it is stale.
 thread.run(every=1., write_console)
 
-# ---- schedule -------------------------------------------------------------
-# Offsets are arithmetic over queue.tsv durations, re-anchored to the listener
-# position every cycle so error cannot accumulate.
+# Schedule offsets are arithmetic over queue.tsv durations, re-anchored to the
+# listener position every cycle.
 
 def mins_word(t) =
   m = int_of_float(t / 60.)
@@ -261,10 +244,8 @@ def write_schedule() =
     if n == 0 or here < 0 then
       ()
     else
-      # Clamp rather than wrap (a reshuffle invalidates the earlier order), but
-      # SLIDE rather than truncate: the panel is a fixed height, so a short list
-      # leaves a gap above its border. rows_wanted must match --sc-rows in
-      # static/style.css.
+      # Slide the window rather than truncate: the panel is fixed height.
+      # rows_wanted must match --sc-rows in style.css.
       rows_wanted = 11
       lo_raw = here - 2
       hi_raw = lo_raw + rows_wanted - 1

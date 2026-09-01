@@ -5,11 +5,9 @@
     <meta name="color-scheme" content="dark" />
     <meta http-equiv="refresh" content="10" />
     <title>Now playing</title>
-    <!-- Styles are INLINE, not a <link>. This document reloads every second;
-         linking the full stylesheet meant re-fetching and re-applying ~11KB on
-         every tick, and the browser paints an unstyled frame in between - which
-         is exactly the flicker. Inline means nothing external to wait for.
-         These few rules are duplicated from style.css by necessity. -->
+    <!-- Inline, not <link>: this document reloads; a linked stylesheet painted
+         an unstyled frame on each reload (the flicker). Duplicated from
+         style.css. -->
     <style>
       @font-face {
         font-family: "Iosevka Web";
@@ -95,10 +93,8 @@
       }
 
 
-      /* Clock digits are CSS counters driven by animated <integer> custom
-         properties, so they tick every second with NO document reload. The
-         animation declarations (durations, step counts, negative delays) are
-         written per-track by liquidsoap into the style attribute. */
+      /* Counters driven by animated <integer> properties; the animation
+         declarations come per-track from liquidsoap in the style attribute. */
       @property --m { syntax: "<integer>"; initial-value: 0; inherits: false; }
       @property --s { syntax: "<integer>"; initial-value: 0; inherits: false; }
       .rc-m { counter-reset: m var(--m); }
@@ -114,17 +110,8 @@
 
     </style>
   </head>
-  <!--
-  The volatile half of the console: title, channel, progress bar, clock and
-  listener count. Reloads every 10s - only the track title needs it, since the clock
-  animates itself. Fewer reloads means fewer chances to paint a blank frame,
-  which is what the flicker was. This is why the <audio> element and the
-  <details> tracklist both live in the shell instead - anything stateful in
-  here would be destroyed on every reload.
-
-  The whole block is one include written by liquidsoap, so the values are
-  always from the same instant and cannot disagree with each other.
--->
+  <!-- Reloads every 10s; the clock animates itself. Anything stateful
+       (<audio>, <details>) lives in the shell for that reason. -->
   <body class="rc-body">
     <!--#include virtual="/console.html" -->
   </body>

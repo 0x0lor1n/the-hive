@@ -1,5 +1,5 @@
-/* Subset Iosevka from bin/build-fonts.sh. Self-hosted: a Google Fonts link
-   would be a third-party request on a site whose point is making none. */
+/* Self-hosted Iosevka subsets: a Google Fonts link would be a third-party
+   request on a site whose point is making none. */
 @font-face {
   font-family: "Iosevka Web";
   src: url("/fonts/iosevka-regular.woff2") format("woff2");
@@ -425,7 +425,6 @@ footer {
      stacking a filter on top made them read as flat grey. */
 }
 
-/* ---- radio mode shell (/listen.html) ---------------------------------- */
 
 .shell-body {
   display: flex;
@@ -491,7 +490,7 @@ footer {
 
 
 
-/* ---- the card ------------------------------------------------------------ */
+/* the card */
 
 /* In the shell this also contains the content iframe, which is why the framed
    document must not paint a background of its own. */
@@ -525,7 +524,7 @@ body.framed {
   background-color: transparent;
 }
 
-/* ---- console: lainon.life's information design, Kanagawa palette --------- */
+/* console: lainon.life's information design, Kanagawa palette */
 
 /* This is the CRT; the page texture behind it is the room it sits in. */
 .console {
@@ -624,7 +623,7 @@ body.framed {
 .console-meta a { color: var(--link); text-decoration: underline; }
 .console-meta a:hover { color: var(--hover); }
 
-/* ---- schedule disclosure ------------------------------------------------ */
+/* schedule disclosure */
 
 /* The panel overlays the frame rather than pushing it: the shell is a
    fixed-height flex column, so growing the console shrinks reading area. */
@@ -751,7 +750,7 @@ body.framed {
   border-bottom-right-radius: 0;
 }
 
-/* ---- inside schedule.html ------------------------------------------------ */
+/* inside schedule.html */
 
 .sc-body {
   margin: 0;
@@ -794,7 +793,7 @@ body.framed {
 .sc-a { color: var(--muted); }
 .sc-now .sc-a { color: var(--carp-yellow); font-weight: 400; opacity: 0.72; }
 
-/* ---- inside live.html ---------------------------------------------------- */
+/* inside live.html */
 
 .rc-body {
   margin: 0;
@@ -939,7 +938,7 @@ body.framed {
   .console-live { min-height: 3rem; }
 }
 
-/* ---- scrollbars ---------------------------------------------------------- */
+/* scrollbars */
 
 * {
   scrollbar-width: thin;
@@ -970,7 +969,7 @@ body.framed {
   background: transparent;
 }
 
-/* ---- opening the schedule pushes the content down ------------------------ */
+/* opening the schedule pushes the content down */
 
 .shell-content,
 .layout {
@@ -992,7 +991,7 @@ body.framed {
   }
 }
 
-/* ---- article text fades out as it reaches the player --------------------- */
+/* article text fades out as it reaches the player */
 
 /* A fixed band, not a per-element range: with view() the fade lasted as long as
    each element took to leave, so tall blocks crawled and short ones snapped.
@@ -1038,7 +1037,7 @@ body.framed {
   }
 }
 
-/* ---- tag cloud ----------------------------------------------------------- */
+/* tag cloud */
 
 /* --t is a 0..1 weight from post count, computed in the template. Glow ramps
    harder than size: on a young archive the counts are close, and a few px of

@@ -22,7 +22,6 @@ in {
         flac
         icecast
         liquidsoap
-        nginx
         process-compose
         watchexec
       ])
@@ -31,6 +30,7 @@ in {
         tag-album
         build-queue
         listener-count
+        dev-nginx
       ])
       ++ [dev];
 

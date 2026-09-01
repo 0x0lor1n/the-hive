@@ -1,39 +1,33 @@
 version: "0.5"
 processes:
-  # music/ is gitignored and rsynced in; without it tag-music dies with a bare
-  # "not a directory" and the process_completed_successfully chain to liquidsoap
-  # wedges silently.
+  # music/ is gitignored and rsynced in. Without this gate tag-music dies with a
+  # bare "not a directory" and the dependency chain to liquidsoap wedges.
   check-music:
     command: |
-      if [ ! -d music ] || [ -z "$(find music -type f -print -quit 2>/dev/null)" ]; then
-        echo "process-compose: music/ is missing or empty." >&2
-        echo "  The radio needs a music library, which is not in the repo" >&2
-        echo "  (~1.1 GB, gitignored, rsynced in separately)." >&2
-        echo "  Put audio files under cells/hisilome/music/ and retry." >&2
+      mkdir -p radio/state/logs
+      if [ -z "$(find music -type f -print -quit 2>/dev/null)" ]; then
+        echo "check-music: no files under cells/hisilome/music/ (gitignored; rsync it in)." >&2
         exit 1
       fi
-      echo "check-music: $(find music -type f | wc -l) files present."
 
   build-site:
     command: "zola build"
 
-  # No-op on an unchanged library. Keeps liquidsoap from analysing at resolve
-  # time (~5s), which on a single-core box competes with the encoder.
+  # No-op on an unchanged library; keeps liquidsoap from analysing at resolve
+  # time (~5s per track).
   tag-music:
     command: "tag-replaygain music"
     depends_on:
       check-music:
         condition: process_completed_successfully
 
-  # Must complete before liquidsoap: the playlist file will not exist otherwise.
   build-queue:
     command: "build-queue --rounds 8 music"
     depends_on:
       tag-music:
         condition: process_completed_successfully
 
-  # The queue is finite and loops in the same order, so reshuffle daily. Picked
-  # up by reload_mode="watch", which resets playback position - hence daily.
+  # reload_mode="watch" resets playback position, hence daily.
   queue-refresh:
     command: "while true; do sleep 86400; build-queue --rounds 8 music; done"
     depends_on:
@@ -41,8 +35,10 @@ processes:
         condition: process_completed_successfully
 
   icecast:
-    # <logdir> is gitignored runtime state; icecast exits 1 if it is missing.
-    command: "mkdir -p radio/state/logs && exec icecast -c radio/icecast.xml"
+    command: "icecast -c radio/icecast.xml"
+    depends_on:
+      check-music:
+        condition: process_completed_successfully
     readiness_probe:
       http_get:
         host: "127.0.0.1"
@@ -67,8 +63,10 @@ processes:
       icecast:
         condition: process_healthy
 
+  # Config is generated from the same locations the NixOS module uses
+  # (packages.nix nginxLocations); :8099.
   nginx:
-    command: "nginx -c $(pwd)/radio/nginx.conf -p $(pwd)"
+    command: "dev-nginx"
     depends_on:
       build-site:
         condition: process_completed_successfully

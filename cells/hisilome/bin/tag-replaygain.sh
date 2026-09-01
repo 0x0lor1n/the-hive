@@ -1,13 +1,7 @@
 #!/usr/bin/env bash
-# Write ReplayGain track-gain tags into audio files so Liquidsoap reads the
-# value instead of analysing the file at resolve time.
-#
-# Analysing costs ~5s per track on first play, which on a single-core box is a
-# CPU burst competing with the encoder. A tag read costs ~4ms. This script pays
-# that cost once, offline.
-#
-# Gain is computed as (target - integrated loudness), EBU R128, target -18 LUFS
-# to match the ReplayGain 2.0 reference. Existing tags are kept unless --force.
+# ReplayGain track-gain tags, so liquidsoap reads ~4ms instead of analysing
+# ~5s per track on a single core. EBU R128, target -18 LUFS (ReplayGain 2.0).
+# Existing tags kept unless --force.
 
 set -euo pipefail
 
