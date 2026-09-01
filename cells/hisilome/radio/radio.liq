@@ -131,18 +131,18 @@ radio = normalize_track_gain(radio)
 radio = mksafe(radio)
 radio.on_metadata(synchronous=true, write_now_playing)
 
-output.icecast(
-  %mp3,
-  host="127.0.0.1",
-  port=8000,
-  # Production supplies ICECAST_SOURCE_PASSWORD (systemd EnvironmentFile, from
-  # colmena's deployment.keys). The default keeps `nix run .#dev` working
-  # unchanged: icecast binds 127.0.0.1, so a dev password on loopback is not a
-  # defect. Must match radio/icecast.xml's <source-password>.
-  password=environment.get(default="hackme", "ICECAST_SOURCE_PASSWORD"),
-  mount="/stream.mp3",
-  radio
-)
+# Production supplies ICECAST_SOURCE_PASSWORD via systemd EnvironmentFile; the
+# default matches radio/icecast.xml for the loopback-only dev stack.
+source_password = environment.get(default="hackme", "ICECAST_SOURCE_PASSWORD")
+
+output.icecast(%mp3, host="127.0.0.1", port=8000,
+               password=source_password, mount="/stream.mp3", radio)
+
+# Opus at 96 kbps: better than the mp3 at 128, but no Safari/iOS. Listed second
+# in the <audio> elements so those fall through to mp3. Its per-mount burst in
+# icecast.xml is sized to the same 8.192 s so stream_latency holds for both.
+output.icecast(%opus(bitrate=96), host="127.0.0.1", port=8000,
+               password=source_password, mount="/stream.opus", radio)
 
 # Where the LISTENER is: queue index and seconds into that track. While the
 # encoder is less than stream_latency into a track, the listener is still
