@@ -1,25 +1,18 @@
 #!/usr/bin/env bash
-# Decrypt an age-encrypted .nix file, caching the plaintext so repeated
-# evaluations do not re-exercise the identity.
-#
-# Ported from ~/nixos-config/flake/rageImportEncrypted.sh, itself forked from
-# oddlama/nix-config's rage-decrypt-and-cache.sh.
-#
-# NOTE the cache is PLAINTEXT ON DISK at /var/tmp/nix-import-encrypted/$UID/
-# and is never cleared. Protection is "not in git", not "not on disk".
+
+# Forked from:
+# https://github.com/oddlama/nix-config/blob/a3854ea1c1b253b1cf58d29a7eef799a6ce5a582/flake/rage-decrypt-and-cache.sh
+
 set -euo pipefail
 
 file="$1"
 shift
 identities=("$@")
 
-# Strip .age suffix, and store path prefix or ./ if applicable
 basename="${file%".age"}"
 [[ $file == "/nix/store/"* ]] && basename="${basename#*"-"}"
 [[ $file == "./"* ]] && basename="${basename#"./"}"
 
-# Content-based identifier, so relocating the source file in the nix store
-# does not invalidate the cache.
 new_name="$(sha512sum "$file")"
 new_name="${new_name:0:32}-${basename//"/"/"_"}"
 
