@@ -51,14 +51,6 @@ in {
       echo "build-queue music                            rebuild the play queue + schedule"
       echo
       echo "NOTE: run these from cells/hisilome/ -- the configs use relative paths."
-
-      # `dev` switcher, shared with the deploy shell so you can switch back
-      # (e.g. `dev` -> deploy shell). Sourced from the working tree; see
-      # nix/dev-switch.sh.
-      if _root=$(git rev-parse --show-toplevel 2>/dev/null); then
-        # shellcheck disable=SC1091
-        source "$_root/nix/dev-switch.sh"
-      fi
     '';
   };
 }
