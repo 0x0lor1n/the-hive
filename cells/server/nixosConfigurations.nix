@@ -1,9 +1,3 @@
-# Headless server hosts.
-#
-# Ported from test-vm's mkHost. The shape is the same -- a base suite, hardware
-# and host-specific modules -- but rensa has no bee module: `ren.system`,
-# `ren.pkgs` and `ren.disko` replace `bee.system` / `bee.pkgs` / importing
-# disko's nixosModule by hand.
 {
   inputs,
   cell,
@@ -15,14 +9,12 @@
   common = inputs.cells.common.profiles;
   p = cell.profiles;
 
-  # Everything any installed host needs, regardless of machine class.
   foundation = [
     common.base
     common.storage-impermanence
     common.layer-users-root
   ];
 
-  # Headless server: stock kernel, btrfs, root only, no desktop, no Entra.
   server =
     foundation
     ++ [
@@ -48,9 +40,6 @@
 
       imports =
         [
-          # colmena's modules, so `deployment.*` exists. Under hive these came
-          # from the colmenaConfigurations transformer; here they are explicit,
-          # which is easier to follow.
           colmena.nixosModules.deploymentOptions
           colmena.nixosModules.keyChownModule
           colmena.nixosModules.keyServiceModule
@@ -60,12 +49,9 @@
         ++ hardware
         ++ extraModules;
 
-      # Lets every imported module read user/host params without re-importing.
       _module.args.globals = globals;
-      # colmena defaults `deployment.targetHost` to the node name, which its own
-      # evaluator supplies via `_module.args.name`. Nothing sets that when its
-      # modules are imported into a plain nixosSystem, so without this every
-      # `config.deployment` read fails with "attribute 'name' missing".
+      # colmena's own evaluator supplies `name`; deployment.targetHost defaults
+      # from it and every config.deployment read fails without it.
       _module.args.name = hostKey;
       _module.args.host = host;
       _module.args.inputs = inputs;

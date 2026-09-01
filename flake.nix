@@ -1,10 +1,12 @@
 {
-  description = "This is my take on one-flake-to-rule-them-all";
+  description = "One flake for the fleet, on rensa";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     ren.url = "gitlab:rensa-nix/core/v0.2.0?dir=lib";
-    # root-level too, so the soil can read colmena's __schema constant
+    # Pinned by rev on purpose: colmenaHive below reads colmena's internal
+    # __schema from this source and the CLI (same input, in the devshell)
+    # asserts equality. Both halves must come from one revision.
     colmena.url = "github:zhaofengli/colmena/dc22786a43315b212eeafe13409a7203328e5a30";
   };
 
@@ -20,7 +22,6 @@
 
       cellBlocks = with ren.blocks; [
         (simple "globals")
-        (simple "secretsConfig")
         (simple "profiles")
         (simple "disks")
         (simple "nixosConfigurations")
@@ -29,10 +30,9 @@
         (simple "devshells")
       ];
 
-      # rensa's answer to "instantiate nixpkgs once per system". Also what
-      # makes `inputs.pkgs` available to every block -- note `inputs.nixpkgs`
-      # is NOT a package set here, because deSystemize flattens
-      # `.legacyPackages.<system>` rather than the flake root.
+      # `inputs.nixpkgs` inside a block is the flake (deSystemize flattens
+      # legacyPackages, so .lib resolves but stdenv builders do not). This is
+      # the one instantiation every block uses as `inputs.pkgs`.
       transformInputs = system: i:
         i
         // {
@@ -45,18 +45,12 @@
       l = inputs.nixpkgs.lib;
       nodes = ren.get self [["server" "nixosConfigurations"]];
     in {
-      # nixos-anywhere resolves this; agenix-rekey would too.
       nixosConfigurations = nodes;
-
-      # `nix develop` / direnv. The repo cell owns tooling; hosts never see it.
       devShells.x86_64-linux = ren.get self [["repo" "devshells"]];
 
-      # Colmena's CLI schema, emitted by hand -- rensa has no colmena block.
-      # ~25 lines, and clearer than hive's hidden transformer.
-      #
-      # __schema is read FROM THE PINNED COLMENA so the pairing cannot drift.
-      # Exposed as `colmenaHive`, never `colmena`: colmena's own eval.nix
-      # asserts a raw hive does not already carry __schema.
+      # Rensa has no colmena block, so the hive is emitted by hand. Exposed as
+      # `colmenaHive`, never `colmena`: colmena's eval.nix asserts a raw hive
+      # does not already carry __schema.
       colmenaHive = let
         toplevel = l.mapAttrs (_: v: v.config.system.build.toplevel) nodes;
         deploymentConfig = l.mapAttrs (_: v: v.config.deployment) nodes;
@@ -69,9 +63,8 @@
           l.mapAttrs (_: v: v.drvPath) (l.filterAttrs (n: _: l.elem n names) toplevel);
         metaConfig = {
           name = "nix-rensa";
-          # A literal, NOT `inherit (self) description`: flake metadata is not
-          # exposed on `self` inside `outputs`, so that reads as a missing attr.
-          description = "osgiliath, deployed from rensa";
+          # Flake metadata is not on `self` inside outputs.
+          description = "the fleet, deployed from rensa";
           machinesFile = null;
           allowApplyAll = false;
         };

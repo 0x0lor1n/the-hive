@@ -1,25 +1,15 @@
-# NixOS module for Hísilómë: the Zola site and the radio station.
+# The Zola site and the radio station as a NixOS module. Host-agnostic; the
+# consumer sets domain, secrets and firewall.
 #
-# Deliberately knows nothing about any particular host. Everything
-# osgiliath-specific -- which domain, which secrets, which firewall -- is set by
-# the consumer (test-vm's cells/nixos/profiles/site-hisilome.nix).
-#
-# THE CENTRAL DESIGN CONSTRAINT: radio.liq and the shell scripts address
-# everything RELATIVE to the working directory -- `radio/state/...`, `music`,
-# `public` (radio.liq:3-5,52,116,124,212,225,303). Rather than rewrite tuned
-# audio code to use absolute paths, this module reproduces the directory shape
-# that code already expects and sets WorkingDirectory to it. radio.liq is used
-# verbatim.
-# rensa passes `system` as well as `inputs` and `cell`, so block files need an
-# ellipsis. hive's signature was exactly `{ inputs, cell }`.
+# radio.liq and the scripts address everything relative to the working
+# directory (`radio/state/...`, `music`, `public`). Rather than rewrite tuned
+# audio code, the module reproduces that directory shape under stateDir and
+# runs every unit with WorkingDirectory there. radio.liq is used verbatim.
 {
   inputs,
   cell,
   ...
 }: {
-  # A `functions` cell block must evaluate to an ATTRSET of instances, not to
-  # a bare module lambda -- paisano rejects the latter with
-  # "expected type 'attrs<any>' ... is of type 'lambda'".
   default = {
     config,
     lib,
@@ -28,17 +18,9 @@
   }: let
     cfg = config.services.hisilome;
 
-    # The two files the units read at start, each given its OWN store path.
-    #
-    # NOT `inputs.self + "/cells/hisilome"`: that makes the setup script
-    # depend on the entire flake source, so osgiliath's toplevel changes on
-    # every unrelated repo edit and `colmena apply` re-pushes a 4.2 GiB
-    # closure for nothing. Measured -- folding the blog in this way changed
-    # the toplevel while the package set stayed identical, and the only diff
-    # was this script's hash.
-    #
-    # builtins.path copies each file alone, so the units change only when
-    # radio.liq or icecast.xml actually change.
+    # Each file gets its own store path. Referencing `inputs.self + "/cells/..."`
+    # instead would make the toplevel depend on the whole flake source and
+    # re-push a 4 GiB closure on every unrelated edit (measured).
     radioLiq = builtins.path {
       path = ./radio/radio.liq;
       name = "radio.liq";
@@ -62,10 +44,8 @@
     runtime = cfg.stateDir;
     radioState = "${runtime}/radio/state";
 
-    # Shared systemd confinement. This is what makes NixOS containers unnecessary
-    # here (see iteration-12 plan §10): the boundary wanted is "liquidsoap cannot
-    # write outside its own state dir", and that is exactly this, at no closure
-    # cost.
+    # "liquidsoap cannot write outside its state dir" -- what a container would
+    # buy, at no closure cost.
     hardening = {
       ReadWritePaths = [radioState];
       ProtectSystem = "strict";
@@ -77,14 +57,11 @@
       RestrictSUIDSGID = true;
     };
 
-    # From the cell's packages block, so the units and the devshell can never
-    # run different builds of the same script.
     buildQueue = cell.packages.build-queue;
 
-    # build-queue exits 1 on an empty library ("no playable files in music"),
-    # which failed the whole activation on the first deploy -- before the 1.1 GB
-    # library had been rsynced, which cannot happen until the host exists. An
-    # empty library is a valid state: serve the site, no station.
+    # build-queue exits 1 on an empty library, which failed the first
+    # activation before the library was rsynced. Empty is valid: serve the
+    # site, no station.
     emptyTolerantQueue = pkgs.writeShellApplication {
       name = "build-queue-if-music";
       runtimeInputs = [
@@ -180,12 +157,8 @@
       };
       users.groups.${cfg.group} = {};
 
-      # ---------------------------------------------------------------------
-      # Runtime directory assembly
-      # ---------------------------------------------------------------------
-      #
-      # public/ is a SYMLINK into the store, so publishing a new site is an atomic
-      # swap and `zola build` never runs on the target.
+      # public/ is a store symlink: publishing is an atomic swap and zola never
+      # runs on the target.
       systemd.services.hisilome-setup = {
         description = "Assemble the Hísilómë runtime directory";
         wantedBy = ["multi-user.target"];
@@ -201,33 +174,22 @@
           set -eu
           install -d -o ${cfg.user} -g ${cfg.group} -m 0755 "${runtime}" "${runtime}/radio"
           install -d -o ${cfg.user} -g ${cfg.group} -m 0755 "${radioState}" "${radioState}/logs"
-          # Not created if absent-and-empty would be wrong: the library is rsynced
-          # in out of band, and an empty dir is a valid (silent) station.
           install -d -o ${cfg.user} -g ${cfg.group} -m 0750 "${runtime}/music"
 
           ln -sfn ${cfg.site} "${runtime}/public"
           ln -sfn ${radioLiq} "${runtime}/radio/radio.liq"
 
-          # icecast.xml is RENDERED, not linked: it carries passwords, and store
-          # files are world-readable. The same pass re-points <webroot>/
-          # <adminroot>, which icecast.xml:37-38 pins to a store path from
-          # whenever it was last edited -- stale after any icecast bump.
+          # icecast.xml is rendered, not linked: it carries passwords, and store
+          # files are world-readable. <webroot>/<adminroot> are re-pointed too;
+          # the committed file pins a stale store path.
           #
-          # PASSWORD RESOLUTION, in order. This ordering exists because
-          # colmena's deployment.keys land in /run/keys, which is a TMPFS: after
-          # a reboot they are gone until the next `colmena apply`. Reading them
-          # unconditionally under `set -eu` would leave the station dead on every
-          # boot. So a previously-resolved value on the persistent volume is
-          # preferred over the committed default, and a freshly delivered key
-          # over both:
-          #
-          #   1. the key file, if colmena has delivered it       (best)
-          #   2. the value resolved on a previous boot           (survives reboot)
-          #   3. the committed dev value in icecast.xml          (last resort)
-          #
-          # (3) is not a silent downgrade: icecast binds 127.0.0.1 and nginx
-          # proxies only /stream.mp3, so neither password is reachable from
-          # outside. It is defence in depth, and the warning says so.
+          # Password resolution order. colmena's deployment.keys land in /run/keys
+          # (tmpfs) and are gone after a reboot until the next apply, so a value
+          # resolved on a previous boot is kept on the persistent volume:
+          #   1. the delivered key file
+          #   2. the value from a previous boot
+          #   3. the committed dev value (loopback-only icecast; nginx proxies
+          #      only /stream.mp3, so not reachable from outside)
           umask 077
 
           resolve() {  # $1 = key file or empty, $2 = env file, $3 = var name
@@ -272,10 +234,8 @@
             ADM=hackme
           fi
 
-          # Written to the PERSISTENT volume, which is what makes step (2) above
-          # work on the next boot. The password is on disk either way -- icecast
-          # has no way to read it from a descriptor -- so the property held here
-          # is "not in the Nix store and not in git", at mode 0400.
+          # Persistent volume, 0400: not in the store, not in git. icecast
+          # cannot read a password from a descriptor, so on-disk it is.
           printf 'ICECAST_SOURCE_PASSWORD=%s\n' "$SRC" > "${radioState}/source.env"
           printf 'ADMIN_PASSWORD=%s\nADMIN=admin:%s\n' "$ADM" "$ADM" > "${radioState}/admin.env"
 
@@ -286,13 +246,8 @@
         '';
       };
 
-      # ---------------------------------------------------------------------
-      # The station
-      # ---------------------------------------------------------------------
-      #
-      # process-compose.yaml's dependency graph, translated. Two processes are
-      # deliberately absent: `build-site` (a derivation now, built off-host) and
-      # `tag-music` (a full decode pass over the library -- run on the workstation
+      # process-compose.yaml's graph, translated. Absent on purpose: build-site
+      # (a derivation, built off-host) and tag-music (run on the workstation
       # before rsync; ReplayGain tags travel inside the files).
 
       systemd.services.icecast = {
@@ -360,13 +315,9 @@
           "hisilome-setup.service"
           "hisilome-build-queue.service"
         ];
-        # Ordered after icecast but NOT bound to it: liquidsoap retries the
-        # source connection, so a brief icecast restart should not take the
-        # encoder down with it.
-        # Skipped, not failed, when there is no queue yet -- a host whose library
-        # has not been synced should come up serving the site, with the station
-        # simply absent. Without this liquidsoap crash-loops on a missing
-        # playlist.
+        # After icecast but not bound to it: liquidsoap retries the source.
+        # Condition, not failure, on a missing queue: an unsynced library serves
+        # the site with no station instead of crash-looping.
         unitConfig.ConditionPathExists = "${radioState}/queue.m3u";
         serviceConfig =
           {
@@ -399,26 +350,15 @@
           // hardening;
       };
 
-      # ---------------------------------------------------------------------
-      # nginx
-      # ---------------------------------------------------------------------
-      #
-      # Translated from radio/nginx.conf rather than used as-is: that file pins a
-      # store path for mime.types (:12), which goes stale on any nginx bump, and
-      # carries no TLS. The locations below are app knowledge and belong with the
-      # app; the domain and ACME toggle come from the consumer.
+      # Translated from radio/nginx.conf: that file pins a store path for
+      # mime.types and carries no TLS. Locations are app knowledge; domain and
+      # ACME come from the consumer.
       services.nginx = {
         enable = true;
 
-        # RELOAD on config change rather than restart. The default is false,
-        # which is the wrong default for THIS host: a restart drops every
-        # in-flight connection, and the connections here are listeners
-        # holding /stream.mp3 open for hours. Publishing a blog post must not
-        # cut the radio off mid-track.
-        #
-        # Measured: a template edit changes nginx.service (new config store
-        # path) but leaves liquidsoap and icecast untouched, so the encoder
-        # never skips. This closes the remaining gap on the listener side.
+        # Reload, not restart: listeners hold /stream.mp3 open for hours and a
+        # blog post must not cut the radio. A template edit changes only
+        # nginx.service; liquidsoap and icecast are untouched (measured).
         enableReload = true;
 
         recommendedProxySettings = false; # would override the Icy-MetaData fix below
