@@ -61,7 +61,18 @@
       ~^document.*/$  /listen/index.html;
       default         /__none;
     }
+
+    # 1 vCPU, icecast <clients>100</clients>: without these one client holding
+    # a few hundred /stream.* connections takes the station down.
+    limit_conn_zone $binary_remote_addr zone=stream:1m;
+    limit_req_zone  $binary_remote_addr zone=pages:1m rate=10r/s;
+    limit_conn_status 429;
+    limit_req_status  429;
   '';
+
+  # A shell load is ~10 requests at once (page, css, fonts, two frames, their
+  # fragments), then a fragment every 10s per listener.
+  pageLimit = "limit_req zone=pages burst=40 nodelay;";
 
   # `stateDir` is where liquidsoap writes (absolute in prod, relative in dev).
   # `extraHeaders` is repeated in every location that adds its own header:
@@ -72,10 +83,13 @@
   }:
     {
       "/".extraConfig = ''
+        ${pageLimit}
         try_files $shell_page $uri $uri/ =404;
       '';
 
       "~ ^/stream\\.(mp3|opus)$".extraConfig = ''
+        # Two mounts plus a reconnect in flight per household.
+        limit_conn stream 6;
         proxy_pass http://127.0.0.1:8000;
         proxy_http_version 1.1;
         proxy_buffering off;
@@ -98,6 +112,7 @@
     // lib.listToAttrs (map (f:
       lib.nameValuePair "= /${f.name}" {
         extraConfig = ''
+          ${pageLimit}
           alias ${stateDir}/${f.file};
           default_type ${f.type};
           add_header Cache-Control "no-store, no-cache, must-revalidate";
