@@ -21,6 +21,15 @@
   # lives in stdenv/trivial-builders, so it is NOT present, and the failure is
   # a missing-attribute error at build time rather than at eval.
   pkgs = inputs.pkgs;
+
+  # `dev [<cell>]` -- switch devshells. Same shared script the deploy shell
+  # ships (nix/dev.sh); present here so `dev` (e.g. `dev` back to repo) works
+  # from inside the station shell too.
+  dev = pkgs.writeShellApplication {
+    name = "dev";
+    runtimeInputs = with pkgs; [git direnv coreutils];
+    text = builtins.readFile "${inputs.self.outPath}/nix/dev.sh";
+  };
 in {
   hisilome = pkgs.mkShellNoCC {
     name = "hisilome";
@@ -40,7 +49,8 @@ in {
         tag-album
         build-queue
         listener-count
-      ]);
+      ])
+      ++ [dev];
 
     shellHook = ''
       echo "zola build                                   generate the site into public/"
@@ -51,6 +61,7 @@ in {
       echo "build-queue music                            rebuild the play queue + schedule"
       echo
       echo "NOTE: run these from cells/hisilome/ -- the configs use relative paths."
+      echo "dev            switch back to the deploy shell (repo)"
     '';
   };
 }
