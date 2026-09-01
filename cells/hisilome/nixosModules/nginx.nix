@@ -32,6 +32,8 @@ in {
       recommendedGzipSettings = true;
       recommendedOptimisation = true;
 
+      appendHttpConfig = cell.packages.nginxHttpConfig;
+
       virtualHosts.${cfg.domain} = {
         enableACME = cfg.enableACME;
         forceSSL = cfg.enableACME;

@@ -255,6 +255,29 @@ main > h2:first-child {
   color: var(--hover);
 }
 
+/* Inside the shell the address bar always shows "/"; this is the copyable URL.
+   One click selects it whole. */
+.permalink {
+  color: var(--muted);
+  font-size: 0.85rem;
+  margin-bottom: 1.2rem;
+}
+
+.permalink code {
+  user-select: all;
+  cursor: copy;
+  color: var(--link);
+}
+
+.permalink a {
+  color: var(--muted);
+  text-decoration: none;
+}
+
+.permalink a:hover {
+  color: var(--hover);
+}
+
 .summary {
   color: var(--muted);
 }
