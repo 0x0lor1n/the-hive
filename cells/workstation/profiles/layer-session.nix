@@ -1,6 +1,6 @@
 # Session layer: the NixOS side of any Wayland session (polkit, xdg-portal,
 # hardware.graphics, greetd + tuigreet). DWL + home-manager live in
-# layer-compositor.nix. Was test-vm profiles/layer-session.nix.
+# layer-compositor.nix.
 {
   inputs,
   cell,
@@ -40,7 +40,7 @@
   # compositor. tuigreet 0.11 has --env, but greetd's own environment is
   # inherited by PAM either way and covers the greeter too.
   # Only the session type belongs here: XDG_CURRENT_DESKTOP set this way does
-  # NOT survive into the user session (verified in port-test-vm) —
+  # NOT survive into the user session (verified on sevastopol) —
   # layer-compositor's dwl-session exports it right before exec dwl.
   systemd.services.greetd.environment = {
     XDG_SESSION_TYPE = "wayland";

@@ -1,8 +1,8 @@
 # Workstation hosts. Isolated from cells/server: a different cell flake with its
 # own inputs (lanzaboote, mkcreds), never part of colmenaHive.
 #
-# test-vm port (.hermes/state/port-test-vm.md), phases 1-4: storage + boot,
-# secrets, auth, desktop; phase 5: CachyOS kernel + "safe" fallback entry.
+# A host is composed from profiles in layers: storage + boot, secrets, auth,
+# session/desktop, kernel (CachyOS with a stock "safe" specialisation).
 {
   inputs,
   cell,
@@ -101,8 +101,8 @@
       system.stateVersion = "24.11";
     };
 in {
-  # Native ZFS encryption behind a pre-unseal PCR 15 gate with anti-replay.
-  # The rehearsal for dellvis.
+  # QEMU rehearsal for dellvis: native ZFS encryption behind a pre-unseal
+  # PCR 15 gate with anti-replay, Secure Boot, impermanence.
   sevastopol = mkHost {
     hostKey = "sevastopol";
     base = workstation;

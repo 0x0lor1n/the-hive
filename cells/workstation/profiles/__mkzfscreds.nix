@@ -4,10 +4,10 @@
 # retyping a hex pipeline, with the fingerprint and PCR prediction computed
 # in-process.
 #
-# Ported from shinasada/nix-config (modules/apps/mkzfscreds/flake-parts.nix),
+# Derived from shinasada/nix-config (modules/apps/mkzfscreds/flake-parts.nix),
 # itself built on codgician/mkcreds. Upstream is a flake-parts `perSystem`
-# module; this repo is hive and must not retreat to flake-parts (AGENTS.md),
-# so the shell body is lifted into a plain function returning the package.
+# module; this repo must not retreat to flake-parts (AGENTS.md), so the shell
+# body is lifted into a plain function returning the package.
 #
 # Three deliberate divergences from upstream, each documented below at its own
 # call site: the default PCR set, how the PCR spec string is built, and passing
@@ -35,8 +35,8 @@
   mkcredsBin = "${mkcredsPackage}/bin/mkcreds";
 
   # Divergence 1: upstream defaults to "0,1,2,3,5,7,15". We default to PCR 15
-  # alone, matching what the seal-zfs-cred runbook has always done, so this
-  # port is behaviour-preserving. Broadening to include firmware and Secure
+  # alone, which is what hardware-zfs-unlock.nix measures and what the manual
+  # runbook always sealed against. Broadening to include firmware and Secure
   # Boot state (0-7) is strictly stronger but strictly more brittle — a
   # firmware or kernel update moves those PCRs, the credential stops
   # unsealing, and the operator is back at the passphrase prompt needing a

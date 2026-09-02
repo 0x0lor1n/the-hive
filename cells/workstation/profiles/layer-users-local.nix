@@ -1,6 +1,5 @@
 # The local (non-Entra) unix user: account, sudo policy, and the carve-outs
-# that survive the @blank rollback of its home. Was test-vm
-# profiles/layer-users-local.nix.
+# that survive the @blank rollback of its home.
 #
 # Workstation-only: osgiliath is root-key-only and stops at
 # common/layer-users-root.

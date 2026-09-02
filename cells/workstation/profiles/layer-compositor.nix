@@ -1,7 +1,5 @@
-# Compositor layer: DWL + home-manager as a NixOS module. Was test-vm
-# profiles/layer-compositor.nix; test-vm's dwl-startup.nix wrote an
-# /etc/dwl/startup nothing referenced (the -s target below already does the
-# same), so it is not ported.
+# Compositor layer: DWL + home-manager as a NixOS module. Session startup is
+# the `-s` target below; there is deliberately no separate /etc/dwl/startup.
 #
 # dwl is a SYSTEM package, not home.packages: greetd execs /etc/dwl/session as
 # the authenticated user and system packages are on PATH regardless of whether
