@@ -2,8 +2,6 @@
 # profiles/auth-entra.nix. The local user (layer-users-local) stays as the
 # break-glass fallback: pam_himmelblau is `sufficient` above pam_unix.
 #
-# Phase 3 of the port: no desktop yet, so pamServices carries only what exists
-# here; layer-session (phase 4) adds greetd/swaylock.
 { inputs, cell }:
 {
   pkgs,
@@ -91,13 +89,17 @@ in
     enable = true;
     daemonPackage = lib.mkForce patchedHimmelblau.packages.daemon;
 
-    # greetd + swaylock need pam_himmelblau too (module only wires the
-    # passwd/login/systemd-user defaults); without it Entra users can't
-    # unlock their own session (no /etc/shadow entry for pam_unix to check).
+    # swaylock needs pam_himmelblau too (the module only wires the
+    # passwd/login/systemd-user defaults); without it Entra users cannot unlock
+    # their own session (no /etc/shadow entry for pam_unix to check). greetd is
+    # NOT listed, unlike test-vm: this nixpkgs' greetd PAM service is a
+    # substack/include of `login` with useDefaultRules = false, so it inherits
+    # himmelblau from there and has no `unix` rule for the module to order on.
     pamServices = [
       "passwd"
       "login"
       "systemd-user"
+      "swaylock"
     ];
 
     # OpenSSH bug 2876 workaround, needed for MFA prompts over SSH.

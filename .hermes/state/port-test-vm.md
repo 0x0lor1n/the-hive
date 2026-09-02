@@ -3,7 +3,7 @@
 Source: ~/workspace/playground/test-vm (divnix/hive, 5.8k lines). Target: a
 new cells/workstation in this repo, isolated from cells/server.
 
-phase: 3 auth -- IN PROGRESS (files ported, secrets generated+rekeyed, invariants hold; toplevel build running, VM not yet activated)
+phase: 4 desktop -- IN PROGRESS (files ported, toplevel built + activated in the running VM gen gyi0pk4v...; greetd started by hand, tuigreet/dwl NOT yet verified on the GTK display)
 phases: 1 storage+boot (zfs native enc, tpm unlock, pcr15, lanzaboote,
            impermanence) | 2 secrets (agenix + rekey) | 3 auth (himmelblau,
            layer-users-local) | 4 desktop (dwl, home-manager as NixOS module)
@@ -69,3 +69,21 @@ server-isolation: `nix eval --json .#x86_64-linux.server.nixosConfigurations.osg
 - Persist mounts: /persist/home/vmuser/.ssh, /var/lib/himmelblaud, /var/cache/himmelblaud created 0700/0755.
 - Not tested: real Entra login (needs tenant user + interactive flow) — phase 4 candidate.
 - Console fact: VM console lives in the pty of whoever ran ws-vm-run; tmux `nix-rensa` has no VM window. Root pw `onion` works on ttyS0.
+
+## phase 4 progress (2026-09-02, paused)
+- Ported: profiles/layer-session.nix (greetd+tuigreet from nixpkgs 0.11.1, NO tuigreet input), profiles/layer-compositor.nix (dwl-custom, somebar patch, HM as NixOS module; test-vm dwl-startup.nix dropped — /etc/dwl/startup was unreferenced), home/default.nix + home/desktop/* (foot, fuzzel, swaylock, mako, swayidle, swaybg, cliphist, avizo). coding-agents + copy-files NOT ported.
+- flake.nix: + home-manager release-25.05 (follows nixpkgs), lock updated. auth-entra pamServices += swaylock only: greetd here is `substack login` with useDefaultRules=false -> himmelblau module fails on `account.unix` if greetd is listed (inherits himmelblau via login anyway).
+- ws-vm-run: WS_DISPLAY=1 -> nixGL + virtio-vga-gl venus + GTK display + virtio keyboard/tablet, 8G memfd; default path unchanged. Devshell builds (SC2054 excluded).
+- Eval OK; osgiliath drv unchanged (nxca0xf2...), server lock inputs still `disko utils`.
+- Toplevel /nix/store/gyi0pk4vzkw6ma2r3zsyg0svh6ndbymz-nixos-system-vm-zfs-26.11pre-git activated via activate.sh RC=0 (--failed empty). greetd did not start on switch (needs boot / vt1 handoff); `systemctl stop getty@tty1; systemctl start greetd` -> active, but pgrep found no tuigreet a few seconds later -- CHECK journalctl -u greetd and the GTK window next. Likely a reboot is the honest test (vt=1 + XDG env at boot).
+- VM is running in agent pty (proc_084571385aa6, WS_DISPLAY=1), root logged in on ttyS0; user key at $(cat .ren/vm/.userkey-path). Files staged, NOT committed.
+- Next: reboot VM -> tuigreet on GTK window -> login vmuser/Qwerty123! -> dwl + somebar visible, foot on Ctrl+Shift+Return, `systemctl --user` mako/avizo/swayidle active, dwl-session-bridge active; then commit "workstation: phase 4 (desktop)" + state update. Still open: layer-kernel (CachyOS), real Entra login.
+
+## Фаза 4 — итерация 3 (dwl-startup env)
+- Логин через tuigreet → dwl работает (пользователь подтвердил).
+- Проблема: avizo/swayidle не стартуют — ConditionEnvironment=WAYLAND_DISPLAY not met в user manager.
+- Фикс: в dwl-startup перед `systemctl --user start dwl-session-bridge.service` добавлен
+  `systemctl --user import-environment` + `dbus-update-activation-environment --systemd`
+  для WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE (layer-compositor.nix).
+- Пересборка toplevel: .ren/vm/phase4-build2.log (фон). Далее: nixos-rebuild switch в VM (ssh -p 2222),
+  релогин, проверить `systemctl --user status avizo swayidle`.

@@ -1,9 +1,8 @@
 # Workstation hosts. Isolated from cells/server: a different cell flake with its
 # own inputs (lanzaboote, mkcreds), never part of colmenaHive.
 #
-# test-vm port (.hermes/state/port-test-vm.md), phases 1-3: storage + boot,
-# secrets, auth. Stock kernel until layer-kernel (CachyOS) is ported; no
-# desktop yet.
+# test-vm port (.hermes/state/port-test-vm.md), phases 1-4: storage + boot,
+# secrets, auth, desktop. Stock kernel until layer-kernel (CachyOS) is ported.
 {
   inputs,
   cell,
@@ -22,8 +21,9 @@
     common.layer-users-root
   ];
 
-  # The workstation shape, as far as phase 3 reaches: ZFS + ephemeral root,
-  # the local user, Entra login. Kernel (CachyOS) and desktop still pending.
+  # The workstation shape: ZFS + ephemeral root, the local user, a Wayland
+  # session (greetd -> dwl, home-manager as a NixOS module), Entra login.
+  # Kernel (CachyOS) still pending.
   workstation =
     foundation
     ++ [
@@ -31,6 +31,9 @@
       p.storage-zfs-rollback
       # the local desktop user (break-glass next to Entra)
       p.layer-users-local
+      # Wayland session: seat/portal/greetd, then dwl + the user's home
+      p.layer-session
+      p.layer-compositor
       # Entra ID login via himmelblau
       p.auth-entra
     ];

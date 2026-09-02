@@ -106,9 +106,15 @@
   #   mkdir -p /boot/zfs-unlock
   #   mkzfscreds --devices rpool > /boot/zfs-unlock/rpool.cred
   #   reboot                                            # unlocks silently
+  #
+  # WS_DISPLAY=1 adds a GTK window with virgl (virtio-vga-gl + venus) for the
+  # desktop, keyboard and tablet; the serial console stays on stdio. The host is
+  # Ubuntu, so QEMU's GL goes through nixGL exactly as test-vm did.
   ws-vm-run = pkgs.writeShellApplication {
     name = "ws-vm-run";
     runtimeInputs = with pkgs; [git coreutils procps qemu swtpm];
+    # SC2054 misreads QEMU's comma-separated option values as array typos.
+    excludeShellChecks = ["SC2054"];
     text =
       prologue
       + ''
@@ -134,21 +140,40 @@
 
         # q35 + SMM + secure pflash is what makes OVMF honour Secure Boot;
         # SSH is forwarded to :2222, the repo is shared over 9p as `share`.
-        exec qemu-system-x86_64 \
-          -enable-kvm \
-          -machine q35,smm=on \
-          -global driver=cfi.pflash01,property=secure,value=on \
-          -global ICH9-LPC.disable_s3=1 \
-          -cpu host -smp 4 -m 4096 \
-          -drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMFFull.fd.firmware} \
-          -drive if=pflash,format=raw,unit=1,file="$vars" \
-          -drive if=virtio,format=raw,file="$image" \
-          -netdev user,id=net0,hostfwd=tcp::2222-:22 -device virtio-net-pci,netdev=net0 \
-          -chardev "socket,id=chrtpm,path=$sock" \
-          -tpmdev emulator,id=tpm0,chardev=chrtpm \
-          -device tpm-tis,tpmdev=tpm0 \
-          -virtfs "local,path=$root,mount_tag=share,security_model=none,id=share" \
-          -nographic -serial mon:stdio
+        common() {
+          "$@" \
+            -enable-kvm \
+            -machine q35,smm=on \
+            -global driver=cfi.pflash01,property=secure,value=on \
+            -global ICH9-LPC.disable_s3=1 \
+            -cpu host -smp 4 \
+            -drive if=pflash,format=raw,unit=0,readonly=on,file=${pkgs.OVMFFull.fd.firmware} \
+            -drive if=pflash,format=raw,unit=1,file="$vars" \
+            -drive if=virtio,format=raw,file="$image" \
+            -netdev user,id=net0,hostfwd=tcp::2222-:22 -device virtio-net-pci,netdev=net0 \
+            -chardev "socket,id=chrtpm,path=$sock" \
+            -tpmdev emulator,id=tpm0,chardev=chrtpm \
+            -device tpm-tis,tpmdev=tpm0 \
+            -virtfs "local,path=$root,mount_tag=share,security_model=none,id=share" \
+            "''${extra[@]}"
+        }
+        if [ -z "''${WS_DISPLAY:-}" ]; then
+          extra=(-m 4096 -nographic -serial mon:stdio)
+          common exec qemu-system-x86_64
+        fi
+        # blob=true needs a shareable memory backend; i8042=off leaves the
+        # virtio keyboard as the only one; the GTK display wants X11 on this host.
+        export GDK_BACKEND=x11
+        extra=(
+          -m 8G -object memory-backend-memfd,id=mem1,size=8G -machine memory-backend=mem1,i8042=off
+          -vga none
+          -device virtio-vga-gl,xres=1920,yres=1080,hostmem=8G,blob=true,venus=true
+          -display gtk,gl=on,grab-on-hover=true
+          -device virtio-keyboard-pci
+          -device virtio-tablet-pci
+          -serial mon:stdio
+        )
+        common exec nix run --impure github:nix-community/nixGL -- "$(type -P qemu-system-x86_64)"
       '';
   };
 in {
@@ -177,7 +202,7 @@ in {
       echo "  ws-image             build the disko image"
       echo "  ws-switch            build toplevel, export closure for activation in the VM"
       echo "  ws-secureboot-reset  fresh OVMF varstore (Setup Mode) + wipe swtpm"
-      echo "  ws-vm-run            boot it: OVMF Secure Boot + swtpm, ssh -p 2222"
+      echo "  ws-vm-run            boot it: OVMF Secure Boot + swtpm, ssh -p 2222 (WS_DISPLAY=1: GTK window + virgl)"
       echo "  agenix generate|rekey|view   secrets/generated + rekeyed/<host>"
       echo "  dev                  back to the deploy shell"
     '';

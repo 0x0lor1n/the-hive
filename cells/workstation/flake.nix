@@ -30,6 +30,13 @@
     # patches the source (libhimmelblau bump, tpm feature), so bump deliberately.
     himmelblau.url = "github:himmelblau-idm/himmelblau/791372aad3c5bce2baddd5b794399f58fbd56c61";
     himmelblau.inputs.nixpkgs.follows = "nixpkgs";
+    # Same branch as test-vm; used ONLY as a NixOS module (home-manager.users),
+    # never standalone (utils.mkHome is broken upstream). release-25.05 against
+    # an unstable nixpkgs is intentional, home.enableNixpkgsReleaseCheck = false.
+    home-manager.url = "github:nix-community/home-manager/release-25.05";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    # tuigreet is NOT an input: the nixpkgs pin already ships the maintained
+    # fork (tuigreet/tuigreet 0.11.1, ex NotAShelf) that test-vm overlaid in.
     # colmena deliberately not declared: this cell is never deployed by colmena.
   };
 
