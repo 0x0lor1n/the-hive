@@ -35,7 +35,7 @@
     root=$(git rev-parse --show-toplevel)
     state="$root/.ren/vm"
     mkdir -p "$state"
-    host="''${WS_HOST:-vm-zfs}"
+    host="''${WS_HOST:-sevastopol}"
     # shellcheck disable=SC2034
     image="$state/$host.raw"
     # shellcheck disable=SC2034
@@ -198,7 +198,7 @@ in {
         plugin-files = ${nixPlugins}/lib/nix/plugins
         extra-builtins-file = ${inputs.self.outPath}/nix/extra-builtins.nix
       "
-      echo "workstation: WS_HOST=''${WS_HOST:-vm-zfs}; state in .ren/vm/"
+      echo "workstation: WS_HOST=''${WS_HOST:-sevastopol}; state in .ren/vm/"
       echo "  ws-image             build the disko image"
       echo "  ws-switch            build toplevel, export closure for activation in the VM"
       echo "  ws-secureboot-reset  fresh OVMF varstore (Setup Mode) + wipe swtpm"

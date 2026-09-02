@@ -103,8 +103,8 @@
 in {
   # Native ZFS encryption behind a pre-unseal PCR 15 gate with anti-replay.
   # The rehearsal for dellvis.
-  vm-zfs = mkHost {
-    hostKey = "vm-zfs";
+  sevastopol = mkHost {
+    hostKey = "sevastopol";
     base = workstation;
     hardware = vmGuest;
     encryption = zfsNative;

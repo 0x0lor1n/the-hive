@@ -50,7 +50,7 @@
   environment.etc."tuigreet/config.toml".text = ''
     [display]
     show_time = true
-    greeting = "NixOS vm-zfs (nix-rensa)"
+    greeting = "NixOS sevastopol (nix-rensa)"
     align_greeting = "center"
 
     [remember]
