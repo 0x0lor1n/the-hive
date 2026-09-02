@@ -12,8 +12,8 @@ pxpipe:   ~/.config/systemd/user/pxpipe.service, ExecStart hardcodes
 hosts:    /etc/hosts line `127.0.0.1 pxpipe.anthropic.com` added by hand
 hermes:   ~/.hermes/config.yaml  base_url: http://pxpipe.anthropic.com:47821
 claude:   ~/.claude/settings.json  (env / hooks edited by hand; pxpipe base_url lives here too)
-rtk:      not installed
-nixq:     not written yet (see plan below)
+rtk:      0.47.0 in devshell (cells/repo/packages.nix); no hooks, no config.toml yet
+nixq:     shipped as `nix` in devshell (cells/repo/nixq)
 
 ## todo (after dellvis boots from cells/workstation)
 
@@ -34,7 +34,8 @@ nixq:     not written yet (see plan below)
 - [ ] keep DISABLE_NON_ESSENTIAL_MODEL_CALLS=1
 
 ### 3. rtk (github.com/rtk-ai/rtk, not in nixpkgs)
-- [ ] cells/repo/packages.nix: rtk via buildRustPackage (pin tag + cargoHash)
+- [x] cells/repo/packages.nix: rtk 0.47.0 via buildRustPackage, in devshell PATH,
+      RTK_TELEMETRY_DISABLED=1 set in shellHook (devshell only until home-manager lands)
 - [ ] ~/.config/rtk/config.toml via home-manager:
       [hooks] exclude_commands = ["nix","nixos-rebuild","colmena","nom","just"]
       [tee] enabled = true, mode = "failures"
@@ -42,20 +43,23 @@ nixq:     not written yet (see plan below)
 - [ ] runtime once: `rtk init -g` (claude: PreToolUse hook + ~/.claude/RTK.md)
       and `rtk init --agent hermes` (-> ~/.hermes/plugins/rtk-rewrite/);
       backup settings.json first; check both are idempotent enough to be
-      re-run or replaced by home.file
+      re-run or replaced by home.file. Until then rtk nags once/day on stderr
+      ("No hook installed") because ~/.claude exists — cosmetic.
 - [ ] verify: `rtk gain` after a day of use
 
 ### 4. nixq (own tool, cells/repo/nixq, Go like pxpipe)
-- [ ] wrapper: nix/nixos-rebuild in PATH -> nixq; NIXQ=off or --raw = passthrough;
-      tty stderr or interactive subcommands (repl/shell/develop) = passthrough
-- [ ] filter stderr only via --log-format internal-json:
-      drop start/stop/progress/substitute/fetch -> one summary line
-      keep msg level<=warn verbatim
-      buildLogLine: ring buffer 40 lines/drv, dump only on that drv failing
-      eval trace: first 6 + last 6 frames, position/snippet untouched
-      fail-safe: exit!=0 and no error event printed -> dump raw stderr
-- [ ] fixtures: internal-json dumps for success / eval error / build fail
-- [ ] add to cells/repo/devshells.nix (and rtk exclude_commands above so they don't stack)
+- [x] shipped as `nix` in cells/repo/devshells.nix, first in packages so it
+      shadows nix_2_31; NIXQ_REAL_NIX pins the wrapped client (plugin ABI)
+- [x] passthrough (exec): NIXQ=off, tty stderr, run/shell/develop/repl/log
+- [x] line filter on plain stderr (not internal-json — simpler, and error text
+      is what the model reads anyway): drop plan lists / copying / building,
+      one summary line; verbatim from first `error` line; warning/trace/note
+      and unknown lines always kept (fail-open). Tests: main_test.go
+- [x] verified live: success -> 1 line; eval error verbatim, exit 1;
+      build failure keeps "Last N log lines" + nix log hint; NIXQ=off exec
+- [ ] nixos-rebuild / colmena wrappers — only if their noise turns out to matter
+- [ ] optional later: --log-format internal-json for per-drv 40-line ring buffer
+      (drops the "For full logs, run nix log" round-trip)
 
 ### 5. cleanup on jarvis after migration
 - [ ] rm ~/.config/systemd/user/pxpipe.service, /etc/hosts line, ~/.hermes/config.yaml.bak.pxpipe
