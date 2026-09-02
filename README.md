@@ -51,6 +51,21 @@ Local station: `cd cells/hisilome && process-compose up -f process-compose.yaml`
 (add `-f process-compose.dev.yaml` for file watchers). Needs `music/`, which is
 gitignored and rsynced in.
 
+## pxpipe
+
+`cells/repo/packages.nix` builds [pxpipe](https://github.com/evan-choi/pxpipe-go)
+(pinned by hash), a local proxy that compacts Claude requests before they leave
+the machine. `pxpipe-install` in the deploy shell writes a user systemd unit
+from the store path -- it is not a Nix module, so it works on non-NixOS hosts.
+
+```bash
+pxpipe-install                       # systemctl --user enable --now pxpipe
+journalctl --user -u pxpipe -f       # per-request: applied= saved= cache_read=
+```
+
+Hermes reaches it via `base_url: http://pxpipe.anthropic.com:47821`; the name
+is pinned to `127.0.0.1` in `/etc/hosts` so the `/anthropic` suffix survives.
+
 ## Secrets
 
 `secrets/globals.nix.age` is the encrypted half of `globals` (IPs, password

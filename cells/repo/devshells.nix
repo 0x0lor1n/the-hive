@@ -42,6 +42,36 @@
     runtimeInputs = with pkgs; [git direnv coreutils];
     text = builtins.readFile "${inputs.self.outPath}/nix/dev.sh";
   };
+
+  # Not a Nix module: the pxpipe user service is installed imperatively so it
+  # works on non-NixOS hosts. Re-run after the package
+  # changes: the unit pins the store path it was generated from.
+  pxpipe-install = pkgs.writeShellApplication {
+    name = "pxpipe-install";
+    runtimeInputs = with pkgs; [coreutils systemd];
+    text = ''
+      port="''${PXPIPE_PORT:-47821}"
+      unit="$HOME/.config/systemd/user/pxpipe.service"
+      mkdir -p "$(dirname "$unit")"
+      cat > "$unit" <<EOF
+      [Unit]
+      Description=pxpipe: Anthropic loopback proxy (images system prompt/tool docs)
+      After=network-online.target
+
+      [Service]
+      ExecStart=${pkgs.lib.getExe cell.packages.pxpipe} -port $port
+      Restart=on-failure
+      RestartSec=2
+
+      [Install]
+      WantedBy=default.target
+      EOF
+      systemctl --user daemon-reload
+      systemctl --user enable pxpipe.service
+      systemctl --user restart pxpipe.service
+      echo "pxpipe-install: listening on 127.0.0.1:$port; log: journalctl --user -fu pxpipe"
+    '';
+  };
 in {
   default = pkgs.mkShell {
     name = "nix-rensa";
@@ -60,6 +90,8 @@ in {
       pkgs.nixos-anywhere
       deploy-key
       dev
+      pxpipe-install
+      cell.packages.pxpipe
       pkgs.direnv
 
       # From this cell's input, not the root's: see cells/repo/flake.nix.
@@ -77,6 +109,7 @@ in {
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
+      echo "  pxpipe-install  (re)install the pxpipe user service; needs pxpipe.anthropic.com in /etc/hosts"
     '';
   };
 }
