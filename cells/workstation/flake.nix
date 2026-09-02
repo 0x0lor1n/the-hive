@@ -35,6 +35,14 @@
     # an unstable nixpkgs is intentional, home.enableNixpkgsReleaseCheck = false.
     home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    # CachyOS kernel + matching zfs_cachyos, pre-built on nyx-cache.chaotic.cx.
+    # Pinned to the nyx rev whose own nixpkgs lock == our nixpkgs pin above
+    # (34ab9907); ANY drift between the two turns the kernel into a local
+    # build. Bump both together. Only the overlay is consumed (layer-kernel);
+    # nyx's NixOS modules are not imported (mkSystem passes a ready `pkgs`, so
+    # `nixpkgs.overlays` from a module would be silently ignored anyway).
+    chaotic.url = "github:chaotic-cx/nyx/43fe06999491eabd2ec15c221f5066e39d6a5a51";
+    chaotic.inputs.nixpkgs.follows = "nixpkgs";
     # tuigreet is NOT an input: the nixpkgs pin already ships the maintained
     # fork (tuigreet/tuigreet 0.11.1, ex NotAShelf) that test-vm overlaid in.
     # colmena deliberately not declared: this cell is never deployed by colmena.

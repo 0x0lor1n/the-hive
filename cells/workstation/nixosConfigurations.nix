@@ -2,14 +2,20 @@
 # own inputs (lanzaboote, mkcreds), never part of colmenaHive.
 #
 # test-vm port (.hermes/state/port-test-vm.md), phases 1-4: storage + boot,
-# secrets, auth, desktop. Stock kernel until layer-kernel (CachyOS) is ported.
+# secrets, auth, desktop; phase 5: CachyOS kernel + "safe" fallback entry.
 {
   inputs,
   cell,
   system,
   ...
 }: let
-  inherit (inputs) utilsLib pkgs disko;
+  inherit (inputs) utilsLib disko;
+  # nyx overlay (linuxPackages_cachyos, zfs_cachyos) on top of the shared
+  # instantiation. Applied here, not in a module: mkSystem sets nixpkgs.pkgs,
+  # so nixpkgs.overlays inside the module system is ignored. Purely additive
+  # attrs at this rev; the hashes match nyx's own CI (== cache hits) because
+  # our nixpkgs pin equals nyx's lock.
+  pkgs = inputs.pkgs.extend inputs.chaotic.overlays.default;
   globals = inputs.cells.common.globals;
   common = inputs.cells.common.profiles;
   p = cell.profiles;
@@ -22,11 +28,12 @@
   ];
 
   # The workstation shape: ZFS + ephemeral root, the local user, a Wayland
-  # session (greetd -> dwl, home-manager as a NixOS module), Entra login.
-  # Kernel (CachyOS) still pending.
+  # session (greetd -> dwl, home-manager as a NixOS module), Entra login,
+  # CachyOS kernel with a stock-kernel "safe" boot entry.
   workstation =
     foundation
     ++ [
+      p.layer-kernel
       p.storage-zfs
       p.storage-zfs-rollback
       # the local desktop user (break-glass next to Entra)
