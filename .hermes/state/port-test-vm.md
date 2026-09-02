@@ -93,3 +93,12 @@ server-isolation: `nix eval --json .#x86_64-linux.server.nixosConfigurations.osg
 - Мелочь: XDG_CURRENT_DESKTOP не был в env (greetd его не ставит) -> dwl-startup теперь экспортирует `dwl` по умолчанию
   (нужно для xdg-desktop-portal). Не активировано в VM, проверить при следующем switch.
 - Разлогин из VM без Alt-хоткеев (QEMU перехватывает Alt): root@serial `loginctl terminate-user vmuser`.
+
+## Фаза 5 — layer-kernel (CachyOS) (2026-09-02)
+- Источник: chaotic-cx/nyx (НЕ xddxdd/nix-cachyos-kernel как в test-vm — у него нет кэша под наш nixpkgs; nyx его pin == наш 34ab9907 → hash-совпадение, бинарный кэш nyx-cache.chaotic.cx). Оба репо живые (pushed 2026-09-02), nyx не archived.
+- cells/workstation/flake.nix: + input chaotic = nyx@43fe0699 (follows nixpkgs). Комментарий: бампать вместе с nixpkgs, иначе локальная сборка ядра.
+- nixosConfigurations.nix: `pkgs = inputs.pkgs.extend inputs.chaotic.overlays.default` (nixpkgs.overlays в модуле — no-op, mkSystem задаёт nixpkgs.pkgs).
+- profiles/layer-kernel.nix: linuxPackages_cachyos (7.2.2) + zfs_cachyos, mkOverride 99; specialisation.safe (по PedroHLC/system-setup seat.nix): stock linuxPackages 6.18.48 + stock zfs, mkOverride 98/mkForce. Оба zfs = 2.4.4 → пул совместим. nix.settings += nyx substituter/key для гостя.
+- Проверка: eval OK; dry-run toplevel c nyx substituter: kernel 20dxgk1x…-7.2.2, modules, zfs-all/zfs-user — все в "will be fetched"; из 207 "to build" тяжёлого нет (dwl, somebar, edge .deb, units). osgiliath drv nxca0xf2… не изменился, server lock всё ещё `disko utils`.
+- Host-side: для сборки образа/toplevel на хосте нужны substituter+key nyx в nix.conf хоста или --option (в dry-run передавал через --option).
+- Не сделано: реальный switch/reboot VM на CachyOS ядре + проверка boot entry "safe" в systemd-boot/lanzaboote меню (lanzaboote подписывает специализации тоже — проверить, что появляется второй UKI).

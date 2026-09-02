@@ -2,15 +2,16 @@
 # profiles/auth-entra.nix. The local user (layer-users-local) stays as the
 # break-glass fallback: pam_himmelblau is `sufficient` above pam_unix.
 #
-{ inputs, cell }:
 {
+  inputs,
+  cell,
+}: {
   pkgs,
   lib,
   globals,
   ...
-}:
-let
-  patchedHimmelblauSrc = pkgs.runCommand "himmelblau-patched-src" { } ''
+}: let
+  patchedHimmelblauSrc = pkgs.runCommand "himmelblau-patched-src" {} ''
     cp -r ${inputs.himmelblau} $out
     chmod -R u+w $out
     # Retries CustomComplianceCSE's script spawn on ENOENT — mitigates a
@@ -80,10 +81,9 @@ let
       features = [ "default" "himmelblau_unix_common/tpm" ];
     };'
   '';
-  patchedHimmelblau = import "${patchedHimmelblauSrc}/default.nix" { inherit pkgs; };
-in
-{
-  imports = [ inputs.himmelblau.nixosModules.himmelblau ];
+  patchedHimmelblau = import "${patchedHimmelblauSrc}/default.nix" {inherit pkgs;};
+in {
+  imports = [inputs.himmelblau.nixosModules.himmelblau];
 
   services.himmelblau = {
     enable = true;
@@ -174,11 +174,11 @@ in
     group = "himmelblaud";
     description = "Himmelblau authentication daemon";
   };
-  users.groups.himmelblaud = { };
+  users.groups.himmelblaud = {};
 
   # nsncd runs libnss_himmelblau.so as the nscd user, not himmelblaud —
   # needs group read on the daemon's cache files or every NSS lookup EACCESs.
-  users.users.nscd.extraGroups = [ "himmelblaud" ];
+  users.users.nscd.extraGroups = ["himmelblaud"];
 
   # The daemon's own state and cache must survive the @blank rollback, or
   # the device re-enrolls with Entra on every boot.
@@ -313,8 +313,7 @@ in
   # wire up XDG_DATA_DIRS automatically, and environment.variables doesn't
   # reach himmelblaud-tasks (it has its own explicit unit environment).
   environment.variables.GSETTINGS_SCHEMA_DIR = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
-  systemd.services.himmelblaud-tasks.environment.GSETTINGS_SCHEMA_DIR =
-    "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
+  systemd.services.himmelblaud-tasks.environment.GSETTINGS_SCHEMA_DIR = "${pkgs.gsettings-desktop-schemas}/share/gsettings-schemas/${pkgs.gsettings-desktop-schemas.name}/glib-2.0/schemas";
 
   # First enrollment needs two MFA rounds (password + Hello-PIN setup),
   # which blows past login(1)'s default 60s timeout on the serial console.
