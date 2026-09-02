@@ -28,19 +28,25 @@
     text = builtins.readFile "${inputs.self.outPath}/nix/dev.sh";
   };
 
-  # Shared prologue: repo root + state dir + host name.
+  # Shared prologue: repo root + state dir + host name. Not every script uses
+  # every variable, hence the shellcheck exemption.
   prologue = ''
+    # shellcheck disable=SC2034
     root=$(git rev-parse --show-toplevel)
     state="$root/.ren/vm"
     mkdir -p "$state"
     host="''${WS_HOST:-vm-zfs}"
+    # shellcheck disable=SC2034
     image="$state/$host.raw"
+    # shellcheck disable=SC2034
     vars="$state/OVMF_VARS.secureboot.fd"
   '';
 
   ws-image = pkgs.writeShellApplication {
     name = "ws-image";
-    runtimeInputs = with pkgs; [git coreutils nix];
+    # No `nix` here on purpose: the shell's nix_2_31 must stay first on PATH,
+    # or the 2.34 client fails to dlopen the 2.31 nix-plugins.
+    runtimeInputs = with pkgs; [git coreutils];
     text =
       prologue
       + ''
