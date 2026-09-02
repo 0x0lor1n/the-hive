@@ -1,15 +1,18 @@
 # nix-rensa
 
 One flake for the fleet, on [rensa](https://gitlab.com/rensa-nix/). Ported from
-`divnix/hive`. First host: **osgiliath**, the VPS serving <https://hisilo.me>.
+`divnix/hive`. Hosts: **osgiliath** (VPS, <https://hisilo.me>) and **vm-zfs**
+(workstation rehearsal VM -- ZFS native encryption, TPM-sealed unlock, Secure
+Boot via lanzaboote, impermanence).
 
 ## Layout
 
 ```
-cells/common     globals (public schema + encrypted values), shared profiles
-cells/server     hosts: nixosConfigurations, disks, server profiles
-cells/hisilome   the site + radio station: NixOS module, packages, dev stack
-cells/repo       the deploy shell
+cells/common       globals (public schema + encrypted values), shared profiles
+cells/server       hosts: nixosConfigurations, disks, server profiles
+cells/workstation  hosts: nixosConfigurations, disks, desktop profiles, home-manager
+cells/hisilome     the site + radio station: NixOS module, packages, dev stack
+cells/repo         the deploy shell
 ```
 
 Blocks are `{ inputs, cell, system, ... }`. `inputs.pkgs` is the one nixpkgs
@@ -32,6 +35,9 @@ colmena apply switch --on osgiliath
 `colmenaHive` is hand-written in `flake.nix` -- rensa has no colmena block. Its
 `__schema` is read from the pinned colmena input and the CLI (same input) asserts
 equality, which is why colmena is pinned by rev and declared only at the root.
+
+Workstation hosts are plain `nixosConfigurations`, not colmena nodes. The VM is
+built and booted from `cells/workstation/devshells.nix` (`ws-image`, `ws-vm-run`).
 
 ## Devshells
 
@@ -65,6 +71,28 @@ journalctl --user -u pxpipe -f       # per-request: applied= saved= cache_read=
 
 Hermes reaches it via `base_url: http://pxpipe.anthropic.com:47821`; the name
 is pinned to `127.0.0.1` in `/etc/hosts` so the `/anthropic` suffix survives.
+
+## nixq
+
+`cells/repo/nixq` is a Go PATH shim shipped as `nix` in the deploy shell. It
+sits in front of the real `nix` client and squeezes progress noise out of stderr
+(plan lists, `copying path`, `building '…'`) into one summary line. From the
+first `error:` line onward everything is verbatim; warnings, traces and unknown
+lines always survive (fail-open).
+
+When stderr is a TTY, `NIXQ=off` is set, or the subcommand is interactive
+(`run`, `shell`, `develop`, `repl`, `log`), nixq execs the real nix with zero
+overhead. `NIXQ_REAL_NIX` in the shellHook pins `nix_2_31` so the nix-plugins
+ABI match survives PATH shadowing.
+
+## rtk
+
+[rtk](https://github.com/rtk-ai/rtk) (Rust, pinned tag in
+`cells/repo/packages.nix`) compresses common command output (`git status/diff/log`,
+`cargo test`, `ls`, `grep`, …) before it reaches the model. Telemetry disabled
+via `RTK_TELEMETRY_DISABLED=1` in the shellHook. The Hermes plugin
+(`rtk init --agent hermes`) is not yet wired; see
+`.hermes/state/post-dellvis-tooling.md`.
 
 ## Secrets
 
