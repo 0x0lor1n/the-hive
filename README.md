@@ -1,7 +1,7 @@
 # nix-rensa
 
 One flake for the fleet, on [rensa](https://gitlab.com/rensa-nix/). Ported from
-`divnix/hive`. Hosts: **osgiliath** (VPS, <https://hisilo.me>) and **vm-zfs**
+`divnix/hive`. Hosts: **osgiliath** (VPS, <https://hisilo.me>) and **sevastopol**
 (workstation rehearsal VM -- ZFS native encryption, TPM-sealed unlock, Secure
 Boot via lanzaboote, impermanence).
 

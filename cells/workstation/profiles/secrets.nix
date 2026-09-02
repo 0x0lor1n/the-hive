@@ -35,7 +35,7 @@ in {
   # The persisted path, not /etc/ssh: agenixInstall runs at activation before
   # impermanence bind-mounts /etc/ssh, so at boot the default identity is
   # absent ("no readable identities found") and zfs-key-sync sees no secret.
-  # /persist is mounted in the initrd. Measured on boot 4 of vm-zfs.
+  # /persist is mounted in the initrd. Measured on boot 4 of sevastopol.
   age.identityPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
 
   age.rekey = {

@@ -1,5 +1,5 @@
 # Native ZFS encryption behind a pre-unseal PCR 15 gate. Ported from test-vm's
-# diskoConfigurations.nix (vm-zfs target only; the LUKS variant was dropped).
+# diskoConfigurations.nix (sevastopol target only; the LUKS variant was dropped).
 #
 # ESP + one partition for `rpool`. The pool root carries the encryption, the
 # datasets are the impermanence layout: local/root is rolled back to @blank on
@@ -12,7 +12,7 @@
   ...
 }: let
   globals = inputs.cells.common.globals;
-  host = globals.hosts.vm-zfs;
+  host = globals.hosts.sevastopol;
   inherit (inputs) pkgs;
 in
   inputs.utilsLib.mkDisk {
