@@ -3,7 +3,7 @@
 Source: ~/workspace/playground/test-vm (divnix/hive, 5.8k lines). Target: a
 new cells/workstation in this repo, isolated from cells/server.
 
-phase: 2 secrets -- DONE 2026-09-02 (agenix rotate + reseal + silent boot on the agenix key verified in VM). next: 3 auth
+phase: 3 auth -- IN PROGRESS (files ported, secrets generated+rekeyed, invariants hold; toplevel build running, VM not yet activated)
 phases: 1 storage+boot (zfs native enc, tpm unlock, pcr15, lanzaboote,
            impermanence) | 2 secrets (agenix + rekey) | 3 auth (himmelblau,
            layer-users-local) | 4 desktop (dwl, home-manager as NixOS module)
@@ -17,12 +17,16 @@ cells/workstation/devshells.nix        ws-image / ws-switch / ws-secureboot-rese
 cells/workstation/profiles/secrets.nix  <- test-vm profiles/secrets.nix, ONLY zfs-rpool-passphrase (logins stay in globals); hostPubkey from globals.hosts.<h>.sshHostPubkey (new option), master = jarvis-nopin-rage.pub only, age.identityPaths=/persist/etc/ssh/ssh_host_ed25519_key
 cells/workstation/agenixRekey.nix      agenix-rekey.configure over cell.nixosConfigurations; root flake exposes `agenix-rekey` via new cell block (simple "agenixRekey")
 secrets/generated/vm-zfs/zfs-rpool-passphrase.age + secrets/rekeyed/vm-zfs/7322449f...age
+cells/workstation/flake.nix: + himmelblau 791372a (test-vm lock rev; main), follows nixpkgs
+cells/workstation/profiles/layer-users-local.nix  <- test-vm, mechanical (user = host.userName, keyFiles secrets/generated/<host>/user-ssh-key.pub)
+cells/workstation/profiles/auth-entra.nix + patches/himmelblau/0001-*.patch  <- test-vm, mechanical; pamServices minus greetd/swaylock (phase 4 re-adds)
+cells/workstation/profiles/secrets.nix: + age.secrets.user-ssh-key generator (.pub committed); secrets/generated/vm-zfs/user-ssh-key.{age,pub} + rekeyed/vm-zfs/fd7d82c6...age
 cells/common: globals-options + isVm/hasTpm/userName/homeDir/hashedPassword per host, user.uid; globals.nix hosts.vm-zfs (public throwaway hashes), userName/homeDir resolution
 flake.nix: nixosConfigurations = server // workstation; devShells += workstation. colmenaHive unchanged (server only).
 
 ## invariants
-osgiliath-unchanged: `nix eval --raw .#colmenaHive.toplevel.osgiliath.drvPath` == /nix/store/nxca0xf2iphm3qgg118vcavj5h85dxps-nixos-system-osgiliath-26.11pre-git.drv   last: /nix/store/nxca0xf2iphm3qgg118vcavj5h85dxps-nixos-system-osgiliath-26.11pre-git.drv @ 2026-09-02 (after phase-2 edits)
-server-isolation: `nix eval --json .#x86_64-linux.server.nixosConfigurations.osgiliath --apply 'x: builtins.attrNames x' 2>/dev/null; jq -r '.nodes.root.inputs|keys[]' cells/server/flake.lock` must not gain lanzaboote/himmelblau/home-manager/cachyos   last: `disko utils`, osgiliath `config ? age` = false @ 2026-09-02 (phase 2)
+osgiliath-unchanged: `nix eval --raw .#colmenaHive.toplevel.osgiliath.drvPath` == /nix/store/nxca0xf2iphm3qgg118vcavj5h85dxps-nixos-system-osgiliath-26.11pre-git.drv   last: /nix/store/nxca0xf2iphm3qgg118vcavj5h85dxps-nixos-system-osgiliath-26.11pre-git.drv @ 2026-09-02 (after phase-3 edits)
+server-isolation: `nix eval --json .#x86_64-linux.server.nixosConfigurations.osgiliath --apply 'x: builtins.attrNames x' 2>/dev/null; jq -r '.nodes.root.inputs|keys[]' cells/server/flake.lock` must not gain lanzaboote/himmelblau/home-manager/cachyos   last: `disko utils`, osgiliath `config ? age || services ? himmelblau` = false @ 2026-09-02 (phase 3)
 
 ## blocked_on
 (none)

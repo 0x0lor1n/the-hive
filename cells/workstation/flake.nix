@@ -26,6 +26,10 @@
     agenix.inputs.nixpkgs.follows = "nixpkgs";
     agenix-rekey.url = "github:oddlama/agenix-rekey/8b9c179bc1300ab130c90f2d25426bf0e7a2b58d";
     agenix-rekey.inputs.nixpkgs.follows = "nixpkgs";
+    # Same rev test-vm's flake.lock resolved from himmelblau main. auth-entra.nix
+    # patches the source (libhimmelblau bump, tpm feature), so bump deliberately.
+    himmelblau.url = "github:himmelblau-idm/himmelblau/791372aad3c5bce2baddd5b794399f58fbd56c61";
+    himmelblau.inputs.nixpkgs.follows = "nixpkgs";
     # colmena deliberately not declared: this cell is never deployed by colmena.
   };
 

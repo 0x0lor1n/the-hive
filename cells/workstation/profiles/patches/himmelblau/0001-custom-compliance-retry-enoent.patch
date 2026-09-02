@@ -1,0 +1,68 @@
+--- a/src/policies/src/custom_compliance_ext.rs	2026-08-18 19:46:03.618662095 +0200
++++ b/src/policies/src/custom_compliance_ext.rs	2026-08-18 19:46:18.319837219 +0200
+@@ -286,6 +286,40 @@
+     }
+ }
+ 
++/// Retries `f` on a spawn-time ENOENT: mitigates a benign TOCTOU race where
++/// exec on a just-written, just-chmod'd temp file intermittently fails
++/// (confirmed via strace on a live himmelblaud-tasks process).
++fn spawn_with_enoent_retry<F>(mut f: F) -> Result<std::process::Output>
++where
++    F: FnMut() -> Result<std::process::Output>,
++{
++    const MAX_ATTEMPTS: u32 = 5;
++    const RETRY_DELAY: Duration = Duration::from_millis(25);
++    let mut attempt = 0;
++    loop {
++        attempt += 1;
++        match f() {
++            Ok(out) => return Ok(out),
++            Err(e) => {
++                let is_enoent = e
++                    .downcast_ref::<io::Error>()
++                    .map(|io_err| io_err.kind() == io::ErrorKind::NotFound)
++                    .unwrap_or(false);
++                if is_enoent && attempt < MAX_ATTEMPTS {
++                    debug!(
++                        attempt,
++                        max_attempts = MAX_ATTEMPTS,
++                        "Discovery script spawn hit ENOENT on its own just-written temp file, retrying"
++                    );
++                    std::thread::sleep(RETRY_DELAY);
++                    continue;
++                }
++                return Err(e);
++            }
++        }
++    }
++}
++
+ fn execute_script(script: &[u8]) -> Result<String> {
+     // Check if the content is valid UTF-8 text and, if so, whether it
+     // starts with a shebang.  When a shebang is present the file is
+@@ -320,14 +354,16 @@
+ 
+     // Execute: directly if it has a shebang, via /bin/sh otherwise
+     let started = Instant::now();
+-    let output = if has_shebang {
+-        output_with_timeout(Command::new(&temp_path), SCRIPT_TIMEOUT)
+-            .context("Failed to execute script directly")?
+-    } else {
+-        let mut cmd = Command::new("/bin/sh");
+-        cmd.arg(&temp_path);
+-        output_with_timeout(cmd, SCRIPT_TIMEOUT).context("Failed to execute script via /bin/sh")?
+-    };
++    let output = spawn_with_enoent_retry(|| {
++        if has_shebang {
++            output_with_timeout(Command::new(&temp_path), SCRIPT_TIMEOUT)
++                .context("Failed to execute script directly")
++        } else {
++            let mut cmd = Command::new("/bin/sh");
++            cmd.arg(&temp_path);
++            output_with_timeout(cmd, SCRIPT_TIMEOUT).context("Failed to execute script via /bin/sh")
++        }
++    })?;
+     let elapsed = started.elapsed();
+ 
+     // Remove the temp file (best-effort)

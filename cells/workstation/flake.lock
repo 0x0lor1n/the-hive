@@ -216,6 +216,27 @@
         "type": "github"
       }
     },
+    "himmelblau": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1786742854,
+        "narHash": "sha256-aADQ3zCllMosOMdZOizS6AMyGuludi7CnC9lHqZYvUM=",
+        "owner": "himmelblau-idm",
+        "repo": "himmelblau",
+        "rev": "791372aad3c5bce2baddd5b794399f58fbd56c61",
+        "type": "github"
+      },
+      "original": {
+        "owner": "himmelblau-idm",
+        "repo": "himmelblau",
+        "rev": "791372aad3c5bce2baddd5b794399f58fbd56c61",
+        "type": "github"
+      }
+    },
     "home-manager": {
       "inputs": {
         "nixpkgs": [
@@ -367,6 +388,7 @@
         "agenix": "agenix",
         "agenix-rekey": "agenix-rekey",
         "disko": "disko",
+        "himmelblau": "himmelblau",
         "lanzaboote": "lanzaboote",
         "mkcreds": "mkcreds",
         "nixpkgs": "nixpkgs_2",
