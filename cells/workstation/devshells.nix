@@ -74,15 +74,17 @@
         cache="$state/hb-cache"
         rm -rf "$cache"
         nix copy --to "file://$cache?compression=none" "$top"
-        cat > "$cache/activate.sh" <<'ACTIVATE'
+        # $top is baked in so the guest-side command never needs the hash;
+        # an explicit argument still overrides it.
+        cat > "$cache/activate.sh" <<ACTIVATE
         set -euo pipefail
-        top="$1"
-        nix copy --no-check-sigs --from file:///mnt/share/.ren/vm/hb-cache "$top"
-        nix-env -p /nix/var/nix/profiles/system --set "$top"
-        "$top"/bin/switch-to-configuration switch
+        top="\''${1:-$top}"
+        nix copy --no-check-sigs --from file:///mnt/share/.ren/vm/hb-cache "\$top"
+        nix-env -p /nix/var/nix/profiles/system --set "\$top"
+        "\$top"/bin/switch-to-configuration switch
         ACTIVATE
         echo "ws-switch: $top"
-        echo "in the VM as root:  bash /mnt/share/.ren/vm/hb-cache/activate.sh $top"
+        echo "in the VM:  sudo bash /mnt/share/.ren/vm/hb-cache/activate.sh"
       '';
   };
 
