@@ -39,6 +39,8 @@
   # keyboard FDs before wlroots upgrades the type -> dead keyboard in the
   # compositor. tuigreet 0.11 has --env, but greetd's own environment is
   # inherited by PAM either way and covers the greeter too.
+  # NB: XDG_CURRENT_DESKTOP does NOT survive into the user session this way
+  # (verified in port-test-vm) — layer-compositor's dwl-session exports it.
   systemd.services.greetd.environment = {
     XDG_SESSION_TYPE = "wayland";
     XDG_CURRENT_DESKTOP = "dwl";

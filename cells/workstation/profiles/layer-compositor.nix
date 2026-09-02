@@ -82,7 +82,13 @@
     exec ${somebar-patched}/bin/somebar
   '';
 
+  # greetd starts the session with a PAM-clean env (systemd.services.greetd.
+  # environment does NOT reach it), and dwl's -s child only exports into the
+  # user manager / session bus. Clients spawned by dwl itself (foot, fuzzel)
+  # inherit dwl's env, so the desktop identity must be set here, before exec.
   dwl-session = pkgs.writeShellScript "dwl-session" ''
+    export XDG_CURRENT_DESKTOP=dwl
+    export XDG_SESSION_TYPE=wayland
     exec ${dwl-custom}/bin/dwl -s ${dwl-startup-with-bar}
   '';
 in {

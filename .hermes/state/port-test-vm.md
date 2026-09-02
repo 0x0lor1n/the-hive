@@ -113,3 +113,15 @@ server-isolation: `nix eval --json .#x86_64-linux.server.nixosConfigurations.osg
 - bootctl list: gen 7 `Linux 7.2.2-cachyos` (default) + `nixos-generation-7-specialisation-safe-…efi` = "lts-zfs-stable-26.11pre-git (Linux 6.18.48) (Generation 7-safe)" — lanzaboote signs specialisation UKIs too. Gen 6 (6.18.48) still in menu.
 - Not tested: actually booting the `safe` entry (needs menu pick in serial console during boot) — optional.
 - NEXT: phase 4 leftover (tuigreet/dwl on GTK display) or wrap up port.
+
+## Phase 5 wrap-up — GTK display + XDG_CURRENT_DESKTOP (2026-09-02, manual by user)
+- WS_DISPLAY=1 ws-vm-run: UKI -> TPM unlock -> tuigreet on GTK window -> vmuser login -> dwl + somebar, foot OK.
+- foot env: WAYLAND_DISPLAY=wayland-0, XDG_SESSION_TYPE=wayland, XDG_CURRENT_DESKTOP was EMPTY.
+  Cause: systemd.services.greetd.environment does not reach the PAM session; export in dwl-startup-with-bar
+  only reaches the user manager / session bus, not dwl's own env (foot/fuzzel inherit from dwl).
+  Fix: layer-compositor.nix dwl-session exports XDG_CURRENT_DESKTOP=dwl + XDG_SESSION_TYPE=wayland before exec dwl.
+- Toplevel xbxgnxy23fhzidciv6ib5jw4swh75p1p activated via `sudo bash /mnt/share/.ren/vm/hb-cache/activate.sh <top>`
+  (note: ws-switch only exports the closure; activate.sh must be run in the VM). Relogin -> XDG_CURRENT_DESKTOP=dwl. ✓
+- bootctl list shows `safe` specialisation entry. Noise in xdg-open output (UPower DisplayDevice not activatable,
+  MESA radv/vdrm on virtio-gpu) is VM/edge-specific, not a portal failure.
+- Phase 5 CLOSED. Port test-vm -> nix-rensa complete except: real Entra login (needs tenant), booting `safe` entry (optional).
