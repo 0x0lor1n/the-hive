@@ -60,3 +60,12 @@ server-isolation: `nix eval --json .#x86_64-linux.server.nixosConfigurations.osg
 - globals-options was trimmed for the server; isVm/hasTpm/gpu/entra.*/user.* come back for workstations. Encrypted half already sets user.*/entra.*.
 - test-vm secrets are agenix + agenix-rekey by host key; server uses colmena deployment.keys. Different mechanism, phase 2.
 - test-vm profiles are {inputs, cell}: module -- port mechanically like the server ones.
+
+## phase 3 result (2026-09-02)
+- VM rebooted in agent pty (old qemu on /dev/pts/35 was unreachable — killed; root@blank rollback + /persist ZFS made this safe). TPM unlock silent, zfs-key-sync OK.
+- activate.sh 559pw1mz…-vm-zfs-26.11pre-git → RC=0, /run/current-system points to it.
+- systemctl --failed: empty. himmelblaud, himmelblaud-tasks, nscd, sshd active; 3 sockets in /var/run/himmelblaud/; hsm-pin + himmelblau.cache.db created; HTTP/2 to login.microsoftonline.com OK.
+- vmuser ssh -p 2222 works (key: `agenix view secrets/generated/vm-zfs/user-ssh-key.age` — file path, no --host).
+- Persist mounts: /persist/home/vmuser/.ssh, /var/lib/himmelblaud, /var/cache/himmelblaud created 0700/0755.
+- Not tested: real Entra login (needs tenant user + interactive flow) — phase 4 candidate.
+- Console fact: VM console lives in the pty of whoever ran ws-vm-run; tmux `nix-rensa` has no VM window. Root pw `onion` works on ttyS0.
