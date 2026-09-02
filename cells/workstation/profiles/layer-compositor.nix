@@ -71,6 +71,7 @@
     # dwl sets WAYLAND_DISPLAY only in its own environment; the HM units
     # (avizo, swayidle) gate on ConditionEnvironment=WAYLAND_DISPLAY, so hand
     # the session variables to the user manager and the session bus first.
+    export XDG_CURRENT_DESKTOP="''${XDG_CURRENT_DESKTOP:-dwl}"
     ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user start dwl-session-bridge.service 2>/dev/null || true

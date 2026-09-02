@@ -87,3 +87,9 @@ server-isolation: `nix eval --json .#x86_64-linux.server.nixosConfigurations.osg
   для WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE (layer-compositor.nix).
 - Пересборка toplevel: .ren/vm/phase4-build2.log (фон). Далее: nixos-rebuild switch в VM (ssh -p 2222),
   релогин, проверить `systemctl --user status avizo swayidle`.
+- РЕЗУЛЬТАТ: toplevel rla3pv79... активирован (ACT_RC=0), релогин через tuigreet -> graphical-session.target,
+  dwl-session-bridge, avizo, swayidle = active; --failed пусто; user env содержит WAYLAND_DISPLAY=wayland-0,
+  XDG_SESSION_TYPE=wayland. Фаза 4 (greetd -> dwl -> HM user units) ЗАКРЫТА.
+- Мелочь: XDG_CURRENT_DESKTOP не был в env (greetd его не ставит) -> dwl-startup теперь экспортирует `dwl` по умолчанию
+  (нужно для xdg-desktop-portal). Не активировано в VM, проверить при следующем switch.
+- Разлогин из VM без Alt-хоткеев (QEMU перехватывает Alt): root@serial `loginctl terminate-user vmuser`.
