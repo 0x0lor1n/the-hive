@@ -28,6 +28,7 @@
         (simple "packages")
         (simple "nixosModules")
         (simple "devshells")
+        (simple "agenixRekey")
       ];
 
       # `inputs.nixpkgs` inside a block is the flake (deSystemize flattens
@@ -52,6 +53,8 @@
       devShells.x86_64-linux =
         ren.get self [["repo" "devshells"]]
         // ren.get self [["workstation" "devshells"]];
+      # `agenix` (agenix-rekey CLI) runs `nix run .#agenix-rekey.<system>.<app>`.
+      agenix-rekey = ren.get self [["workstation" "agenixRekey"]];
 
       # Rensa has no colmena block, so the hive is emitted by hand. Exposed as
       # `colmenaHive`, never `colmena`: colmena's eval.nix asserts a raw hive

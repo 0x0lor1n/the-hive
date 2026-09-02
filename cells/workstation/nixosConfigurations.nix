@@ -43,6 +43,7 @@
     p.hardware-zfs-unlock # zfsUnlock: pre-unseal PCR 15 gate + anti-replay
     p.hardware-zfs-tpm # TPM2 initrd, mkzfscreds, zfs-key-sync
     p.hardware-secureboot # lanzaboote: signed UKIs, key auto-enrollment
+    p.secrets # agenix: zfs-rpool-passphrase -> zfsUnlock.passphraseFile
   ];
 
   mkHost = {

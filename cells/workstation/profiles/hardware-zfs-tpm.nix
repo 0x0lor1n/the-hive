@@ -41,10 +41,9 @@
   secretPath = config.zfsUnlock.passphraseFile;
 in {
   # The passphrase the pool is rotated to and the credential sealed from. null
-  # (phase 1 of the port, no secrets cell yet) means zfs-key-sync is not
-  # installed at all: the pool keeps its disko-time key and the operator seals
-  # by hand with `mkzfscreds --devices rpool > /boot/zfs-unlock/rpool.cred`.
-  # Phase 2 sets this to config.age.secrets.zfs-rpool-passphrase.path.
+  # (no secrets profile) means zfs-key-sync is not installed at all: the pool
+  # keeps its disko-time key and the operator seals by hand with
+  # `mkzfscreds --devices rpool > /boot/zfs-unlock/rpool.cred`.
   options.zfsUnlock.passphraseFile = lib.mkOption {
     type = lib.types.nullOr lib.types.str;
     default = null;
