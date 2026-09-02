@@ -37,7 +37,16 @@ colmena apply switch --on osgiliath
 equality, which is why colmena is pinned by rev and declared only at the root.
 
 Workstation hosts are plain `nixosConfigurations`, not colmena nodes. The VM is
-built and booted from `cells/workstation/devshells.nix` (`ws-image`, `ws-vm-run`).
+built and booted from `cells/workstation/devshells.nix` (`ws-image`, `ws-vm-run`,
+`ws-switch` -> `/mnt/share/activate.sh` inside the guest). Procedure and state
+for the rehearsal live in `.hermes/state/port-test-vm.md`.
+
+`sevastopol` runs the CachyOS kernel + `zfs_cachyos` from the pinned `chaotic`
+input (`profiles/layer-kernel.nix`); `specialisation.safe` is stock nixpkgs
+kernel + ZFS as a boot fallback. Prebuilt binaries come from
+`nyx-cache.chaotic.cx`, declared in `nix.settings` for the guest and needed in
+the builder's own `nix.conf` too (`~/.config/nix/nix.conf` here), otherwise the
+kernel builds from source.
 
 ## Devshells
 
@@ -101,6 +110,11 @@ hashes), to the PIN-less identity so eval is non-interactive. `secrets/deploy.ag
 is the fleet deploy key, to the PIN-protected identity. `secrets/<cell>/*.age`
 are that service's colmena `deployment.keys`. Pubkeys are public.
 
+Workstation hosts use agenix-rekey: `secrets/generated/<host>/` holds generated
+material, `secrets/rekeyed/<host>/` the copies for that host's key
+(`agenix generate` / `agenix rekey`). Both are keyed by hostname -- renaming a
+host means regenerating.
+
 ## Traps, measured
 
 - A cell flake declaring inputs with no committed `flake.lock` resolves to an
@@ -113,3 +127,11 @@ are that service's colmena `deployment.keys`. Pubkeys are public.
   a plain system.
 - `rensa-nix/utils` `mkHome.nix:25` references `config.bee.home`, which does not
   exist in `ren-module.nix`; `mkHome` is unusable until fixed upstream.
+- `networking.hostId` is derived from the hostname and ZFS pools remember it:
+  after a rename the pool imports only with force (`storage-zfs.nix` sets
+  `boot.zfs.forceImportRoot` for VMs; a real host would need it once).
+- `environment.sessionVariables` / greetd env do not reach the compositor
+  session; `XDG_CURRENT_DESKTOP` must be exported by the launcher script itself
+  (`layer-compositor.nix`'s `dwl-session`), or dbus/xdg-desktop-portal see nothing.
+- `nix.settings.extra-substituters` on the target does nothing for the machine
+  that *builds* it; the cache must be in the builder's own `nix.conf`.
