@@ -4,3 +4,4 @@
 .hermes/*
 !.hermes/skills/
 !.hermes/state/
+result
