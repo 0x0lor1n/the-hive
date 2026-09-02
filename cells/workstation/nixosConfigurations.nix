@@ -70,6 +70,16 @@
       disko.devices = utilsLib.collectDisks {${hostKey} = cell.disks.${hostKey};};
       # Only consumed by the disko image builder.
       disko.memSize = 4096;
+      # nixpkgs >= 2026-08 vmTools requires `kernel.target`, but disko (through
+      # master ff8702b) passes an aggregateModules buildEnv as `kernel`, which
+      # has none. The buildEnv still symlinks bzImage from the real kernel, so
+      # naming the image explicitly restores the old behaviour. Drop once disko
+      # passes `kernelModules` instead.
+      disko.imageBuilder.pkgs =
+        pkgs
+        // {
+          vmTools = pkgs.vmTools.override {kernelImage = "bzImage";};
+        };
 
       networking.hostName = host.hostName;
       system.stateVersion = "24.11";
