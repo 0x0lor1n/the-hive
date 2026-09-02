@@ -38,8 +38,15 @@ func main() {
 		}
 		upstream = u
 	}
+	// Only image context for models that read dense renders reliably.
+	// Upstream evals (teamchong/pxpipe README): Fable 5 recalls 12-char hex
+	// 13/15 on dense renders; Opus 0/15, gpt-5.6-sol 0/15 — for those the
+	// transform silently corrupts identifiers, so they stay plain text.
+	// Matching is prefix-based ("claude-fable-5" also hits "claude-fable-5-1"
+	// and dated snapshots); "-1" is listed explicitly for clarity.
+	// PXPIPE_MODELS overrides this list; PXPIPE_MODELS=off disables.
 	if os.Getenv("PXPIPE_MODELS") == "" {
-		pxpipe.SetAllowedModelBases([]string{"*"})
+		pxpipe.SetAllowedModelBases([]string{"claude-fable-5", "claude-fable-5-1"})
 	}
 
 	handler := pxpipe.NewHandler(pxpipe.HandlerOptions{
