@@ -24,7 +24,7 @@ in {
   ];
 
   # With no pubkey the host decrypts nothing and zfs-key-sync stays inert
-  # (hardware-zfs-tpm.nix); the port-time placeholder from test-vm is gone.
+  # (hardware-zfs-tpm.nix), so a missing pubkey must fail at eval, not at boot.
   assertions = [
     {
       assertion = host.sshHostPubkey != null;

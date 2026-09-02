@@ -5,9 +5,8 @@
 #
 # Takes `host` (this host's globals entry) rather than a username: the
 # username lives in the encrypted half of globals and cannot be an attribute
-# name in a public file. Phase 4 of the test-vm port carries only the desktop;
-# test-vm's coding-agents (llm-agents input with its own nixpkgs) and
-# copy-files.nix are not ported.
+# name in a public file. Desktop only for now; editor/agent tooling is a
+# separate later step.
 {host}: {pkgs, ...}: {
   home.username = host.userName;
   home.homeDirectory = host.homeDir;

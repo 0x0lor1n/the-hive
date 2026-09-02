@@ -7,13 +7,10 @@
 }: {
   boot.supportedFilesystems = ["zfs"];
 
-  # ZFS requires a stable 8-hex hostId. Derived from the host's own
-  # hostName, so the disko-created pool's hostid matches at import time.
-  #
-  # This used to hash the literal "vm", which meant nixos-vm and
-  # nixos-vm-zfs shared one hostId -- precisely the collision ZFS's
-  # multihost protection exists to detect. Two real machines sharing a
-  # hostId would defeat it entirely.
+  # ZFS requires a stable 8-hex hostId. Derived from the host's own hostName,
+  # so the disko-created pool's hostid matches at import time and no two hosts
+  # share one -- that collision is exactly what ZFS multihost protection exists
+  # to detect. Consequence: renaming a host orphans its pool (forceImportRoot).
   networking.hostId = lib.substring 0 8 (builtins.hashString "sha256" config.networking.hostName);
 
   # Default /dev/disk/by-id doesn't populate for virtio disks (no hardware

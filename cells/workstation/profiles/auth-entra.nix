@@ -1,6 +1,6 @@
-# Entra ID authentication via himmelblau (NSS + PAM). Was test-vm
-# profiles/auth-entra.nix. The local user (layer-users-local) stays as the
-# break-glass fallback: pam_himmelblau is `sufficient` above pam_unix.
+# Entra ID authentication via himmelblau (NSS + PAM). The local user
+# (layer-users-local) stays as the break-glass fallback: pam_himmelblau is
+# `sufficient` above pam_unix.
 #
 {
   inputs,
@@ -92,7 +92,7 @@ in {
     # swaylock needs pam_himmelblau too (the module only wires the
     # passwd/login/systemd-user defaults); without it Entra users cannot unlock
     # their own session (no /etc/shadow entry for pam_unix to check). greetd is
-    # NOT listed, unlike test-vm: this nixpkgs' greetd PAM service is a
+    # NOT listed: this nixpkgs' greetd PAM service is a
     # substack/include of `login` with useDefaultRules = false, so it inherits
     # himmelblau from there and has no `unix` rule for the module to order on.
     pamServices = [

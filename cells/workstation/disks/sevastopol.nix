@@ -1,5 +1,4 @@
-# Native ZFS encryption behind a pre-unseal PCR 15 gate. Ported from test-vm's
-# diskoConfigurations.nix (sevastopol target only; the LUKS variant was dropped).
+# Native ZFS encryption behind a pre-unseal PCR 15 gate (no LUKS layer).
 #
 # ESP + one partition for `rpool`. The pool root carries the encryption, the
 # datasets are the impermanence layout: local/root is rolled back to @blank on

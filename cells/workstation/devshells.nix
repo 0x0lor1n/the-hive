@@ -1,6 +1,6 @@
 # Workstation shell: build the playground VM image and boot it under
-# QEMU + OVMF (Secure Boot, Setup Mode) + swtpm. Replaces test-vm's justfile
-# recipes image / secureboot-reset / vm-run-secureboot-tpm.
+# QEMU + OVMF (Secure Boot, Setup Mode) + swtpm, and switch the running guest
+# over the 9p share.
 #
 # Everything here evaluates `globals`, so NIX_CONFIG must carry the same
 # nix-plugins extra-builtin the deploy shell loads.
@@ -111,7 +111,7 @@
   #
   # WS_DISPLAY=1 adds a GTK window with virgl (virtio-vga-gl + venus) for the
   # desktop, keyboard and tablet; the serial console stays on stdio. The host is
-  # Ubuntu, so QEMU's GL goes through nixGL exactly as test-vm did.
+  # Ubuntu, so QEMU's GL goes through nixGL.
   ws-vm-run = pkgs.writeShellApplication {
     name = "ws-vm-run";
     runtimeInputs = with pkgs; [git coreutils procps qemu swtpm];
