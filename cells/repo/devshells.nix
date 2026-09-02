@@ -77,6 +77,11 @@ in {
     name = "nix-rensa";
 
     packages = [
+      # Agent-facing `nix`: shadows the real client below (mkShell prepends in
+      # list order). NIXQ_REAL_NIX in shellHook pins the target so a stray
+      # system nix 2.34 can never be picked — that would break the plugin.
+      cell.packages.nixq
+
       # Must match what nixPlugins is built against.
       pkgs.nixVersions.nix_2_31
 
@@ -92,6 +97,7 @@ in {
       dev
       pxpipe-install
       cell.packages.pxpipe
+      cell.packages.rtk
       pkgs.direnv
 
       # From this cell's input, not the root's: see cells/repo/flake.nix.
@@ -106,10 +112,16 @@ in {
         plugin-files = ${nixPlugins}/lib/nix/plugins
         extra-builtins-file = ${inputs.self.outPath}/nix/extra-builtins.nix
       "
+      # nixq must wrap exactly the client nix-plugins was built against.
+      export NIXQ_REAL_NIX=${pkgs.nixVersions.nix_2_31}/bin/nix
+      # rtk: local filters only. `rtk nix` does not exist and must not: nix
+      # errors go through nixq, whose contract is "verbatim after error".
+      export RTK_TELEMETRY_DISABLED=1
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
       echo "  pxpipe-install  (re)install the pxpipe user service; needs pxpipe.anthropic.com in /etc/hosts"
+      echo "  nix             = nixq shim (quiet progress; NIXQ=off to bypass); rtk <cmd> for compact git/ls/…"
     '';
   };
 }
