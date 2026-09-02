@@ -18,22 +18,59 @@
     which sets NIX_CONFIG's plugin-files and extra-builtins-file.
   '';
     builtins.extraBuiltins.rageImportEncrypted identities (flakeRoot + "/secrets/globals.nix.age");
-in
-  (lib.evalModules {
-    modules = [
-      ./globals-options.nix
-      encrypted
-      {
-        globals = {
-          hosts.osgiliath.diskDevice = "/dev/vda";
-          persistence = {
-            statePath = "/persist/state";
-            dataPath = "/persist/data";
+in let
+  merged =
+    (lib.evalModules {
+      modules = [
+        ./globals-options.nix
+        encrypted
+        {
+          globals = {
+            hosts.osgiliath.diskDevice = "/dev/vda";
+
+            # Playground workstation VM (cells/workstation). Public throwaway
+            # identity: the hashes are for `vmuser`/root on a disposable image and
+            # exist so the VM boots without the encrypted half being needed.
+            hosts.vm-zfs = {
+              diskDevice = "/dev/vda";
+              isVm = true;
+              hasTpm = true; # swtpm
+              userName = "vmuser";
+              hashedPassword = "$y$j9T$z/Vdo8yMPLoQ9PEXJDj7//$6BuWjVnrKNXrYiXOSmWReG3Iji0JZXUjAqiIUtb7hj/";
+              rootHashedPassword = "$y$j9T$46atH3AmHBsnheSr3VdkW/$qaal/LB3V26HiltSiVTtd6DP3DZVJEmo24AO8EN2311";
+            };
+
+            persistence = {
+              statePath = "/persist/state";
+              dataPath = "/persist/data";
+            };
+            acme.email = null;
           };
-          acme.email = null;
-        };
-      }
-    ];
-  })
-  .config
-  .globals
+        }
+      ];
+    }).config.globals;
+in
+  # Resolve the per-host user: a host either names its own (playground) or
+  # inherits the encrypted fleet user. After this, host.userName/homeDir are
+  # always strings.
+  merged
+  // {
+    hosts =
+      builtins.mapAttrs (
+        _: h:
+          h
+          // {
+            userName =
+              if h.userName != null
+              then h.userName
+              else merged.user.name;
+            homeDir =
+              if h.homeDir != null
+              then h.homeDir
+              else if h.userName != null
+              then "/home/${h.userName}"
+              else merged.user.homeDir;
+          }
+      )
+      merged.hosts;
+  }

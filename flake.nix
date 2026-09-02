@@ -44,9 +44,14 @@
     } (let
       l = inputs.nixpkgs.lib;
       nodes = ren.get self [["server" "nixosConfigurations"]];
+      # Workstations: built and installed locally (disko image / nixos-rebuild),
+      # never deployed by colmena, so they are NOT in colmenaHive below.
+      workstations = ren.get self [["workstation" "nixosConfigurations"]];
     in {
-      nixosConfigurations = nodes;
-      devShells.x86_64-linux = ren.get self [["repo" "devshells"]];
+      nixosConfigurations = nodes // workstations;
+      devShells.x86_64-linux =
+        ren.get self [["repo" "devshells"]]
+        // ren.get self [["workstation" "devshells"]];
 
       # Rensa has no colmena block, so the hive is emitted by hand. Exposed as
       # `colmenaHive`, never `colmena`: colmena's eval.nix asserts a raw hive

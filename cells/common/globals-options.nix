@@ -5,12 +5,16 @@
     description = "Repo-wide parameters, merged from public and encrypted halves.";
     type = lib.types.submodule {
       options = {
-        # Encrypted half. No consumer in this repo yet; kept because the
-        # encrypted file sets them and the schema must accept what it sets.
+        # Encrypted half (name/homeDir/hashedPassword). Read by cells/workstation:
+        # disks pre-create the home inside the @blank snapshot.
         user = {
           name = lib.mkOption {type = lib.types.str;};
           homeDir = lib.mkOption {type = lib.types.str;};
           hashedPassword = lib.mkOption {type = lib.types.str;};
+          uid = lib.mkOption {
+            type = lib.types.int;
+            default = 1000;
+          };
         };
         entra = {
           domains = lib.mkOption {
@@ -67,6 +71,35 @@
                   # this is the real device. Never /dev/sda on osgiliath: that is
                   # the provider's config drive.
                   diskDevice = lib.mkOption {type = lib.types.str;};
+
+                  # Workstation axes (cells/workstation). Server hosts keep the
+                  # defaults.
+                  isVm = lib.mkOption {
+                    type = lib.types.bool;
+                    default = false;
+                    description = "QEMU guest: forces the ZFS import, no autoScrub.";
+                  };
+                  hasTpm = lib.mkOption {
+                    type = lib.types.nullOr lib.types.bool;
+                    default = null;
+                    description = "TPM 2.0 present (swtpm counts). null = unknown.";
+                  };
+
+                  # Per-host local user. null falls back to the encrypted
+                  # globals.user.*; the playground VMs carry a public throwaway
+                  # identity so nothing secret is needed to boot them.
+                  userName = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                  };
+                  homeDir = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                  };
+                  hashedPassword = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                  };
 
                   # Encrypted half. layer-server-hardening.nix asserts this is
                   # set: an internet-facing host must not inherit the fleet
