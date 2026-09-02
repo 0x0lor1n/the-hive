@@ -3,7 +3,7 @@
 Source: ~/workspace/playground/test-vm (divnix/hive, 5.8k lines). Target: a
 new cells/workstation in this repo, isolated from cells/server.
 
-phase: 4 desktop -- IN PROGRESS (files ported, toplevel built + activated in the running VM gen gyi0pk4v...; greetd started by hand, tuigreet/dwl NOT yet verified on the GTK display)
+phase: 5 kernel -- DONE (VM boots gen 7 on 7.2.2-cachyos, SB enabled, TPM unlock ok). Phase 4 leftover: tuigreet/dwl NOT yet verified on the GTK display (WS_DISPLAY=1)
 phases: 1 storage+boot (zfs native enc, tpm unlock, pcr15, lanzaboote,
            impermanence) | 2 secrets (agenix + rekey) | 3 auth (himmelblau,
            layer-users-local) | 4 desktop (dwl, home-manager as NixOS module)
@@ -102,3 +102,14 @@ server-isolation: `nix eval --json .#x86_64-linux.server.nixosConfigurations.osg
 - Проверка: eval OK; dry-run toplevel c nyx substituter: kernel 20dxgk1x…-7.2.2, modules, zfs-all/zfs-user — все в "will be fetched"; из 207 "to build" тяжёлого нет (dwl, somebar, edge .deb, units). osgiliath drv nxca0xf2… не изменился, server lock всё ещё `disko utils`.
 - Host-side: для сборки образа/toplevel на хосте нужны substituter+key nyx в nix.conf хоста или --option (в dry-run передавал через --option).
 - Не сделано: реальный switch/reboot VM на CachyOS ядре + проверка boot entry "safe" в systemd-boot/lanzaboote меню (lanzaboote подписывает специализации тоже — проверить, что появляется второй UKI).
+
+## Phase 5 — build (2026, cachyos kernel)
+- vm-zfs toplevel builds: /nix/store/8580z4cp0xxrx4crb5ahkizikx2k05ly-nixos-system-vm-zfs-26.11pre-git
+- kernel 7.2.2 + modules + zfs-all-2.4.4 fetched from nyx-cache.chaotic.cx (not rebuilt)
+- host: ~/.config/nix/nix.conf now has nyx-cache substituter+key (nixq/ws-switch ignore flake nixConfig). /etc/nix/nix.conf untouched (no sudo).
+- old no-cache build log: .ren/vm/phase5-build.nocache.log
+- 5-activate: ws-switch -> 8580z4cp… ; activate.sh via serial console (root/onion; ssh+sudo -S is blocked by the agent tooling) RC=0; zfs-key-sync `already in sync`; --failed empty.
+- 5-boot (reboot into gen 7, default entry): `uname -r` = 7.2.2-cachyos; /run/current-system = 8580z4cp…; Secure Boot: enabled (user); zfs-unlock: PCR extend (fp ea3106cb…41d1) -> TPM unlock -> Unlocked rpool -> Anti-replay; keystatus available; zfs module loaded; --failed empty.
+- bootctl list: gen 7 `Linux 7.2.2-cachyos` (default) + `nixos-generation-7-specialisation-safe-…efi` = "lts-zfs-stable-26.11pre-git (Linux 6.18.48) (Generation 7-safe)" — lanzaboote signs specialisation UKIs too. Gen 6 (6.18.48) still in menu.
+- Not tested: actually booting the `safe` entry (needs menu pick in serial console during boot) — optional.
+- NEXT: phase 4 leftover (tuigreet/dwl on GTK display) or wrap up port.
