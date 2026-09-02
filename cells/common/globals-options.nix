@@ -108,6 +108,15 @@
                     type = lib.types.nullOr lib.types.str;
                     default = null;
                   };
+
+                  # agenix-rekey recipient (cells/workstation/profiles/secrets.nix).
+                  # null = not captured yet: the host boots on the pool's disko
+                  # key and decrypts nothing. Capture with
+                  # `ssh-keyscan -t ed25519 <host>`, set, `agenix rekey`.
+                  sshHostPubkey = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                  };
                 };
               }
             )

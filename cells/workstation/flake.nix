@@ -21,6 +21,11 @@
     # (systemd#38763).
     mkcreds.url = "github:codgician/mkcreds/112d95f75913829b5ac54d7608b384a0f242e09e";
     mkcreds.inputs.nixpkgs.follows = "nixpkgs";
+    # Same pins as test-vm. Server secrets stay on colmena deployment.keys.
+    agenix.url = "github:ryantm/agenix/b027ee29d959fda4b60b57566d64c98a202e0feb";
+    agenix.inputs.nixpkgs.follows = "nixpkgs";
+    agenix-rekey.url = "github:oddlama/agenix-rekey/8b9c179bc1300ab130c90f2d25426bf0e7a2b58d";
+    agenix-rekey.inputs.nixpkgs.follows = "nixpkgs";
     # colmena deliberately not declared: this cell is never deployed by colmena.
   };
 

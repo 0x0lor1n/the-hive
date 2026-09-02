@@ -61,6 +61,31 @@
       '';
   };
 
+  # The guest has 4G and no reason to evaluate: the host builds the toplevel and
+  # exports the closure to $state/hb-cache (= /mnt/share/.ren/vm/hb-cache over
+  # 9p); the guest imports it and runs what nixos-rebuild does after eval.
+  ws-switch = pkgs.writeShellApplication {
+    name = "ws-switch";
+    runtimeInputs = with pkgs; [git coreutils];
+    text =
+      prologue
+      + ''
+        top=$(nix build --no-link --print-out-paths "$root#nixosConfigurations.$host.config.system.build.toplevel")
+        cache="$state/hb-cache"
+        rm -rf "$cache"
+        nix copy --to "file://$cache?compression=none" "$top"
+        cat > "$cache/activate.sh" <<'ACTIVATE'
+        set -euo pipefail
+        top="$1"
+        nix copy --no-check-sigs --from file:///mnt/share/.ren/vm/hb-cache "$top"
+        nix-env -p /nix/var/nix/profiles/system --set "$top"
+        "$top"/bin/switch-to-configuration switch
+        ACTIVATE
+        echo "ws-switch: $top"
+        echo "in the VM as root:  bash /mnt/share/.ren/vm/hb-cache/activate.sh $top"
+      '';
+  };
+
   ws-secureboot-reset = pkgs.writeShellApplication {
     name = "ws-secureboot-reset";
     runtimeInputs = with pkgs; [git coreutils];
@@ -133,8 +158,10 @@ in {
       pkgs.nixVersions.nix_2_31
       pkgs.rage
       pkgs.age-plugin-tpm
+      inputs.agenix-rekey.packages.${pkgs.stdenv.hostPlatform.system}.default
       pkgs.sbctl
       ws-image
+      ws-switch
       ws-secureboot-reset
       ws-vm-run
       dev
@@ -148,8 +175,10 @@ in {
       "
       echo "workstation: WS_HOST=''${WS_HOST:-vm-zfs}; state in .ren/vm/"
       echo "  ws-image             build the disko image"
+      echo "  ws-switch            build toplevel, export closure for activation in the VM"
       echo "  ws-secureboot-reset  fresh OVMF varstore (Setup Mode) + wipe swtpm"
       echo "  ws-vm-run            boot it: OVMF Secure Boot + swtpm, ssh -p 2222"
+      echo "  agenix generate|rekey|view   secrets/generated + rekeyed/<host>"
       echo "  dev                  back to the deploy shell"
     '';
   };

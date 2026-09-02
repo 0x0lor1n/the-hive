@@ -38,6 +38,8 @@ in let
               userName = "vmuser";
               hashedPassword = "$y$j9T$z/Vdo8yMPLoQ9PEXJDj7//$6BuWjVnrKNXrYiXOSmWReG3Iji0JZXUjAqiIUtb7hj/";
               rootHashedPassword = "$y$j9T$46atH3AmHBsnheSr3VdkW/$qaal/LB3V26HiltSiVTtd6DP3DZVJEmo24AO8EN2311";
+              # Persisted in the image (/persist/etc/ssh); a new `ws-image` changes it.
+              sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEkHLFGCFphGyc0GGyxCENyE/762o1ZPOVa1Ar15ee5 root@vm-zfs";
             };
 
             persistence = {
