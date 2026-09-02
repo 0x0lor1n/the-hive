@@ -71,4 +71,22 @@ in {
   '';
 
   zfsUnlock.passphraseFile = config.age.secrets.zfs-rpool-passphrase.path;
+
+  # The local user's SSH keypair (layer-users-local reads the .pub). Custom
+  # generator: agenix's built-in ssh-ed25519 does not write a .pub. The private
+  # key is the secret; the .pub is committed next to the .age in generated/.
+  age.secrets.user-ssh-key.generator.script = {
+    pkgs,
+    lib,
+    file,
+    ...
+  }: ''
+    tmp=$(${pkgs.coreutils}/bin/mktemp -d)
+    trap "${pkgs.coreutils}/bin/rm -rf '$tmp'" EXIT
+    ${pkgs.openssh}/bin/ssh-keygen -t ed25519 -N "" \
+      -C "${host.hostName} user (agenix-generated)" -f "$tmp/key" >/dev/null
+    ${pkgs.coreutils}/bin/cp "$tmp/key.pub" \
+      ${lib.escapeShellArg (lib.removeSuffix ".age" file + ".pub")}
+    ${pkgs.coreutils}/bin/cat "$tmp/key"
+  '';
 }

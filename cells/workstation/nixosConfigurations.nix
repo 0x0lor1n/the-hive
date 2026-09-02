@@ -1,9 +1,9 @@
 # Workstation hosts. Isolated from cells/server: a different cell flake with its
 # own inputs (lanzaboote, mkcreds), never part of colmenaHive.
 #
-# Phase 1 of the test-vm port (.hermes/state/port-test-vm.md): storage + boot
-# only. Stock kernel until layer-kernel (CachyOS) is ported; no secrets, no
-# local user, no desktop yet.
+# test-vm port (.hermes/state/port-test-vm.md), phases 1-3: storage + boot,
+# secrets, auth. Stock kernel until layer-kernel (CachyOS) is ported; no
+# desktop yet.
 {
   inputs,
   cell,
@@ -22,12 +22,17 @@
     common.layer-users-root
   ];
 
-  # The workstation shape, as far as phase 1 reaches: ZFS + ephemeral root.
+  # The workstation shape, as far as phase 3 reaches: ZFS + ephemeral root,
+  # the local user, Entra login. Kernel (CachyOS) and desktop still pending.
   workstation =
     foundation
     ++ [
       p.storage-zfs
       p.storage-zfs-rollback
+      # the local desktop user (break-glass next to Entra)
+      p.layer-users-local
+      # Entra ID login via himmelblau
+      p.auth-entra
     ];
 
   # Hardware: exactly one per host. The playground VMs mount the host's flake
