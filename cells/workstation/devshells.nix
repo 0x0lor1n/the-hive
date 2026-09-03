@@ -169,11 +169,14 @@
         # X11 here means XWayland under GNOME, and mutter refuses XWayland
         # keyboard grabs by default: Ctrl+Alt+G does nothing and Super (dwl's
         # MODKEY) keeps opening the host's Activities. Allow QEMU explicitly.
+        # The access rule matches WM_CLASS, which GTK capitalises:
+        # "Qemu-system-x86_64" (check with xwininfo -root -tree); the
+        # lowercase binary name silently never matches.
         if command -v gsettings >/dev/null \
           && [ "$(gsettings get org.gnome.mutter.wayland xwayland-allow-grabs 2>/dev/null)" != "true" ]; then
           echo "ws-vm-run: host GNOME blocks XWayland keyboard grabs; Super will not reach dwl." >&2
           echo "  gsettings set org.gnome.mutter.wayland xwayland-allow-grabs true" >&2
-          echo "  gsettings set org.gnome.mutter.wayland xwayland-grab-access-rules \"['qemu-system-x86_64']\"" >&2
+          echo "  gsettings set org.gnome.mutter.wayland xwayland-grab-access-rules \"['Qemu-system-x86_64']\"" >&2
           echo "  then Ctrl+Alt+G in the QEMU window toggles the grab." >&2
           echo "  (WS_NOGRAB=1 to start anyway)" >&2
           [ -n "''${WS_NOGRAB:-}" ] || exit 1

@@ -16,9 +16,11 @@ in {
       '';
   });
 
+  # Colors/font in packages/somebar/config.hpp; nixpkgs copies `conf` over
+  # src/config.hpp in prePatch.
   # DWL 0.8 advertises zwlr_layer_shell_v1 version 3; somebar hardcodes 4 and
   # exits at once without this.
-  somebar = pkgs.somebar.overrideAttrs (old: {
+  somebar = (pkgs.somebar.override {conf = ./packages/somebar/config.hpp;}).overrideAttrs (old: {
     postPatch =
       (old.postPatch or "")
       + ''

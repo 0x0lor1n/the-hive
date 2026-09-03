@@ -32,7 +32,7 @@
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user start dwl-session-bridge.service 2>/dev/null || true
 
-    ${pkgs.swaybg}/bin/swaybg -c '#1e1e2e' &
+    ${pkgs.swaybg}/bin/swaybg -c '#1f1f28' &  # kanagawa sumiInk3
     ${pkgs.wl-clipboard}/bin/wl-paste --type text  --watch ${pkgs.cliphist}/bin/cliphist store &
     ${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store &
     exec ${cell.packages.somebar}/bin/somebar
