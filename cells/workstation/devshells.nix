@@ -166,6 +166,16 @@
         # blob=true needs a shareable memory backend; i8042=off leaves the
         # virtio keyboard as the only one; the GTK display wants X11 on this host.
         export GDK_BACKEND=x11
+        # X11 here means XWayland under GNOME, and mutter refuses XWayland
+        # keyboard grabs by default: Ctrl+Alt+G does nothing and Super (dwl's
+        # MODKEY) keeps opening the host's Activities. Allow QEMU explicitly.
+        if command -v gsettings >/dev/null \
+          && [ "$(gsettings get org.gnome.mutter.wayland xwayland-allow-grabs 2>/dev/null)" != "true" ]; then
+          echo "ws-vm-run: host GNOME blocks XWayland keyboard grabs; Super will not reach dwl." >&2
+          echo "  gsettings set org.gnome.mutter.wayland xwayland-allow-grabs true" >&2
+          echo "  gsettings set org.gnome.mutter.wayland xwayland-grab-access-rules \"['qemu-system-x86_64']\"" >&2
+          echo "  then Ctrl+Alt+G in the QEMU window toggles the grab." >&2
+        fi
         extra=(
           -m 8G -object memory-backend-memfd,id=mem1,size=8G -machine memory-backend=mem1,i8042=off
           -vga none
