@@ -1,5 +1,5 @@
 # Static solid-color wallpaper (no asset management overhead); the
-# startup script sets `swaybg -c '#1f1f28' &` (kanagawa sumiInk3).
+# startup script (layer-compositor.nix) sets `swaybg -c '#<theme.roles.bg>' &`.
 {pkgs, ...}: {
   home.packages = [pkgs.swaybg];
 }

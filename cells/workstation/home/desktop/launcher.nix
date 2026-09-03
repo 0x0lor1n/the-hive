@@ -1,8 +1,12 @@
 # fuzzel — wlroots-native (layer-shell) app launcher.
 # Same author as foot, same minimal aesthetic.
 # HM module programs.fuzzel exists in release-25.05.
-{pkgs, ...}: let
-  k = import ./kanagawa.nix;
+{
+  pkgs,
+  theme,
+  ...
+}: let
+  k = theme.colors;
 in {
   programs.fuzzel = {
     enable = true;

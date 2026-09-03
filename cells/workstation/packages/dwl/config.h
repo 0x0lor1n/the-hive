@@ -12,10 +12,11 @@
 static const int sloppyfocus               = 1;  /* focus follows mouse */
 static const int bypass_surface_visibility = 0;  /* 1 means idle inhibitors will disable idle tracking even if it's surface isn't visible  */
 static const unsigned int borderpx         = 2;  /* border pixel of windows */
-static const float rootcolor[]             = COLOR(0x1f1f28ff);  /* kanagawa sumiInk3 */
-static const float bordercolor[]           = COLOR(0x363646ff);  /* kanagawa sumiInk5, hisilome --border */
-static const float focuscolor[]            = COLOR(0x7e9cd8ff);  /* kanagawa crystalBlue */
-static const float urgentcolor[]           = COLOR(0xc34043ff);  /* kanagawa autumnRed */
+/* @theme_*@ are filled from cells/theme at build time (packages.nix). */
+static const float rootcolor[]             = COLOR(0x@theme_bg@ff);
+static const float bordercolor[]           = COLOR(0x@theme_border@ff);
+static const float focuscolor[]            = COLOR(0x@theme_focus@ff);
+static const float urgentcolor[]           = COLOR(0x@theme_urgent@ff);
 /* This conforms to the xdg-protocol. Set the alpha to zero to restore the old behavior */
 static const float fullscreen_bg[]         = {0.0f, 0.0f, 0.0f, 1.0f}; /* You can also use glsl colors */
 

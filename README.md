@@ -12,6 +12,7 @@ cells/common       globals (public schema + encrypted values), shared profiles
 cells/server       hosts: nixosConfigurations, disks, server profiles
 cells/workstation  hosts: nixosConfigurations, disks, desktop profiles, home-manager
 cells/hisilome     the site + radio station: NixOS module, packages, dev stack
+cells/theme        palette as data (kanagawa: colors, roles, ansi); every desktop colour reads from it
 cells/repo         the deploy shell
 ```
 
