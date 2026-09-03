@@ -2,10 +2,14 @@
 # consumer live here; login hashes stay in globals so console login survives
 # an agenix outage.
 #
-# Master identity: jarvis-nopin-rage.pub (TPM-sealed, no PIN, so
-# `agenix generate/rekey` stay non-interactive). The same identity decrypts
-# secrets/globals.nix.age. `generated/` holds values encrypted to it,
-# `rekeyed/<host>/` the same values re-encrypted to host.sshHostPubkey.
+# Master identities: jarvis-nopin-rage.pub (TPM-sealed, no PIN, so
+# `agenix generate/rekey` stay non-interactive; also decrypts
+# secrets/globals.nix.age at eval time) and dellvis-nix-rage.pub (TPM on
+# dellvis, PIN-gated). Every secret is additionally encrypted to the
+# recovery key held offline in KeePass (extraEncryptionPubkeys) so losing
+# both TPMs does not lose the secrets. `generated/` holds values encrypted
+# to those recipients, `rekeyed/<host>/` the same values re-encrypted to
+# host.sshHostPubkey.
 {
   inputs,
   cell,
@@ -46,6 +50,15 @@ in {
         # recipient from the identity file without touching the TPM.
         pubkey = "age1tag1q2vgn00whx3eukfv6n97udenlcl2nqx39ykq40z5gccc3exugtdq6kedkgm";
       }
+      {
+        identity = "${flakeRoot}/secrets/dellvis-nix-rage.pub";
+        pubkey = "age1tag1q2ggf943ppzwpqwcf39m0r3ztj3vzg6yap2e3tewda7m7k6k0cxdv9dramt";
+      }
+    ];
+    # Offline recovery identity (plain age key, stored in KeePass). Never
+    # used for decryption from this repo.
+    extraEncryptionPubkeys = [
+      "age12tng070ds3cr6xfhlyqqqc5mnavgxuen865uynr8vja2krt8cy2qz0p80l"
     ];
     agePlugins = [pkgs.age-plugin-tpm];
     hostPubkey = host.sshHostPubkey;
