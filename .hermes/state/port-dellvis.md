@@ -5,7 +5,7 @@ Source: sevastopol (this repo, cells/workstation) + ~/nixos-config/hosts/dellvis
 Target: dellvis as a second host in cells/workstation, same `workstation` base,
 its own `hardware` list. Sevastopol was the rehearsal; this is the real disk.
 
-phase: 0 recon -- IN PROGRESS: hw/net/mdatp facts in (2026-09-03); still missing: lsblk, sgdisk outer+p3, tpm, bootctl, secureboot/efivars, dmidecode
+phase: 1 config -- NOT STARTED (phase 0 complete 2026-09-03)
 phases: 0 recon (facts off the running machine, nothing written) |
           1 config (globals + disk + hardware profiles, builds on the ZBook) |
           2 install (nixos-anywhere from the ZBook, wipes the disk) |
@@ -21,26 +21,21 @@ sevastopol-unchanged: `nix eval --raw .#nixosConfigurations.sevastopol.config.sy
 dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system.build.toplevel` -> exit 0   last: -
 
 ## blocked_on
-- phase 0 needs physical access to the laptop (user: no access from work).
-  Checked 2026-09-03 from the ZBook (192.168.10.0/24): `dellvis` does not
-  resolve, no ssh path. Waiting on the pasted output of the phase 0 list.
-- What is on nvme0n1p1/p2? Old disko named only p3. /porsche is NOT on the
-  nvme (external HDD, user 2026-09-03), so p1/p2 are unexplained -- likely
-  Windows or Dell recovery. Wipe is approved either way; the open part is
-  only Secure Boot: if Windows must keep booting, MS keys must survive.
-  Needs: `sgdisk -p /dev/nvme0n1`, `blkid p1 p2`, `efibootmgr -v`.
+- Secure Boot: disabled, PK/KEK/db populated (factory keys). User must clear
+  keys in BIOS Setup (-> Setup Mode) before phase 3 so lanzaboote enrolls its
+  own. No Windows on the disk, so nothing to preserve. Not blocking phase 1-2.
 - Peripheral configs in the old host (ergohaven keyboard, NI Audio 6 pipewire
   rates, amnezia VPN, mesa): workstation-wide or dellvis-only?
 
 ## verified
 0 (laptop, partial): lscpu/lspci/ip/nmcli/systemctl/nixos-generate-config pasted by user @ 2026-09-03 -> notes "dellvis facts"
+0 (laptop, rest): lsblk/sgdisk/blkid/tpm2_getcap/bootctl/efivars/efibootmgr/dmidecode pasted by user @ 2026-09-03 -> notes "dellvis disk/firmware". Phase 0 DONE.
 0 (desk part): `cat ~/nixos-config/hosts/dellvis/{disko,fs,net,default}.nix` -> facts recorded in notes @ 2026-09-03
 0: osgiliath-unchanged -> nxca0xf2 (match); sevastopol-unchanged -> hwdrgcb on clean tree, 9kamqrvb with the uncommitted gtk.nix WIP (Kanagawa gtk theme + phinger cursors -- a workstation change, not dellvis) @ 2026-09-03
 
 ## notes
 - Phase 0 command list, to run on the laptop and paste back:
   `lsblk -f`; `sudo sgdisk -p /dev/nvme0n1`; `ls /sys/class/tpm`;
-  `sudo sgdisk -p /dev/nvme0n1p3` (old disko put a GPT *inside* p3, see below);
   `sudo tpm2_getcap properties-fixed | head -30`; `bootctl status`;
   `lspci -k | grep -A3 -iE 'vga|network'`; `sudo dmidecode -s system-product-name`;
   `nixos-generate-config --show-hardware-config`; `du -sh /porsche/* 2>/dev/null | tail`.
@@ -74,13 +69,19 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
   docker rootless, flatpak, hardware/intel.nix = microcode + linux-firmware,
   net.nix = useDHCP. Nothing there is worth porting mechanically except the
   intel microcode/firmware pair and the /porsche question.
-- Old disko.nix: `disk.my-disk.device = "/dev/nvme0n1p3"; type = "disk"` with
-  GPT -> ESP 1G (vfat, /boot, uuid A936-4157) + btrfs root (uuid
-  88136b8e-d669-4712-865a-e5fde573f7ef). Nested partition table in p3; the
-  outer p1/p2 were never touched by disko. Old default.nix also imports
-  hardware/{mesa,intel,ergohaven,ni-audio-6}.nix and amnezia.nix; /porsche
-  mount is duplicated (fs.nix live, default.nix commented). Last commit to
-  hosts/dellvis: ca43fab 2026-04-20.
+- ~/nixos-config/hosts/dellvis/disko.nix (device=nvme0n1p3, ESP 1G) does NOT
+  match the live disk -- stale, ignore it. Old default.nix also imports
+  hardware/{mesa,intel,ergohaven,ni-audio-6}.nix and amnezia.nix. Last commit
+  to hosts/dellvis: ca43fab 2026-04-20.
+- dellvis disk/firmware (2026-09-03): Dell Latitude 5580, BIOS 1.14.2 (AMI
+  5.11, UEFI 2.60). Disk Crucial CT1000P3SSD8 931.5G, one plain GPT:
+  p1 ESP 5G vfat A936-4157 (/boot, 54% used), p2 btrfs 926.5G (/). No p3, no
+  Windows, no recovery partition -> whole-disk `disk.main` is correct.
+  systemd-boot 259.3; Boot0000 is a stale entry for a partition GUID that no
+  longer exists (previous disk), Boot0001/0002 point at p1 -- all gone after
+  wipe anyway. TPM2 present: Nuvoton NPCT (NTC), spec rev 1.16, fw from 2015
+  -- old but TPM 2.0; PCR7 sealing should work, verify in phase 3. dmidecode
+  type 22 empty -> no battery installed. i7-7600U + HD 620 + 930MX (nouveau).
 - User decisions 2026-09-03: all data already rescued, wipe the whole nvme
   freely. /porsche = external HDD, drop it entirely. mdatp NOT wanted
   (currently active but "severely outdated"; intune-daemon inactive) -- no
