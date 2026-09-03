@@ -1,3 +1,9 @@
+## iter 14 — Entra persistence (aa4b66f) — VERIFIED in VM
+- himmelblaud state/cache + Entra user Edge profile & bash history survive @blank rollback.
+- globals.nix.age: entra.user.uid pinned, upn domain corrected.
+- Intune compliance: PASS.
+- Next: DellVis integration plan (user t=412). VM sudo needs password: activation is run by user, not agent.
+
 # port-test-vm
 
 Source: ~/workspace/playground/test-vm (divnix/hive, 5.8k lines). Target: a

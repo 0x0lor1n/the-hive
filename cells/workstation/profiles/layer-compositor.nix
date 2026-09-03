@@ -13,9 +13,22 @@
   lib,
   config,
   host,
+  globals,
   ...
 }: let
   theme = inputs.cells.theme.palettes.kanagawa;
+  mkHome = userName: homeDir: import ../home {inherit userName homeDir theme;};
+
+  # The Entra user is an NSS user (himmelblau), not in users.users, so the HM
+  # NixOS module can't target it. Build the same home standalone and activate
+  # it from a user unit at login. cn = upn before '@', which is also the
+  # /home/<cn> alias himmelblau creates (home_alias = "cn" in auth-entra.nix).
+  entra = globals.entra.user;
+  entraCn = lib.head (lib.splitString "@" entra.upn);
+  entraHome = inputs.home-manager.lib.homeManagerConfiguration {
+    inherit pkgs;
+    modules = [(mkHome entraCn "/home/${entraCn}")];
+  };
   # `dwl -s <cmd>`: dwl makes the child's stdin the read end of its status
   # pipe, so somebar must be exec'd (not backgrounded) to hold it open. swaybg
   # and the cliphist watchers start here; mako/swayidle/avizo have HM user
@@ -74,7 +87,25 @@ in {
 
     home-manager.useGlobalPkgs = true;
     home-manager.useUserPackages = true;
-    home-manager.users.${host.userName} = import ../home {inherit host theme;};
+    home-manager.users.${host.userName} = mkHome host.userName host.homeDir;
+
+    # HM for the Entra user (see entraHome above). Runs in the user manager
+    # PAM starts at login, so dbus is up and dconfSettings works. Idempotent:
+    # re-activating the same generation is a no-op.
+    systemd.user.services.home-manager-entra = lib.mkIf (entra.upn != null && entra.uid != null) {
+      description = "Home Manager environment for the Entra user";
+      unitConfig.ConditionUser = toString entra.uid;
+      wantedBy = ["default.target"];
+      # activate registers the generation via nix-env, which the unit's
+      # default PATH lacks. ~/.local/state/nix/profiles is created by the
+      # tmpfiles rules in auth-entra.nix.
+      path = [config.nix.package pkgs.bash];
+      serviceConfig = {
+        Type = "oneshot";
+        RemainAfterExit = true;
+        ExecStart = "${entraHome.activationPackage}/activate";
+      };
+    };
 
     environment.systemPackages = [
       cell.packages.dwl
