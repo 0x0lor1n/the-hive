@@ -1,14 +1,15 @@
-# The local user's home-manager config, consumed as a NixOS module via
-# home-manager.users.<name> in profiles/layer-compositor.nix. utils.mkHome is
-# broken upstream (bee.home), and standalone HM is not wanted anyway: the
-# system and the home must switch together.
+# The desktop home-manager config. Built twice by profiles/layer-compositor.nix:
+# as a NixOS module for the local user (home-manager.users.<name>) and as a
+# standalone activationPackage for the Entra user, who is not in users.users
+# and so cannot go through the NixOS module. utils.mkHome is broken upstream
+# (bee.home).
 #
-# Takes `host` (this host's globals entry) rather than a username: the
-# username lives in the encrypted half of globals and cannot be an attribute
-# name in a public file. Desktop only for now; editor/agent tooling is a
-# separate later step.
+# Takes the username/home explicitly: both live in the encrypted half of
+# globals and cannot be attribute names in a public file. Desktop only for
+# now; editor/agent tooling is a separate later step.
 {
-  host,
+  userName,
+  homeDir,
   theme,
 }: {pkgs, ...}: let
   k = theme.colors;
@@ -17,8 +18,8 @@ in {
   # Every desktop module below reads the palette from this arg.
   _module.args.theme = theme;
 
-  home.username = host.userName;
-  home.homeDirectory = host.homeDir;
+  home.username = userName;
+  home.homeDirectory = homeDir;
   # Must match system.stateVersion in nixosConfigurations.nix.
   home.stateVersion = "24.11";
   programs.home-manager.enable = true;

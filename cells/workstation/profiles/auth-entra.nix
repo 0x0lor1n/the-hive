@@ -136,9 +136,10 @@ in {
       # over SSH. Without this, console login can force the device-code flow.
       allow_console_password_only = true;
 
-      # Hello PIN enrollment once left an account unable to log in after a
-      # mistyped PIN mid-flow; keep disabled until that UX is tested.
-      enable_hello = false;
+      # Hello PIN: after the first password+MFA login himmelblau offers to
+      # set a PIN, then greetd accepts PIN only. PIN is sealed to the TPM
+      # (hsm_type above); the store lives in /var/cache/himmelblaud (persisted).
+      enable_hello = true;
 
       # Required for Entra login: tenant Conditional Access blocks the
       # PRT->access-token exchange for non-compliant devices, and
@@ -187,9 +188,9 @@ in {
   #
   # Entra user's home: Edge profile (corp login) + bash history. NSS-only
   # account, so `persistence.users.<name>` (needs users.users) is out --
-  # absolute paths + numeric uid from the encrypted globals. The home itself
-  # is left to himmelblaud-tasks; ExecStartPre below re-owns it after
-  # impermanence's root-owned mkdir -p of the parents.
+  # absolute paths + numeric uid from the encrypted globals. impermanence
+  # creates the *parents* of a bind mount with defaultPerms (root 0755), so
+  # the tmpfiles rules below re-own the home and its xdg dirs.
   environment.persistence."/persist".directories = let
     inherit (globals.entra.user) upn uid;
     entraHome = sub: {
@@ -224,19 +225,6 @@ in {
   programs.bash.interactiveShellInit = ''
     [ -d "$HOME/.local/share/bash" ] && export HISTFILE="$HOME/.local/share/bash/history"
   '';
-
-  systemd.services.himmelblaud-tasks.serviceConfig.ExecStartPre = let
-    inherit (globals.entra.user) upn uid;
-  in
-    lib.mkIf (upn != null && uid != null) [
-      "+${pkgs.writeShellScript "entra-home-owner" ''
-        home="/home/${upn}"
-        [ -d "$home" ] || exit 0
-        ${pkgs.coreutils}/bin/chown ${toString uid}:${toString uid} "$home" "$home"/.config "$home"/.cache "$home"/.local "$home"/.local/share 2>/dev/null
-        ${pkgs.coreutils}/bin/chmod 0750 "$home"
-        exit 0
-      ''}"
-    ];
 
   systemd.services.himmelblaud.serviceConfig.ExecStartPost = [
     "+${pkgs.writeShellScript "himmelblaud-fix-perms" ''
@@ -318,13 +306,30 @@ in {
   # /usr/bin/bash, /bin/dash — the tenant's Intune custom-compliance
   # discovery scripts exec directly via their shebang, and none of these
   # interpreters exist on NixOS by default.
-  systemd.tmpfiles.rules = [
-    "d /etc/krb5.conf.d 0755 root root -"
-    "d /etc/cron.d 0755 root root -"
-    "L+ /bin/bash - - - - ${pkgs.bash}/bin/bash"
-    "L+ /usr/bin/bash - - - - ${pkgs.bash}/bin/bash"
-    "L+ /bin/dash - - - - ${pkgs.dash}/bin/dash"
-  ];
+  systemd.tmpfiles.rules = let
+    inherit (globals.entra.user) upn uid;
+    own = sub: "d /home/${upn}${sub} 0700 ${toString uid} ${toString uid} -";
+  in
+    [
+      "d /etc/krb5.conf.d 0755 root root -"
+      "d /etc/cron.d 0755 root root -"
+      "L+ /bin/bash - - - - ${pkgs.bash}/bin/bash"
+      "L+ /usr/bin/bash - - - - ${pkgs.bash}/bin/bash"
+      "L+ /bin/dash - - - - ${pkgs.dash}/bin/dash"
+    ]
+    # /home/<upn> itself is 0750: himmelblau creates it that way (umask 027)
+    # and the /home/<cn> alias must stay traversable. .local/state is where
+    # home-manager-entra registers its generation.
+    ++ lib.optionals (upn != null && uid != null) [
+      "d /home/${upn} 0750 ${toString uid} ${toString uid} -"
+      (own "/.config")
+      (own "/.cache")
+      (own "/.local")
+      (own "/.local/share")
+      (own "/.local/state")
+      (own "/.local/state/nix")
+      (own "/.local/state/nix/profiles")
+    ];
 
   # TPM resource-manager access for the static himmelblaud user (no
   # security.tpm2/tss group here). nvme0n1p3 symlink lets the tenant's
