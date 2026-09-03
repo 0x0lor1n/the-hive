@@ -19,6 +19,6 @@
     # the EDID wlroots sees may only list small modes — force the size the
     # QEMU window is opened with (ws-vm-run xres/yres). Real hardware has a
     # real EDID and must NOT have this.
-    WLR_OUTPUT_DEFAULT_MODE = "1920x1080@60";
+    WLR_OUTPUT_DEFAULT_MODE = "1440x2400@60";
   };
 }
