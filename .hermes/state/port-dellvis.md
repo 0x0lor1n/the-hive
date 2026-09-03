@@ -96,9 +96,11 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
   or dead; skip battery tuning until it shows up. No ed25519 host key on the
   old install (confirms: generate on the ZBook, ship via --extra-files).
 - User 2026-09-03 on old-host peripherals: NI Audio 6 and amnezia -- drop.
-  ergohaven + mesa bits -- dellvis-only, not workstation-wide. Caveat: the
-  machine sat untouched ~1 year, so treat the old config as a hint, not a
-  spec; port ergohaven only if the keyboard is actually still in use (ask
-  at phase 4, not before).
+  ergohaven + vial -- WORKSTATION-WIDE (user's daily split keyboard, used on
+  every machine): vial package + its udev rules (old host declared them in
+  code -- grep the old dellvis config for `vial`/`udev`/`ergohaven` and port
+  verbatim into a shared workstation module, not per-host). mesa bits --
+  dellvis-only. The machine sat untouched ~1 year, so everything else in the
+  old config is a hint, not a spec.
 - The ZBook (HP, Ubuntu + nix pm) is last on purpose: it is the work machine,
   and dellvis is where the hardware surprises get paid for.
