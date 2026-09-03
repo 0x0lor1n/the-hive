@@ -14,7 +14,7 @@
 # `pkgs == null` guard (upstream needs it for their eval context, we
 # always pass pkgs).
 #
-# `__` prefix keeps haumea from loading this as a profile — it's a
+# `__` prefix keeps the profiles/default.nix loader from picking this up as a profile — it's a
 # plain function, not a NixOS module. See profiles/default.nix.
 {
   pkgs,

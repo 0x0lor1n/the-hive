@@ -36,10 +36,13 @@ in {
       main.pad = "8x8";
       # Palette from cells/theme (foot uses rrggbb, no #); the 16 ANSI slots
       # come from theme.ansi, same list the VT console uses.
-      cursor.color = "${k.sumiInk3} ${k.oldWhite}";
-      colors = {
+      # foot >= 1.23 moved cursor.color into the colors section, and 1.27
+      # renamed [colors] -> [colors-dark] ([colors] is deprecated, cursor.color
+      # is a hard error). The CachyOS nixpkgs pin ships 1.27.
+      colors-dark = {
         foreground = k.fujiWhite;
         background = k.sumiInk3;
+        cursor = "${k.sumiInk3} ${k.oldWhite}";
         selection-foreground = k.oldWhite;
         selection-background = k.waveBlue2;
       }
