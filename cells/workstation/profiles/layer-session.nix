@@ -18,12 +18,16 @@ in {
   # GPU-independent session environment. NixOS-level, not home.sessionVariables:
   # tuigreet's `--cmd` never sources ~/.profile, so HM vars are invisible to the
   # compositor greetd execs.
-  environment.variables = {
-    LIBSEAT_BACKEND = "logind";
-    XKB_DEFAULT_RULES = "evdev";
-    XKB_DEFAULT_MODEL = "pc105";
-    XKB_DEFAULT_LAYOUT = "us";
-    XKB_DEFAULT_OPTIONS = "";
+  environment.variables.LIBSEAT_BACKEND = "logind";
+
+  # XKB reaches dwl only through compositorEnvironment (environment.variables
+  # does not survive greetd's PAM-clean env). mkDefault: a platform profile
+  # overrides the toggle where the host steals the chord.
+  session.compositorEnvironment = {
+    XKB_DEFAULT_RULES = lib.mkDefault "evdev";
+    XKB_DEFAULT_MODEL = lib.mkDefault "pc105";
+    XKB_DEFAULT_LAYOUT = lib.mkDefault "us,ru";
+    XKB_DEFAULT_OPTIONS = lib.mkDefault "grp:alt_shift_toggle";
   };
 
   # Screen sharing, file pickers. "*" keeps the pre-1.17 behaviour (first
