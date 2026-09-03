@@ -179,7 +179,7 @@
         extra=(
           -m 8G -object memory-backend-memfd,id=mem1,size=8G -machine memory-backend=mem1,i8042=off
           -vga none
-          -device virtio-vga-gl,xres=1920,yres=1080,hostmem=8G,blob=true,venus=true
+          -device virtio-vga-gl,xres=1440,yres=2400,hostmem=8G,blob=true,venus=true
           -display gtk,gl=on,grab-on-hover=true
           -device virtio-keyboard-pci
           -device virtio-tablet-pci
