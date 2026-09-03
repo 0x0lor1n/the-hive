@@ -332,12 +332,15 @@ in {
     ];
 
   # TPM resource-manager access for the static himmelblaud user (no
-  # security.tpm2/tss group here). nvme0n1p3 symlink lets the tenant's
+  # security.tpm2/tss group here). The nvme0n1p3 symlink lets the tenant's
   # disk-encryption script (hardcoded to that Ubuntu NVMe path) find our
-  # real encrypted partition (vda2) under the name it expects.
+  # real encrypted partition under the name it expects. Matched on disko's
+  # GPT partlabel, not the kernel name: it is vda2 on the VM and nvme0n1p2 on
+  # penrose, and the label is the same on both. Suppressed where the kernel
+  # name already IS nvme0n1p3 (a self-symlink is harmless but noisy).
   services.udev.extraRules = ''
     KERNEL=="tpmrm0", GROUP="himmelblaud", MODE="0660"
-    KERNEL=="vda2", SYMLINK+="nvme0n1p3"
+    SUBSYSTEM=="block", ENV{ID_PART_ENTRY_NAME}=="disk-main-rpool", KERNEL!="nvme0n1p3", SYMLINK+="nvme0n1p3"
   '';
 
   # The tenant's screen-idle-lock script reads GNOME's dconf idle-delay

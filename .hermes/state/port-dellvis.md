@@ -1,11 +1,13 @@
-# port-dellvis
+# port-dellvis (host is named `penrose` in the repo; dellvis = the old install)
 
 Source: sevastopol (this repo, cells/workstation) + ~/nixos-config/hosts/dellvis
 (the machine's current NixOS: btrfs on nvme0n1p3, services.intune + mdatp).
-Target: dellvis as a second host in cells/workstation, same `workstation` base,
+Target: penrose as a second host in cells/workstation, same `workstation` base,
 its own `hardware` list. Sevastopol was the rehearsal; this is the real disk.
+Naming (user, 2026-09-03): osgiliath = LotR, sevastopol = Alien, penrose = the
+Ergo Proxy/Signalis-adjacent pick; hostname == globals key == secrets dirs.
 
-phase: 1 config -- NOT STARTED (phase 0 complete 2026-09-03)
+phase: 2 install -- NOT STARTED (phase 1 complete 2026-09-03)
 phases: 0 recon (facts off the running machine, nothing written) |
           1 config (globals + disk + hardware profiles, builds on the ZBook) |
           2 install (nixos-anywhere from the ZBook, wipes the disk) |
@@ -13,12 +15,26 @@ phases: 0 recon (facts off the running machine, nothing written) |
           4 daily driver (wifi/bt/battery, editor+agents, then ZBook)
 
 ## ported
-(nothing yet)
+- globals.hosts.penrose (diskDevice /dev/nvme0n1, hasTpm, sshHostPubkey) -- cells/common/globals.nix
+- disks/penrose.nix: sevastopol layout, keylocation=file:///tmp/rpool.key (nixos-anywhere --disk-encryption-keys), no imageSize
+- profiles: platform-baremetal (initrd nvme/xhci/rtsx, kvm-intel, efivars=true, microcode+firmware), gpu-intel (media-driver, nouveau/nvidia blacklisted, dGPU runtime PM), laptop (NetworkManager + nm group, bluetooth off-at-boot, lid ignored, NM/bt persisted)
+- input-vial: workstation-wide (in `workstation` list, so sevastopol got it too); udev rule verbatim from old ergohaven.nix
+- nixosConfigurations.penrose = mkHost {base=workstation; hardware=intelLaptop; encryption=zfsNative}
+- host key: secrets/hosts/penrose/ssh_host_ed25519_key.{age,pub}; .age is rage-encrypted to nopin + dellvis-nix (TPM) + KeePass recovery. Decrypt on the ZBook only for --extra-files.
+- agenix generate + rekey done: secrets/generated/penrose/{user-ssh-key,zfs-rpool-passphrase}, secrets/rekeyed/penrose/
+- auth-entra: nvme0n1p3 compat symlink now matches ENV{ID_PART_ENTRY_NAME}=="disk-main-rpool" instead of KERNEL=="vda2" (was VM-only; on penrose rpool is nvme0n1p2)
 
 ## invariants
 osgiliath-unchanged: `nix eval --raw .#colmenaHive.toplevel.osgiliath.drvPath` == /nix/store/nxca0xf2iphm3qgg118vcavj5h85dxps-nixos-system-osgiliath-26.11pre-git.drv   last: /nix/store/nxca0xf2iphm3qgg118vcavj5h85dxps-nixos-system-osgiliath-26.11pre-git.drv @ 2026-09-03
-sevastopol-unchanged: `nix eval --raw .#nixosConfigurations.sevastopol.config.system.build.toplevel.drvPath` == /nix/store/hwdrgcbw0v920fykvya0305lndqz8i25-nixos-system-sevastopol-26.11pre-git.drv   last: /nix/store/hwdrgcbw0v920fykvya0305lndqz8i25-nixos-system-sevastopol-26.11pre-git.drv @ 2026-09-03 (clean tree, d81e4be..467844c; the earlier 8h7zdb5 baseline was taken on a dirty tree and matches no commit)
-dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system.build.toplevel` -> exit 0   last: -
+sevastopol-unchanged: `nix eval --raw .#nixosConfigurations.sevastopol.config.system.build.toplevel.drvPath` == /nix/store/yncp0rcmhdmp8nhcb2li185fb6k4873b-nixos-system-sevastopol-26.11pre-git.drv   last: yncp0rcm @ 2026-09-03 (rebaselined after phase 1: input-vial + auth-entra udev; previous hwdrgcb)
+penrose-builds: `nix build --no-link .#nixosConfigurations.penrose.config.system.build.toplevel` -> exit 0   last: exit 0 @ 2026-09-03 -> /nix/store/gqpj87g4nwbnskf6gj2qnk795m0ivd8w-nixos-system-penrose-26.11pre-git (drv wd79r7bx)
+
+## next (phase 2, from the ZBook, in `nix develop .#workstation`)
+1. Boot the laptop into a NixOS installer ISO with ssh; note its IP.
+2. `rage -d -i secrets/jarvis-nopin-rage.pub secrets/hosts/penrose/ssh_host_ed25519_key.age > /dev/shm/x/persist/etc/ssh/ssh_host_ed25519_key`; cp the .pub next to it; chmod 600/644.
+3. Passphrase file for install: `printf '%s' "$(xkcdpass -n 6 -d -)" > /dev/shm/rpool.key` (typed once at boot 1; zfs-key-sync rotates to the agenix one).
+4. `nixos-anywhere --flake .#penrose --disk-encryption-keys /tmp/rpool.key /dev/shm/rpool.key --extra-files /dev/shm/x root@<ip>` (may need --build-on-remote off / substitutes from ZBook; disk on ZBook is tight -- ~4G free).
+5. BIOS: clear Secure Boot keys -> Setup Mode BEFORE first boot (blocked_on).
 
 ## blocked_on
 - Secure Boot: disabled, PK/KEK/db populated (factory keys). User must clear
@@ -26,6 +42,8 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
   own. No Windows on the disk, so nothing to preserve. Not blocking phase 1-2.
 
 ## verified
+1: penrose toplevel builds; eval check: initrd has nvme/xhci_pci/rtsx_pci_sdmmc, efivars=true, lanzaboote on/systemd-boot off, forceImportRoot=false, autoScrub=true, NM on, nouveau blacklisted, WLR_OUTPUT_DEFAULT_MODE absent, user crookedmirror in wheel+networkmanager, Vial-0.7.5 + hidraw rule present @ 2026-09-03
+1: sevastopol drvPath moved hwdrgcb -> yncp0rcm -- EXPECTED: input-vial added to the shared `workstation` list, auth-entra udev rule generalised, agenix rekey renamed rekeyed/sevastopol files (hash includes hostPubkey+rekeyFile, both unchanged -- values identical, filenames differ because rekey is not deterministic in name). New baseline below.
 0 (laptop, partial): lscpu/lspci/ip/nmcli/systemctl/nixos-generate-config pasted by user @ 2026-09-03 -> notes "dellvis facts"
 0 (laptop, rest): lsblk/sgdisk/blkid/tpm2_getcap/bootctl/efivars/efibootmgr/dmidecode pasted by user @ 2026-09-03 -> notes "dellvis disk/firmware". Phase 0 DONE.
 0 (desk part): `cat ~/nixos-config/hosts/dellvis/{disko,fs,net,default}.nix` -> facts recorded in notes @ 2026-09-03

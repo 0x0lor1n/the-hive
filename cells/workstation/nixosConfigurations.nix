@@ -43,6 +43,8 @@
       p.layer-compositor
       # Entra ID login via himmelblau
       p.auth-entra
+      # the user's split keyboard follows them to every machine
+      p.input-vial
     ];
 
   # Hardware: exactly one per host. The playground VMs mount the host's flake
@@ -51,6 +53,13 @@
     p.platform-virtio
     p.gpu-virtio
     p.dev-9p-share
+  ];
+
+  # Intel laptop, iGPU only (the dGPU is powered down in gpu-intel).
+  intelLaptop = [
+    p.platform-baremetal
+    p.gpu-intel
+    p.laptop
   ];
 
   # Encryption + unlock; must match what the host's disk file created.
@@ -107,6 +116,15 @@ in {
     hostKey = "sevastopol";
     base = workstation;
     hardware = vmGuest;
+    encryption = zfsNative;
+  };
+
+  # Dell Latitude 5580 (ex-dellvis): what sevastopol rehearsed, on the real
+  # disk. Same base and encryption stack, only the hardware list differs.
+  penrose = mkHost {
+    hostKey = "penrose";
+    base = workstation;
+    hardware = intelLaptop;
     encryption = zfsNative;
   };
 }

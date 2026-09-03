@@ -62,8 +62,22 @@
     # The 16 ANSI slots: black red green yellow blue magenta cyan white, then
     # bright. Terminal (foot) and the kernel VT (console.colors) share this.
     ansi = with colors; [
-      sumiInk3 autumnRed autumnGreen boatYellow2 crystalBlue oniViolet waveAqua1 oldWhite
-      fujiGray samuraiRed springGreen carpYellow springBlue springViolet1 waveAqua2 fujiWhite
+      sumiInk3
+      autumnRed
+      autumnGreen
+      boatYellow2
+      crystalBlue
+      oniViolet
+      waveAqua1
+      oldWhite
+      fujiGray
+      samuraiRed
+      springGreen
+      carpYellow
+      springBlue
+      springViolet1
+      waveAqua2
+      fujiWhite
     ];
   };
 }
