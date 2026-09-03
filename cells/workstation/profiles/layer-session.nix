@@ -4,7 +4,11 @@
 {
   inputs,
   cell,
-}: {pkgs, ...}: {
+}: {
+  pkgs,
+  lib,
+  ...
+}: {
   # wlroots takes the seat from logind. Do NOT also enable seatd, it would
   # contend for seat0.
   security.polkit.enable = true;
@@ -46,6 +50,16 @@
     XDG_SESSION_TYPE = "wayland";
   };
 
+  # Kanagawa Wave on the kernel VT: tuigreet is a TUI and only names ANSI
+  # colours (--theme below), so the actual hexes come from the console
+  # palette. Same values as home/desktop/kanagawa.nix, order is the 16 ANSI
+  # slots: black red green yellow blue magenta cyan white, then bright.
+  console.colors = [
+    "1f1f28" "c34043" "76946a" "c0a36e" "7e9cd8" "957fb8" "6a9589" "c8c093"
+    "727169" "e82424" "98bb6c" "e6c384" "7fb4ca" "938aa9" "7aa89f" "dcd7ba"
+  ];
+  console.earlySetup = true;
+
   # tuigreet reads /etc/tuigreet/config.toml; CLI flags below win over it.
   environment.etc."tuigreet/config.toml".text = ''
     [display]
@@ -64,7 +78,13 @@
     settings.default_session = {
       # /etc/dwl/session (layer-compositor.nix) runs `dwl -s <startup>`; dwl's
       # own pipe feeds somebar, so nothing here may sit between them.
-      command = "${pkgs.tuigreet}/bin/tuigreet --time --remember --cmd /etc/dwl/session";
+      command = lib.concatStringsSep " " [
+        "${pkgs.tuigreet}/bin/tuigreet"
+        "--time --remember --asterisks"
+        # ANSI slot names resolved through console.colors above.
+        "--theme 'border=blue;text=white;prompt=yellow;time=gray;action=cyan;button=magenta;container=black;input=white'"
+        "--cmd /etc/dwl/session"
+      ];
       user = "greeter";
     };
   };
