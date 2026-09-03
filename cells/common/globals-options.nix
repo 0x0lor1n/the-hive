@@ -21,8 +21,15 @@
             type = lib.types.listOf lib.types.str;
             default = [];
           };
+          # Entra account whose home gets impermanence carve-outs
+          # (auth-entra.nix). uid = himmelblau idmap value, stable per
+          # tenant+object, so hardcoded.
           user.upn = lib.mkOption {
             type = lib.types.nullOr lib.types.str;
+            default = null;
+          };
+          user.uid = lib.mkOption {
+            type = lib.types.nullOr lib.types.int;
             default = null;
           };
         };

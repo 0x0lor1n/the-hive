@@ -181,31 +181,62 @@ in {
   # needs group read on the daemon's cache files or every NSS lookup EACCESs.
   users.users.nscd.extraGroups = ["himmelblaud"];
 
-  # The daemon's own state and cache must survive the @blank rollback, or
-  # the device re-enrolls with Entra on every boot.
+  # Daemon state/cache: without it the device re-enrolls every boot. Lives
+  # here, not in storage-impermanence, because it names the himmelblaud
+  # user created above.
   #
-  # Declared HERE rather than in storage-impermanence.nix (iter 11): these
-  # entries name `user`/`group` = himmelblaud, which the block just above
-  # creates. A host without auth-entra has no such account, so a shared
-  # impermanence profile carrying them would break every headless host.
-  #
-  # Static user (not DynamicUser, see below), plain paths, no
-  # /var/lib/private idmap indirection; the TPM seal is bound to the TPM
-  # itself so this is safe across a stable uid.
-  environment.persistence."/persist".directories = [
-    {
-      directory = "/var/lib/himmelblaud";
-      user = "himmelblaud";
-      group = "himmelblaud";
+  # Entra user's home: Edge profile (corp login) + bash history. NSS-only
+  # account, so `persistence.users.<name>` (needs users.users) is out --
+  # absolute paths + numeric uid from the encrypted globals. The home itself
+  # is left to himmelblaud-tasks; ExecStartPre below re-owns it after
+  # impermanence's root-owned mkdir -p of the parents.
+  environment.persistence."/persist".directories = let
+    inherit (globals.entra.user) upn uid;
+    entraHome = sub: {
+      directory = "/home/${upn}/${sub}";
+      user = toString uid;
+      group = toString uid;
       mode = "0700";
-    }
-    {
-      directory = "/var/cache/himmelblaud";
-      user = "himmelblaud";
-      group = "himmelblaud";
-      mode = "0700";
-    }
-  ];
+    };
+  in
+    [
+      {
+        directory = "/var/lib/himmelblaud";
+        user = "himmelblaud";
+        group = "himmelblaud";
+        mode = "0700";
+      }
+      {
+        directory = "/var/cache/himmelblaud";
+        user = "himmelblaud";
+        group = "himmelblaud";
+        mode = "0700";
+      }
+    ]
+    ++ lib.optionals (upn != null && uid != null) [
+      (entraHome ".config/microsoft-edge")
+      (entraHome ".cache/microsoft-edge")
+      (entraHome ".local/share/bash")
+    ];
+
+  # HISTFILE into the persisted dir instead of persisting ~/.bash_history
+  # as a file (avoids the persist-files symlink race on first shell).
+  programs.bash.interactiveShellInit = ''
+    [ -d "$HOME/.local/share/bash" ] && export HISTFILE="$HOME/.local/share/bash/history"
+  '';
+
+  systemd.services.himmelblaud-tasks.serviceConfig.ExecStartPre = let
+    inherit (globals.entra.user) upn uid;
+  in
+    lib.mkIf (upn != null && uid != null) [
+      "+${pkgs.writeShellScript "entra-home-owner" ''
+        home="/home/${upn}"
+        [ -d "$home" ] || exit 0
+        ${pkgs.coreutils}/bin/chown ${toString uid}:${toString uid} "$home" "$home"/.config "$home"/.cache "$home"/.local "$home"/.local/share 2>/dev/null
+        ${pkgs.coreutils}/bin/chmod 0750 "$home"
+        exit 0
+      ''}"
+    ];
 
   systemd.services.himmelblaud.serviceConfig.ExecStartPost = [
     "+${pkgs.writeShellScript "himmelblaud-fix-perms" ''
