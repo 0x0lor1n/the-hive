@@ -8,7 +8,9 @@
   pkgs,
   lib,
   ...
-}: {
+}: let
+  theme = inputs.cells.theme.palettes.kanagawa;
+in {
   # wlroots takes the seat from logind. Do NOT also enable seatd, it would
   # contend for seat0.
   security.polkit.enable = true;
@@ -52,12 +54,9 @@
 
   # Kanagawa Wave on the kernel VT: tuigreet is a TUI and only names ANSI
   # colours (--theme below), so the actual hexes come from the console
-  # palette. Same values as home/desktop/kanagawa.nix, order is the 16 ANSI
+  # palette, which is theme.ansi from cells/theme -- the 16 ANSI
   # slots: black red green yellow blue magenta cyan white, then bright.
-  console.colors = [
-    "1f1f28" "c34043" "76946a" "c0a36e" "7e9cd8" "957fb8" "6a9589" "c8c093"
-    "727169" "e82424" "98bb6c" "e6c384" "7fb4ca" "938aa9" "7aa89f" "dcd7ba"
-  ];
+  console.colors = theme.ansi;
   console.earlySetup = true;
 
   # tuigreet reads /etc/tuigreet/config.toml; CLI flags below win over it.

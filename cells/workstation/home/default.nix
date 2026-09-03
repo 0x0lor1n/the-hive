@@ -7,9 +7,16 @@
 # username lives in the encrypted half of globals and cannot be an attribute
 # name in a public file. Desktop only for now; editor/agent tooling is a
 # separate later step.
-{host}: {pkgs, ...}: let
-  k = import ./desktop/kanagawa.nix;
+{
+  host,
+  theme,
+}: {pkgs, ...}: let
+  k = theme.colors;
+  ansi = theme.ansi;
 in {
+  # Every desktop module below reads the palette from this arg.
+  _module.args.theme = theme;
+
   home.username = host.userName;
   home.homeDirectory = host.homeDir;
   # Must match system.stateVersion in nixosConfigurations.nix.
@@ -27,30 +34,20 @@ in {
       # 10 fits more on 1920x1080 than the default 12 and stays readable.
       main.font = "monospace:size=10";
       main.pad = "8x8";
-      # Kanagawa Wave, as shipped in foot's themes/ (foot uses rrggbb, no #).
+      # Palette from cells/theme (foot uses rrggbb, no #); the 16 ANSI slots
+      # come from theme.ansi, same list the VT console uses.
       cursor.color = "${k.sumiInk3} ${k.oldWhite}";
       colors = {
         foreground = k.fujiWhite;
         background = k.sumiInk3;
         selection-foreground = k.oldWhite;
         selection-background = k.waveBlue2;
-        regular0 = "090618"; # black
-        regular1 = k.autumnRed;
-        regular2 = k.autumnGreen;
-        regular3 = k.boatYellow2;
-        regular4 = k.crystalBlue;
-        regular5 = k.oniViolet;
-        regular6 = k.waveAqua1;
-        regular7 = k.oldWhite;
-        bright0 = k.fujiGray;
-        bright1 = k.samuraiRed;
-        bright2 = k.springGreen;
-        bright3 = k.carpYellow;
-        bright4 = k.springBlue;
-        bright5 = k.springViolet1;
-        bright6 = k.waveAqua2;
-        bright7 = k.fujiWhite;
-      };
+      }
+      // builtins.listToAttrs (pkgs.lib.imap0 (i: c: {
+          name = if i < 8 then "regular${toString i}" else "bright${toString (i - 8)}";
+          value = c;
+        })
+        ansi);
     };
   };
 }

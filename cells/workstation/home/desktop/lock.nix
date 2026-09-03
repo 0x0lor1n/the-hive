@@ -1,7 +1,11 @@
 # Plain swaylock (not swaylock-effects) — no blur/images, just locking.
 # PAM config lives in layer-session.nix instead (HM can't install PAM).
-{pkgs, ...}: let
-  k = import ./kanagawa.nix;
+{
+  pkgs,
+  theme,
+  ...
+}: let
+  k = theme.colors;
 in {
   programs.swaylock = {
     enable = true;

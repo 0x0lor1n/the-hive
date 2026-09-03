@@ -22,6 +22,7 @@
 
       cellBlocks = with ren.blocks; [
         (simple "globals")
+        (simple "palettes")
         (simple "profiles")
         (simple "disks")
         (simple "nixosConfigurations")
