@@ -175,6 +175,8 @@
           echo "  gsettings set org.gnome.mutter.wayland xwayland-allow-grabs true" >&2
           echo "  gsettings set org.gnome.mutter.wayland xwayland-grab-access-rules \"['qemu-system-x86_64']\"" >&2
           echo "  then Ctrl+Alt+G in the QEMU window toggles the grab." >&2
+          echo "  (WS_NOGRAB=1 to start anyway)" >&2
+          [ -n "''${WS_NOGRAB:-}" ] || exit 1
         fi
         extra=(
           -m 8G -object memory-backend-memfd,id=mem1,size=8G -machine memory-backend=mem1,i8042=off
