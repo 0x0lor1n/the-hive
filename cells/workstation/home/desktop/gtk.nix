@@ -37,19 +37,38 @@
     @define-color error_color #${k.urgent};
     @define-color borders #${k.border};
   '';
+
+  # A real theme directory so the name is not a lie: adw-gtk3-dark's assets
+  # with our @define-colors prepended to both gtk.css entry points.
+  kanagawaGtk = pkgs.runCommand "kanagawa-gtk3" {} ''
+    mkdir -p $out/share/themes
+    cp -r ${pkgs.adw-gtk3}/share/themes/adw-gtk3-dark $out/share/themes/Kanagawa
+    chmod -R u+w $out/share/themes/Kanagawa
+    for f in $out/share/themes/Kanagawa/gtk-3.0/gtk.css \
+             $out/share/themes/Kanagawa/gtk-3.0/gtk-dark.css; do
+      [ -e "$f" ] || continue
+      cat ${pkgs.writeText "kanagawa-colors.css" kanagawaCss} "$f" > "$f.new"
+      mv "$f.new" "$f"
+    done
+  '';
 in {
+  # Bibata's hand2 (link hover) is drawn mirrored -- it points away from the
+  # link. phinger-cursors has a conventional pointing hand.
   home.pointerCursor = {
-    package = pkgs.bibata-cursors;
-    name = "Bibata-Modern-Ice";
+    package = pkgs.phinger-cursors;
+    name = "phinger-cursors-dark";
     size = 24;
     gtk.enable = true;
   };
 
   gtk = {
     enable = true;
+    # adw-gtk3-dark is the widget engine; kanagawaCss below repaints it, so
+    # the theme is exported under its own name (which is also what fastfetch
+    # and every theme switcher report).
     theme = {
-      package = pkgs.adw-gtk3;
-      name = "adw-gtk3-dark";
+      package = kanagawaGtk;
+      name = "Kanagawa";
     };
     iconTheme = {
       package = pkgs.kanagawa-icon-theme;
