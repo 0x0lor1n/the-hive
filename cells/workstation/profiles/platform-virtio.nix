@@ -11,6 +11,10 @@
 }: {lib, ...}: {
   services.qemuGuest.enable = true;
 
+  # A GNOME host grabs Alt+Shift for its own switcher, so the guest never
+  # sees the default toggle; Caps is free on both sides.
+  session.compositorEnvironment.XKB_DEFAULT_OPTIONS = "grp:caps_toggle";
+
   # Without these in the initrd the kernel cannot see /dev/vda before
   # stage 2 and the root filesystem mount hangs forever — services.qemuGuest
   # does not add them itself. (Bare metal's equivalent is disk-nvme.nix.)
