@@ -8,6 +8,7 @@
 }: {
   pkgs,
   lib,
+  config,
   globals,
   ...
 }: let
@@ -269,11 +270,15 @@ in {
     PrivateDevices = lib.mkForce false;
   };
 
-  # Tenant Intune discovery scripts call gsettings/awk, which aren't in the
-  # module's curated PATH for this unit.
+  # Tenant Intune discovery scripts call gsettings/awk/zfs/zpool, which
+  # aren't in the module's curated PATH for this unit (shadow, bash,
+  # util-linux). The disk-encryption compliance script in particular
+  # falls through to `command -v zfs || return 1` and reports "false"
+  # for a fully encrypted native-ZFS root when zfs is missing here.
   systemd.services.himmelblaud-tasks.path = [
     pkgs.glib # gsettings
     pkgs.gawk # awk
+    config.boot.zfs.package # zfs, zpool
   ];
 
   # /etc/krb5.conf.d — silences non-fatal Kerberos ccache log spam (no
