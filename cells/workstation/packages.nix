@@ -22,14 +22,16 @@ in {
   # dwl with our config.h. dwl's Makefile copies config.def.h to config.h only
   # when the latter is absent, so dropping the file in is the whole override --
   # no sed patching of upstream. Keybinds and rationale live in packages/dwl/config.h.
-  # Two patches from codeberg.org/dwl/dwl-patches, config.def.h hunks stripped
+  # movestack from codeberg.org/dwl/dwl-patches, config.def.h hunks stripped
   # (our config.h carries the keybinds). Re-fetch on a dwl version bump.
   dwl = pkgs.dwl.overrideAttrs (old: {
     patches =
       (old.patches or [])
       ++ [
         ./packages/dwl/patches/movestack-0.8.patch
-        ./packages/dwl/patches/simple_scratchpad-0.8.patch
+        # Keybindings are latin; without this none of them fire while the
+        # ru group is active (xkb_state_key_get_syms follows the group).
+        ./packages/dwl/patches/latin-keybindings.patch
       ];
     postPatch =
       (old.postPatch or "")
