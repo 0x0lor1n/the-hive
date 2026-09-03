@@ -20,8 +20,6 @@ static const float urgentcolor[]           = COLOR(0x@theme_urgent@ff);
 /* This conforms to the xdg-protocol. Set the alpha to zero to restore the old behavior */
 static const float fullscreen_bg[]         = {0.0f, 0.0f, 0.0f, 1.0f}; /* You can also use glsl colors */
 
-/* simple_scratchpad patch: one hidden-window slot is enough */
-#define SCRATCHPAD_COUNT 1
 /* tagging - TAGCOUNT must be no greater than 31 */
 #define TAGCOUNT (9)
 
@@ -55,11 +53,11 @@ static const MonitorRule monrules[] = {
 	/* default monitor rule: can be changed but cannot be eliminated; at least one monitor rule must exist */
 };
 
-/* keyboard */
+/* keyboard: empty fields are filled by xkbcommon from XKB_DEFAULT_*, which
+ * layer-session.nix puts in session.compositorEnvironment -- so the layout
+ * toggle is a per-host knob and not baked into this binary. */
 static const struct xkb_rule_names xkb_rules = {
-	/* can specify fields: rules, model, layout, variant, options */
-	.layout = "us,ru",
-	.options = "grp:caps_toggle",
+	.options = NULL,
 };
 
 static const int repeat_rate = 50;
@@ -150,12 +148,6 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_h,           setmfact,         {.f = -0.05f} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_l,           setmfact,         {.f = +0.05f} },
 	{ MODKEY,                    XKB_KEY_Return,      zoom,             {0} },
-	/* simple_scratchpad patch: z shows/hides the scratchpad, Shift+z floats
-	 * the window and hides it there, Ctrl+z puts it back into the layout.
-	 * Drop-down terminal = open foot, Super+Shift+z, then Super+z. */
-	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_z,           addscratchpad,    {0} },
-	{ MODKEY,                    XKB_KEY_z,           togglescratchpad, {0} },
-	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_z,           removescratchpad, {0} },
 	{ MODKEY,                    XKB_KEY_Tab,         view,             {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_c,           killclient,       {0} },
 	{ MODKEY,                    XKB_KEY_t,           setlayout,        {.v = &layouts[0]} },

@@ -1,0 +1,27 @@
+--- a/dwl.c
++++ b/dwl.c
+@@ -1640,6 +1640,12 @@
+ 	int nsyms = xkb_state_key_get_syms(
+ 			group->wlr_group->keyboard.xkb_state, keycode, &syms);
+ 
++	/* Keysyms from the first configured layout, so bindings written as
++	 * latin letters still fire while a non-latin group is active. */
++	const xkb_keysym_t *latinsyms;
++	int nlatinsyms = xkb_keymap_key_get_syms_by_level(
++			group->wlr_group->keyboard.keymap, keycode, 0, 0, &latinsyms);
++
+ 	int handled = 0;
+ 	uint32_t mods = wlr_keyboard_get_modifiers(&group->wlr_group->keyboard);
+ 
+@@ -1650,6 +1656,11 @@
+ 	if (!locked && event->state == WL_KEYBOARD_KEY_STATE_PRESSED) {
+ 		for (i = 0; i < nsyms; i++)
+ 			handled = keybinding(mods, syms[i]) || handled;
++		/* Only when the active group is not the first one: on the latin
++		 * layout both lists are identical and every action would run
++		 * twice (a toggle would cancel itself out). */
++		for (i = 0; i < nlatinsyms && !handled; i++)
++			handled = keybinding(mods, latinsyms[i]) || handled;
+ 	}
+ 
+ 	if (handled && group->wlr_group->keyboard.repeat_info.delay > 0) {
