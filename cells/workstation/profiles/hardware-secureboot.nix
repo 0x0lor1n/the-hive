@@ -11,7 +11,7 @@
 # the matching QEMU SMM flags. On bare metal this is the physical UEFI
 # Setup Mode menu instead; this is Lanzaboote's own canonical workflow.
 #
-# `lib` isn't auto-injected by haumea's loader scope, hence
+# `lib` isn't injected by the profiles/default.nix loader (only inputs+cell), hence
 # inputs.nixpkgs.lib below. Reference: patrick/nix-config's secureboot.nix.
 {
   inputs,

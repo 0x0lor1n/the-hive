@@ -14,8 +14,8 @@
 # mkcreds --name (without which nothing this produces can ever be decrypted by
 # hardware-zfs-unlock.nix).
 #
-# `__` prefix keeps haumea from loading this as a profile — it's a plain
-# function, not a NixOS module. See profiles/default.nix.
+# `__` prefix keeps the profiles/default.nix loader from picking this up as a profile —
+# it's a plain function, not a NixOS module. See profiles/default.nix.
 {
   pkgs,
   zfsPackage,
