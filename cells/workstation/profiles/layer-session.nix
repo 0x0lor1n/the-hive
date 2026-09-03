@@ -81,8 +81,11 @@
       command = lib.concatStringsSep " " [
         "${pkgs.tuigreet}/bin/tuigreet"
         "--time --remember --asterisks"
-        # ANSI slot names resolved through console.colors above.
-        "--theme 'border=blue;text=white;prompt=yellow;time=gray;action=cyan;button=magenta;container=black;input=white'"
+        # ratatui slot names -> console.colors above. Roles mirror hisilome
+        # style.css: white=fujiWhite fg, darkgray=fujiGray muted, blue=crystalBlue
+        # link, lightyellow=carpYellow highlight, lightgreen=springGreen accent,
+        # magenta=oniViolet hover. (gray is slot 7 = oldWhite, NOT fujiGray.)
+        "--theme 'border=blue;text=white;prompt=lightyellow;time=darkgray;action=lightgreen;button=magenta;container=black;input=white'"
         "--cmd /etc/dwl/session"
       ];
       user = "greeter";
