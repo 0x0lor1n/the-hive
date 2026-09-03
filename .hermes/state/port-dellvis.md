@@ -5,7 +5,7 @@ Source: sevastopol (this repo, cells/workstation) + ~/nixos-config/hosts/dellvis
 Target: dellvis as a second host in cells/workstation, same `workstation` base,
 its own `hardware` list. Sevastopol was the rehearsal; this is the real disk.
 
-phase: 0 recon -- NOT STARTED (needs the laptop; user is at work)
+phase: 0 recon -- IN PROGRESS: desk facts from ~/nixos-config done (2026-09-03), laptop facts pending
 phases: 0 recon (facts off the running machine, nothing written) |
           1 config (globals + disk + hardware profiles, builds on the ZBook) |
           2 install (nixos-anywhere from the ZBook, wipes the disk) |
@@ -22,6 +22,8 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
 
 ## blocked_on
 - phase 0 needs physical access to the laptop (user: no access from work).
+  Checked 2026-09-03 from the ZBook (192.168.10.0/24): `dellvis` does not
+  resolve, no ssh path. Waiting on the pasted output of the phase 0 list.
 - What is on nvme0n1p1/p2? The old disko names only p3, and fs.nix mounts an
   NTFS /porsche by uuid C88E64058E63EB00 -- so the disk holds a Windows or a
   data partition that our whole-disk `disk.main` would eat. Decides whether
@@ -31,13 +33,16 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
   himmelblau + the custom-compliance CSE enough (as on sevastopol)? Decides
   whether the nix-mdatp input enters the workstation cell.
 - NetworkManager or iwd?
+- Peripheral configs in the old host (ergohaven keyboard, NI Audio 6 pipewire
+  rates, amnezia VPN, mesa): workstation-wide or dellvis-only?
 
 ## verified
-(nothing yet)
+0 (desk part): `cat ~/nixos-config/hosts/dellvis/{disko,fs,net,default}.nix` -> facts recorded in notes @ 2026-09-03
 
 ## notes
 - Phase 0 command list, to run on the laptop and paste back:
   `lsblk -f`; `sudo sgdisk -p /dev/nvme0n1`; `ls /sys/class/tpm`;
+  `sudo sgdisk -p /dev/nvme0n1p3` (old disko put a GPT *inside* p3, see below);
   `sudo tpm2_getcap properties-fixed | head -30`; `bootctl status`;
   `lspci -k | grep -A3 -iE 'vga|network'`; `sudo dmidecode -s system-product-name`;
   `nixos-generate-config --show-hardware-config`; `du -sh /porsche/* 2>/dev/null | tail`.
@@ -71,5 +76,12 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
   docker rootless, flatpak, hardware/intel.nix = microcode + linux-firmware,
   net.nix = useDHCP. Nothing there is worth porting mechanically except the
   intel microcode/firmware pair and the /porsche question.
+- Old disko.nix: `disk.my-disk.device = "/dev/nvme0n1p3"; type = "disk"` with
+  GPT -> ESP 1G (vfat, /boot, uuid A936-4157) + btrfs root (uuid
+  88136b8e-d669-4712-865a-e5fde573f7ef). Nested partition table in p3; the
+  outer p1/p2 were never touched by disko. Old default.nix also imports
+  hardware/{mesa,intel,ergohaven,ni-audio-6}.nix and amnezia.nix; /porsche
+  mount is duplicated (fs.nix live, default.nix commented). Last commit to
+  hosts/dellvis: ca43fab 2026-04-20.
 - The ZBook (HP, Ubuntu + nix pm) is last on purpose: it is the work machine,
   and dellvis is where the hardware surprises get paid for.
