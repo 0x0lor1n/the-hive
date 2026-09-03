@@ -5,7 +5,7 @@ Source: sevastopol (this repo, cells/workstation) + ~/nixos-config/hosts/dellvis
 Target: dellvis as a second host in cells/workstation, same `workstation` base,
 its own `hardware` list. Sevastopol was the rehearsal; this is the real disk.
 
-phase: 0 recon -- IN PROGRESS: desk facts from ~/nixos-config done (2026-09-03), laptop facts pending
+phase: 0 recon -- IN PROGRESS: hw/net/mdatp facts in (2026-09-03); still missing: lsblk, sgdisk outer+p3, tpm, bootctl, secureboot/efivars, dmidecode
 phases: 0 recon (facts off the running machine, nothing written) |
           1 config (globals + disk + hardware profiles, builds on the ZBook) |
           2 install (nixos-anywhere from the ZBook, wipes the disk) |
@@ -24,19 +24,16 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
 - phase 0 needs physical access to the laptop (user: no access from work).
   Checked 2026-09-03 from the ZBook (192.168.10.0/24): `dellvis` does not
   resolve, no ssh path. Waiting on the pasted output of the phase 0 list.
-- What is on nvme0n1p1/p2? The old disko names only p3, and fs.nix mounts an
-  NTFS /porsche by uuid C88E64058E63EB00 -- so the disk holds a Windows or a
-  data partition that our whole-disk `disk.main` would eat. Decides whether
-  the pool takes the disk or one partition.
-- Is anything on /porsche and the btrfs root worth keeping? Both are wiped.
-- mdatp (Defender): does the tenant's compliance policy require it, or is
-  himmelblau + the custom-compliance CSE enough (as on sevastopol)? Decides
-  whether the nix-mdatp input enters the workstation cell.
-- NetworkManager or iwd?
+- What is on nvme0n1p1/p2? Old disko named only p3. /porsche is NOT on the
+  nvme (external HDD, user 2026-09-03), so p1/p2 are unexplained -- likely
+  Windows or Dell recovery. Wipe is approved either way; the open part is
+  only Secure Boot: if Windows must keep booting, MS keys must survive.
+  Needs: `sgdisk -p /dev/nvme0n1`, `blkid p1 p2`, `efibootmgr -v`.
 - Peripheral configs in the old host (ergohaven keyboard, NI Audio 6 pipewire
   rates, amnezia VPN, mesa): workstation-wide or dellvis-only?
 
 ## verified
+0 (laptop, partial): lscpu/lspci/ip/nmcli/systemctl/nixos-generate-config pasted by user @ 2026-09-03 -> notes "dellvis facts"
 0 (desk part): `cat ~/nixos-config/hosts/dellvis/{disko,fs,net,default}.nix` -> facts recorded in notes @ 2026-09-03
 0: osgiliath-unchanged -> nxca0xf2 (match); sevastopol-unchanged -> hwdrgcb on clean tree, 9kamqrvb with the uncommitted gtk.nix WIP (Kanagawa gtk theme + phinger cursors -- a workstation change, not dellvis) @ 2026-09-03
 
@@ -84,5 +81,20 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
   hardware/{mesa,intel,ergohaven,ni-audio-6}.nix and amnezia.nix; /porsche
   mount is duplicated (fs.nix live, default.nix commented). Last commit to
   hosts/dellvis: ca43fab 2026-04-20.
+- User decisions 2026-09-03: all data already rescued, wipe the whole nvme
+  freely. /porsche = external HDD, drop it entirely. mdatp NOT wanted
+  (currently active but "severely outdated"; intune-daemon inactive) -- no
+  nix-mdatp input, himmelblau + compliance CSE as on sevastopol.
+- dellvis facts (2026-09-03): i7-7600U 4c, 31G RAM, Micron 2550 NVMe
+  (DRAM-less). Intel HD 620 (i915) + **NVIDIA GM108M GeForce 930MX on
+  nouveau** -- hybrid GPU, not in the old config at all. Plan: p.gpu-intel
+  as primary, blacklist nouveau/nvidia and power the dGPU off (no reason to
+  carry the nvidia stack for a 930MX); revisit only if an external display
+  turns out to hang off it. Wifi Intel 8265 (iwlwifi, wlp2s0), ethernet
+  enp0s31f6 (e1000e, no carrier), bt hci0. Network: NetworkManager active,
+  iwd inactive -> stay on NM. initrd modules: xhci_pci nvme rtsx_pci_sdmmc;
+  kvm-intel. /sys/class/power_supply has only AC -- no BAT0: battery absent
+  or dead; skip battery tuning until it shows up. No ed25519 host key on the
+  old install (confirms: generate on the ZBook, ship via --extra-files).
 - The ZBook (HP, Ubuntu + nix pm) is last on purpose: it is the work machine,
   and dellvis is where the hardware surprises get paid for.
