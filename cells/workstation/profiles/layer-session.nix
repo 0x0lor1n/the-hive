@@ -91,6 +91,24 @@ in {
     };
   };
 
+  # `--remember` writes /var/cache/tuigreet/lastuser; keep it across @blank
+  # so the greeter is prefilled with the last login.
+  environment.persistence."/persist".directories = [
+    {
+      directory = "/var/cache/tuigreet";
+      user = "greeter";
+      group = "greeter";
+      mode = "0755";
+    }
+  ];
+
+  fonts.packages = with pkgs; [
+    nerd-fonts.jetbrains-mono
+    inter
+    noto-fonts
+    noto-fonts-color-emoji
+  ];
+
   # Only the PAM file; HM configures swaylock itself (programs.swaylock).
   security.pam.services.swaylock = {};
 

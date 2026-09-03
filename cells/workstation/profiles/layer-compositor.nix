@@ -48,7 +48,9 @@
     export XDG_CURRENT_DESKTOP=dwl
     export XDG_SESSION_TYPE=wayland
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") config.session.compositorEnvironment)}
-    exec ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar}
+    # Last crash log survives in the (persisted) home.
+    mkdir -p "$HOME/.cache/dwl"
+    exec ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
   '';
 in {
   imports = [inputs.home-manager.nixosModules.home-manager];
@@ -62,6 +64,14 @@ in {
   };
 
   config = {
+    # File pickers, screen sharing (Edge/Teams), xdg-open. wlr does screen
+    # capture, gtk everything else.
+    xdg.portal = {
+      enable = true;
+      extraPortals = [pkgs.xdg-desktop-portal-wlr pkgs.xdg-desktop-portal-gtk];
+      config.dwl.default = ["wlr" "gtk"];
+    };
+
     home-manager.useGlobalPkgs = true;
     home-manager.useUserPackages = true;
     home-manager.users.${host.userName} = import ../home {inherit host theme;};
