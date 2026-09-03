@@ -17,7 +17,7 @@ phases: 0 recon (facts off the running machine, nothing written) |
 
 ## invariants
 osgiliath-unchanged: `nix eval --raw .#colmenaHive.toplevel.osgiliath.drvPath` == /nix/store/nxca0xf2iphm3qgg118vcavj5h85dxps-nixos-system-osgiliath-26.11pre-git.drv   last: /nix/store/nxca0xf2iphm3qgg118vcavj5h85dxps-nixos-system-osgiliath-26.11pre-git.drv @ 2026-09-03
-sevastopol-unchanged: `nix eval --raw .#nixosConfigurations.sevastopol.config.system.build.toplevel.drvPath` == /nix/store/8h7zdb55hka5477f4xmbhn4ab2sib384-nixos-system-sevastopol-26.11pre-git.drv   last: /nix/store/8h7zdb55hka5477f4xmbhn4ab2sib384-nixos-system-sevastopol-26.11pre-git.drv @ 2026-09-03 (baseline)
+sevastopol-unchanged: `nix eval --raw .#nixosConfigurations.sevastopol.config.system.build.toplevel.drvPath` == /nix/store/hwdrgcbw0v920fykvya0305lndqz8i25-nixos-system-sevastopol-26.11pre-git.drv   last: /nix/store/hwdrgcbw0v920fykvya0305lndqz8i25-nixos-system-sevastopol-26.11pre-git.drv @ 2026-09-03 (clean tree, d81e4be..467844c; the earlier 8h7zdb5 baseline was taken on a dirty tree and matches no commit)
 dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system.build.toplevel` -> exit 0   last: -
 
 ## blocked_on
@@ -38,6 +38,7 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
 
 ## verified
 0 (desk part): `cat ~/nixos-config/hosts/dellvis/{disko,fs,net,default}.nix` -> facts recorded in notes @ 2026-09-03
+0: osgiliath-unchanged -> nxca0xf2 (match); sevastopol-unchanged -> hwdrgcb on clean tree, 9kamqrvb with the uncommitted gtk.nix WIP (Kanagawa gtk theme + phinger cursors -- a workstation change, not dellvis) @ 2026-09-03
 
 ## notes
 - Phase 0 command list, to run on the laptop and paste back:
