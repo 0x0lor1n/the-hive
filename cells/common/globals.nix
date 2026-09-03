@@ -42,6 +42,19 @@ in let
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEkHLFGCFphGyc0GGyxCENyE/762o1ZPOVa1Ar15ee5 root@sevastopol";
             };
 
+            # Dell Latitude 5580 (ex-dellvis), the first real workstation host.
+            # Whole disk, nothing else on it. User + hashes come from the
+            # encrypted half (fleet user). Single NVMe, so the kernel name is
+            # stable enough; disko wipes it anyway.
+            hosts.penrose = {
+              diskDevice = "/dev/nvme0n1";
+              hasTpm = true; # Nuvoton NPCT, TPM 2.0 (fw 2015; PCR7 sealing verified in phase 3)
+              # Generated on the ZBook, private half in secrets/hosts/penrose/
+              # (rage, master identities + KeePass), shipped to /persist/etc/ssh
+              # by nixos-anywhere --extra-files. Never keyscanned.
+              sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMbQt3EL0KhxSadOnWnBDKVySy843hxcCPNbUtU8pqgi root@penrose";
+            };
+
             persistence = {
               statePath = "/persist/state";
               dataPath = "/persist/data";
