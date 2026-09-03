@@ -59,7 +59,7 @@ static const MonitorRule monrules[] = {
 static const struct xkb_rule_names xkb_rules = {
 	/* can specify fields: rules, model, layout, variant, options */
 	.layout = "us,ru",
-	.options = "grp:alt_shift_toggle",
+	.options = "grp:caps_toggle",
 };
 
 static const int repeat_rate = 50;
@@ -150,12 +150,12 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_h,           setmfact,         {.f = -0.05f} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_l,           setmfact,         {.f = +0.05f} },
 	{ MODKEY,                    XKB_KEY_Return,      zoom,             {0} },
-	/* simple_scratchpad patch: Shift+z floats the window and hides it in the
-	 * scratchpad, Ctrl+z shows/hides it, plain z puts it back into the layout.
-	 * Drop-down terminal = open foot, Super+Shift+z, then Super+Ctrl+z. */
+	/* simple_scratchpad patch: z shows/hides the scratchpad, Shift+z floats
+	 * the window and hides it there, Ctrl+z puts it back into the layout.
+	 * Drop-down terminal = open foot, Super+Shift+z, then Super+z. */
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_z,           addscratchpad,    {0} },
-	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_z,           togglescratchpad, {0} },
-	{ MODKEY,                    XKB_KEY_z,           removescratchpad, {0} },
+	{ MODKEY,                    XKB_KEY_z,           togglescratchpad, {0} },
+	{ MODKEY|WLR_MODIFIER_CTRL,  XKB_KEY_z,           removescratchpad, {0} },
 	{ MODKEY,                    XKB_KEY_Tab,         view,             {0} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_c,           killclient,       {0} },
 	{ MODKEY,                    XKB_KEY_t,           setlayout,        {.v = &layouts[0]} },
