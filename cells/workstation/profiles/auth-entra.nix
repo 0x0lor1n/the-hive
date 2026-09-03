@@ -332,15 +332,16 @@ in {
     ];
 
   # TPM resource-manager access for the static himmelblaud user (no
-  # security.tpm2/tss group here). The nvme0n1p3 symlink lets the tenant's
-  # disk-encryption script (hardcoded to that Ubuntu NVMe path) find our
-  # real encrypted partition under the name it expects. Matched on disko's
-  # GPT partlabel, not the kernel name: it is vda2 on the VM and nvme0n1p2 on
-  # penrose, and the label is the same on both. Suppressed where the kernel
-  # name already IS nvme0n1p3 (a self-symlink is harmless but noisy).
+  # security.tpm2/tss group here).
+  #
+  # There used to be a `vda2 -> nvme0n1p3` symlink here for the tenant's
+  # disk-encryption compliance script. Gone: that script (user-authored) finds
+  # the root via `findmnt -no SOURCE /` and checks `zfs get encryptionroot/
+  # encryption/keystatus`; its `/dev/nvme0n1p3` probe is the Ubuntu/LUKS
+  # legacy branch and is meant to fall through on ZFS hosts. All it needs
+  # from us is zfs/zpool/findmnt on the unit's PATH (below).
   services.udev.extraRules = ''
     KERNEL=="tpmrm0", GROUP="himmelblaud", MODE="0660"
-    SUBSYSTEM=="block", ENV{ID_PART_ENTRY_NAME}=="disk-main-rpool", KERNEL!="nvme0n1p3", SYMLINK+="nvme0n1p3"
   '';
 
   # The tenant's screen-idle-lock script reads GNOME's dconf idle-delay
