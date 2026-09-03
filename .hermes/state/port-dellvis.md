@@ -24,8 +24,6 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
 - Secure Boot: disabled, PK/KEK/db populated (factory keys). User must clear
   keys in BIOS Setup (-> Setup Mode) before phase 3 so lanzaboote enrolls its
   own. No Windows on the disk, so nothing to preserve. Not blocking phase 1-2.
-- Peripheral configs in the old host (ergohaven keyboard, NI Audio 6 pipewire
-  rates, amnezia VPN, mesa): workstation-wide or dellvis-only?
 
 ## verified
 0 (laptop, partial): lscpu/lspci/ip/nmcli/systemctl/nixos-generate-config pasted by user @ 2026-09-03 -> notes "dellvis facts"
@@ -97,5 +95,10 @@ dellvis-builds: `nix build --no-link .#nixosConfigurations.dellvis.config.system
   kvm-intel. /sys/class/power_supply has only AC -- no BAT0: battery absent
   or dead; skip battery tuning until it shows up. No ed25519 host key on the
   old install (confirms: generate on the ZBook, ship via --extra-files).
+- User 2026-09-03 on old-host peripherals: NI Audio 6 and amnezia -- drop.
+  ergohaven + mesa bits -- dellvis-only, not workstation-wide. Caveat: the
+  machine sat untouched ~1 year, so treat the old config as a hint, not a
+  spec; port ergohaven only if the keyboard is actually still in use (ask
+  at phase 4, not before).
 - The ZBook (HP, Ubuntu + nix pm) is last on purpose: it is the work machine,
   and dellvis is where the hardware surprises get paid for.
