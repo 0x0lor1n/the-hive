@@ -37,6 +37,27 @@
     '';
   };
 
+  # Prime the eval-time secrets cache with this host's PIN-protected TPM
+  # identity. `nix build`/`nixos-rebuild` have no tty, so the PIN prompt cannot
+  # happen inside eval; run this first, then build. Cache lives in
+  # /var/tmp/nix-import-encrypted/$UID and is keyed by ciphertext hash.
+  unlock-secrets = pkgs.writeShellApplication {
+    name = "unlock-secrets";
+    runtimeInputs = with pkgs; [git rage age-plugin-tpm coreutils];
+    text = ''
+      root=$(git rev-parse --show-toplevel)
+      case "''${1:-$(hostname)}" in
+        penrose) identity=dellvis-nix-rage ;;
+        *)       identity=jarvis-nix-rage ;;
+      esac
+      echo "unlock-secrets: decrypting secrets/globals.nix.age with $identity (TPM PIN)" >&2
+      sh "$root/nix/rageImportEncrypted.sh" \
+        "$root/secrets/globals.nix.age" \
+        "$root/secrets/$identity.pub" > /dev/null
+      echo "unlock-secrets: cached; eval will not touch the TPM until globals.nix.age changes." >&2
+    '';
+  };
+
   dev = pkgs.writeShellApplication {
     name = "dev";
     runtimeInputs = with pkgs; [git direnv coreutils];
@@ -94,6 +115,7 @@ in {
 
       pkgs.nixos-anywhere
       deploy-key
+      unlock-secrets
       dev
       pxpipe-install
       cell.packages.pxpipe
@@ -119,6 +141,7 @@ in {
       export RTK_TELEMETRY_DISABLED=1
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
+      echo "  unlock-secrets  decrypt globals.nix.age with this host's TPM (PIN) before nix build/rebuild"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
       echo "  pxpipe-install  (re)install the pxpipe user service; needs pxpipe.anthropic.com in /etc/hosts"
       echo "  nix             = nixq shim (quiet progress; NIXQ=off to bypass); rtk <cmd> for compact git/ls/…"
