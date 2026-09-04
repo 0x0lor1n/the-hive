@@ -9,12 +9,13 @@ file="$1"
 shift
 identities=("$@")
 
-basename="${file%".age"}"
-[[ $file == "/nix/store/"* ]] && basename="${basename#*"-"}"
-[[ $file == "./"* ]] && basename="${basename#"./"}"
+# Cache key = content hash + plain basename, so the same ciphertext maps to the
+# same cache entry whether it is addressed via the store (eval) or the checkout
+# (`unlock-secrets` in the devshell, which primes this cache with a PIN identity).
+basename="$(basename "${file%".age"}")"
 
 new_name="$(sha512sum "$file")"
-new_name="${new_name:0:32}-${basename//"/"/"_"}"
+new_name="${new_name:0:32}-${basename}"
 
 out="/var/tmp/nix-import-encrypted/$UID/$new_name"
 umask 077
