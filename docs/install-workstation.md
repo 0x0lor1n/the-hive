@@ -137,10 +137,12 @@ Note: the same config on the sevastopol VM reports "Not evaluated" -- the platfo
 check rejects the VM, it is not a config bug.
 
 ## 8. Day-to-day quirks (expected, not bugs)
-- **greeter asks Password, then PIN, whatever you typed.** himmelblau Hello:
-  once a PIN is enrolled the PAM stack ignores the password field and
-  authenticates on the TPM-sealed PIN only. Enter on the password prompt,
-  then the PIN. Disabling `enable_hello` would mean password + MFA every login.
+- **greeter goes straight to PIN** for a user with an enrolled Hello PIN.
+  Upstream himmelblau asks Password first and ignores the answer; we carry a
+  patch (`cells/workstation/profiles/auth-entra.nix`, `patchedHimmelblauSrc`)
+  that checks the cached Hello key in `pam authenticate init` and skips the
+  password prompt. Re-check the patch on every himmelblau bump. Disabling
+  `enable_hello` would mean password + MFA every login.
 - **rpool passphrase after a rebuild + reboot.** The ZFS key is TPM-sealed to
   PCR15 of the *booted* generation; `nixos-rebuild switch` produces a new
   generation, so the first boot into it falls back to the passphrase
