@@ -37,5 +37,10 @@
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   # Real console: the last console= wins, so tty1 stays primary (no serial).
-  boot.kernelParams = ["console=tty1"];
+  # greetd starts on tty1 while units are still coming up, so without `quiet`
+  # + a low console loglevel the kernel/udev/systemd chatter lands on top of
+  # tuigreet. Logs are untouched -- journalctl still has everything.
+  boot.kernelParams = ["console=tty1" "quiet" "udev.log_level=3"];
+  boot.consoleLogLevel = 3;
+  boot.initrd.verbose = false;
 }

@@ -6,6 +6,7 @@
   cell,
 }: {
   pkgs,
+  config,
   lib,
   ...
 }: let
@@ -67,7 +68,7 @@ in {
   environment.etc."tuigreet/config.toml".text = ''
     [display]
     show_time = true
-    greeting = "NixOS sevastopol (nix-rensa)"
+    greeting = "NixOS ${config.networking.hostName} (nix-rensa)"
     align_greeting = "center"
 
     [remember]
