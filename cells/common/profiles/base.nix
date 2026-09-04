@@ -23,4 +23,11 @@
     git
     fastfetch
   ];
+
+  # `cd` into the repo checkout loads the devshell via .envrc; nix-direnv
+  # caches the eval so prompts stay fast.
+  programs.direnv = {
+    enable = true;
+    nix-direnv.enable = true;
+  };
 }

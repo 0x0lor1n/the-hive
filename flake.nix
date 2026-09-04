@@ -41,6 +41,20 @@
           pkgs = import i.nixpkgs {
             inherit system;
             config.allowUnfree = true;
+            # One nix for the whole fleet (oddlama's trick): nix-plugins does
+            # not build against 2.34, and the plugin only dlopens into the
+            # exact client it was built for. Overriding pkgs.nix pins the
+            # devshell client AND every host's nix.package (default pkgs.nix),
+            # so `nixos-rebuild` on a host loads the plugin too. Drop when
+            # nix-plugins catches up.
+            overlays = [
+              (final: prev: {
+                nix = prev.nixVersions.nix_2_31;
+                nix-plugins = prev.nix-plugins.override {
+                  nixComponents = prev.nixVersions.nixComponents_2_31;
+                };
+              })
+            ];
           };
         };
     } (let

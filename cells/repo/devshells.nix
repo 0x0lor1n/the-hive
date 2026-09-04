@@ -8,12 +8,10 @@
 }: let
   pkgs = inputs.pkgs;
 
-  # nix-plugins 16.0.1 does not build against nix 2.34's C++ API
-  # (https://discourse.nixos.org/t/67426). Pin components to 2.31 and ship the
-  # matching client; a mismatch fails to dlopen the plugin.
-  nixPlugins = pkgs.nix-plugins.override {
-    nixComponents = pkgs.nixVersions.nixComponents_2_31;
-  };
+  # pkgs.nix and pkgs.nix-plugins are pinned to one version by the overlay in
+  # flake.nix (transformInputs) — same nix here and as every host's
+  # nix.package, so the plugin dlopens under nixos-rebuild too.
+  nixPlugins = pkgs.nix-plugins;
 
   # One deploy key for the fleet. Encrypted to the PIN-protected identity, so
   # no unattended process can deploy. Do not "fix" the prompt.
@@ -99,12 +97,11 @@ in {
 
     packages = [
       # Agent-facing `nix`: shadows the real client below (mkShell prepends in
-      # list order). NIXQ_REAL_NIX in shellHook pins the target so a stray
-      # system nix 2.34 can never be picked — that would break the plugin.
+      # list order). NIXQ_REAL_NIX in shellHook pins the target explicitly.
       cell.packages.nixq
 
-      # Must match what nixPlugins is built against.
-      pkgs.nixVersions.nix_2_31
+      # The overlay-pinned client nixPlugins is built against.
+      pkgs.nix
 
       pkgs.rage
       pkgs.age-plugin-tpm
@@ -135,7 +132,7 @@ in {
         extra-builtins-file = ${inputs.self.outPath}/nix/extra-builtins.nix
       "
       # nixq must wrap exactly the client nix-plugins was built against.
-      export NIXQ_REAL_NIX=${pkgs.nixVersions.nix_2_31}/bin/nix
+      export NIXQ_REAL_NIX=${pkgs.nix}/bin/nix
       # rtk: local filters only. `rtk nix` does not exist and must not: nix
       # errors go through nixq, whose contract is "verbatim after error".
       export RTK_TELEMETRY_DISABLED=1
