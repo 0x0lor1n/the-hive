@@ -116,6 +116,8 @@ material, `secrets/rekeyed/<host>/` the copies for that host's key
 (`agenix generate` / `agenix rekey`). Both are keyed by hostname -- renaming a
 host means regenerating.
 
+Installing a new workstation host end to end: `docs/install-workstation.md`.
+
 ## Traps, measured
 
 - A cell flake declaring inputs with no committed `flake.lock` resolves to an

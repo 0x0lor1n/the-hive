@@ -21,6 +21,8 @@
 in {
   imports = [
     inputs.lanzaboote.nixosModules.lanzaboote
+    # `sbctl status` / `sbctl verify` on the running host.
+    ({pkgs, ...}: {environment.systemPackages = [pkgs.sbctl];})
   ];
 
   boot.loader.systemd-boot.enable = lib.mkForce false;
