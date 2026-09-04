@@ -133,8 +133,8 @@ to find the unsigned component.
 Login with Entra creds on the greeter; the device enrolls on first login. Compliance
 runs the ZFS-encryption script in `cells/workstation/profiles/auth-entra.nix`
 (root on encrypted dataset -> compliant). Portal shows the device within ~5 min.
-Note: the same config on the sevastopol VM reports "Not evaluated" -- the platform
-check rejects the VM, it is not a config bug.
+Note: on a VM (the former sevastopol test VM, now retired) the same config reports
+"Not evaluated" -- Intune's platform check rejects VMs, it is not a config bug.
 
 ## 8. Day-to-day quirks (expected, not bugs)
 - **greeter goes straight to PIN** for a user with an enrolled Hello PIN.
@@ -143,11 +143,14 @@ check rejects the VM, it is not a config bug.
   that checks the cached Hello key in `pam authenticate init` and skips the
   password prompt. Re-check the patch on every himmelblau bump. Disabling
   `enable_hello` would mean password + MFA every login.
-- **rpool passphrase after a rebuild + reboot.** The ZFS key is TPM-sealed to
-  PCR15 of the *booted* generation; `nixos-rebuild switch` produces a new
-  generation, so the first boot into it falls back to the passphrase
-  (KeePass). zfs-key-sync reseals after login; the next boot auto-unlocks.
-  Check: `journalctl -b -u zfs-key-sync`.
+- **rpool passphrase on the first boot after install (once).** The TPM
+  credential is sealed to PCR 15 = ZFS wrapping-key fingerprint, *not* to the
+  generation (Lanzaboote UKIs are dynamic, so PCR 11 is never used). disko
+  creates the pool with a throwaway key; on first login `zfs-key-sync`
+  rotates it to the agenix passphrase, which changes the fingerprint, so the
+  next boot falls back to the passphrase (KeePass) exactly once, then
+  reseals. Rebuilds do **not** trigger this. If it recurs, check
+  `journalctl -b -u zfs-key-sync` and `zpool get guid rpool`.
 
 ## 9. Open questions
 - **Should the Entra user be able to rebuild at all?** Current answer: no.
