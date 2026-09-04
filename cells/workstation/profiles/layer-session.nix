@@ -119,4 +119,11 @@ in {
 
   # Chromium-based apps (microsoft-edge) run Wayland-native, not XWayland.
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
+
+  # Claude Code keeps ~/.claude.json (onboarding, oauth account, per-project
+  # state) OUTSIDE ~/.claude unless told otherwise. Pointing it inside makes
+  # one persisted directory cover both users (layer-users-local, auth-entra)
+  # and avoids persisting a single file. $HOME is rewritten to @{HOME} for
+  # pam_env, so this reaches the greetd session too.
+  environment.sessionVariables.CLAUDE_CONFIG_DIR = "$HOME/.claude";
 }

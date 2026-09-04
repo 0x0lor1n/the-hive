@@ -38,6 +38,22 @@
       ])
     ];
   };
+  # himmelblau creates /home/<upn> and the /home/<cn> alias from pam_himmelblau
+  # while the session is opening; the user manager starts home-manager-entra in
+  # parallel. On the FIRST login after a boot the home does not exist yet (the
+  # root is rolled back, so nothing survives outside /persist) and HM's
+  # `activate` dies on its opening `cd $HOME`. Later logins in the same boot
+  # find the home already there, which is why this only ever broke right after
+  # a reboot. Type=oneshot forbids Restart=, so wait in ExecStartPre instead.
+  waitForEntraHome = pkgs.writeShellScript "wait-for-entra-home" ''
+    for _ in $(seq 1 120); do
+      [ -d "$1" ] && exit 0
+      sleep 0.5
+    done
+    echo "timed out after 60s waiting for $1 (himmelblau did not create it)" >&2
+    exit 1
+  '';
+
   # `dwl -s <cmd>`: dwl makes the child's stdin the read end of its status
   # pipe, so somebar must be exec'd (not backgrounded) to hold it open. swaybg
   # and the cliphist watchers start here; mako/swayidle/avizo have HM user
@@ -107,12 +123,14 @@ in {
       wantedBy = ["default.target"];
       # activate registers the generation via nix-env, which the unit's
       # default PATH lacks. ~/.local/state/nix/profiles is created by the
-      # tmpfiles rules in auth-entra.nix.
-      path = [config.nix.package pkgs.bash];
+      # tmpfiles rules in auth-entra.nix. coreutils: seq/sleep for the wait.
+      path = [config.nix.package pkgs.bash pkgs.coreutils];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
+        ExecStartPre = "${waitForEntraHome} /home/${entraCn}";
         ExecStart = "${entraHome.activationPackage}/activate";
+        TimeoutStartSec = "180s";
       };
     };
 
