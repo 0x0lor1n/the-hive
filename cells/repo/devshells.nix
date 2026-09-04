@@ -43,16 +43,23 @@
     name = "unlock-secrets";
     runtimeInputs = with pkgs; [git rage age-plugin-tpm coreutils];
     text = ''
+      # The only place a TPM PIN is ever requested: explicit, by the user.
+      # Eval itself never prompts (see nix/rageImportEncrypted.sh).
       root=$(git rev-parse --show-toplevel)
       case "''${1:-$(hostname)}" in
         penrose) identity=dellvis-nix-rage ;;
         *)       identity=jarvis-nix-rage ;;
       esac
+      file="$root/secrets/globals.nix.age"
+      out="/var/tmp/nix-import-encrypted/$UID/$(sha512sum "$file" | cut -c1-32)-globals.nix"
+      if [[ -e $out ]]; then
+        echo "unlock-secrets: already cached for UID $UID." >&2
+        exit 0
+      fi
       echo "unlock-secrets: decrypting secrets/globals.nix.age with $identity (TPM PIN)" >&2
-      sh "$root/nix/rageImportEncrypted.sh" \
-        "$root/secrets/globals.nix.age" \
-        "$root/secrets/$identity.pub" > /dev/null
-      echo "unlock-secrets: cached; eval will not touch the TPM until globals.nix.age changes." >&2
+      umask 077; mkdir -p "$(dirname "$out")"
+      rage --decrypt --identity "$root/secrets/$identity.pub" --output "$out" "$file"
+      echo "unlock-secrets: cached for UID $UID; eval will not touch the TPM until globals.nix.age changes." >&2
     '';
   };
 

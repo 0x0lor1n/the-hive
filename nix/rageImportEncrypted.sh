@@ -26,7 +26,14 @@ if [[ ! -e $out ]]; then
   for i in "${identities[@]}"; do
     args+=("--identity" "$i")
   done
-  rage --decrypt "${args[@]}" --output "$out" "$file"
+  # Never prompts: PIN-gated identities are used only by `unlock-secrets`,
+  # which the user runs on purpose. Eval must not pop a PIN dialog.
+  if ! rage --decrypt "${args[@]}" --output "$out" "$file" 2>/dev/null </dev/null; then
+    rm -f "$out"
+    echo "secrets: no cached plaintext for $(basename "$file") (UID $UID) and the quiet identities do not fit this TPM." >&2
+    echo "  run \`unlock-secrets\` (same user, no sudo) to decrypt with this host's PIN identity, then retry." >&2
+    exit 1
+  fi
 fi
 
 cat "$out"
