@@ -17,7 +17,7 @@
   ...
 }: let
   theme = inputs.cells.theme.palettes.kanagawa;
-  mkHome = userName: homeDir: import ../home {inherit userName homeDir theme;};
+  mkHome = userName: homeDir: extraPackages: import ../home {inherit userName homeDir theme extraPackages;};
 
   # The Entra user is an NSS user (himmelblau), not in users.users, so the HM
   # NixOS module can't target it. Build the same home standalone and activate
@@ -27,7 +27,16 @@
   entraCn = lib.head (lib.splitString "@" entra.upn);
   entraHome = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
-    modules = [(mkHome entraCn "/home/${entraCn}")];
+    # Work-account-only apps live here, not in systemPackages: the local
+    # break-glass user has no SSO and no business in the tenant's chat.
+    modules = [
+      (mkHome entraCn "/home/${entraCn}" [
+        # Electron; Wayland via NIXOS_OZONE_WL (layer-session.nix), screen
+        # share via the wlr portal. Lands on PATH through ~/.nix-profile once
+        # home-manager-entra has activated (first login: after the unit runs).
+        pkgs.slack
+      ])
+    ];
   };
   # `dwl -s <cmd>`: dwl makes the child's stdin the read end of its status
   # pipe, so somebar must be exec'd (not backgrounded) to hold it open. swaybg
@@ -87,7 +96,7 @@ in {
 
     home-manager.useGlobalPkgs = true;
     home-manager.useUserPackages = true;
-    home-manager.users.${host.userName} = mkHome host.userName host.homeDir;
+    home-manager.users.${host.userName} = mkHome host.userName host.homeDir [];
 
     # HM for the Entra user (see entraHome above). Runs in the user manager
     # PAM starts at login, so dbus is up and dconfSettings works. Idempotent:
@@ -122,9 +131,6 @@ in {
       pkgs.wlopm
       # Silent M365 SSO through himmelblau's broker DBus service.
       pkgs.microsoft-edge
-      # Work chat for the Entra session. Electron; Wayland via NIXOS_OZONE_WL
-      # (layer-session.nix), screen share via the wlr portal above.
-      pkgs.slack
     ];
 
     # Known path for greetd's --cmd.
