@@ -146,3 +146,15 @@ check rejects the VM, it is not a config bug.
   generation, so the first boot into it falls back to the passphrase
   (KeePass). zfs-key-sync reseals after login; the next boot auto-unlocks.
   Check: `journalctl -b -u zfs-key-sync`.
+
+## 9. Open questions
+- **Should the Entra user be able to rebuild at all?** Current answer: no.
+  `the-hive` lives in `/persist/home/crookedmirror/the-hive`; the Entra (PAM)
+  user has no access to the checkout, the TPM PIN identity or the deploy key.
+  Rebuilds are done as `crookedmirror` (local admin / break-glass), the Entra
+  session is a plain workstation session. Revisit only if daily work under the
+  Entra account needs the repo — then a shared checkout in `/etc/nix/the-hive`
+  (root:users, `git config --system safe.directory`) is the candidate, not
+  giving the Entra user sudo.
+- Split secrets into "install-time, TPM+PIN" vs "rebuild-time, no PIN" so
+  `nixos-rebuild` never prompts in a tty popup. Not before penrose is stable.
