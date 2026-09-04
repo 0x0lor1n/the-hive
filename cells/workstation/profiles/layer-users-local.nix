@@ -49,6 +49,10 @@
         directory = ".ssh";
         mode = "0700";
       }
+      # The fleet repo checkout: what `nixos-rebuild --flake .#<host>` runs from.
+      "the-hive"
+      # direnv's allow-list, so `cd the-hive` does not re-prompt every boot.
+      ".local/share/direnv"
     ];
     files = [".bash_history"];
   };
