@@ -1,5 +1,5 @@
 # Applied to every host.
-{pkgs, ...}: {
+{inputs, ...}: {pkgs, ...}: {
   time.timeZone = "UTC";
   i18n.defaultLocale = "en_US.UTF-8";
 
@@ -13,8 +13,15 @@
       "@wheel"
     ];
     auto-optimise-store = true;
+    # No global registry (network fetch on every bare `nixpkgs#` reference);
+    # `nixpkgs` is pinned below to the exact input the system was built from.
     flake-registry = "";
   };
+
+  # `nix run nixpkgs#foo` / `nix shell nixpkgs#foo` resolve to the flake.lock
+  # revision: same store paths as the system, nothing new to download.
+  nix.registry.nixpkgs.flake = inputs.nixpkgs;
+  nix.nixPath = ["nixpkgs=${inputs.nixpkgs}"];
 
   services.openssh.enable = true;
 
