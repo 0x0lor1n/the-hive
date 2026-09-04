@@ -11,6 +11,8 @@
   userName,
   homeDir,
   theme,
+  # Per-user additions on top of the shared desktop (Entra-only apps etc).
+  extraPackages ? [],
 }: {pkgs, ...}: let
   k = theme.colors;
   ansi = theme.ansi;
@@ -27,6 +29,8 @@ in {
   home.enableNixpkgsReleaseCheck = false;
 
   imports = [./desktop];
+
+  home.packages = extraPackages;
 
   # DWL's terminal keybind execs `foot` by name, so it must be on PATH.
   programs.foot = {

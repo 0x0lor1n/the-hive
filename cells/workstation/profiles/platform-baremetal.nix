@@ -37,10 +37,9 @@
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
   # Real console: the last console= wins, so tty1 stays primary (no serial).
-  # greetd starts on tty1 while units are still coming up, so without `quiet`
-  # + a low console loglevel the kernel/udev/systemd chatter lands on top of
-  # tuigreet. Logs are untouched -- journalctl still has everything.
-  boot.kernelParams = ["console=tty1" "quiet" "udev.log_level=3"];
-  boot.consoleLogLevel = 3;
-  boot.initrd.verbose = false;
+  # Boot output stays verbose on purpose: greetd is ordered after himmelblaud
+  # (layer-session.nix), so by the time tuigreet draws the chatter is over,
+  # and seeing units come up is worth more than a clean tty1 on a machine
+  # that boots once a day.
+  boot.kernelParams = ["console=tty1"];
 }
