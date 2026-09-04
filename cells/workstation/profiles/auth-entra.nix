@@ -247,6 +247,16 @@ in {
     ''}"
   ];
 
+  # First login after boot used to prompt `Password:` instead of the Hello
+  # PIN: greetd came up before himmelblaud had opened its socket, so
+  # pam_himmelblau returned PAM_IGNORE and the stack fell through to pam_unix
+  # ("check pass; user unknown" for Entra users). The retry a few seconds
+  # later hit a live daemon and got the PIN. Order greetd after the daemon.
+  systemd.services.greetd = {
+    wants = ["himmelblaud.service"];
+    after = ["himmelblaud.service"];
+  };
+
   systemd.services.himmelblaud.serviceConfig = {
     # Plain non-idmap state dir (impermanence-friendly); no extra caps needed.
     DynamicUser = lib.mkForce false;
