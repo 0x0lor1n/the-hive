@@ -122,6 +122,9 @@ in {
       pkgs.wlopm
       # Silent M365 SSO through himmelblau's broker DBus service.
       pkgs.microsoft-edge
+      # Work chat for the Entra session. Electron; Wayland via NIXOS_OZONE_WL
+      # (layer-session.nix), screen share via the wlr portal above.
+      pkgs.slack
     ];
 
     # Known path for greetd's --cmd.
