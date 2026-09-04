@@ -14,7 +14,9 @@
   users.users.${host.userName} = {
     isNormalUser = true;
     uid = globals.user.uid;
-    extraGroups = ["wheel"];
+    # himmelblaud: auth-entra.nix hands /dev/tpmrm0 to that group (Hello PIN);
+    # the local user needs it too for age-plugin-tpm (unlock-secrets / rage).
+    extraGroups = ["wheel" "himmelblaud"];
 
     # Fleet default from the ENCRYPTED half of globals, per-host public
     # override for the playground VMs (AGENTS.md documents the passphrase).
