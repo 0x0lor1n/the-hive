@@ -1,6 +1,7 @@
 # post-dellvis-tooling
 
-Blocked on: cells/workstation running on the dellvis laptop (real hardware)
+Unblocked 2026-09-04: penrose (ex-dellvis) runs cells/workstation on bare metal,
+Secure Boot enabled (user keys), ZFS auto-unlock via TPM PCR15. Remaining blocker:
 and home-manager living in this repo instead of ~/nixos-config.
 Everything below is currently imperative on jarvis and must become
 declarative in cells/workstation/home/ (+ a profile for the pxpipe unit).
