@@ -135,3 +135,14 @@ runs the ZFS-encryption script in `cells/workstation/profiles/auth-entra.nix`
 (root on encrypted dataset -> compliant). Portal shows the device within ~5 min.
 Note: the same config on the sevastopol VM reports "Not evaluated" -- the platform
 check rejects the VM, it is not a config bug.
+
+## 8. Day-to-day quirks (expected, not bugs)
+- **greeter asks Password, then PIN, whatever you typed.** himmelblau Hello:
+  once a PIN is enrolled the PAM stack ignores the password field and
+  authenticates on the TPM-sealed PIN only. Enter on the password prompt,
+  then the PIN. Disabling `enable_hello` would mean password + MFA every login.
+- **rpool passphrase after a rebuild + reboot.** The ZFS key is TPM-sealed to
+  PCR15 of the *booted* generation; `nixos-rebuild switch` produces a new
+  generation, so the first boot into it falls back to the passphrase
+  (KeePass). zfs-key-sync reseals after login; the next boot auto-unlocks.
+  Check: `journalctl -b -u zfs-key-sync`.
