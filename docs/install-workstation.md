@@ -84,6 +84,13 @@ nixos-install → reboot.
 - Secure Boot — see next section. No `sbctl` in PATH is needed, the config does it.
 - Create the host TPM identity (`age-plugin-tpm --generate` with PIN), add it to
   `masterIdentities`, rekey, and drop `jarvis-nopin-rage` from the recipients.
+- Log in as the fleet user from `secrets/globals.nix.age` (not `jarvis` — that's the
+  zBook playground user). From the builder:
+  `ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 <user>@<ip>` — without
+  `IdentitiesOnly` the agent burns through `MaxAuthTries` before it gets to the
+  right key. Put it in `~/.ssh/config` as `Host penrose`.
+- Sanity check: `bootctl status | grep 'Secure Boot'` → `enabled (user)`,
+  `zfs get keystatus rpool` → `available`, `systemctl --failed` → empty.
 - Check `hermes/state/post-dellvis-tooling.md` for what's still not ported.
 
 ## 6. Secure Boot (Lanzaboote, bare metal)
