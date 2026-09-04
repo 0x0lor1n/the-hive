@@ -128,3 +128,10 @@ to find the unsigned component.
   use `wpa_supplicant` directly.
 - The Intune compliance script matches by ZFS/LUKS state, not by disk name — don't
   "fix" it to look for `nvme0n1p3`.
+
+## 7. Intune (himmelblau)
+Login with Entra creds on the greeter; the device enrolls on first login. Compliance
+runs the ZFS-encryption script in `cells/workstation/profiles/auth-entra.nix`
+(root on encrypted dataset -> compliant). Portal shows the device within ~5 min.
+Note: the same config on the sevastopol VM reports "Not evaluated" -- the platform
+check rejects the VM, it is not a config bug.

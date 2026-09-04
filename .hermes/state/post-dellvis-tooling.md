@@ -1,8 +1,9 @@
 # post-dellvis-tooling
 
 Unblocked 2026-09-04: penrose (ex-dellvis) runs cells/workstation on bare metal,
-Secure Boot enabled (user keys), ZFS auto-unlock via TPM PCR15. Remaining blocker:
-and home-manager living in this repo instead of ~/nixos-config.
+Secure Boot enabled (user keys), ZFS auto-unlock via TPM PCR15, Intune enrolled
+and compliant (himmelblau; the earlier "Not evaluated" was the VM, not the config).
+Remaining blocker: home-manager still lives in ~/nixos-config, not in this repo.
 Everything below is currently imperative on jarvis and must become
 declarative in cells/workstation/home/ (+ a profile for the pxpipe unit).
 

@@ -146,14 +146,6 @@ in {
       # apply_policy is what lets enrollment/compliance happen at all.
       apply_policy = true;
 
-      # TEMPORARY diagnostic toggle (live-only; resets to false on every
-      # switch-to-configuration per iter 9.2.8's own note) — flips RUST_LOG
-      # to debug in both himmelblaud and himmelblaud_tasks (cfg.get_debug()
-      # in daemon.rs/tasks_daemon.rs) so CustomComplianceCSE's decode/
-      # execute/evaluate/submit trail is visible. Investigating why the
-      # device stays "Not evaluate" in Intune despite one apply_intune_policy
-      # call reaching real policy processing. Revert once understood.
-      debug = true;
     };
   };
 
