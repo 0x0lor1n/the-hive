@@ -53,6 +53,17 @@
       "the-hive"
       # direnv's allow-list, so `cd the-hive` does not re-prompt every boot.
       ".local/share/direnv"
+      # Agent state: hermes config/sessions/skills; claude credentials +
+      # settings, and ~/.claude.json too via CLAUDE_CONFIG_DIR (layer-session).
+      # 0700: both hold API keys.
+      {
+        directory = ".hermes";
+        mode = "0700";
+      }
+      {
+        directory = ".claude";
+        mode = "0700";
+      }
     ];
     files = [".bash_history"];
   };

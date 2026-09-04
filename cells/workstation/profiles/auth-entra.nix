@@ -19,31 +19,31 @@
     # benign TOCTOU race where exec on a just-written temp file intermittently fails.
     patch -p1 -d $out < ${./patches/himmelblau/0001-custom-compliance-retry-enoent.patch}
 
-    # Bumps libhimmelblau 0.8.30 -> 0.8.34 (upstream himmelblau main is
-    # still pinned to 0.8.30 as of its latest commit, so this can't be
-    # picked up via a plain `nix flake update`). This is a real fix, not a
-    # throwaway diagnostic bump: 0.8.34's intune.rs adds
-    # http_status_error()/sanitize_http_error_body(), which surfaces the
-    # server's actual response body instead of the bare "General failure:
-    # 500 Internal Server Error" we've been stuck reading, AND adds
-    # IntunePlatformInfo::current()/for_details(), which reads
-    # /etc/os-release properly (falling back to /proc/sys/kernel/osrelease)
-    # instead of reporting the OSVersion/OSDistribution placeholder that
-    # shows up as "0.0.0.0" in the Intune portal.
+    # Bumps libhimmelblau 0.8.30 -> 0.8.39 (the pinned himmelblau commit
+    # wants 0.8.30; upstream main is on 0.8.37 via the 5.0.0 release, which
+    # is a bigger jump than this fix needs). History of why:
+    #   0.8.34: intune.rs gained http_status_error()/sanitize_http_error_body()
+    #     (real server error bodies instead of "General failure: 500") and
+    #     IntunePlatformInfo (reads /etc/os-release; portal stopped showing
+    #     OS "0.0.0.0").
+    #   0.8.39 (2026-09-04): the Intune check-in service started answering
+    #     LinuxDeviceCheckinService/status in camelCase (`policyId`,
+    #     `lastStatusDateTime`, `details`); 0.8.34's PolicyStatus only knew
+    #     PascalCase, so every ApplyPolicy failed with
+    #     `Invalid JSON: missing field PolicyId` and the device went
+    #     non-compliant. 0.8.39 adds serde aliases for both spellings.
     #
-    # Verified safe as a two-line version+hash swap: fetched both 0.8.30
-    # and 0.8.34 from crates.io and diffed Cargo.toml -- identical except
-    # the version bump. The new intune.rs code uses the `os-release` and
-    # `uuid` crates, but both were already direct dependencies in 0.8.30's
-    # Cargo.toml (just unused there), so crate2nix's dependency graph in
-    # Cargo.nix needs no new crates, only this version+sha256 swap. Also
-    # confirmed both the old version string and old sha256 appear exactly
-    # once in Cargo.nix (grep -c), so this can't collide with another crate.
+    # Verified safe as a two-line version+hash swap: Cargo.toml of 0.8.30,
+    # 0.8.34 and 0.8.39 differ only in the version line, so crate2nix's
+    # dependency graph in Cargo.nix needs no new crates. Both the old version
+    # string and old sha256 appear exactly once in Cargo.nix (grep -c), so
+    # the sed can't collide with another crate. Hash =
+    # `nix hash file --type sha256 --base32 libhimmelblau-<v>.crate`.
     grep -q 'version = "0.8.30";' $out/Cargo.nix
     grep -q '1v4kwsiplpgws93pp6715w6ncc6dkc2rs0mxjzi3gwyf2855545i' $out/Cargo.nix
-    sed -i 's/version = "0.8.30";/version = "0.8.34";/' $out/Cargo.nix
-    sed -i 's/1v4kwsiplpgws93pp6715w6ncc6dkc2rs0mxjzi3gwyf2855545i/16km8iwsr1155h1z13k74dl1km3nnbg7r01yx3jj3h05byf9ma6n/' $out/Cargo.nix
-    grep -q 'version = "0.8.34";' $out/Cargo.nix
+    sed -i 's/version = "0.8.30";/version = "0.8.39";/' $out/Cargo.nix
+    sed -i 's/1v4kwsiplpgws93pp6715w6ncc6dkc2rs0mxjzi3gwyf2855545i/16lwc932ywpklmjsrwypkdjnq3sqxpqxmmy5jsrym5ks7qilqhv3/' $out/Cargo.nix
+    grep -q 'version = "0.8.39";' $out/Cargo.nix
 
     # Enables himmelblau's "tpm" feature (real TPM 2.0 support) for the
     # daemon + aad-tool; upstream default.nix never wires up the native
@@ -178,11 +178,14 @@ in {
   # here, not in storage-impermanence, because it names the himmelblaud
   # user created above.
   #
-  # Entra user's home: Edge profile (corp login) + bash history. NSS-only
-  # account, so `persistence.users.<name>` (needs users.users) is out --
-  # absolute paths + numeric uid from the encrypted globals. impermanence
-  # creates the *parents* of a bind mount with defaultPerms (root 0755), so
-  # the tmpfiles rules below re-own the home and its xdg dirs.
+  # Entra user's home: Edge profile (corp login), Slack, the o365 launchers'
+  # Electron state (teams-for-linux + per-app --profile dirs), agent state
+  # (hermes, claude -- see CLAUDE_CONFIG_DIR in layer-session.nix) and bash
+  # history. NSS-only account, so `persistence.users.<name>` (needs
+  # users.users) is out -- absolute paths + numeric uid from the encrypted
+  # globals. impermanence creates the *parents* of a bind mount with
+  # defaultPerms (root 0755), so the tmpfiles rules below re-own the home and
+  # its xdg dirs.
   environment.persistence."/persist".directories = let
     inherit (globals.entra.user) upn uid;
     entraHome = sub: {
@@ -212,6 +215,10 @@ in {
       # Slack (HM home.packages of the Entra user, layer-compositor.nix):
       # session token + workspace list live here; cache is disposable.
       (entraHome ".config/Slack")
+      (entraHome ".config/teams-for-linux")
+      (entraHome ".config/o365-profiles")
+      (entraHome ".hermes")
+      (entraHome ".claude")
       (entraHome ".local/share/bash")
     ];
 
@@ -369,10 +376,31 @@ in {
   # which blows past login(1)'s default 60s timeout on the serial console.
   security.loginDefs.settings.LOGIN_TIMEOUT = 300;
 
+  # teams-for-linux 2.17 REMOVED the flat `--ssoInTuneEnabled` flag that
+  # himmelblau's o365 wrapper still passes (src/o365/src/o365.sh:256); Electron
+  # silently ignores unknown switches, so Intune SSO stayed at its default
+  # (false), Teams never asked the broker for a PRT, and every o365 app showed
+  # the "install Intune" wall even with the broker running and the device
+  # compliant. The replacement keys are auth.intune.{enabled,user}, read from
+  # /etc/teams-for-linux/config.json (loaded first, before the per-profile
+  # file) -- the per-user file would have to live in each --user-data-dir
+  # (~/.config/o365-profiles/<app>), not in ~/.config/teams-for-linux.
+  # Drop this once the o365 wrapper learns the new keys.
+  environment.etc = lib.mkIf (globals.entra.user.upn != null) {
+    "teams-for-linux/config.json".text = builtins.toJSON {
+      auth.intune = {
+        enabled = true;
+        user = globals.entra.user.upn;
+      };
+    };
+  };
+
   # aad-tool from patchedHimmelblau (not the flake's own build) so its
   # "tpm" feature — and therefore `aad-tool tpm` — actually works.
   environment.systemPackages = [
     patchedHimmelblau.packages.aad-tool
+    patchedHimmelblau.packages.o365
+    #patchedHimmelblau.packages.sso
     pkgs.glib
     pkgs.gsettings-desktop-schemas
   ];
