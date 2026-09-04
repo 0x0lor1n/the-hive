@@ -17,10 +17,8 @@
   pkgs = inputs.pkgs;
   l = pkgs.lib;
 
-  # Same pin as cells/repo/devshells.nix, same reason (nix-plugins vs nix 2.34).
-  nixPlugins = pkgs.nix-plugins.override {
-    nixComponents = pkgs.nixVersions.nixComponents_2_31;
-  };
+  # Pinned together with pkgs.nix by the overlay in flake.nix.
+  nixPlugins = pkgs.nix-plugins;
 
   dev = pkgs.writeShellApplication {
     name = "dev";
@@ -44,7 +42,7 @@
 
   ws-image = pkgs.writeShellApplication {
     name = "ws-image";
-    # No `nix` here on purpose: the shell's nix_2_31 must stay first on PATH,
+    # No `nix` here on purpose: the shell's pkgs.nix must stay first on PATH,
     # or the 2.34 client fails to dlopen the 2.31 nix-plugins.
     runtimeInputs = with pkgs; [git coreutils];
     text =
@@ -197,7 +195,7 @@ in {
   workstation = pkgs.mkShellNoCC {
     name = "workstation";
     packages = [
-      pkgs.nixVersions.nix_2_31
+      pkgs.nix
       pkgs.rage
       pkgs.age-plugin-tpm
       inputs.agenix-rekey.packages.${pkgs.stdenv.hostPlatform.system}.default

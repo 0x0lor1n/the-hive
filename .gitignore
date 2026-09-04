@@ -6,3 +6,4 @@
 !.hermes/state/
 result
 result-*
+.direnv/
