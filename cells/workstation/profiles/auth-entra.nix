@@ -209,6 +209,9 @@ in {
     ++ lib.optionals (upn != null && uid != null) [
       (entraHome ".config/microsoft-edge")
       (entraHome ".cache/microsoft-edge")
+      # Slack (HM home.packages of the Entra user, layer-compositor.nix):
+      # session token + workspace list live here; cache is disposable.
+      (entraHome ".config/Slack")
       (entraHome ".local/share/bash")
     ];
 
