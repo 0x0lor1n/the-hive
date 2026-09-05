@@ -7,9 +7,11 @@ its own `hardware` list. Sevastopol was the rehearsal; this is the real disk.
 Naming (user, 2026-09-03): osgiliath = LotR, sevastopol = Alien, penrose = the
 Ergo Proxy/Signalis-adjacent pick; hostname == globals key == secrets dirs.
 
-phase: 4 daily driver -- IN PROGRESS (phases 2+3 done before 2026-09-04: the
-machine is penrose on rpool/local/root, Secure Boot enabled (user), himmelblaud
-active; they were never recorded here -- the file lagged reality, see notes)
+phase: DONE -- closed 2026-09-05 (user: "everything on this file is finished").
+All phases 0-4 complete; penrose is the daily driver. Config + fixes landed in
+262ba03. Kept as a record only; follow-ups (ZBook, tooling) live in
+post-dellvis-tooling.md. Historical note: phases 2+3 were never recorded here
+at the time -- the file lagged reality, see notes.
 phases: 0 recon (facts off the running machine, nothing written) |
           1 config (globals + disk + hardware profiles, builds on the ZBook) |
           2 install (nixos-anywhere from the ZBook, wipes the disk) |
@@ -32,7 +34,10 @@ osgiliath-unchanged: `nix eval --raw .#colmenaHive.toplevel.osgiliath.drvPath` =
 sevastopol-unchanged: `nix eval --raw .#nixosConfigurations.sevastopol.config.system.build.toplevel.drvPath` == /nix/store/044c1dy1s26rzjj4plclyysadd51bbkn-nixos-system-sevastopol-26.11pre-git.drv   last: 044c1dy @ 2026-09-04 (rebaselined after libhimmelblau 0.8.39 bump in shared auth-entra; before that cbb68j6 after the persist edit)
 penrose-builds: `nix build --no-link .#nixosConfigurations.penrose.config.system.build.toplevel` -> exit 0   last: exit 0 @ 2026-09-04 -> /nix/store/xbcj1r5glcfrdgyg152y4ahsz3ns2hbz-nixos-system-penrose-26.11pre-git (22m, 1104 built; himmelblaud drv closure has rust_libhimmelblau-0.8.39.drv only)
 
-## next (phase 4, on penrose itself)
+## next
+- none: closed 2026-09-05. Items 1-5 below kept for history (5 = commit 262ba03).
+
+### done (phase 4, on penrose itself)
 1. `unlock-secrets`, then `sudo nixos-rebuild switch --flake .#penrose` to pick
    up the two fixes still only in the working tree: the home-manager-entra
    ExecStartPre wait (layer-compositor) and /etc/teams-for-linux/config.json
