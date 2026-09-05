@@ -11,6 +11,10 @@
     # module on top of it. Same pair rensa/core uses for its own repo shell.
     devshell.url = "gitlab:rensa-nix/devshell?dir=lib";
     devtools-lib.url = "gitlab:rensa-nix/devtools?dir=lib";
+
+    # One `treefmt` for every formatter; lefthook calls it, not each tool.
+    # Its nixpkgs is only used for `lib` -- the wrapper is built with ours.
+    treefmt-nix.url = "github:numtide/treefmt-nix";
   };
 
   # colmena deliberately not declared (see root flake.nix). A cell input with
@@ -20,5 +24,6 @@
     i
     // {
       dslib = i.devshell.lib {inherit (i.parent) pkgs;};
+      treefmt = import i.treefmt-nix;
     };
 }

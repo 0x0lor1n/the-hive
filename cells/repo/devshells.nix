@@ -6,7 +6,48 @@
   cell,
   ...
 }: let
-  inherit (inputs) pkgs dslib devtools-lib;
+  inherit (inputs) pkgs dslib devtools-lib treefmt;
+
+  # Formatters for what is actually in tree: nix, go, sh. deadnix is a
+  # formatter here too -- it edits unused bindings out, not just reports.
+  treefmtWrapper = treefmt.mkWrapper pkgs {
+    projectRootFile = "flake.nix";
+    programs = {
+      alejandra.enable = true;
+      deadnix.enable = true;
+      gofumpt.enable = true;
+      shfmt.enable = true;
+    };
+    # `cell`/`inputs` are the rensa block signature; deadnix must not strip
+    # them or the block stops matching. Underscore-prefixed names it ignores.
+    settings.formatter.deadnix.options = ["--no-lambda-pattern-names"];
+    settings.formatter.shfmt.options = ["-i" "2" "-s"];
+    settings.global.excludes = [
+      "*.age"
+      "*.patch"
+      "*.pub"
+      "*.lock"
+      "cells/hisilome/**"
+    ];
+  };
+
+  # go test for every go.mod in tree. Nix-free on purpose: pre-push should not
+  # wait on an evaluation. Binaries are still built by buildGoModule in
+  # packages.nix; this is the fast path for the human/agent loop.
+  go-test-all = pkgs.writeShellApplication {
+    name = "go-test-all";
+    runtimeInputs = [pkgs.go pkgs.git];
+    text = ''
+      root=$(git rev-parse --show-toplevel)
+      status=0
+      while IFS= read -r mod; do
+        dir=$(dirname "$mod")
+        echo "==> $dir"
+        (cd "$root/$dir" && go test ./...) || status=1
+      done < <(cd "$root" && git ls-files '*/go.mod' 'go.mod')
+      exit $status
+    '';
+  };
 
   # pkgs.nix and pkgs.nix-plugins are pinned to one version by the overlay in
   # flake.nix (transformInputs) — same nix here and as every host's
@@ -129,7 +170,9 @@ in {
       # From this cell's input, not the root's: see cells/repo/flake.nix.
       inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hermes-agent
 
-      pkgs.alejandra
+      treefmtWrapper
+      go-test-all
+      pkgs.go
       pkgs.gitleaks
     ];
 
@@ -146,14 +189,32 @@ in {
       RTK_TELEMETRY_DISABLED.value = "1";
     };
 
-    # Staged-only: history is scanned by hand (skill pii-scan). Rules incl. PII
-    # in .gitleaks.toml; hooks land in .git/hooks on shell entry.
-    lefthook.config.pre-commit.jobs = [
-      {
-        name = "gitleaks";
-        run = "${pkgs.gitleaks}/bin/gitleaks protect --staged --no-banner --redact";
-      }
-    ];
+    lefthook.config = {
+      pre-commit = {
+        parallel = true;
+        jobs = [
+          {
+            # Staged-only: history is scanned by hand (skill pii-scan). Rules
+            # incl. PII in .gitleaks.toml.
+            name = "gitleaks";
+            run = "${pkgs.gitleaks}/bin/gitleaks protect --staged --no-banner --redact";
+          }
+          {
+            # Formats the staged files and re-stages them (stage_fixed).
+            name = "treefmt";
+            run = "${treefmtWrapper}/bin/treefmt {staged_files}";
+            stage_fixed = true;
+            env.TERM = "dumb";
+          }
+        ];
+      };
+      pre-push.jobs = [
+        {
+          name = "go-test";
+          run = "${go-test-all}/bin/go-test-all";
+        }
+      ];
+    };
 
     enterShellCommands.motd.text = ''
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
@@ -162,7 +223,8 @@ in {
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
       echo "  pxpipe-install  (re)install the pxpipe user service; needs pxpipe.anthropic.com in /etc/hosts"
       echo "  nix             = nixq shim (quiet progress; NIXQ=off to bypass); rtk <cmd> for compact git/ls/…"
-      echo "  pre-commit      gitleaks --staged via lefthook (LEFTHOOK=0 git commit to skip)"
+      echo "  treefmt         alejandra + deadnix + gofumpt + shfmt; runs on pre-commit (LEFTHOOK=0 to skip)"
+      echo "  go-test-all     go test every module; runs on pre-push"
     '';
   };
 }
