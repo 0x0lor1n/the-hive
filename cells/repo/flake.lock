@@ -33,6 +33,40 @@
         "type": "github"
       }
     },
+    "devshell": {
+      "locked": {
+        "dir": "lib",
+        "lastModified": 1767274074,
+        "narHash": "sha256-h2grM9qoSnYdqN7K8+taeMuWC2umaN/c2FCBu48frlo=",
+        "owner": "rensa-nix",
+        "repo": "devshell",
+        "rev": "5508ced269ee40ff7f5261ee3b5bf5597f7cad5d",
+        "type": "gitlab"
+      },
+      "original": {
+        "dir": "lib",
+        "owner": "rensa-nix",
+        "repo": "devshell",
+        "type": "gitlab"
+      }
+    },
+    "devtools-lib": {
+      "locked": {
+        "dir": "lib",
+        "lastModified": 1767275572,
+        "narHash": "sha256-f50ucOP0TZkQOrdyrrX0wBmDn54GJsqQfvMYqnK1kFo=",
+        "owner": "rensa-nix",
+        "repo": "devtools",
+        "rev": "35a325363486190c2efd8f2860320dbb49a2942b",
+        "type": "gitlab"
+      },
+      "original": {
+        "dir": "lib",
+        "owner": "rensa-nix",
+        "repo": "devtools",
+        "type": "gitlab"
+      }
+    },
     "flake-parts": {
       "inputs": {
         "nixpkgs-lib": [
@@ -95,6 +129,8 @@
     },
     "root": {
       "inputs": {
+        "devshell": "devshell",
+        "devtools-lib": "devtools-lib",
         "llm-agents": "llm-agents"
       }
     },
