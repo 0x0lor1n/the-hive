@@ -30,7 +30,7 @@ else
 fi
 
 mkdir -p "$root/.ren"
-printf '%s\n' "$cell" > "$root/.ren/devshell"
+printf '%s\n' "$cell" >"$root/.ren/devshell"
 direnv reload >/dev/null 2>&1 || true
 
 echo "dev: selected '$cell'." >&2

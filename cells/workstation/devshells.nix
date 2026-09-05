@@ -15,7 +15,6 @@
   ...
 }: let
   pkgs = inputs.pkgs;
-  l = pkgs.lib;
 
   # Pinned together with pkgs.nix by the overlay in flake.nix.
   nixPlugins = pkgs.nix-plugins;

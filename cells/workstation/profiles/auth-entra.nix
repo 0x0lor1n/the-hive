@@ -145,7 +145,6 @@ in {
       # PRT->access-token exchange for non-compliant devices, and
       # apply_policy is what lets enrollment/compliance happen at all.
       apply_policy = true;
-
     };
   };
 
