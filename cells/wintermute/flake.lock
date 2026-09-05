@@ -1,0 +1,29 @@
+{
+  "nodes": {
+    "coreboot": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1788623503,
+        "narHash": "sha256-xHOoDpYZxspSdwT4mRuGXUz01nxizeuHxoF8CcnhCzg=",
+        "ref": "refs/heads/main",
+        "rev": "3a0399ffb1b60330f3bb2c80b8177cf57e15397a",
+        "revCount": 64905,
+        "submodules": true,
+        "type": "git",
+        "url": "https://review.coreboot.org/coreboot.git"
+      },
+      "original": {
+        "submodules": true,
+        "type": "git",
+        "url": "https://review.coreboot.org/coreboot.git"
+      }
+    },
+    "root": {
+      "inputs": {
+        "coreboot": "coreboot"
+      }
+    }
+  },
+  "root": "root",
+  "version": 7
+}

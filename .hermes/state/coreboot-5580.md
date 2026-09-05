@@ -10,7 +10,11 @@ Source refs: `mainboard/dell/optiplex_3050` (same gen, Dell, Kaby Lake, ME/BootG
 `ec/dell/mec5035` (Dell EC protocol, E7240/E7440), `soc/intel/skylake` (KBL FSP 2.0).
 Hardware on hand: ESP-Prog (FT2232H, MPSSE → flashrom `ft2232_spi:type=2232H,port=A`), old i7-U board.
 To buy: SOIC-8 clip (Pomona 5250 or 2× clone). Optional: 3.3 V LDO module, 1 kΩ pull-up.
-Repo: `~/workspace/playground/coreboot-5580` (new flake: toolchain, build, `flashrom` wrapper, dumps NOT committed — `.gitignore` *.bin).
+Repo: rensa cell `cells/wintermute` (Neuromancer: the AI that removes its makers' restraints). Own `flake.nix`+`flake.lock` pin
+upstream coreboot (`review.coreboot.org`, submodules) as a non-flake input — invisible to server/workstation eval, same pattern as `cells/repo`.
+`dev wintermute` → devshell: flashrom/flashprog, coreboot-utils (ifdtool, cbfstool, cbmem, inteltool, intelmetool, superiotool, ectool),
+intelp2m, me_cleaner, uefitool, msr-tools, acpica, coreboot-toolchain.i386+x64, plus scripts `recon` / `dump` / `inspect` / `flash-bios`.
+`BOARD=i7u|xeon` selects `cells/wintermute/recon/<board>/`; *.bin/*.rom/*.dat/flashregion_* gitignored, text reports committed.
 Naming: board dir `mainboard/dell/latitude_5580`, variants `latitude_5580` / `precision_3520` (same LA-E152P, differ in CPU/dGPU).
 
 Invariants:
@@ -21,24 +25,27 @@ Invariants:
 - Boot Guard result is a kill-switch: verified-boot fused ⇒ project stops, fallback = me_cleaner + own SB keys.
 
 ## Phase 0 — Recon (kill-switch) ⏳
-0.1 On the *live* laptop (before teardown), as root:
-    `intelmetool -b` (Boot Guard: expect "not fused"/"disabled"), `intelmetool -m` (ME version/HAP),
-    `rdmsr 0x13A` (BOOT_GUARD_SACM_INFO), `inteltool -a > inteltool.txt`, `acpidump -o acpi.dat && acpixtract -a acpi.dat`,
-    `lspci -nnvvvxxxx > lspci.txt`, `dmidecode > dmi.txt`, `cat /proc/iomem`, `superiotool -dV`.
-    Store everything in repo `recon/<board>/`.
+0.0 Cell `wintermute`: flake.nix (coreboot input) + flake.lock, devshells.nix (tools + recon/dump/inspect/flash-bios),
+    recon/.gitignore, wired into root `devShells` — DONE 2026-09, `nix build .#devShells.x86_64-linux.wintermute` green.
+0.1 On the *live* laptop (before teardown): `dev wintermute && sudo --preserve-env=BOARD recon`. Writes
+    intelmetool-b/-m (Boot Guard: expect "not fused"/"disabled"; ME version/HAP), msr 0x13A (BOOT_GUARD_SACM_INFO),
+    inteltool.txt, superiotool.txt, dsdt.dsl/ssdt*.dsl, lspci.txt (-xxxx), lsusb.txt, dmi.txt, iomem.txt, bios_version.txt, ec-map.txt
+    into `recon/i7u/`. Commit the text.
 0.2 Locate SPI chip(s) on LA-E152P: count (1 or 2), package (SOIC-8 vs WSON-8), marking (W25Q128/256?). Photo → repo.
 0.3 Wire ESP-Prog → clip (TCK→CLK, TDI→MOSI, TDO→MISO, TMS→CS#, GND, 3.3V→VCC+WP#+HOLD#). Board fully unpowered.
-0.4 `flashrom -p ft2232_spi:type=2232H,port=A,divisor=8 -r d1.bin`; repeat → `cmp d1.bin d2.bin`. If chip not detected: `-c <model>`, add ext 3.3 V, or pull CS# up.
-0.5 `ifdtool -x`, `ifdtool -d` → regions map; `me_cleaner -c` → ME version, HAP state.
-    Decompile DSDT/SSDTs (`iasl -d`) → grep EC (`\_SB.PCI0.LPCB.ECDV` / `EC0`), record EC RAM fields and SMBus/PMIO commands.
+0.4 `dump` (2× read + cmp, refuses otherwise; `CHIP=W25Q128.V` if ambiguous) → `recon/i7u/stock-<date>.bin` + sha256.
+    If chip not detected: add ext 3.3 V, or pull CS# up. Copy dump to KeePass attachment + osgiliath immediately.
+0.5 `inspect stock-<date>.bin` → ifd.txt, layout.txt, flashregion_*.bin, me_cleaner-c.txt (ME version, HAP state).
+    From dsdt.dsl: `\_SB.PCI0.LPCB.ECDV` / `EC0` OperationRegion, EC RAM fields, SMBus/PMIO commands → `recon/i7u/ec-notes.md`.
 Exit criteria: Boot Guard not enforcing; full stock dump verified & backed up; SPI layout + chip known; DSDT EC map extracted.
 
 ## Phase 1 — Minimal boot on old board (i7-U) ⏳
-1.1 Flake: coreboot toolchain (`nixpkgs#coreboot-toolchain.x86_64`), pinned coreboot src, edk2 payload (MrChromebox UefiPayload fork), `nix run .#flash-bios-region`.
+1.1 `cells/wintermute/packages.nix`: `coreboot-5580` derivation from `inputs.coreboot` + our `defconfig` + board dir as overlay;
+    edk2 payload (MrChromebox UefiPayload fork) as second cell input. `flash-bios` already exists in the shell.
 1.2 Board skeleton copied from `optiplex_3050`; `devicetree.cb` from `lspci`+`inteltool`; GPIO via `intelp2m -p snr -fld cb inteltool.txt` → `gpio.h`.
 1.3 FSP 2.0 KBL binaries from stock BIOS (`UEFIExtract`) or Intel FSP repo; `vbt.bin` from stock (`UEFIExtract` → VBT); ME region = stock (later: me_cleaner -S).
 1.4 First build: `SOC_INTEL_KABYLAKE`, no EC, serial via USB debug (no UART on board) → rely on `cbmem -c` post-boot; if dead — SPI flash console (`CONSOLE_SPI_FLASH`).
-1.5 Flash BIOS region only, keep stock descriptor+ME+GbE. Boot with external USB keyboard + HDMI. Reach edk2 → GRUB/systemd-boot → NixOS (penrose).
+1.5 `flash-bios result/coreboot.rom` — BIOS region only via layout.txt, stock descriptor+ME+GbE untouched. Boot with external USB keyboard + HDMI. Reach edk2 → systemd-boot → NixOS (penrose).
 1.6 SeaBIOS/edk2 choice: edk2 (need UEFI for lanzaboote later).
 Exit criteria: NixOS on ext display/keyboard, `cbmem -c` clean of fatal errors, memory training stable across 10 reboots.
 
@@ -66,7 +73,7 @@ Exit criteria: new board daily-driven; TB dock + eGPU work or documented as not-
 Stock BIOS + `me_cleaner -S` (HAP) + own SB keys (sbctl/lanzaboote). Achievable in one evening; gives most of the security benefit.
 
 ## Progress
-- 2026-09: plan written. Waiting: 5580 upgrade completion, SOIC-8 clip.
+- 2026-09: plan written. Cell `wintermute` created (flake+lock, devshell, scripts), root flake wired. Waiting: 5580 upgrade completion, SOIC-8 clip.
 
-Next: Phase 0.1 — run recon on the live laptop *before* teardown (free, 15 min). Then buy clip.
+Next: Phase 0.1 — `dev wintermute; sudo --preserve-env=BOARD recon` on the live laptop *before* teardown (free, 15 min). Then buy clip.
 Blocked on: hardware upgrade in progress (user-curated).

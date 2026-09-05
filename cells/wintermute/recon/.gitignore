@@ -1,0 +1,7 @@
+# firmware images never enter git; text reports do
+*.bin
+*.bin.*
+*.rom
+*.dat
+*.sha256
+flashregion_*
