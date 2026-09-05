@@ -1,0 +1,3 @@
+# One regex per line; matches from pii-scan are dropped. Reason after `#`.
+0x0lor1n@  # public contact on the hisilome site, intentional
+nikita\.vyach\.ivanov@  # upstream dwl movestack patch author
