@@ -10,7 +10,6 @@
   ...
 }: let
   pkgs = inputs.pkgs;
-  l = pkgs.lib;
 
   programmer = "ft2232_spi:type=2232H,port=A,divisor=8";
 

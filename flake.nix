@@ -48,7 +48,7 @@
             # so `nixos-rebuild` on a host loads the plugin too. Drop when
             # nix-plugins catches up.
             overlays = [
-              (final: prev: {
+              (_final: prev: {
                 nix = prev.nixVersions.nix_2_31;
                 nix-plugins = prev.nix-plugins.override {
                   nixComponents = prev.nixVersions.nixComponents_2_31;
