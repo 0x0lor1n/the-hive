@@ -6,7 +6,7 @@
   cell,
   ...
 }: let
-  pkgs = inputs.pkgs;
+  inherit (inputs) pkgs dslib devtools-lib;
 
   # pkgs.nix and pkgs.nix-plugins are pinned to one version by the overlay in
   # flake.nix (transformInputs) — same nix here and as every host's
@@ -99,16 +99,16 @@
     '';
   };
 in {
-  default = pkgs.mkShell {
+  # rensa devshell module, not pkgs.mkShell: the lefthook module needs
+  # enterShellCommands to (re)install git hooks on every shell entry.
+  default = dslib.mkShell {
+    imports = [devtools-lib.devshellModule];
     name = "nix-rensa";
 
     packages = [
-      # Agent-facing `nix`: shadows the real client below (mkShell prepends in
-      # list order). NIXQ_REAL_NIX in shellHook pins the target explicitly.
+      # Agent-facing `nix`. The real client is NOT in packages: buildEnv
+      # rejects two bin/nix. NIXQ_REAL_NIX below pins it by store path.
       cell.packages.nixq
-
-      # The overlay-pinned client nixPlugins is built against.
-      pkgs.nix
 
       pkgs.rage
       pkgs.age-plugin-tpm
@@ -130,25 +130,39 @@ in {
       inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hermes-agent
 
       pkgs.alejandra
+      pkgs.gitleaks
     ];
 
-    shellHook = ''
+    env = {
       # sudo does not inherit this; use --preserve-env=NIX_CONFIG.
-      export NIX_CONFIG="
+      NIX_CONFIG.value = ''
         plugin-files = ${nixPlugins}/lib/nix/plugins
         extra-builtins-file = ${inputs.self.outPath}/nix/extra-builtins.nix
-      "
+      '';
       # nixq must wrap exactly the client nix-plugins was built against.
-      export NIXQ_REAL_NIX=${pkgs.nix}/bin/nix
+      NIXQ_REAL_NIX.value = "${pkgs.nix}/bin/nix";
       # rtk: local filters only. `rtk nix` does not exist and must not: nix
       # errors go through nixq, whose contract is "verbatim after error".
-      export RTK_TELEMETRY_DISABLED=1
+      RTK_TELEMETRY_DISABLED.value = "1";
+    };
+
+    # Staged-only: history is scanned by hand (skill pii-scan). Rules incl. PII
+    # in .gitleaks.toml; hooks land in .git/hooks on shell entry.
+    lefthook.config.pre-commit.jobs = [
+      {
+        name = "gitleaks";
+        run = "${pkgs.gitleaks}/bin/gitleaks protect --staged --no-banner --redact";
+      }
+    ];
+
+    enterShellCommands.motd.text = ''
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
       echo "  unlock-secrets  decrypt globals.nix.age with this host's TPM (PIN) before nix build/rebuild"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
       echo "  pxpipe-install  (re)install the pxpipe user service; needs pxpipe.anthropic.com in /etc/hosts"
       echo "  nix             = nixq shim (quiet progress; NIXQ=off to bypass); rtk <cmd> for compact git/ls/…"
+      echo "  pre-commit      gitleaks --staged via lefthook (LEFTHOOK=0 git commit to skip)"
     '';
   };
 }

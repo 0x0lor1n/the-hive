@@ -1,0 +1,36 @@
+# gitleaks: default secret rules + personal data. Companion of skill pii-scan.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "email"
+description = "e-mail address"
+regex = '''[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[a-z]{2,}'''
+[rules.allowlist]
+regexes = [
+  '''noreply@''',
+  '''example\.com''',
+  '''0x0lor1n@''',            # public contact on the hisilome site
+  '''nikita\.vyach\.ivanov@''', # upstream dwl movestack patch author
+]
+
+[[rules]]
+id = "entra-tenant"
+description = "Entra tenant domain in plaintext; belongs in globals.nix.age"
+regex = '''[A-Za-z0-9-]+\.onmicrosoft\.com'''
+
+[[rules]]
+id = "mac-address"
+regex = '''\b([0-9a-fA-F]{2}:){5}[0-9a-fA-F]{2}\b'''
+
+[[rules]]
+id = "phone-e164"
+regex = '''\+[1-9][0-9]{7,14}\b'''
+
+[allowlist]
+paths = [
+  '''.*\.age$''',
+  '''flake\.lock$''',
+  '''.*\.patch$''',
+  '''.*\.svg$''',
+]
