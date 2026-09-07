@@ -75,5 +75,9 @@ Stock BIOS + `me_cleaner -S` (HAP) + own SB keys (sbctl/lanzaboote). Achievable 
 ## Progress
 - 2026-09: plan written. Cell `wintermute` created (flake+lock, devshell, scripts), root flake wired. Waiting: 5580 upgrade completion, SOIC-8 clip.
 
-Next: Phase 0.1 — `dev wintermute; sudo --preserve-env=BOARD recon` on the live laptop *before* teardown (free, 15 min). Then buy clip.
-Blocked on: hardware upgrade in progress (user-curated).
+- 2026-09: ORDERED — SOIC-8 clip (clone), Precision 3520 board (LA-E152P, E3-1505M v6 + M620), dGPU heatsink+pipes, 130 W DA130PE1-00 charger. Waiting for delivery.
+- Side note: CWWK S8 (i3-N305, ADL-N) firewall — coreboot NOT feasible (no public ADL-N FSP, no mainboard port, no Dasharo). Only stock dump + me_cleaner HAP possible. Not pursued.
+
+Next: Phase 0.1 — `dev wintermute; sudo --preserve-env=BOARD recon` on the live laptop *before* teardown (free, 15 min). Do it NOW, while parts are in transit — no hardware needed.
+Then on clip arrival: 0.2 (photo SPI chip, SOIC-8 vs WSON-8 — decides whether clip is usable at all) → 0.3/0.4 dump on the old board.
+Blocked on: delivery of parts.
