@@ -1,8 +1,9 @@
 /* nix-rensa dwl config: copy of upstream config.def.h (dwl v0.8) with local
  * changes. On a dwl bump: diff against the new config.def.h and re-apply.
  * Changes vs upstream: MODKEY=Super, Ctrl+Shift+Return terminal, fuzzel on
- * Mod+D/Mod+P, swaylock on Mod+L, cliphist/grim binds, XF86 media keys;
- * displaced incnmaster-/setmfact+ moved to Mod+Shift+D / Mod+Shift+L. */
+ * Mod+D/Mod+P, swaylock on Mod+L, somebar toggle on Mod+B, cliphist/grim
+ * binds, XF86 media keys; displaced incnmaster-/setmfact+ moved to
+ * Mod+Shift+D / Mod+Shift+L. */
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
 #define COLOR(hex)    { ((hex >> 24) & 0xFF) / 255.0f, \
                         ((hex >> 16) & 0xFF) / 255.0f, \
@@ -133,6 +134,9 @@ static const Key keys[] = {
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_s,           spawn,            SHCMD("slurp | grim -g - - | wl-copy") },
 	{ 0,                         XKB_KEY_Print,       spawn,            SHCMD("grim - | wl-copy") },
 	{ MODKEY,                    XKB_KEY_l,           spawn,            SHCMD("swaylock -fF") },
+	/* somebar reads $XDG_RUNTIME_DIR/somebar-0; "all", not "selected": the bar
+	 * is one process for every output */
+	{ MODKEY,                    XKB_KEY_b,           spawn,            SHCMD("somebar -c toggle all") },
 	{ 0, XKB_KEY_XF86AudioRaiseVolume,  spawn, SHCMD("volumectl -u up") },
 	{ 0, XKB_KEY_XF86AudioLowerVolume,  spawn, SHCMD("volumectl -u down") },
 	{ 0, XKB_KEY_XF86AudioMute,         spawn, SHCMD("volumectl toggle-mute") },
