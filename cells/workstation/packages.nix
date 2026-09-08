@@ -18,6 +18,71 @@
 
   dwlConfig = pkgs.replaceVars ./packages/dwl/config.h (themeVars lib.id ["bg" "border" "focus" "urgent"]);
   somebarConfig = pkgs.replaceVars ./packages/somebar/config.hpp (themeVars cxxRgb ["bg" "fg" "focus"]);
+
+  mkNixPak = inputs.nixpak.lib.nixpak {inherit (pkgs) lib pkgs;};
+  # Desktop apps behind bwrap + xdg-dbus-proxy. An app sees its own state
+  # (~/.var/app/<appId>, mapped over the XDG dirs), ~/Downloads, the
+  # Wayland/PipeWire sockets and a filtered session bus; nothing else of the
+  # home. The Flatpak appId is real, so xdg-desktop-portal treats the app as
+  # a Flatpak: file dialogs and link opening go through the portals.
+  sandboxed = {
+    package,
+    appId,
+    dbus ? {},
+    env ? {},
+    extra ? {},
+  }:
+    (mkNixPak {
+      config = {
+        imports = [
+          ({sloth, ...}: {
+            app.package = package;
+            flatpak.appId = appId;
+
+            dbus.policies =
+              {
+                "org.freedesktop.DBus" = "talk";
+                "org.freedesktop.portal.Desktop" = "talk";
+                "org.freedesktop.portal.Documents" = "talk";
+                "org.freedesktop.Notifications" = "talk";
+                "org.freedesktop.ScreenSaver" = "talk";
+              }
+              // dbus;
+
+            gpu.enable = true;
+            etc.sslCertificates.enable = true;
+            timeZone.enable = true;
+
+            bubblewrap = {
+              sockets = {
+                wayland = true;
+                pipewire = true;
+                pulse = true;
+              };
+              bind.rw = [
+                [(sloth.mkdir sloth.appConfigDir) sloth.xdgConfigHome]
+                [(sloth.mkdir sloth.appDataDir) sloth.xdgDataHome]
+                [(sloth.mkdir sloth.appCacheDir) sloth.xdgCacheHome]
+                (sloth.mkdir sloth.xdgDownloadDir)
+              ];
+              # Host fontconfig: its <dir> entries are store paths, already bound.
+              bind.ro = ["/etc/fonts"];
+              inherit env;
+              newSession = true;
+              dieWithParent = true;
+            };
+          })
+          extra
+        ];
+      };
+    }).config.env;
+
+  # Chromium/Electron: the bundled Chromium reads NIXOS_OZONE_WL for Wayland
+  # (the wrappers test it), and its own renderer sandbox works under bwrap
+  # (nested user namespaces). Screen share goes through the wlr portal.
+  chromiumEnv = {
+    NIXOS_OZONE_WL = "1";
+  };
 in {
   # dwl with our config.h. dwl's Makefile copies config.def.h to config.h only
   # when the latter is absent, so dropping the file in is the whole override --
@@ -54,4 +119,17 @@ in {
             'reg.handle(wlrLayerShell, zwlr_layer_shell_v1_interface, 3)'
       '';
   });
+
+  telegram-desktop = sandboxed {
+    package = pkgs.telegram-desktop;
+    appId = "org.telegram.desktop";
+    dbus."org.mpris.MediaPlayer2.tdesktop" = "own";
+    env.QT_QPA_PLATFORM = "wayland";
+  };
+
+  slack = sandboxed {
+    package = pkgs.slack;
+    appId = "com.slack.Slack";
+    env = chromiumEnv;
+  };
 }

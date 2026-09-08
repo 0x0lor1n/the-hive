@@ -211,11 +211,11 @@ in {
     ++ lib.optionals (upn != null && uid != null) [
       (entraHome ".config/microsoft-edge")
       (entraHome ".cache/microsoft-edge")
-      # Slack (HM home.packages of the Entra user, layer-compositor.nix):
-      # session token + workspace list live here; cache is disposable.
-      (entraHome ".config/Slack")
       (entraHome ".config/teams-for-linux")
       (entraHome ".config/o365-profiles")
+      # nixpak apps: config/data/cache under one Flatpak-style dir each.
+      (entraHome ".var/app/com.slack.Slack")
+      (entraHome ".var/app/org.telegram.desktop")
       (entraHome ".hermes")
       (entraHome ".claude")
       (entraHome ".local/share/bash")
@@ -340,6 +340,8 @@ in {
       (own "/.local/state")
       (own "/.local/state/nix")
       (own "/.local/state/nix/profiles")
+      (own "/.var")
+      (own "/.var/app")
     ];
 
   # TPM resource-manager access for the static himmelblaud user (no

@@ -41,6 +41,10 @@
     # `nixpkgs.overlays` from a module would be silently ignored anyway).
     chaotic.url = "github:chaotic-cx/nyx/43fe06999491eabd2ec15c221f5066e39d6a5a51";
     chaotic.inputs.nixpkgs.follows = "nixpkgs";
+    # bwrap + xdg-dbus-proxy sandboxes for untrusted desktop apps (packages.nix).
+    # Only lib.nixpak is consumed; its NixOS module targets systemPackages.
+    nixpak.url = "github:nixpak/nixpak/333bd8c7ca0c014e61be1933b3c131c9dfa20218";
+    nixpak.inputs.nixpkgs.follows = "nixpkgs";
     # tuigreet is NOT an input: the nixpkgs pin already ships the maintained
     # fork (tuigreet/tuigreet 0.11.1, ex NotAShelf).
     # colmena deliberately not declared: this cell is never deployed by colmena.

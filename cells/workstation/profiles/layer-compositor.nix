@@ -31,10 +31,9 @@
     # break-glass user has no SSO and no business in the tenant's chat.
     modules = [
       (mkHome entraCn "/home/${entraCn}" [
-        # Electron; Wayland via NIXOS_OZONE_WL (layer-session.nix), screen
-        # share via the wlr portal. Lands on PATH through ~/.nix-profile once
-        # home-manager-entra has activated (first login: after the unit runs).
-        pkgs.slack
+        # Sandboxed (packages.nix); state persists via auth-entra.nix.
+        cell.packages.slack
+        cell.packages.telegram-desktop
       ])
     ];
   };
