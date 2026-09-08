@@ -26,12 +26,16 @@ if [[ ! -e $out ]]; then
   for i in "${identities[@]}"; do
     args+=("--identity" "$i")
   done
-  # Never prompts: PIN-gated identities are used only by `unlock-secrets`,
-  # which the user runs on purpose. Eval must not pop a PIN dialog.
-  if ! rage --decrypt "${args[@]}" --output "$out" "$file" 2>/dev/null </dev/null; then
+  # age-plugin-tpm asks for the PIN on /dev/tty itself, so a cache miss during
+  # an interactive `nix build`/`nixos-rebuild` simply prompts (oddlama-style).
+  # Only when there is no controlling tty (agents, CI, sudo without a tty) does
+  # this fail — then say what to do instead of dumping a rage trace.
+  if ! rage --decrypt "${args[@]}" --output "$out" "$file"; then
     rm -f "$out"
-    echo "secrets: no cached plaintext for $(basename "$file") (UID $UID) and the quiet identities do not fit this TPM." >&2
-    echo "  run \`unlock-secrets\` (same user, no sudo) to decrypt with this host's PIN identity, then retry." >&2
+    if ! { : </dev/tty; } 2>/dev/null; then
+      echo "secrets: no cached plaintext for $(basename "$file") (UID $UID) and no tty to ask the TPM PIN on." >&2
+      echo '  run `unlock-secrets` from an interactive shell (same user, no sudo), then retry.' >&2
+    fi
     exit 1
   fi
 fi

@@ -161,8 +161,13 @@ Note: on a VM (the former sevastopol test VM, now retired) the same config repor
   Entra account needs the repo — then a shared checkout in `/etc/nix/the-hive`
   (root:users, `git config --system safe.directory`) is the candidate, not
   giving the Entra user sudo.
-- Split secrets into "install-time, TPM+PIN" vs "rebuild-time, no PIN" so
-  `nixos-rebuild` never prompts in a tty popup. Not before penrose is stable.
+- ~~Split secrets into "install-time, TPM+PIN" vs "rebuild-time, no PIN"~~
+  Resolved differently: the eval-time plaintext cache
+  (`/var/tmp/nix-import-encrypted`, ciphertext-hash keyed, 0700 local user)
+  is persisted, so the TPM PIN is asked once per *change* of
+  `globals.nix.age`, never per boot. On a cache miss `nixos-rebuild` prompts
+  for the PIN itself (age-plugin-tpm uses `/dev/tty`); `unlock-secrets` is the
+  same decrypt for shells without a tty (agents, CI, `sudo` from a script).
 - **Slack lost its login across reboots with only `~/.config/Slack` persisted.**
   Now sandboxed (nixpak, `packages.nix`): every path Electron may write
   (`~/.config`, `~/.local/share`, `~/.cache`) is mapped into the single

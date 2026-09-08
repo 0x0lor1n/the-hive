@@ -67,4 +67,21 @@
     ];
     files = [".bash_history"];
   };
+
+  # Eval-time plaintext of secrets/globals.nix.age (nix/rageImportEncrypted.sh).
+  # Keyed by ciphertext hash, so a changed secret misses the cache and needs one
+  # TPM PIN (prompted by eval itself, or via `unlock-secrets` without a tty);
+  # an unchanged one never touches the TPM again.
+  # Persisted so that a reboot does not force the PIN either. Accepted risk:
+  # the directory is 0700 to the local user, who is the only account that can
+  # rebuild anyway (trusted-users, checkout, PIN identity) - the Entra user
+  # cannot read it, and the pool itself is encrypted.
+  environment.persistence."/persist".directories = [
+    {
+      directory = "/var/tmp/nix-import-encrypted";
+      user = host.userName;
+      group = "users";
+      mode = "0700";
+    }
+  ];
 }
