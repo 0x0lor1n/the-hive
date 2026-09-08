@@ -57,7 +57,7 @@ penrose-builds: `nix build --no-link .#nixosConfigurations.penrose.config.system
 
 ## blocked_on
 - Secure Boot: RESOLVED -- `bootctl status` on penrose says "Secure Boot: enabled (user)" @ 2026-09-04.
-- Every eval/build needs `unlock-secrets` by the user after a reboot (globals.nix.age cache, PIN identity); the agent cannot run it.
+- `unlock-secrets` (TPM PIN, user only) is needed once per *change* of globals.nix.age: the plaintext cache in /var/tmp/nix-import-encrypted is persisted (layer-users-local) and keyed by ciphertext hash, so reboots no longer invalidate it.
 - `nixos-rebuild switch` needs the user's sudo password.
 
 ## verified

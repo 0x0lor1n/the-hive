@@ -77,15 +77,17 @@
   };
 
   # Prime the eval-time secrets cache with this host's PIN-protected TPM
-  # identity. `nix build`/`nixos-rebuild` have no tty, so the PIN prompt cannot
-  # happen inside eval; run this first, then build. Cache lives in
-  # /var/tmp/nix-import-encrypted/$UID and is keyed by ciphertext hash.
+  # identity. Not required: on a cache miss eval itself prompts for the PIN
+  # (age-plugin-tpm talks to /dev/tty). This exists for the cases without a
+  # tty - agents, CI, sudo without a terminal - and to decrypt on purpose.
+  # Cache lives in /var/tmp/nix-import-encrypted/$UID, keyed by ciphertext
+  # hash, and is persisted (layer-users-local): a PIN is needed once per change
+  # of globals.nix.age, not once per boot.
   unlock-secrets = pkgs.writeShellApplication {
     name = "unlock-secrets";
     runtimeInputs = with pkgs; [git rage age-plugin-tpm coreutils];
     text = ''
-      # The only place a TPM PIN is ever requested: explicit, by the user.
-      # Eval itself never prompts (see nix/rageImportEncrypted.sh).
+      # Same cache, same key as eval (see nix/rageImportEncrypted.sh).
       root=$(git rev-parse --show-toplevel)
       case "''${1:-$(hostname)}" in
         penrose) identity=dellvis-nix-rage ;;
@@ -109,36 +111,6 @@
     runtimeInputs = with pkgs; [git direnv coreutils];
     text = builtins.readFile "${inputs.self.outPath}/nix/dev.sh";
   };
-
-  # Not a Nix module: the pxpipe user service is installed imperatively so it
-  # works on non-NixOS hosts. Re-run after the package
-  # changes: the unit pins the store path it was generated from.
-  pxpipe-install = pkgs.writeShellApplication {
-    name = "pxpipe-install";
-    runtimeInputs = with pkgs; [coreutils systemd];
-    text = ''
-      port="''${PXPIPE_PORT:-47821}"
-      unit="$HOME/.config/systemd/user/pxpipe.service"
-      mkdir -p "$(dirname "$unit")"
-      cat > "$unit" <<EOF
-      [Unit]
-      Description=pxpipe: Anthropic loopback proxy (images system prompt/tool docs)
-      After=network-online.target
-
-      [Service]
-      ExecStart=${pkgs.lib.getExe cell.packages.pxpipe} -port $port
-      Restart=on-failure
-      RestartSec=2
-
-      [Install]
-      WantedBy=default.target
-      EOF
-      systemctl --user daemon-reload
-      systemctl --user enable pxpipe.service
-      systemctl --user restart pxpipe.service
-      echo "pxpipe-install: listening on 127.0.0.1:$port; log: journalctl --user -fu pxpipe"
-    '';
-  };
 in {
   # rensa devshell module, not pkgs.mkShell: the lefthook module needs
   # enterShellCommands to (re)install git hooks on every shell entry.
@@ -159,11 +131,12 @@ in {
       inputs.colmena.packages.${pkgs.stdenv.hostPlatform.system}.colmena
 
       pkgs.nixos-anywhere
+      # Workstation secrets (generated/ + rekeyed/<host>). agenix-rekey is a
+      # workstation-cell input; that cell re-exports the CLI.
+      inputs.cells.workstation.packages.agenix
       deploy-key
       unlock-secrets
       dev
-      pxpipe-install
-      cell.packages.pxpipe
       cell.packages.rtk
       pkgs.direnv
 
@@ -219,9 +192,9 @@ in {
     enterShellCommands.motd.text = ''
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
-      echo "  unlock-secrets  decrypt globals.nix.age with this host's TPM (PIN) before nix build/rebuild"
+      echo "  unlock-secrets  decrypt globals.nix.age with this host's TPM (PIN); eval prompts itself when it has a tty"
+      echo "  agenix edit|generate|rekey|view   workstation secrets (generated/ + rekeyed/<host>)"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
-      echo "  pxpipe-install  (re)install the pxpipe user service; needs pxpipe.anthropic.com in /etc/hosts"
       echo "  nix             = nixq shim (quiet progress; NIXQ=off to bypass); rtk <cmd> for compact git/ls/…"
       echo "  treefmt         alejandra + deadnix + gofumpt + shfmt; runs on pre-commit (LEFTHOOK=0 to skip)"
       echo "  go-test-all     go test every module; runs on pre-push"

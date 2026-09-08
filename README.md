@@ -71,16 +71,16 @@ gitignored and rsynced in.
 
 `cells/repo/packages.nix` builds [pxpipe](https://github.com/evan-choi/pxpipe-go)
 (pinned by hash), a local proxy that compacts Claude requests before they leave
-the machine. `pxpipe-install` in the deploy shell writes a user systemd unit
-from the store path -- it is not a Nix module, so it works on non-NixOS hosts.
+the machine. Workstations run one system instance for every session
+(`cells/workstation/profiles/agent-proxy.nix`), which also pins
+`pxpipe.anthropic.com` to `127.0.0.1` so the `/anthropic` suffix survives
+Hermes' base_url handling.
 
 ```bash
-pxpipe-install                       # systemctl --user enable --now pxpipe
-journalctl --user -u pxpipe -f       # per-request: applied= saved= cache_read=
+journalctl -u pxpipe -f              # per-request: applied= saved= cache_read=
 ```
 
-Hermes reaches it via `base_url: http://pxpipe.anthropic.com:47821`; the name
-is pinned to `127.0.0.1` in `/etc/hosts` so the `/anthropic` suffix survives.
+Hermes reaches it via `base_url: http://pxpipe.anthropic.com:47821`.
 
 ## nixq
 
@@ -117,6 +117,12 @@ material, `secrets/rekeyed/<host>/` the copies for that host's key
 host means regenerating.
 
 Installing a new workstation host end to end: `docs/install-workstation.md`.
+
+Two planes on a workstation: the local user (`layer-users-local`) holds the
+checkout, the TPM identities (`himmelblaud` group), `wheel` and nix
+trusted-users -- it is the only account that can `unlock-secrets` or rebuild.
+The Entra user is desktop-only (no `wheel`, no TPM); untrusted apps there run
+under nixpak (`cells/workstation/packages.nix`).
 
 ## Traps, measured
 
