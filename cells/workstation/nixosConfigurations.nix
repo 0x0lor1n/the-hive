@@ -45,6 +45,10 @@
       p.auth-entra
       # the user's split keyboard follows them to every machine
       p.input-vial
+      # 3 generations, weekly nh clean
+      p.maintenance
+      # pxpipe system unit + /etc/hosts alias, shared by every session's Hermes
+      p.agent-proxy
     ];
 
   # Hardware: exactly one per host. The playground VMs mount the host's flake
