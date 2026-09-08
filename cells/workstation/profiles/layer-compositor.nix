@@ -17,7 +17,13 @@
   ...
 }: let
   theme = inputs.cells.theme.palettes.kanagawa;
-  mkHome = userName: homeDir: extraPackages: import ../home {inherit userName homeDir theme extraPackages;};
+  mkHome = {
+    userName,
+    homeDir,
+    extraPackages ? [],
+    git ? null,
+  }:
+    import ../home {inherit userName homeDir theme extraPackages git;};
 
   # The Entra user is an NSS user (himmelblau), not in users.users, so the HM
   # NixOS module can't target it. Build the same home standalone and activate
@@ -30,11 +36,15 @@
     # Work-account-only apps live here, not in systemPackages: the local
     # break-glass user has no SSO and no business in the tenant's chat.
     modules = [
-      (mkHome entraCn "/home/${entraCn}" [
+      (mkHome {
+        userName = entraCn;
+        homeDir = "/home/${entraCn}";
         # Sandboxed (packages.nix); state persists via auth-entra.nix.
-        cell.packages.slack
-        cell.packages.telegram-desktop
-      ])
+        extraPackages = [
+          cell.packages.slack
+          cell.packages.telegram-desktop
+        ];
+      })
     ];
   };
   # himmelblau creates /home/<upn> and the /home/<cn> alias from pam_himmelblau
@@ -111,7 +121,11 @@ in {
 
     home-manager.useGlobalPkgs = true;
     home-manager.useUserPackages = true;
-    home-manager.users.${host.userName} = mkHome host.userName host.homeDir [];
+    # The local user holds the checkout: commit identity from public globals.
+    home-manager.users.${host.userName} = mkHome {
+      inherit (host) userName homeDir;
+      git = globals.user.git;
+    };
 
     # HM for the Entra user (see entraHome above). Runs in the user manager
     # PAM starts at login, so dbus is up and dconfSettings works. Idempotent:

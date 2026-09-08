@@ -113,9 +113,10 @@ in {
       # Any user in these domains may log in (no group filter yet).
       domain = globals.entra.domains;
 
-      # Every Entra user joins these for compositor + sudo access.
+      # No wheel: the Entra account is the desktop plane only. sudo, polkit
+      # admin, nix trusted-users and the TPM (himmelblaud group) stay with the
+      # local user, who holds the repo checkout and runs unlock-secrets.
       local_groups = [
-        "wheel"
         "video"
         "audio"
         "input"
