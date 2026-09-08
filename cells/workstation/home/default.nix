@@ -13,7 +13,15 @@
   theme,
   # Per-user additions on top of the shared desktop (Entra-only apps etc).
   extraPackages ? [],
-}: {pkgs, ...}: let
+  # Commit identity ({name, email}) or null: only the local user, who holds
+  # the checkout, commits; the Entra account gets git without a configured
+  # author so a stray commit fails loudly instead of leaking a work UPN.
+  git ? null,
+}: {
+  pkgs,
+  lib,
+  ...
+}: let
   k = theme.colors;
   ansi = theme.ansi;
 in {
@@ -31,6 +39,20 @@ in {
   imports = [./desktop];
 
   home.packages = extraPackages;
+
+  # Declared, not `git config --global`: ~/.gitconfig is not persisted and
+  # the repo-local user.* that got set by hand is what this replaces.
+  # userName/userEmail/extraConfig: the release-25.05 API (settings is 25.11+).
+  programs.git = {
+    enable = true;
+    userName = lib.mkIf (git != null) git.name;
+    userEmail = lib.mkIf (git != null) git.email;
+    extraConfig = {
+      init.defaultBranch = "main";
+      pull.rebase = true;
+      push.autoSetupRemote = true;
+    };
+  };
 
   # DWL's terminal keybind execs `foot` by name, so it must be on PATH.
   programs.foot = {

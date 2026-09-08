@@ -7,8 +7,10 @@ id = "email"
 description = "e-mail address"
 regex = '''[A-Za-z0-9._%+-]+@[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)*\.[a-z]{2,}'''
 [rules.allowlist]
+regexTarget = "line"
 regexes = [
   '''noreply@''',
+  '''@users\.noreply\.github\.com''', # GitHub noreply commit identity, author of this history
   '''example\.com''',
   '''0x0lor1n@''',            # public contact on the hisilome site
   '''nikita\.vyach\.ivanov@''', # upstream dwl movestack patch author

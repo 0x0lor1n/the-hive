@@ -26,6 +26,13 @@ in let
         encrypted
         {
           globals = {
+            # Commit identity for the local user's git (public: it is the
+            # author of the whole history). The Entra account does not commit.
+            user.git = {
+              name = "0x0lor1n";
+              email = "0xolorin@users.noreply.github.com";
+            };
+
             hosts.osgiliath.diskDevice = "/dev/vda";
 
             # Playground workstation VM (cells/workstation). Public throwaway
