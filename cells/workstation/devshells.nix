@@ -197,7 +197,7 @@ in {
       pkgs.nix
       pkgs.rage
       pkgs.age-plugin-tpm
-      inputs.agenix-rekey.packages.${pkgs.stdenv.hostPlatform.system}.default
+      cell.packages.agenix
       pkgs.sbctl
       ws-image
       ws-switch
