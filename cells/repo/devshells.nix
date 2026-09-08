@@ -38,6 +38,10 @@
     name = "go-test-all";
     runtimeInputs = [pkgs.go pkgs.git];
     text = ''
+      # pkgs.go defaults to CGO_ENABLED=1, and `net` then wants a C compiler
+      # for runtime/cgo. No gcc on the workstation PATH by design; the
+      # binaries are pure Go and buildGoModule builds them the same way.
+      export CGO_ENABLED=0
       root=$(git rev-parse --show-toplevel)
       status=0
       while IFS= read -r mod; do

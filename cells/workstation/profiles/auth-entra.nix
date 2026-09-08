@@ -320,6 +320,7 @@ in {
   # interpreters exist on NixOS by default.
   systemd.tmpfiles.rules = let
     inherit (globals.entra.user) upn uid;
+    cn = lib.head (lib.splitString "@" upn);
     own = sub: "d /home/${upn}${sub} 0700 ${toString uid} ${toString uid} -";
   in
     [
@@ -332,8 +333,16 @@ in {
     # /home/<upn> itself is 0750: himmelblau creates it that way (umask 027)
     # and the /home/<cn> alias must stay traversable. .local/state is where
     # home-manager-entra registers its generation.
+    #
+    # The /home/<cn> alias (home_alias = "cn") is what PAM reports as $HOME,
+    # but himmelblaud_tasks creates it *after* the session is already up. On
+    # an @blank root the first login after every boot therefore has no $HOME:
+    # dwl-session's `2> $HOME/.cache/dwl/last.log` fails, dwl never execs,
+    # greetd is back in ~4 s and only the second attempt works. Declare the
+    # link so it exists before the first PAM session (measured 2026-09-08).
     ++ lib.optionals (upn != null && uid != null) [
       "d /home/${upn} 0750 ${toString uid} ${toString uid} -"
+      "L /home/${cn} - - - - ${upn}"
       (own "/.config")
       (own "/.cache")
       (own "/.local")

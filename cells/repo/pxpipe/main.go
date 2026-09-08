@@ -64,11 +64,16 @@ func main() {
 			}
 			o.model, o.applied, o.reason, o.detail = res.Model, res.Applied, res.Reason, res.Detail
 			if i := res.Info; i != nil {
-				// Same estimate as upstream internal/app/server.go estimatedSaving.
+				// Same estimate as upstream internal/app/server.go estimatedSaving,
+				// with one fix: the history collapse adds its pixels to ImagePixels
+				// but books the text it replaced under CollapsedChars, not
+				// CompressedChars. Upstream therefore charges for the history
+				// images without crediting the text they removed and reports a
+				// constant negative "saving" once a session's history is frozen.
 				if i.BaselineImagedTokens > 0 || i.ImageTokens > 0 {
 					o.saved = i.BaselineImagedTokens - i.ImageTokens - i.NativeInjectedTokens
-				} else if i.CompressedChars > 0 && i.ImagePixels > 0 {
-					o.saved = i.CompressedChars/4 - i.ImagePixels/(28*28)
+				} else if chars := i.CompressedChars + i.CollapsedChars; chars > 0 && i.ImagePixels > 0 {
+					o.saved = chars/4 - i.ImagePixels/(28*28)
 				}
 			}
 		},
