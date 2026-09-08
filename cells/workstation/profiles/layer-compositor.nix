@@ -95,9 +95,14 @@
     export XDG_CURRENT_DESKTOP=dwl
     export XDG_SESSION_TYPE=wayland
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") config.session.compositorEnvironment)}
-    # Last crash log survives in the (persisted) home.
-    mkdir -p "$HOME/.cache/dwl"
-    exec ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
+    # Last crash log survives in the (persisted) home. Never let the log be
+    # the reason the session dies: if $HOME is not there yet (first login
+    # after boot raced himmelblaud_tasks), fall back to the journal.
+    if mkdir -p "$HOME/.cache/dwl" 2>/dev/null; then
+      exec ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
+    else
+      exec ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar}
+    fi
   '';
 in {
   imports = [inputs.home-manager.nixosModules.home-manager];
