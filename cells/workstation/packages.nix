@@ -84,6 +84,10 @@
     NIXOS_OZONE_WL = "1";
   };
 in {
+  # The agenix-rekey CLI from this cell's input, so the deploy shell (which
+  # has no such input) ships the same binary the workstation shell does.
+  agenix = inputs.agenix-rekey.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
   # dwl with our config.h. dwl's Makefile copies config.def.h to config.h only
   # when the latter is absent, so dropping the file in is the whole override --
   # no sed patching of upstream. Keybinds and rationale live in packages/dwl/config.h.
