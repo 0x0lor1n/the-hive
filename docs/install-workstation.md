@@ -163,10 +163,10 @@ Note: on a VM (the former sevastopol test VM, now retired) the same config repor
   giving the Entra user sudo.
 - Split secrets into "install-time, TPM+PIN" vs "rebuild-time, no PIN" so
   `nixos-rebuild` never prompts in a tty popup. Not before penrose is stable.
-- **Slack does not survive a reboot even with `~/.config/Slack` persisted**
-  (auth-entra.nix). Something else is written outside that dir. Diagnose under
-  the Entra user after a fresh login:
-  `find ~ -path '*/.nix-profile' -prune -o -newer ~/.config/Slack/Preferences -type f -print | grep -viE '/\.config/Slack/|/\.cache/'`
-  Suspects: `~/.local/share/keyrings` (a secret-service got activated via the
-  portal → Electron uses it for the token) or `~/.config/Slack` being created
-  by Slack *before* the impermanence bind lands on first login. Fix once known.
+- **Slack lost its login across reboots with only `~/.config/Slack` persisted.**
+  Now sandboxed (nixpak, `packages.nix`): every path Electron may write
+  (`~/.config`, `~/.local/share`, `~/.cache`) is mapped into the single
+  persisted `~/.var/app/com.slack.Slack`, and no secret service is reachable
+  from inside, so the token has nowhere else to go. Verify after one reboot;
+  if it still asks to log in, `find ~/.var/app/com.slack.Slack -newer ...`
+  is the whole search space now.
