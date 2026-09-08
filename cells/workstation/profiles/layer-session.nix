@@ -16,6 +16,20 @@ in {
   # contend for seat0.
   security.polkit.enable = true;
 
+  # Any local active session may power off / reboot / suspend without the
+  # admin password. The default is active=yes only for the single-session
+  # case; with the local user's SSH session or a second seat open, logind
+  # switches to the *-multiple-sessions actions, which want auth_admin, and
+  # the Entra user (no wheel) cannot satisfy that.
+  security.polkit.extraConfig = ''
+    polkit.addRule(function(action, subject) {
+      if (subject.local && subject.active &&
+          action.id.match(/^org\.freedesktop\.login1\.(power-off|reboot|suspend|hibernate)(-multiple-sessions)?$/)) {
+        return polkit.Result.YES;
+      }
+    });
+  '';
+
   # GPU-independent session environment. NixOS-level, not home.sessionVariables:
   # tuigreet's `--cmd` never sources ~/.profile, so HM vars are invisible to the
   # compositor greetd execs.
