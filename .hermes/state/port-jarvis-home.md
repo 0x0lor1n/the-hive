@@ -8,6 +8,16 @@ Decision 2026-09-09: stop fixing intune-portal on jarvis (server-side 1001/Inter
 1.2607.4 is latest, clean re-enroll x3 failed). Ubuntu stays until penrose has home+workspace,
 then jarvis gets reinstalled from cells/workstation (own host, not a port of penrose).
 
+## where this runs
+Phases 1-3 run ON PENROSE (hermes there). Setup on penrose:
+  git clone https://github.com/0x0lor1n/the-hive.git ~/workspace/playground/nix-rensa   # this repo, main
+  git clone -b nvim-wochap-resync https://github.com/crookedmirror/nixos-config.git ~/nixos-config  # SOURCE, read-only
+  (branch nvim-wochap-resync = jarvis's live state as of 2026-09-09; main is 6 commits behind it)
+Phase 4 (workspace rsync) is a PULL from penrose: `rsync jarvis:~/workspace/...` — only step
+that needs a route between the two hosts; penrose has 1TB free, space is not a concern.
+jarvis's role until phase 5: keep working, serve ~/workspace over ssh, nothing else.
+Also port users/shared/tui/ (coding-agents/opencode etc.) — missed in the inventory table, goes to home/dev/.
+
 ## invariants
 - home-manager stays a NixOS module in this repo (flake.nix:31 — mkHome broken upstream).
   Anything from nixos-config that only exists for standalone/genericLinux is DROPPED, not ported:
@@ -76,7 +86,7 @@ then jarvis gets reinstalled from cells/workstation (own host, not a port of pen
 
 ## blocked_on
 - penrose not resolvable from jarvis right now (phase 3/4 need a route) — check NetworkManager/LAN, or use IP
-- penrose free disk for 146G workspace unknown
+- (resolved) penrose has 1TB free
 - decisions needed from user: kitty keep/drop; chaotic input keep/drop; certs/ 92G destination
 
 ## verified
