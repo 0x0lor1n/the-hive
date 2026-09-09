@@ -66,7 +66,19 @@
                 (sloth.mkdir sloth.xdgDownloadDir)
               ];
               # Host fontconfig: its <dir> entries are store paths, already bound.
-              bind.ro = ["/etc/fonts"];
+              # os-release: Electron apps (Slack) read it at startup to collect
+              # distro info; without it Slack throws "No unique release file
+              # found!" in the main process and never creates a window.
+              bind.ro = [
+                "/etc/fonts"
+                ["/etc/static/os-release" "/etc/os-release"]
+                ["/etc/static/lsb-release" "/etc/lsb-release"]
+              ];
+              # bwrap starts from an empty root and nixpak adds no /tmp.
+              # Chromium/Electron needs one for its SingletonSocket (and
+              # Qt for its lock/IPC files); without it the main process
+              # hangs before mapping a window. Private per-app tmpfs.
+              tmpfs = ["/tmp"];
               inherit env;
               newSession = true;
               dieWithParent = true;
