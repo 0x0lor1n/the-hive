@@ -143,8 +143,19 @@ in {
     env.QT_QPA_PLATFORM = "wayland";
   };
 
+  # nixpkgs' slack rpath has no libva, so Chromium's va_stubs fail to
+  # dlopen(libva.so.2) and video decode falls back to software. The dlopen
+  # originates in the main binary, so its RUNPATH is what gets searched;
+  # libva then finds iHD_drv_video.so via /run/opengl-driver (gpu.enable).
+  # libva-minimal is already in the closure through ffmpeg: no extra deps.
   slack = sandboxed {
-    package = pkgs.slack;
+    package = pkgs.slack.overrideAttrs (old: {
+      postFixup =
+        (old.postFixup or "")
+        + ''
+          patchelf --add-rpath ${lib.makeLibraryPath [pkgs.libva-minimal]} $out/lib/slack/slack
+        '';
+    });
     appId = "com.slack.Slack";
     env = chromiumEnv;
   };
