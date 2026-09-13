@@ -13,6 +13,9 @@ radio/state/
 result
 result-*
 
+# Regenerable d2 previews; the site derivation compiles diagrams/*.d2 itself.
+diagrams/out/
+
 # trailing slash, no leading slash: also catches the copy under content/
 .omc/
 
