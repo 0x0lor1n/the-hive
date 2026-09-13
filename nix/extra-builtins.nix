@@ -17,7 +17,9 @@ in {
     "The file to decrypt must be given as a path to prevent impurity.";
       exec (
         [
-          "sh"
+          # Explicitly bash: the script uses arrays and substring expansion.
+          # On non-NixOS hosts `sh` is dash and the eval dies with a syntax error.
+          "bash"
           ./rageImportEncrypted.sh
           nixFile
         ]
