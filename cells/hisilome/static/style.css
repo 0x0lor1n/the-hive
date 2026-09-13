@@ -24,6 +24,8 @@
   --sumi-ink-4: #2a2a37;
   --sumi-ink-5: #363646;
   --fuji-white: #dcd7ba;
+  --old-white: #c8c093;
+  --boat-yellow: #c0a36e;
   --fuji-gray: #727169;
   --crystal-blue: #7e9cd8;
   --oni-violet: #957fb8;
@@ -46,7 +48,7 @@
   /* semantic roles */
   --bg: var(--sumi-ink-3);
   --bg-dim: var(--sumi-ink-0);
-  --fg: var(--fuji-white);
+  --fg: var(--old-white);
   --muted: var(--fuji-gray);
   --link: var(--crystal-blue);
   --hover: var(--oni-violet);
@@ -187,16 +189,19 @@ h3:before {
 h1 {
   font-size: 1.4rem;
   font-weight: 700;
+  color: var(--link);
 }
 
 h2 {
   font-size: 1.15rem;
   font-weight: 700;
+  color: var(--sakura-pink);
 }
 
 h3 {
   font-size: 1rem;
   font-weight: 700;
+  color: var(--oni-violet);
 }
 
 /* the global reset zeroes margins, leaving headings flush against the text */
@@ -215,6 +220,58 @@ main > h2:first-child {
 /* .post-list li already spaces entries */
 .post-list h3 {
   margin: 0 0 0.35rem;
+}
+
+/* Chromatic-aberration fringe borrowed from .tag, but hover-only: post titles
+   wrap to two lines, where the absolutely-positioned clones would sit crooked
+   and smear the resting title. On hover the offset + tear reads as intended. */
+.post-title {
+  position: relative;
+  z-index: 0;
+  color: var(--link);
+  text-shadow: 0 0 4px rgba(var(--link-rgb), 0.18);
+  transition: color 160ms, text-shadow 160ms;
+}
+
+.post-title::before,
+.post-title::after {
+  content: attr(data-name);
+  position: absolute;
+  left: 0;
+  top: 0;
+  z-index: -1;
+  pointer-events: none;
+  text-shadow: none;
+  opacity: 0;
+}
+
+.post-title::before {
+  color: #ff3b5c;
+}
+
+.post-title::after {
+  color: #3bf0ff;
+}
+
+.post-title:hover {
+  color: var(--carp-yellow);
+  text-shadow: 0 0 12px rgba(var(--carp-rgb), 0.6);
+}
+
+.post-title:hover::before {
+  opacity: 0.7;
+  animation: tag-tear-r 420ms steps(1, end) 1;
+}
+
+.post-title:hover::after {
+  opacity: 0.7;
+  animation: tag-tear-c 420ms steps(1, end) 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .post-title { transition: none; }
+  .post-title:hover::before,
+  .post-title:hover::after { opacity: 0; animation: none; }
 }
 
 .post-list {
@@ -274,6 +331,13 @@ main > h2:first-child {
   text-decoration: none;
 }
 
+.permalink a svg {
+  width: 0.85em;
+  height: 0.85em;
+  fill: currentColor;
+  vertical-align: -0.1em;
+}
+
 .permalink a:hover {
   color: var(--hover);
 }
@@ -297,7 +361,8 @@ pre {
 
 code {
   font-family: inherit;
-  background: var(--bg-dim);
+  color: var(--fuji-white);
+  background: var(--sumi-ink-5);
   padding: 0.1rem 0.3rem;
   border-radius: 3px;
 }
@@ -312,8 +377,8 @@ main li {
 }
 
 blockquote {
-  border-left: 2px solid var(--border);
-  color: var(--muted);
+  border-left: 2px solid var(--boat-yellow);
+  color: var(--boat-yellow);
   padding-left: 1rem;
   margin-bottom: 1rem;
 }
@@ -365,7 +430,36 @@ del {
 
 pre code {
   padding: 0;
+  color: inherit;
   background: none;
+}
+
+/* Language tab on fenced blocks. Zola sets data-lang on <code>; the label is
+   absolutely positioned so it scrolls with wide snippets instead of floating. */
+pre {
+  position: relative;
+}
+
+pre code[data-lang]::before {
+  content: attr(data-lang);
+  position: absolute;
+  top: 0;
+  right: 0;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.75rem;
+  color: var(--muted);
+  background: var(--sumi-ink-4);
+  border-left: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  border-radius: 0 3px 0 3px;
+}
+
+pre code[data-lang="plain"]::before { content: none; }
+pre code[data-lang="shellscript"]::before { content: "bash"; }
+
+/* Lists of attempts / items where the bold lead-in carries the structure */
+main li > strong:first-child {
+  color: var(--carp-yellow);
 }
 
 .socials {
@@ -896,7 +990,7 @@ body.framed {
 
 .rc-clock {
   margin: 0;
-  color: var(--muted);
+  color: var(--boat-yellow);
   font-size: 0.75rem;
 }
 
@@ -945,9 +1039,34 @@ body.framed {
   .console-live { height: 84px; }
 }
 
-/* cap the measure: the full column is ~110 monospace characters */
+/* Prose stays at a readable measure; code, diagrams and tables break out to
+   the full column (the player's width). Full-width prose is ~137 monospace
+   characters, which the eye cannot track back to the next line. */
 .layout > main {
-  max-width: 72ch;
+  max-width: none;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 110ch) minmax(0, 1fr);
+}
+
+.layout > main > * {
+  grid-column: 2;
+  min-width: 0;
+}
+
+/* Diagrams are laid out top-to-bottom, so they fit the prose column at their
+   natural size and need no zoom. Cap at the SVG's own width (d2 renders
+   labels at ~16px) so a narrow chain does not get inflated to fill the column. */
+.layout > main > figure {
+  margin-left: 0;
+  margin-right: 0;
+  text-align: center;
+}
+
+.layout > main > figure svg {
+  width: auto;
+  max-width: 100%;
+  max-height: 80vh;
+  height: auto;
 }
 
 /* the sidebar block renders nothing, so centre rather than sit hard left */

@@ -9,7 +9,7 @@
 <ul class="post-list">
 {% for page in term.pages %}
 <li>
-<h3><a href="{{ page.path | safe }}">{{ page.title }}</a></h3>
+<h3><a class="post-title" href="{{ page.path | safe }}" data-name="{{ page.title }}">{{ page.title }}</a></h3>
 {{ macros::post_meta(page=page) }}
 </li>
 {% endfor %}

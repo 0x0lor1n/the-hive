@@ -26,6 +26,23 @@
       text = builtins.readFile "${src}/bin/${name}.sh";
     };
 
+  # d2 -> static/ before zola build; zola copies static/ into the output root.
+  # --scale 1 writes width/height on the <svg>, so the browser draws diagrams at
+  # native size instead of stretching a 360px chain to the column width.
+  # classes.d2 is import-only, so compile the numbered diagrams only. One
+  # definition for the derivation and the dev loop so the two cannot drift.
+  build-site = pkgs.writeShellApplication {
+    name = "build-site";
+    runtimeInputs = [pkgs.d2 pkgs.zola pkgs.coreutils];
+    text = ''
+      mkdir -p static/diagrams
+      for f in diagrams/[0-9]*.d2; do
+        d2 --theme 200 --pad 20 --scale 1 "$f" "static/diagrams/$(basename "$f" .d2).svg"
+      done
+      zola build "$@"
+    '';
+  };
+
   # Fragments liquidsoap writes into radio/state, served outside the site root
   # so `zola build` cannot delete them.
   fragments = [
@@ -159,7 +176,7 @@
       }
     '';
 in {
-  inherit nginxLocations nginxHttpConfig;
+  inherit nginxLocations nginxHttpConfig build-site;
 
   site = pkgs.runCommand "hisilome-site" {} ''
     set -e
@@ -167,17 +184,26 @@ in {
     chmod -R u+w s
     cd s
     export HOME=$TMPDIR
-
-    # d2 -> static/ before zola build; zola copies static/ into the output
-    # root. classes.d2 is import-only, so compile the numbered diagrams only.
-    mkdir -p static/diagrams
-    for f in diagrams/[0-9]*.d2; do
-      ${pkgs.d2}/bin/d2 --theme 200 --pad 20 "$f" \
-        "static/diagrams/$(basename "$f" .d2).svg"
-    done
-
-    ${pkgs.zola}/bin/zola build --output-dir $out
+    ${build-site}/bin/build-site --output-dir $out
   '';
+
+  # Preview through the same nginx config as prod (SSI, fragments, headers).
+  # `zola serve` does none of that: the SSI comments leak into the page as text.
+  dev-site = pkgs.writeShellApplication {
+    name = "dev-site";
+    runtimeInputs = [build-site cell.packages.dev-nginx pkgs.watchexec pkgs.coreutils];
+    text = ''
+      build-site
+      dev-nginx &
+      trap 'kill $!' EXIT
+      echo "site: http://localhost:8099 (stream/console 502 unless the station is up)"
+      exec watchexec \
+        --watch content --watch templates --watch static --watch diagrams --watch config.toml \
+        --ignore 'static/diagrams/**' \
+        --debounce 300ms --on-busy-update=queue \
+        -- build-site
+    '';
+  };
 
   dev-nginx = pkgs.writeShellApplication {
     name = "dev-nginx";

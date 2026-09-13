@@ -8,9 +8,10 @@ processes:
   watch-site:
     command: >
       watchexec
-      --watch content --watch templates --watch static --watch config.toml
+      --watch content --watch templates --watch static --watch diagrams --watch config.toml
+      --ignore 'static/diagrams/**'
       --debounce 300ms --on-busy-update=queue
-      -- zola build
+      -- build-site
     depends_on:
       build-site:
         condition: process_completed_successfully

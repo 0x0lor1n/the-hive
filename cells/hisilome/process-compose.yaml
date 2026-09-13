@@ -11,7 +11,7 @@ processes:
       fi
 
   build-site:
-    command: "zola build"
+    command: "build-site"
 
   # No-op on an unchanged library; keeps liquidsoap from analysing at resolve
   # time (~5s per track).

@@ -32,12 +32,14 @@ in {
         build-queue
         listener-count
         dev-nginx
+        build-site
+        dev-site
       ])
       ++ [dev];
 
     shellHook = ''
-      echo "zola build                                   generate the site into public/"
-      echo "zola serve                                   live-reloading preview"
+      echo "dev-site                                     build + nginx :8099 + rebuild on change (use this, not zola serve)"
+      echo "build-site                                   d2 -> static/diagrams, then zola build into public/"
       echo "process-compose up -f process-compose.yaml   local stack: icecast+liquidsoap+nginx"
       echo "tag-replaygain music                         write ReplayGain tags (-n to preview)"
       echo "tag-album music                              write ALBUM tags from [bracket] prefixes"

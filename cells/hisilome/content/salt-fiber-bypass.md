@@ -22,10 +22,7 @@ One thing worth mentioning: Switzerland has no Routerfreiheit. Germany passed th
 
 So the plan was: connect directly to Salt's XGS-PON OLT, run everything in NixOS, and put the Fiber Box in a drawer. Easier said than done, as it turned out.
 
-<figure>
-<img src="/diagrams/01-before.svg" alt="The stock setup: Salt OLT over fiber into the Sagemcom Fiber Box, which does routing, Wi-Fi, VoIP and firewalling behind closed firmware, out to LAN clients over 2.5G copper.">
-<figcaption>The stock setup. Everything grey is the ISP's, and none of it is inspectable.</figcaption>
-</figure>
+{{ d2(name="01-before", alt="The stock setup: Salt OLT over fiber into the Sagemcom Fiber Box, which does routing, Wi-Fi, VoIP and firewalling behind closed firmware, out to LAN clients over 2.5G copper.") }}
 
 
 ## Act 2 — The hardware, and cutting the cord
@@ -97,10 +94,7 @@ The `RouteMetric` is what makes this coexist peacefully with the primary WAN:
 
 With metric 2048, the tether route only activates when the stick's metric-100 route is gone. Plug in the phone, pull the fiber, and within seconds Yggdrasil re-routes through mobile data. SSH stays up. I can experiment on the fiber path without losing access.
 
-<figure>
-<img src="/diagrams/03-tether.svg" alt="Failover topology: the router reaches the internet via the WAS-110 (metric 100) or an Android USB tether (metric 2048); both reach a Yggdrasil mesh that keeps SSH and mosh reachable regardless of which path is live.">
-<figcaption>The lifeline. Pull the fiber and the metric-2048 tether takes over; Yggdrasil keeps the box reachable either way.</figcaption>
-</figure>
+{{ d2(name="03-tether", alt="Failover topology: the router reaches the internet via the WAS-110 (metric 100) or an Android USB tether (metric 2048); both reach a Yggdrasil mesh that keeps SSH and mosh reachable regardless of which path is live.") }}
 
 After this was verified, the monitor and keyboard came off. They never went back.
 
@@ -174,7 +168,7 @@ The public `/32` was routed to us. I could see inbound packets arriving at the W
 
 Using the alias address as source worked, but through CGNAT. The egress IP showed up as `213.55.x.x`, a different Salt NAT pool address each time:
 
-```
+```bash
 # Source: public /32 -> hangs forever
 curl -4 --interface <YOUR_PUBLIC_IP> https://ifconfig.co
 
@@ -189,19 +183,13 @@ So the static IP existed and was routed to us, but the BNG's source-guard reject
 
 I tried everything I could think of, and quite a few things other people suggested. None of it worked:
 
-**Gratuitous ARP** for the `/32` (both opcode 1 and 2). No effect. The source-guard is not ARP-learned.
-
-**Equipment ID change** to match the stick's native identifier. The ONU re-registered fine (O5 state), but egress was still CGNAT. No effect on source-guard.
-
-**Changing the subnet mask** from `/20` to `/22`, based on another Salt user's reported configuration on the Digitec forum. This broke IPv4 entirely. The gateway stopped answering ARP. I rolled back with `networkctl reconfigure`.
-
-**MAP-E** (RFC 7597). I looked into it after a ChatGPT conversation suggested it might be relevant. It's not used by Salt. Their architecture is classical CGNAT with per-subscriber allocation on the BNG.
-
-**DHCP on VLAN 30** with the box's identity (`option 60 = "sagem"`, `option 61 = WAN MAC`). Two DISCOVERs sent, zero inbound frames. Salt runs no DHCP server on the data VLAN. The box's own DHCP client on this VLAN sits permanently at `INIT`.
-
-**VLAN 69 management session.** The theory was that the static IP's authorisation comes from a management DHCP session the box establishes on VLAN 69. I tested this end-to-end: the OLT provisions VLAN 69 to this ONU (OMCI MIB confirms gem1038, bridge port 57604), the tc filters are in place, and our frames leave the fiber (GEM counters increment). But `rx_frames=0`, always. Salt's management plane refuses to talk to this ONU. If the session can't be established, it can't be the authorisation mechanism.
-
-**DHCPv6-PD.** Five solicits, zero replies. Salt doesn't delegate prefixes to third-party equipment.
+- **Gratuitous ARP** for the `/32` (both opcode 1 and 2). No effect. The source-guard is not ARP-learned.
+- **Equipment ID change** to match the stick's native identifier. The ONU re-registered fine (O5 state), but egress was still CGNAT. No effect on source-guard.
+- **Changing the subnet mask** from `/20` to `/22`, based on another Salt user's reported configuration on the Digitec forum. This broke IPv4 entirely. The gateway stopped answering ARP. I rolled back with `networkctl reconfigure`.
+- **MAP-E** (RFC 7597). Investigated it as a possible source of the dual-address behaviour. It's not used by Salt. Their architecture is classical CGNAT with per-subscriber allocation on the BNG.
+- **DHCP on VLAN 30** with the box's identity (`option 60 = "sagem"`, `option 61 = WAN MAC`). Two DISCOVERs sent, zero inbound frames. Salt runs no DHCP server on the data VLAN. The box's own DHCP client on this VLAN sits permanently at `INIT`.
+- **VLAN 69 management session.** The theory was that the static IP's authorisation comes from a management DHCP session the box establishes on VLAN 69. I tested this end-to-end: the OLT provisions VLAN 69 to this ONU (OMCI MIB confirms gem1038, bridge port 57604), the tc filters are in place, and our frames leave the fiber (GEM counters increment). But `rx_frames=0`, always. Salt's management plane refuses to talk to this ONU. If the session can't be established, it can't be the authorisation mechanism.
+- **DHCPv6-PD.** Five solicits, zero replies. Salt doesn't delegate prefixes to third-party equipment.
 
 At this point, every protocol reachable from the subscriber side had been tried. Something was writing an entry into the BNG's source-guard ACL, and none of my traffic was triggering it.
 
@@ -209,7 +197,7 @@ At this point, every protocol reachable from the subscriber side had been tried.
 
 A separate problem showed up during this period that I want to mention briefly because the fix ended up being relevant later. IPv6 would work, then silently die after about 20 minutes, while IPv4 (through CGNAT) kept going.
 
-The cause turned out to be the BNG's IPv6 neighbour cache expiring. When it does, the BNG tries to re-resolve our address by sending an ICMPv6 Neighbour Solicitation to our solicited-node multicast address. The WAS-110 stick delivers this inbound multicast with the VLAN 30 tag still on it. The host drops tagged frames on an untagged interface. The solicitation never arrives, we never reply, and the BNG drops us.
+The cause turned out to be the BNG's IPv6 neighbour cache expiring. When it does, the BNG tries to re-resolve our address by sending an ICMPv6 Neighbour Solicitation to our solicited-node multicast address. The WAS-110 stick delivers this inbound multicast with the VLAN 30 tag still on it. `fix_vlans` strips the tag only for unicast, where it runs as a hardware-offloaded tc filter (`skip_sw`) on the stick's switch. Multicast takes a different path through the stick's datapath and keeps its tag. The host then drops the tagged frame on an untagged interface. The solicitation never arrives, we never reply, and the BNG drops us.
 
 IPv4 self-heals because we actively ARP for the gateway, and that teaches the BNG our MAC. IPv6 has no equivalent outbound trigger.
 
@@ -244,10 +232,7 @@ The idea was straightforward. We can't tap XGS-PON (it's point-to-point, 10 Gbps
 
 No soldering required.
 
-<figure>
-<img src="/diagrams/04-dac.svg" alt="The DAC tap: a twinax DAC cable joins the Fiber Box's 10G LAN port to the CWWK's second SFP+ cage (enp1s0f1). With no fiber attached the box boots and talks to what it thinks is a LAN client, and tcpdump on enp1s0f1 captures every frame — revealing RIPv2 to 224.0.0.9.">
-<figcaption>Watching the box without fiber. Its 10G LAN port speaks plain Ethernet into the spare SFP+ cage, and tcpdump does the rest.</figcaption>
-</figure>
+{{ d2(name="04-dac", alt="The DAC tap: a twinax DAC cable joins the Fiber Box's 10G LAN port to the CWWK's second SFP+ cage (enp1s0f1). With no fiber attached the box boots and talks to what it thinks is a LAN client, and tcpdump on enp1s0f1 captures every frame — revealing RIPv2 to 224.0.0.9.") }}
 
 The box takes about two minutes to boot before the link comes up. Then:
 
@@ -269,7 +254,7 @@ RIPv2 Response
   Route 2: <YOUR_PUBLIC_IP>/32, metric 1, next-hop self
 ```
 
-That's the mechanism. The Fiber Box announces its public `/32` to the BNG via RIP, and the BNG uses that to populate the source-guard ACL. Without this announcement, the BNG has no reason to accept the `/32` as a legitimate source address, so it doesn't.
+That looked like the mechanism. The theory: the Fiber Box announces its public `/32` to the BNG via RIP, and the BNG uses that announcement to accept the `/32` as a legitimate source address. I never got a shell on the BNG to confirm it, so this is inference from what I could see on the wire, not a look at the ACL itself. But it was testable.
 
 RIPv2 in 2026. On a residential fiber connection. Announcing a host route for source validation. I can confidently say that no amount of DHCP option guessing, equipment ID changing, or VLAN probing would have led here. It's a routing protocol from 1998, sitting in the packet capture next to ARP and ND, doing a job nobody would think to look for.
 
@@ -320,7 +305,7 @@ Ran it once. Then:
 curl -4 https://ifconfig.co
 ```
 
-My actual public IP. Not `213.55.x.x`. The static address, used as source. I verified from outside: inbound connections to the `/32` now completed a full handshake.
+My actual public IP. Not `213.55.x.x`. The static address, used as source. And from an external host, the `/32` now answered ICMP echo, so it was reachable inbound too, not just usable as an egress source.
 
 Weeks of dead ends, and one 54-line script later, it just worked. I'm genuinely glad I didn't have to solder UART headers onto that board.
 
@@ -369,10 +354,7 @@ After the fix, measured results:
 
 The Fiber Box is in a drawer.
 
-<figure>
-<img src="/diagrams/02-after.svg" alt="The final topology: Salt OLT over fiber to the WAS-110 ONU stick with a cloned identity, into the CWWK S8 (Intel N305) running NixOS with an nftables firewall, salt-rip-announce and salt-nd-announce; out to LAN clients with static IPv4 and native IPv6 /64 SLAAC and no NAT. The Fiber Box sits unplugged in a drawer.">
-<figcaption>The result. Green is mine now — one NixOS config, the static IP working as source, and native IPv6 with no NAT.</figcaption>
-</figure>
+{{ d2(name="02-after", alt="The final topology: Salt OLT over fiber to the WAS-110 ONU stick with a cloned identity, into the CWWK S8 (Intel N305) running NixOS with an nftables firewall, salt-rip-announce and salt-nd-announce; out to LAN clients with static IPv4 and native IPv6 /64 SLAAC and no NAT. The Fiber Box sits unplugged in a drawer.") }}
 
 
 ## Coming next
@@ -393,7 +375,7 @@ NixOS earned its keep too. When the `/22` mask test broke IPv4, `networkctl reco
 
 What didn't matter, despite looking plausible at the time: equipment ID changes, VLAN 69 management sessions (carrier refused to serve the ONU), DHCP option fingerprinting (no DHCP server on the data VLAN at all), MAP-E (not used by Salt), and subnet mask tweaks (just broke things).
 
-If you're attempting a similar bypass on Salt or another Swiss ISP, I'd suggest capturing what the original equipment puts on the wire before going down the DHCP and management VLAN rabbit holes. The answer, in my case, turned out to be a routing protocol from 1998 doing a job I didn't think to look for.
+If you're attempting a similar bypass on Salt or another Swiss ISP, capture what the original equipment puts on the wire before going down the DHCP and management VLAN rabbit holes. Whatever authorises the static IP, the box has to say it out loud on some interface, and a DAC cable is cheaper than a week of guessing.
 
 ---
 
