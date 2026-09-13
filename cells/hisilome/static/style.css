@@ -1367,3 +1367,10 @@ body.framed::before {
   .tag:hover::before,
   .tag:hover::after { animation: none; }
 }
+
+/* small raster sources (240px FLIR frames): never upscale */
+figure.pair.small img {
+  flex: 0 0 auto;
+  width: 240px;
+  max-width: 100%;
+}
