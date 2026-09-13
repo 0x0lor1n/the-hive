@@ -8,3 +8,8 @@ feed_filenames = ["rss.xml"]
 taxonomies = [
     { name = "tags", rss = true },
 ]
+
+[markdown]
+[markdown.highlighting]
+theme = "kanagawa-wave"
+style = "inline"
