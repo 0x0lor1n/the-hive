@@ -63,6 +63,7 @@ cd "$(dev hisilome)"   # also cd into the cell
 function: direnv exports env vars, not functions. A child cannot cd its parent,
 hence the printed path. Dev shells are per service cell, not per host.
 
+Site preview: `cd cells/hisilome && dev-site` (build + nginx :8099, rebuilds on change; prod SSI/fragments, unlike `zola serve`).
 Local station: `cd cells/hisilome && process-compose up -f process-compose.yaml`
 (add `-f process-compose.dev.yaml` for file watchers). Needs `music/`, which is
 gitignored and rsynced in.
