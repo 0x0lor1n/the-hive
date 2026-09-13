@@ -20,7 +20,7 @@ There's also a throughput argument. The box has a 10 Gbps XGS-PON uplink and a 1
 
 One thing worth mentioning: Switzerland has no Routerfreiheit. Germany passed their Endgerätefreiheit in 2016, giving subscribers the right to use their own equipment. Nothing equivalent exists here. Salt's ToS doesn't explicitly forbid third-party gear, but doesn't support it either. You're on your own, and if you break something, that's your problem.
 
-So the plan was: connect directly to Salt's XGS-PON OLT, run everything in NixOS, and put the Fiber Box in a drawer. Easier said than done, as it turned out.
+So the plan was: connect directly to Salt's XGS-PON OLT, run everything in NixOS, and retire the Fiber Box.
 
 {{ d2(name="01-before", alt="The stock setup: Salt OLT over fiber into the Sagemcom Fiber Box, which does routing, Wi-Fi, VoIP and firewalling behind closed firmware, out to LAN clients over 2.5G copper.") }}
 
@@ -40,7 +40,7 @@ I spent a while looking for hardware and honestly couldn't find a better fit tha
 
 I originally wanted the N355, but it was already out of stock due to chip shortages when I was buying. The N305 has enough headroom for a firewall plus Suricata, which was the plan from the start.
 
-Sourcing it was its own small adventure. I found the S8 on Amazon, but it was out of stock. So I tracked down the warehouse on Alibaba, talked to them on the platform, and they arranged the purchase through Amazon for me. If you know, you know — routing an Alibaba order through Amazon gets you Amazon's returns and buyer protection on a box you'd otherwise be buying direct from a Shenzhen warehouse. The RAM I got separately on [ricardo.ch](https://www.ricardo.ch/) (the Swiss eBay); a couple of days of watching listings and a good DDR5 deal came up.
+I found the S8 on Amazon, but it was out of stock. So I tracked down the warehouse on Alibaba, talked to them on the platform, and they arranged the purchase through Amazon for me. If you know, you know — routing an Alibaba order through Amazon gets you Amazon's returns and buyer protection on a box you'd otherwise be buying direct from a Shenzhen warehouse. The RAM I got separately on [ricardo.ch](https://www.ricardo.ch/) (the Swiss eBay); a couple of days of watching listings and a good DDR5 deal came up.
 
 <!-- [PHOTO: the CWWK box with its top removed, showing the SFP+ cages and the WAS-110 stick inserted] -->
 
@@ -67,6 +67,31 @@ With IPv6 confirmed, NixOS went onto the NVMe. The first real configuration incl
 **Yggdrasil** is an encrypted IPv6 mesh network. Every node gets a stable `200::/7` address derived from its cryptographic key. The router dials out to public peers in Germany and France (the published Swiss peer list is empty), and from that point it's reachable from any other Yggdrasil node on the planet. SSH is open on the `ygg0` interface only, never on the WAN.
 
 **mosh** runs over UDP and predicts local echo, so typing feels instant even at 400 ms RTT through volunteer relay nodes. It survives suspend, roaming, and network changes that kill SSH sessions. Also scoped to `ygg0`, ports 60000-61000.
+
+The part worth copying is not the mesh itself but what the firewall does with it. NixOS opens SSH on every interface by default (`services.openssh.openFirewall = true`), and `programs.mosh.enable` would open the UDP range globally too. Both are pinned to `ygg0` instead, so the WAN has nothing listening on it:
+
+```nix
+services.yggdrasil = {
+  enable = true;
+  persistentKeys = true;   # stable address across reboots
+  settings = {
+    IfName = "ygg0";
+    # Nearest published peers are in DE/FR; the Swiss list is empty.
+    Peers = [
+      "tls://ygg.mkg20001.io:443"
+      "tls://s2.i2pd.xyz:39575"
+    ];
+  };
+};
+
+services.openssh.openFirewall = false;   # default is true: port 22 on every interface
+networking.firewall.interfaces."ygg0" = {
+  allowedTCPPorts = [ 22 ];
+  allowedUDPPortRanges = [ { from = 60000; to = 61000; } ];   # mosh
+};
+```
+
+The LAN bridge is a trusted interface, so SSH works from inside the house without any of this.
 
 **USB tethering** is the actual lifeline, and the one I didn't appreciate enough until I needed it. When you pull the fiber out of the stick to experiment, the WAN dies. Yggdrasil goes down with it. SSH goes down with it. You're locked out of a headless box in another room.
 
@@ -177,7 +202,7 @@ curl -4 --interface <YOUR_ALIAS_IP> https://ifconfig.co
 # 213.55.247.235
 ```
 
-So the static IP existed and was routed to us, but the BNG's source-guard rejected it as an outbound source. Useless in both directions.
+So the static IP existed and was routed to us, but the BNG's source-guard rejected it as an outbound source, so it was useless in both directions.
 
 ### Everything that didn't work
 
@@ -188,7 +213,7 @@ I tried everything I could think of, and quite a few things other people suggest
 - **Changing the subnet mask** from `/20` to `/22`, based on another Salt user's reported configuration on the Digitec forum. This broke IPv4 entirely. The gateway stopped answering ARP. I rolled back with `networkctl reconfigure`.
 - **MAP-E** (RFC 7597). Investigated it as a possible source of the dual-address behaviour. It's not used by Salt. Their architecture is classical CGNAT with per-subscriber allocation on the BNG.
 - **DHCP on VLAN 30** with the box's identity (`option 60 = "sagem"`, `option 61 = WAN MAC`). Two DISCOVERs sent, zero inbound frames. Salt runs no DHCP server on the data VLAN. The box's own DHCP client on this VLAN sits permanently at `INIT`.
-- **VLAN 69 management session.** The theory was that the static IP's authorisation comes from a management DHCP session the box establishes on VLAN 69. I tested this end-to-end: the OLT provisions VLAN 69 to this ONU (OMCI MIB confirms gem1038, bridge port 57604), the tc filters are in place, and our frames leave the fiber (GEM counters increment). But `rx_frames=0`, always. Salt's management plane refuses to talk to this ONU. If the session can't be established, it can't be the authorisation mechanism.
+- **VLAN 69 management session.** The theory was that the static IP's authorisation comes from a management DHCP session the box establishes on VLAN 69. This one cost me a full night. I tested it end-to-end: the OLT provisions VLAN 69 to this ONU (OMCI MIB confirms gem1038, bridge port 57604), the tc filters are in place, and our frames leave the fiber (GEM counters increment). But `rx_frames=0`, always. Salt's management plane refuses to talk to this ONU. If the session can't be established, it can't be the authorisation mechanism.
 - **DHCPv6-PD.** Five solicits, zero replies. Salt doesn't delegate prefixes to third-party equipment.
 
 At this point, every protocol reachable from the subscriber side had been tried. Something was writing an entry into the BNG's source-guard ACL, and none of my traffic was triggering it.
@@ -213,7 +238,7 @@ systemd.timers.salt-nd-announce = {
 };
 ```
 
-That fixed IPv6 reliability. The static IPv4 problem remained.
+IPv6 was reliable after that, and the static IPv4 problem was exactly where it had been.
 
 
 ## Act 5 — The breakthrough
@@ -222,15 +247,13 @@ That fixed IPv6 reliability. The static IPv4 problem remained.
 
 By this point I had a soldering iron and an ESP-Prog programmer sitting on my desk. The Fiber Box's PCB has four UART pads in a row (I found them by looking up the QR code on the board: `800B090B2320`, which identifies the Sagemcom hardware revision). The plan was to solder on some headers, get a root shell through UART, and read the startup scripts to find whatever protocol I was missing.
 
-I was buzzing out the pads with a multimeter when I looked over at the CWWK. The second SFP+ cage was sitting empty. The Fiber Box has a 10G SFP+ LAN port. And I happened to have a DAC cable in a drawer.
+I was buzzing out the pads with a multimeter when I looked over at the CWWK. The second SFP+ cage was sitting empty. The Fiber Box has a 10G SFP+ LAN port. And I had a spare DAC cable.
 
 I put down the soldering iron.
 
-### What if we just watched?
+### Tapping the LAN port
 
 The idea was straightforward. We can't tap XGS-PON (it's point-to-point, 10 Gbps, AES-encrypted upstream). But we don't need fiber to see how the box behaves. A DAC cable (Direct Attach Copper) connects two SFP+ ports without optics, just twinax copper. Plug it between the CWWK's second SFP+ cage (`enp1s0f1`) and the box's 10G LAN port, power on the box without fiber, and the box boots up normally. It thinks it's talking to a LAN client. Every frame it sends is capturable.
-
-No soldering required.
 
 {{ d2(name="04-dac", alt="The DAC tap: a twinax DAC cable joins the Fiber Box's 10G LAN port to the CWWK's second SFP+ cage (enp1s0f1). With no fiber attached the box boots and talks to what it thinks is a LAN client, and tcpdump on enp1s0f1 captures every frame — revealing RIPv2 to 224.0.0.9.") }}
 
@@ -256,7 +279,7 @@ RIPv2 Response
 
 That looked like the mechanism. The theory: the Fiber Box announces its public `/32` to the BNG via RIP, and the BNG uses that announcement to accept the `/32` as a legitimate source address. I never got a shell on the BNG to confirm it, so this is inference from what I could see on the wire, not a look at the ACL itself. But it was testable.
 
-RIPv2 in 2026. On a residential fiber connection. Announcing a host route for source validation. I can confidently say that no amount of DHCP option guessing, equipment ID changing, or VLAN probing would have led here. It's a routing protocol from 1998, sitting in the packet capture next to ARP and ND, doing a job nobody would think to look for.
+A routing protocol from 1998, sitting in the capture next to ARP and ND, doing a job nobody would think to look for. No amount of DHCP or VLAN probing would have led here.
 
 ### Testing
 
@@ -307,7 +330,7 @@ curl -4 https://ifconfig.co
 
 My actual public IP. Not `213.55.x.x`. The static address, used as source. And from an external host, the `/32` now answered ICMP echo, so it was reachable inbound too, not just usable as an egress source.
 
-Weeks of dead ends, and one 54-line script later, it just worked. I'm genuinely glad I didn't have to solder UART headers onto that board.
+Weeks of dead ends, and then a 54-line script did it. The soldering iron went back in the box unused.
 
 ### Making it permanent
 
@@ -345,16 +368,75 @@ routes = [
 ];
 ```
 
+For completeness, the whole WAN network unit. This is the piece Act 4 described in prose:
+
+```nix
+systemd.network.links."10-wan" = {
+  matchConfig.OriginalName = "enp1s0f0";
+  linkConfig.MACAddress = "<YOUR_WAN_MAC>";   # the box's WAN MAC, not the label
+};
+
+systemd.network.networks."10-wan" = {
+  matchConfig.Name = "enp1s0f0";
+  address = [
+    "192.168.11.2/24"          # the stick's management net
+    "<YOUR_PUBLIC_IP>/32"
+    "<YOUR_ALIAS_IP>/20"       # makes the gateway's /20 local, so it answers ARP
+    # /128, not /64: Salt routes the whole /64 to ::1 in your prefix. The
+    # prefix itself lives on the LAN bridge, where clients SLAAC into it.
+    "<YOUR_PREFIX>::1/128"
+  ];
+  networkConfig = {
+    IPv6AcceptRA = false;      # no RAs on this line; everything is static
+    LinkLocalAddressing = "ipv6";
+    DNS = [ "2a04:ee42:53::1" "2a04:ee42:53::2" "213.55.128.100" "213.55.128.101" ];
+  };
+  routes = [
+    { Gateway = "10.114.0.1"; PreferredSource = "<YOUR_PUBLIC_IP>"; Metric = 100; }
+    { Gateway = "fe80::1181"; Metric = 100; }
+  ];
+  linkConfig.RequiredForOnline = false;
+};
+```
+
+And what `networkctl` shows once it's all up. The hardware address is the Fiber Box's; the permanent one underneath is the CWWK's own:
+
+```
+$ networkctl status enp1s0f0
+● 4: enp1s0f0
+                Network File: /etc/systemd/network/10-wan.network
+                       State: routable (configured)
+                      Driver: ixgbe
+                       Model: 82599ES 10-Gigabit SFI/SFP+ Network Connection
+            Hardware Address: <YOUR_WAN_MAC> (Sagemcom Broadband SAS)
+  Permanent Hardware Address: a8:b8:e0:xx:xx:xx (Changwang Technology inc.)
+                       Speed: 10Gbps
+                        Port: fibre
+                     Address: <YOUR_ALIAS_IP>
+                              <YOUR_PUBLIC_IP>
+                              192.168.11.2
+                              <YOUR_PREFIX>::1
+                              fe80::6e99:61ff:fexx:xxxx
+                     Gateway: 10.114.0.1
+                              fe80::1181
+```
+
 After the fix, measured results:
 
-- ~7 Gbps on Ookla speed tests, limited by the N305's CPU rather than the link
+- 7.8–8.0 Gbps down on Ookla (Speedtest CLI, Lausanne server), 2.7–2.9 Gbps up. The CPU governor made no difference: `performance` and `powersave` landed within two percent of each other, so don't bother
 - Static public IPv4 working as source, verified from outside
 - Native IPv6 with the full `/64` routed to the LAN, SLAAC for all clients, no NAT
-- The whole thing is one `configuration.nix` and two Python scripts. `nixos-rebuild switch` and done
+- The whole thing is one `configuration.nix` (the relevant parts are all quoted above) and two Python scripts. `nixos-rebuild switch` and done
+
+<figure class="pair">
+  <img src="/img/speedtest-powersave.png" alt="Speedtest CLI, powersave governor: 7819 Mbps down, 2740 Mbps up, 5 ms ping, Salt, Lausanne">
+  <img src="/img/speedtest-performance.jpg" alt="Speedtest CLI, performance governor: 7970 Mbps down, 2949 Mbps up, 4 ms ping, Salt, Lausanne">
+  <figcaption>powersave vs performance, same server, same box</figcaption>
+</figure>
 
 The Fiber Box is in a drawer.
 
-{{ d2(name="02-after", alt="The final topology: Salt OLT over fiber to the WAS-110 ONU stick with a cloned identity, into the CWWK S8 (Intel N305) running NixOS with an nftables firewall, salt-rip-announce and salt-nd-announce; out to LAN clients with static IPv4 and native IPv6 /64 SLAAC and no NAT. The Fiber Box sits unplugged in a drawer.") }}
+{{ d2(name="02-after", alt="The final topology: Salt OLT over fiber to the WAS-110 ONU stick with a cloned identity, into the CWWK S8 (Intel N305) running NixOS with an nftables firewall, salt-rip-announce and salt-nd-announce; out to LAN clients with static IPv4 and native IPv6 /64 SLAAC and no NAT. The Fiber Box is unplugged.") }}
 
 
 ## Coming next
