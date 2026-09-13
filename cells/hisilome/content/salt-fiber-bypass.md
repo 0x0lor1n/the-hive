@@ -44,11 +44,20 @@ I found the S8 on Amazon, but it was out of stock. So I tracked down the warehou
 
 <!-- [PHOTO: the CWWK box with its top removed, showing the SFP+ cages and the WAS-110 stick inserted] -->
 
-The ONU stick I bought is a Yunvo 10G SFP+ 1270/1577nm 20km SC/APC/UPC, pre-flashed with 8311 community firmware. Fair warning: it runs hot. Out of the box, idle temperature sits around 63 C. Inside the CWWK's aluminium case it crept up to 65 C. I stuck a small copper heatsink on it and that brought it down to about 55 C, which I can live with.
+The ONU stick I bought is a Yunvo 10G SFP+ 1270/1577nm 20km SC/APC/UPC, pre-flashed with 8311 community firmware. Fair warning: it runs hot. Out of the box, idle temperature sits around 63 °C by its own sensor. Inside the CWWK's aluminium case it crept up to 65 °C. I stuck a small copper heatsink on it and that brought the surface down to the high fifties, which I can live with. The module still reports itself warmer than that — the DDM sensor sits on the die, not on the shell:
+
+```bash
+$ sudo ethtool -m enp1s0f0 | grep 'Module temperature'
+        Module temperature                        : 63.72 degrees C / 146.69 degrees F
+```
+
+<figure class="pair small">
+  <img src="/img/stick-outside.jpg" alt="FLIR i5 thermal image of the WAS-110 stick's tail sticking out of the CWWK case: 57.7 °C spot, scale 24–58 °C">
+  <img src="/img/stick-inside.jpg" alt="FLIR i5 thermal image of the stick inside the open case with the copper heatsink: 56.0 °C spot, scale 25–56 °C">
+  <figcaption>FLIR i5: the stick's tail outside the case (57.7 °C) and the body inside, heatsink on (56.0 °C)</figcaption>
+</figure>
 
 > **Tip:** Alibaba stick vendors talk to you over WhatsApp, not the platform. Before you pay, ask them for the stick's root password — it's often a per-batch value, and you will want a shell on the stick later. Get it in writing while they're still motivated to close the sale.
-
-<!-- [PHOTO: the ONU stick with the copper heatsink attached] -->
 
 ### LiveUSB: the first boot
 
