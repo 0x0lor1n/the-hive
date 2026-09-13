@@ -353,8 +353,10 @@ p {
 pre {
   background: var(--bg-dim);
   border: 1px solid var(--border);
-  padding: 1rem;
-  overflow-x: auto;
+  /* scroll lives on the inner <code>; the frame itself never moves, so the
+     language tab pinned to its corner stays put when a wide snippet scrolls */
+  padding: 0;
+  overflow: hidden;
   margin-bottom: 1rem;
   border-radius: 4px;
 }
@@ -429,13 +431,17 @@ del {
 }
 
 pre code {
-  padding: 0;
+  display: block;
+  padding: 1rem;
+  overflow-x: auto;
   color: inherit;
   background: none;
+  border-radius: 0;
 }
 
 /* Language tab on fenced blocks. Zola sets data-lang on <code>; the label is
-   absolutely positioned so it scrolls with wide snippets instead of floating. */
+   absolutely positioned against the non-scrolling <pre>, so it stays in the
+   corner while the code underneath scrolls. */
 pre {
   position: relative;
 }
@@ -515,6 +521,12 @@ main li > strong:first-child {
   }
   .topbar .socials {
     margin-left: 0;
+  }
+  /* The command chain wraps mid-sentence here and lands ./tags on the icon row.
+     Keep the two links, drop the shell grammar. */
+  .topbar .cmd,
+  .topbar .cursor {
+    display: none;
   }
 }
 
@@ -633,6 +645,13 @@ footer {
   width: 100%;
   margin: 1.25rem 0;
   overflow: hidden;
+}
+
+/* Flex items default to min-width:auto, so one nowrap line in the console
+   (the bracket status row) widened the whole card past the viewport and the
+   content iframe with it - the article was clipped on the right on phones. */
+.shell-body > .frame > * {
+  min-width: 0;
 }
 
 /* framed pages sit inside the card, so no texture of their own */
@@ -939,7 +958,9 @@ body.framed {
 /* darkest ink: sumiInk5 let the unfilled half out-glow the yellow fill */
 .rc-bar {
   margin: 0.5rem 0 0.25rem;
-  height: 10px;
+  /* 6px, not 10: at 10 the fill was the largest warm block on screen and
+     out-shouted the post title. It is a status readout, not a heading. */
+  height: 6px;
   background: var(--sumi-ink-0);
   border: 1px solid rgba(149, 127, 184, 0.45);
   overflow: hidden;
@@ -952,6 +973,8 @@ body.framed {
   height: 100%;
   width: 0;
   background-color: var(--carp-yellow);
+  /* thinner bar, quieter fill: the rc-heat warning still reads through it */
+  opacity: 0.8;
   /* Beam head, so the bar reads as painted rather than grown. Static gradient
      on an already-moving element; fixed px so it does not stretch. */
   background-image: linear-gradient(
@@ -1025,18 +1048,47 @@ body.framed {
 }
 
 @media (max-width: 640px) {
-  /* The 180px title padding is dropped at this width, so an absolute player
-     would land on top of the title. Stack them instead. */
+  /* Compact console: the 180px title padding is gone, so the absolute player
+     would land on the title. Put player and live frame side by side in one
+     row instead of stacking - stacking cost ~90px of a 290px reading area. */
   .console-head {
-    flex-direction: column;
-    align-items: stretch;
+    --player-w: 120px;
+    flex-direction: row;
+    align-items: center;
     gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
   }
   .console-play {
     position: static;
-    align-self: center;
+    flex: 0 0 auto;
   }
-  .console-live { height: 84px; }
+  /* title + 6px bar; live.html hides album and clock at this width */
+  .console-live { height: 40px; }
+  .console-meta {
+    padding: 0.25rem 0.6rem 0.4rem;
+    font-size: 0.7rem;
+    /* bracket groups may wrap onto a second line; nothing may overflow */
+    overflow-wrap: anywhere;
+  }
+}
+
+/* Inside the fixed-height shell every px is taken from the article. Drop the
+   card padding and the tribute footer on phones; the plain (unframed) page
+   still shows the footer at the end of the post. */
+@media (max-width: 640px) {
+  .shell-body > .frame {
+    margin: 0;
+    padding: 0.5rem;
+    border-radius: 0;
+    border-left: 0;
+    border-right: 0;
+  }
+  .shell-body .topbar {
+    padding-bottom: 0.5rem;
+  }
+  .shell-footer {
+    display: none;
+  }
 }
 
 /* Prose stays at a readable measure; code, diagrams and tables break out to
@@ -1069,15 +1121,22 @@ body.framed {
   height: auto;
 }
 
+/* Below the SVG's own width a shrink-to-fit render makes 14px labels
+   unreadable. Keep native size and let the figure scroll sideways instead. */
+@media (max-width: 640px) {
+  .layout > main > figure {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .layout > main > figure svg {
+    max-width: none;
+    max-height: none;
+  }
+}
+
 /* the sidebar block renders nothing, so centre rather than sit hard left */
 .layout > main:only-child {
   margin: 0 auto;
-}
-
-@media (max-width: 560px) {
-  .console { height: auto; flex-wrap: wrap; }
-  .console-play { border-right: 0; padding-right: 0; }
-  .console-live { min-height: 3rem; }
 }
 
 /* scrollbars */
@@ -1135,47 +1194,42 @@ body.framed {
 
 /* article text fades out as it reaches the player */
 
-/* A fixed band, not a per-element range: with view() the fade lasted as long as
-   each element took to leave, so tall blocks crawled and short ones snapped.
-   body.framed exists only inside the iframe, so plain pages are unaffected. */
-@property --fade-h {
-  syntax: "<length>";
-  initial-value: 0px;
-  inherits: false;
+/* A sticky band painted over the text, not a scroll-driven mask. The mask
+   version (Chromium-only until Firefox 158) looked no better and needed a
+   registered property plus a scroll container on body; this is one rule and
+   renders the same everywhere. body.framed exists only inside the iframe, so
+   plain pages are unaffected. */
+body.framed::before {
+  content: "";
+  display: block;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  height: 96px;
+  /* 56px stays in flow; with .layout's 1.25rem the title starts at ~76px,
+     past the 70% stop where the gradient is already fully transparent - so
+     nothing is dimmed at rest. The ramp itself is the 20..70% band. */
+  margin-bottom: -40px;
+  background: linear-gradient(to bottom, var(--bg) 20%, transparent 70%);
+  pointer-events: none;
 }
 
-@supports (animation-timeline: scroll(self)) {
-  /* body is only a scroll container if the ROOT's overflow is not `visible`;
-     otherwise the UA propagates it to the viewport and scroll(self) has no
-     scroller, so the animation silently never runs. */
-  html:has(body.framed) {
-    height: 100%;
-    overflow: hidden;
+@media (prefers-reduced-motion: reduce) {
+  body.framed::before {
+    content: none;
   }
+}
 
-  body.framed {
-    height: 100%;
-    overflow-y: auto;
-    /* grows from zero on scroll, so the top lines are not permanently dimmed */
-    mask-image: linear-gradient(to bottom, transparent 0, #000 var(--fade-h));
-    animation: fade-band linear both;
-    animation-timeline: scroll(self block);
-    animation-range: 0 150px;
+/* Phones: the 76px lead-in above the title is a fifth of the visible article.
+   Halve the band (32px in flow) and drop .layout's top margin - the title
+   lands at ~32px, still past the gradient's transparent stop (70% of 48px). */
+@media (max-width: 640px) {
+  body.framed::before {
+    height: 48px;
+    margin-bottom: -16px;
   }
-
-  @keyframes fade-band {
-    to {
-      /* 150px, not 96: the band's top is fully transparent, so the visible ramp
-         is only its lower part - 96px fitted the whole gradient in ~1.5 lines */
-      --fade-h: 150px;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    body.framed {
-      mask-image: none;
-      animation: none;
-    }
+  body.framed .layout {
+    margin-top: 0;
   }
 }
 
