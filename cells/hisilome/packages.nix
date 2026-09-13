@@ -17,7 +17,7 @@
     filter = path: type: let
       rel = lib.removePrefix (toString ./. + "/") (toString path);
     in
-      !(lib.hasPrefix "music" rel || lib.hasPrefix "radio/state" rel);
+      !(lib.hasPrefix "music" rel || lib.hasPrefix "radio/state" rel || lib.hasPrefix "diagrams/out" rel);
   };
 
   mkScript = name: runtimeInputs:
@@ -162,9 +162,20 @@ in {
   inherit nginxLocations nginxHttpConfig;
 
   site = pkgs.runCommand "hisilome-site" {} ''
+    set -e
     cp -r ${src} s
     chmod -R u+w s
     cd s
+    export HOME=$TMPDIR
+
+    # d2 -> static/ before zola build; zola copies static/ into the output
+    # root. classes.d2 is import-only, so compile the numbered diagrams only.
+    mkdir -p static/diagrams
+    for f in diagrams/[0-9]*.d2; do
+      ${pkgs.d2}/bin/d2 --theme 200 --pad 20 "$f" \
+        "static/diagrams/$(basename "$f" .d2).svg"
+    done
+
     ${pkgs.zola}/bin/zola build --output-dir $out
   '';
 

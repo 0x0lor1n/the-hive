@@ -1,0 +1,21 @@
+...@classes
+
+direction: right
+
+title: Before - the ISP appliance {
+  near: top-center
+  shape: text
+  style: {font-color: "#727169"; font-size: 20; bold: true}
+}
+
+olt: Salt Nokia OLT\n(ALCL, XGS-PON) {class: carrier}
+
+box: Sagemcom F5688\n"Fiber Box X6" {
+  class: carrier
+  fw: closed firmware\nrouting - Wi-Fi - VoIP - firewall {class: note}
+}
+
+lan: LAN clients {class: carrier}
+
+olt -> box: fiber\n10G XGS-PON {style.stroke: "#727169"}
+box -> lan: 2.5G copper\n(capped at 1/4 line) {style.stroke: "#727169"}

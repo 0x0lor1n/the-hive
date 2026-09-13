@@ -1,0 +1,28 @@
+...@classes
+
+direction: right
+
+title: After - NixOS on the wire {
+  near: top-center
+  shape: text
+  style: {font-color: "#727169"; font-size: 20; bold: true}
+}
+
+olt: Salt Nokia OLT\n(ALCL, XGS-PON) {class: carrier}
+
+onu: WAS-110 ONU stick\n8311 firmware\n(cloned ONU identity) {class: ours}
+
+cwwk: CWWK S8 - Intel N305\nNixOS 26.05 {
+  class: ours
+  nft: nftables firewall {class: box}
+  rip: salt-rip-announce\nRIPv2 -> BNG {class: box}
+  nd: salt-nd-announce\nIPv6 NA keepalive {class: box}
+}
+
+lan: LAN clients {class: box}
+
+box: Fiber Box\n(in a drawer) {class: drawer}
+
+olt -> onu: fiber\n10G XGS-PON {style.stroke: "#98bb6c"}
+onu -> cwwk: SFP+ port 1\nixgbe {style.stroke: "#98bb6c"}
+cwwk -> lan: 2x 2.5G + static IPv4\nnative IPv6 /64 SLAAC, no NAT {style.stroke: "#98bb6c"}

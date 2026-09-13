@@ -18,6 +18,7 @@ in {
     packages =
       (with pkgs; [
         zola
+        d2
         ffmpeg
         flac
         icecast

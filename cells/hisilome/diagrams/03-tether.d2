@@ -1,0 +1,30 @@
+...@classes
+
+direction: right
+
+title: Headless lifeline - route-metric failover {
+  near: top-center
+  shape: text
+  style: {font-color: "#727169"; font-size: 20; bold: true}
+}
+
+cwwk: CWWK S8 (router) {class: ours}
+
+wan: WAN via WAS-110\nmetric 100 {class: box}
+tether: Android USB tether\ncdc_ncm / rndis_host\nmetric 2048 {class: box}
+
+net: Internet {class: carrier}
+ygg: Yggdrasil mesh\n(SSH + mosh on ygg0) {class: ours}
+
+cwwk -> wan: primary {style.stroke: "#98bb6c"}
+cwwk -> tether: backup {style.stroke: "#e6c384"; style.stroke-dash: 3}
+wan -> net: wins when fiber up {style.stroke: "#98bb6c"}
+tether -> net: wins when fiber pulled {style.stroke: "#e6c384"; style.stroke-dash: 3}
+net -> ygg
+ygg -> cwwk: reachable regardless of path {style.stroke: "#7e9cd8"}
+
+note: Metric 2048 only activates when the metric-100 route is gone.\nPull the fiber, Yggdrasil re-routes over mobile, SSH stays up. {
+  near: bottom-center
+  shape: text
+  style: {font-color: "#e6c384"; font-size: 13; italic: true}
+}
