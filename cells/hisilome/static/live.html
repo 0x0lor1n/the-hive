@@ -54,7 +54,7 @@
       /* keep in sync with style.css: darkest track so the yellow fill leads */
       .rc-bar {
         margin: 0.5rem 0 0.25rem;
-        height: 10px;
+        height: 6px;
         background: var(--sumi-ink-0);
         border: 1px solid rgba(149, 127, 184, 0.45);
         overflow: hidden;
@@ -65,6 +65,7 @@
         height: 100%;
         width: 0;
         background-color: var(--carp-yellow);
+        opacity: 0.8;
         background-image: linear-gradient(
           to right,
           rgba(255, 255, 255, 0) calc(100% - 18px),
@@ -90,6 +91,10 @@
       .rc-clock { padding: 0 180px; }
       @media (max-width: 640px) {
         .rc-title, .rc-sub, .rc-clock { padding: 0; }
+        /* One line in the compact shell: title and bar. Album and clock are
+           in the schedule list a tap away. */
+        .rc-sub, .rc-clock { display: none; }
+        .rc-bar { margin: 0.35rem 0 0; }
       }
 
 

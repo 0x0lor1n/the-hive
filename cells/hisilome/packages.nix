@@ -26,15 +26,33 @@
       text = builtins.readFile "${src}/bin/${name}.sh";
     };
 
+  # d2 takes .ttf only; the page ships Iosevka as woff2 subsets. Decompress
+  # those rather than pulling iosevka-bin (a .ttc, which d2 also refuses), so
+  # the diagrams use the exact glyph set the prose does.
+  d2-fonts =
+    pkgs.runCommand "hisilome-d2-fonts" {
+      nativeBuildInputs = [(pkgs.python3.withPackages (p: [p.fonttools p.brotli]))];
+    } ''
+      mkdir -p $out
+      for w in regular bold; do
+        fonttools ttLib.woff2 decompress ${src}/static/fonts/iosevka-$w.woff2 -o $out/$w.ttf
+      done
+    '';
+
   # d2 -> static/ before zola build; zola copies static/ into the output root.
   # --scale 1 writes width/height on the <svg>, so the browser draws diagrams at
   # native size instead of stretching a 360px chain to the column width.
   # classes.d2 is import-only, so compile the numbered diagrams only. One
   # definition for the derivation and the dev loop so the two cannot drift.
+  # No italic subset is shipped, so italic falls back to regular.
   build-site = pkgs.writeShellApplication {
     name = "build-site";
     runtimeInputs = [pkgs.d2 pkgs.zola pkgs.coreutils];
     text = ''
+      export D2_FONT_REGULAR=${d2-fonts}/regular.ttf
+      export D2_FONT_ITALIC=${d2-fonts}/regular.ttf
+      export D2_FONT_BOLD=${d2-fonts}/bold.ttf
+      export D2_FONT_SEMIBOLD=${d2-fonts}/bold.ttf
       mkdir -p static/diagrams
       for f in diagrams/[0-9]*.d2; do
         d2 --theme 200 --pad 20 --scale 1 "$f" "static/diagrams/$(basename "$f" .d2).svg"
