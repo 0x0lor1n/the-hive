@@ -329,9 +329,18 @@ DETAIL (rationale and facts for the steps above):
       Still open from the original item: decide what stops
       being eval-time: OPENCODE_API_KEY/SNYK_TOKEN via sessionVariables land in /nix/store in
       cleartext (acknowledged in nixos-config opencode README) — candidates for runtime age.secrets.
-- [ ] home/{cli,dev,security}/default.nix stubs; cli+dev unconditional, security takes the
-      account's key/vpn set
-- [ ] consequences of "Entra is the daily driver, local rebuilds" that the split creates:
+- [x] home/{cli,dev,security}/default.nix stubs — DONE 2026-09-14 (step 6). Empty `imports = []`
+      modules with the contract in the header comment; home/default.nix imports all three and
+      exports `_module.args.secrets = sec` so security/ can read the role's attrset without
+      re-plumbing. Toplevel hash unchanged after adding them (expected: no options set yet).
+- [x] consequences of "Entra is the daily driver, local rebuilds" — CHECKED 2026-09-14 (step 6):
+      trusted-users = root + @wheel (eval'd), nyx-cache substituter is nix.settings on the host
+      (layer-kernel.nix:32, eval'd) so devshells from the Entra account hit it; ssh-agent is
+      already per-account (home/default.nix:93, services.ssh-agent + addKeysToAgent, applies to
+      both homes). Left open on purpose: hermes container (phase 2, size first) and the
+      "rebuild from tuigreet/VT is comfortable" check (needs a live penrose, phase 4).
+      Original notes kept below.
+      consequences of "Entra is the daily driver, local rebuilds" that the split creates:
       - nix builds: trusted-users is root + @wheel (common/profiles/base.nix:11), Entra is not in
         wheel. `nix develop`/direnv still work, but anything needing a trusted user (adding a
         substituter, nix-copy from a remote store) fails from the daily-driver account. Confirm
@@ -360,8 +369,10 @@ DETAIL (rationale and facts for the steps above):
         addKeysToAgent; or systemd user unit) or every git push prompts.
       - the local account has no desktop autologin path: it is reached via tuigreet or a VT.
         Verify a rebuild is comfortable from there before phase 5 makes penrose primary.
-- [ ] `nix build .#nixosConfigurations.penrose.config.system.build.toplevel --no-link` green
+- [x] `nix build .#nixosConfigurations.penrose.config.system.build.toplevel --no-link` green
+      — 2026-09-14, /nix/store/8pxkrrfg6wdpqvakqwmvv03dw4z5fmn8-nixos-system-penrose-26.11pre-git
       (covers both branches: the Entra activationPackage is pulled in via layer-compositor.nix:150)
+      PHASE 1 CLOSED. Phase 2 (port modules) starts in a fresh session.
 
 ### phase 2 — port modules (on penrose, file by file, table above)
 - [ ] cli/* (zsh first — it is what everything else is used through). NOTE from probe 0c:

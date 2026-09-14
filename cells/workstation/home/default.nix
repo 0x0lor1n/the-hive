@@ -31,8 +31,10 @@
   ansi = theme.ansi;
   sec = secrets;
 in {
-  # Every desktop module below reads the palette from this arg.
+  # Every module below reads the palette from this arg; security/ reads the
+  # account's encrypted key/vpn set.
   _module.args.theme = theme;
+  _module.args.secrets = sec;
 
   home.username = userName;
   home.homeDirectory = homeDir;
@@ -42,7 +44,7 @@ in {
   # nixpkgs is unstable, home-manager is release-25.05: intentional.
   home.enableNixpkgsReleaseCheck = false;
 
-  imports = [./desktop];
+  imports = [./desktop ./cli ./dev ./security];
 
   home.packages = extraPackages;
 
