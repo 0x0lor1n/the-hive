@@ -112,7 +112,24 @@ ORDER OF WORK (each step ends with a check; do not start the next before it pass
      green, and the same for sevastopol (shared home must not break the VM).
 
 DETAIL (rationale and facts for the steps above):
-- [ ] flake.nix inputs, verified against `grep -r 'inputs\.' ~/nixos-config/users`:
+- [x] flake.nix inputs — DONE 2026-09-14 (cells/workstation/flake.nix + flake.lock, commit below):
+      ADDED phoenix (tag 2026.09.01.1 = rev 164d383; `dev` is the default branch and moves daily,
+      nix/ identical between tag and dev HEAD) and spicetify (Gerg-L/spicetify-nix HEAD 09eed5c;
+      its own nixpkgs is a channel tarball, so it follows ours). Both `inputs.nixpkgs.follows`,
+      lock confirms `follows 'nixpkgs'` — the lanzaboote "same rev" concern does not apply to
+      inputs that follow.
+      NOT added, per user decision 2026-09-14: zsh-vi-mode / zsh-defer come from the nixpkgs pin
+      (0.12.0 / 57a6650; jarvis had 9 / 1 commits newer — two small fixes + OSC52, nothing
+      critical). llm-agents is NOT a workstation input: cells/repo/flake.nix already pins it
+      (304ada96) and cells/repo/packages.nix re-exports hermes-agent — claude-code 2.1.239,
+      opencode 1.18.21, oh-my-opencode 5.0.0-beta.7 exist at that rev; add re-exports there in
+      phase 2, do not declare it twice.
+      phoenix overlay applied in nixosConfigurations.nix (`pkgs = (... chaotic).extend
+      phoenix.overlays.default`): pkgs.phoenix, pkgs.withPhoenix present, penrose toplevel drv
+      unchanged (k6pgf1qq) — purely additive. The withPhoenix wrapping itself is phase 2.
+      Checks: `nix flake metadata` clean; `nix flake check --no-build` fails identically before
+      and after (hisilome-src not valid — unrelated host); penrose + sevastopol toplevel eval OK.
+      Original plan for reference:
       add llm-agents (claude-code, opencode), zsh-defer, zsh-vi-mode; spicetify if media.nix is kept.
       DROP: chaotic (unused in users/ — checked), nixgl (invariant),
       oh-my-claudecode (user is on hermes + opencode; claude/default.nix keeps only the
@@ -486,6 +503,18 @@ phase 1 step 0 PROBES, run on penrose 2026-09-14:
   which for a numeric owner silently resolves to root — pass group = the uid explicitly.
   Empirical confirmation rides along with step 4 (the first real entra age.secrets entry);
   no separate throwaway rebuild spent on it.
+
+## theme-debt (GUI tools ported WITHOUT the custom theme — revisit after cutover)
+Rule: while porting, a tool that had a catppuccin/kanagawa-specific colour config in jarvis
+gets ported with its UPSTREAM DEFAULT look; the theming is a separate pass once the account
+works. Every such drop is listed here so nothing is forgotten. Format: tool — what jarvis had
+— what penrose gets now — how to bring it back.
+- spicetify — colorScheme CatppuccinMocha/Latte selected by globals.theme.preferDark
+  (users/shared/gui/spicetify.nix) — stock Spotify look, no theme, extensions only —
+  spicetify-nix ships `themes.text`/catppuccin under legacyPackages.themes; wire to the repo's
+  kanagawa palette via lib._custom.unwrapHex or just pick theme+colorScheme in the HM module.
+(append below as more GUI modules are ported: foot colours, btop, delta, dircolors are CLI/TUI
+ and tracked in the catppuccin call-site list under phase 1 instead)
 
 ## notes
 - SOURCE MECHANICS, read before porting (verified 2026-09-14 against the clone):
