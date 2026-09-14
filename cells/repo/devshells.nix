@@ -86,7 +86,11 @@
   # tty - agents, CI, sudo without a terminal - and to decrypt on purpose.
   # Cache lives in /var/tmp/nix-import-encrypted/$UID, keyed by ciphertext
   # hash, and is persisted (layer-users-local): a PIN is needed once per change
-  # of globals.nix.age, not once per boot.
+  # of an .age file, not once per boot.
+  #
+  # Covers every eval-time file: globals.nix.age and the per-role
+  # secrets/user-*.nix.age (cells/workstation/home/secrets.nix). One PIN
+  # session, all misses; files already cached are skipped.
   unlock-secrets = pkgs.writeShellApplication {
     name = "unlock-secrets";
     runtimeInputs = with pkgs; [git rage age-plugin-tpm coreutils];
@@ -97,16 +101,24 @@
         penrose) identity=dellvis-nix-rage ;;
         *)       identity=jarvis-nix-rage ;;
       esac
-      file="$root/secrets/globals.nix.age"
-      out="/var/tmp/nix-import-encrypted/$UID/$(sha512sum "$file" | cut -c1-32)-globals.nix"
-      if [[ -e $out ]]; then
-        echo "unlock-secrets: already cached for UID $UID." >&2
-        exit 0
+      cache="/var/tmp/nix-import-encrypted/$UID"
+      umask 077; mkdir -p "$cache"
+      missed=0
+      for file in "$root/secrets/globals.nix.age" "$root"/secrets/user-*.nix.age; do
+        [[ -e $file ]] || continue
+        name=$(basename "''${file%.age}")
+        out="$cache/$(sha512sum "$file" | cut -c1-32)-$name"
+        if [[ -e $out ]]; then
+          echo "unlock-secrets: $name.age already cached for UID $UID." >&2
+          continue
+        fi
+        missed=1
+        echo "unlock-secrets: decrypting secrets/$name.age with $identity (TPM PIN)" >&2
+        rage --decrypt --identity "$root/secrets/$identity.pub" --output "$out" "$file"
+      done
+      if [[ $missed == 1 ]]; then
+        echo "unlock-secrets: cached for UID $UID; eval will not touch the TPM until one of these files changes." >&2
       fi
-      echo "unlock-secrets: decrypting secrets/globals.nix.age with $identity (TPM PIN)" >&2
-      umask 077; mkdir -p "$(dirname "$out")"
-      rage --decrypt --identity "$root/secrets/$identity.pub" --output "$out" "$file"
-      echo "unlock-secrets: cached for UID $UID; eval will not touch the TPM until globals.nix.age changes." >&2
     '';
   };
 
@@ -196,7 +208,7 @@ in {
     enterShellCommands.motd.text = ''
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
-      echo "  unlock-secrets  decrypt globals.nix.age with this host's TPM (PIN); eval prompts itself when it has a tty"
+      echo "  unlock-secrets  decrypt globals.nix.age + secrets/user-*.nix.age with this host's TPM (PIN); eval prompts itself when it has a tty"
       echo "  agenix edit|generate|rekey|view   workstation secrets (generated/ + rekeyed/<host>)"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
       echo "  nix             = nixq shim (quiet progress; NIXQ=off to bypass); rtk <cmd> for compact git/ls/…"
