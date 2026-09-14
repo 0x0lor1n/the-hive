@@ -285,8 +285,20 @@ DETAIL (rationale and facts for the steps above):
       Do NOT confuse with this repo's existing `user-ssh-key`: that is an INBOUND key
       (authorizedKeys.pub, layer-users-local.nix:35), unrelated to these.
       ~/.ssh/penrose (deploy key) belongs to the local account; ~/.ssh/id_rsa unassigned — see notes.
-- [ ] secrets channel: extend rageImportEncrypted for user secrets (own secrets/user-<name>.nix.age
-      with its own identity list — NOT the fleet-wide nopin globals). Separately decide what stops
+- [x] secrets channel — DONE 2026-09-14 (commit b483d2f). cells/workstation/home/secrets.nix:
+      `{flakeRoot, role}` -> attrset from secrets/user-<role>.nix.age, role in {local, entra},
+      identities = [dellvis-nix-rage.pub] only (PIN) + recovery key as extra recipient. The nopin
+      identity is deliberately NOT a recipient. Missing file -> {}. Named by ROLE, not account:
+      both usernames are in the encrypted half of globals. Files are `{ _probe = "<role>"; }`
+      placeholders; real content lands with git identities (step 4/phase 2).
+      NOT WIRED yet: mkHome (layer-compositor.nix) does not call it — the signature (`secrets`
+      arg next to `git`) is decided by its first consumer.
+      unlock-secrets now primes globals + every user-*.nix.age in one PIN session, skips cached.
+      Verified: agent eval (no tty) fails with the unlock-secrets hint, not a rage trace; after one
+      interactive eval the cache entry exists and `nix develop -c nix eval` returns {"_probe":"entra"}
+      with no TPM contact. NOTE: bare `rage -d` does not populate the cache — only eval or
+      unlock-secrets do; a manual rage -d costs a PIN for nothing.
+      Still open from the original item: decide what stops
       being eval-time: OPENCODE_API_KEY/SNYK_TOKEN via sessionVariables land in /nix/store in
       cleartext (acknowledged in nixos-config opencode README) — candidates for runtime age.secrets.
 - [ ] home/{cli,dev,security}/default.nix stubs; cli+dev unconditional, security takes the

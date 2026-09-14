@@ -108,7 +108,10 @@ via `RTK_TELEMETRY_DISABLED=1` in the shellHook. The Hermes plugin
 ## Secrets
 
 `secrets/globals.nix.age` is the encrypted half of `globals` (IPs, password
-hashes), to the PIN-less identity so eval is non-interactive. `secrets/deploy.age`
+hashes), to the PIN-less identity so eval is non-interactive.
+`secrets/user-{local,entra}.nix.age` are the per-account eval-time secrets
+(git identities, ssh matchBlocks; `cells/workstation/home/secrets.nix`), to the
+PIN-protected identity only: `unlock-secrets` once per change. `secrets/deploy.age`
 is the fleet deploy key, to the PIN-protected identity. `secrets/<cell>/*.age`
 are that service's colmena `deployment.keys`. Pubkeys are public.
 
