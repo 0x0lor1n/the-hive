@@ -34,16 +34,6 @@
             'grep "^''${PANE_PID}" | grep -v "sqlite3.*history.db" | head -1 |'
       '';
   });
-
-  start-tmux-server = pkgs.writeShellScript "start-tmux-server" ''
-    # "duplicate session" is fine: continuum's auto-restore may already
-    # have created sessions during startup.
-    ${pkgs.tmux}/bin/tmux new-session -d -s 't̶m̶u̶x̶-̶s̶e̶r̶v̶e̶r̶' 2>/dev/null || true
-    ${pkgs.tmux}/bin/tmux list-sessions &>/dev/null
-  '';
-  stop-tmux-server = pkgs.writeShellScript "stop-tmux-server" ''
-    ${pkgs.tmux}/bin/tmux kill-server 2>/dev/null || true
-  '';
 in {
   home.packages = [pkgs.sesh];
 
@@ -90,19 +80,35 @@ in {
   };
 
   # The server outlives the login session so continuum can restore it.
+  #
+  # `tmux -D` runs the server in the foreground as the unit's main process
+  # (Type=simple), so systemd tracks it directly. The previous
+  # Type=forking + `new-session -d` + ExecStop=kill-server design had no
+  # main PID: every `nixos-rebuild switch` rewrote the unit (store path
+  # of the ExecStart script changes), HM reloaded it, systemd ran
+  # ExecStop (kill-server → all sessions gone) and, since the stop was
+  # clean, Restart=on-failure never brought it back (found 2026-09-14).
+  #
+  # Now: no ExecStop, KillMode=process leaves panes' children alone, and
+  # the unit is restarted on any exit. -D also disables exit-empty, so the
+  # server stays up with zero sessions until continuum restores them or a
+  # client attaches.
   systemd.user.services.tmux-server = {
     Unit = {
       Description = "tmux server (session persistence)";
       Documentation = "man:tmux(1)";
       After = ["default.target"];
+      # HM's sd-switch must not stop+start this unit on every rebuild
+      # (that would kill every session). Restart only on explicit request.
+      X-SwitchMethod = "keep-old";
     };
     Service = {
-      Type = "forking";
+      Type = "simple";
       Environment = ["TERM=xterm-256color" "COLORTERM=truecolor"];
-      ExecStart = "${start-tmux-server}";
-      ExecStop = "${stop-tmux-server}";
-      Restart = "on-failure";
+      ExecStart = "${pkgs.tmux}/bin/tmux -D";
+      Restart = "always";
       RestartSec = "2";
+      KillMode = "process";
     };
     Install.WantedBy = ["default.target"];
   };
