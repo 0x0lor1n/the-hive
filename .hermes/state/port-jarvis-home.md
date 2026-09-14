@@ -214,7 +214,10 @@ DETAIL (rationale and facts for the steps above):
       (covers both branches: the Entra activationPackage is pulled in via layer-compositor.nix:150)
 
 ### phase 2 — port modules (on penrose, file by file, table above)
-- [ ] cli/* (zsh first — it is what everything else is used through)
+- [ ] cli/* (zsh first — it is what everything else is used through). NOTE from probe 0c:
+      zsh has a SYSTEM half in this repo — `programs.zsh.enable` (absent today), then
+      auth-entra.nix:135 `shell` repointed at it for the Entra account and
+      users.users.<local>.shell for the local one. HM's programs.zsh alone leaves both on bash.
 - [ ] dev/* incl. git identities; merge lang-ai with post-dellvis-tooling (pxpipe unit, hermes, claude, rtk)
 - [ ] desktop additions (foot, firefox, mpv, chat)
 - [ ] security/* + rekey vpn/ssh secrets for penrose (per-account key sets, phase 1 table)
@@ -258,6 +261,14 @@ DETAIL (rationale and facts for the steps above):
 - [ ] ~/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
 ## blocked_on
+- NEW 2026-09-14: ~/nixos-config cannot be cloned on penrose, so phase 1/2 have no source tree.
+  Both routes are dead from this shell: HTTPS has no credential helper and no `gh`; the only
+  key present is ~/.ssh/github and it is PASSPHRASE-PROTECTED, with no ssh-agent and no
+  askpass (crookedmirror has no logind session, see MEMORY). Needs the user: run the clone
+  from their own terminal, or start an agent and forward it.
+  Knock-on for phase 1 step 4: the same problem hits the jarvis keys — `ssh-keygen -y` on a
+  passphrase-protected key prompts, so regenerating the 3-4 missing .pub files (see notes)
+  is also a user-run step, not an agent one.
 - penrose not resolvable from jarvis right now (phase 3/4 need a route) — check NetworkManager/LAN, or use IP
 - (resolved) penrose has 1TB free
 - open: git.client-e.tld — work commit identity but local-account ssh key (see phase 1 git item)
@@ -282,7 +293,28 @@ DETAIL (rationale and facts for the steps above):
   shared agent session history across work/personal accepted
 
 ## verified
-- (none yet)
+phase 1 step 0 PROBES, run on penrose 2026-09-14:
+- 0c git: `git --version` -> 2.55.0, >= 2.36 -> hasconfig: matcher available. PASS
+- 0c shell: `getent passwd <entra-upn>` -> /run/current-system/sw/bin/bash, NOT zsh.
+  FAIL, and worse than a per-user setting: the Entra shell is himmelblau's `shell` string
+  (auth-entra.nix:135, hardcoded bash) and zsh is not in the system at all (no programs.zsh
+  anywhere in cells/, no /run/current-system/sw/bin/zsh). Porting cli/zsh therefore has a
+  SYSTEM half: enable programs.zsh, then point auth-entra's shell at it, and set
+  users.users.<local>.shell separately. Neither account gets zsh from home-manager alone.
+- 0b substituters: /etc/nix/nix.conf carries `extra-substituters = https://nyx-cache.chaotic.cx/`
+  + its trusted-public-key at DAEMON level, so every user inherits it regardless of
+  trusted-users. PASS, devshells on the Entra account hit the cache.
+  Corollary confirmed: `trusted-substituters` is empty, so that account can never ADD one
+  (flake nixConfig prompts will just be declined) — it does not need to.
+- 0a agenix owner for an NSS-only account: PASS by inspection, no tmpfiles fallback needed.
+  Evidence: agenix modules/age.nix:126-128 emits a literal `chown ${owner}:${group} "$_truePath"`
+  into the activation script — no users.users lookup at activation time, so a numeric uid
+  string works (same trick the repo already uses at auth-entra.nix:193). `/run/agenix.d` and
+  the per-generation dir are 0751 root:keys (o+x, traversable by any uid); secrets land 0400
+  owned by the declared owner. CAVEAT: the `group` default is `users.${owner}.group or "0"`,
+  which for a numeric owner silently resolves to root — pass group = the uid explicitly.
+  Empirical confirmation rides along with step 4 (the first real entra age.secrets entry);
+  no separate throwaway rebuild spent on it.
 
 ## notes
 - users/jarvis/default.nix drops: nonNixos.enable, targets.genericLinux/nixGL, make-zsh-default-shell
