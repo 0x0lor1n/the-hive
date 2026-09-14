@@ -346,7 +346,23 @@ in {
   systemd.tmpfiles.rules = let
     inherit (globals.entra.user) upn uid;
     cn = lib.head (lib.splitString "@" upn);
+    # Both sides of the impermanence bind-mounts. The persist side is what
+    # impermanence's create-directories.bash copies onto the volatile home
+    # (`chown/chmod --reference=/persist/...`) at every activation -- boot
+    # AND every `nixos-rebuild switch`. The parents of the carve-outs
+    # (.cache, .config, .local, .local/share, .var, .var/app) are not
+    # declared as persisted directories themselves, so impermanence had
+    # created them on /persist as root:root 0755 (its default for undeclared
+    # parents, 2026-09-04). Every switch then re-chowned the live dirs to
+    # root, home-manager-entra failed on `ln .cache/.keep: Permission
+    # denied`, and its half-applied tmux config kept the imperative
+    # @continuum-boot tmux.service alive (found 2026-09-14). Fixing the
+    # source of truth under /persist makes the copy correct too.
     own = sub: "d /home/${upn}${sub} 0700 ${toString uid} ${toString uid} -";
+    ownBoth = sub: [
+      (own sub)
+      "d /persist/home/${upn}${sub} 0700 ${toString uid} ${toString uid} -"
+    ];
   in
     [
       "d /etc/krb5.conf.d 0755 root root -"
@@ -365,19 +381,28 @@ in {
     # dwl-session's `2> $HOME/.cache/dwl/last.log` fails, dwl never execs,
     # greetd is back in ~4 s and only the second attempt works. Declare the
     # link so it exists before the first PAM session (measured 2026-09-08).
-    ++ lib.optionals (upn != null && uid != null) [
-      "d /home/${upn} 0750 ${toString uid} ${toString uid} -"
-      "L /home/${cn} - - - - ${upn}"
-      (own "/.config")
-      (own "/.cache")
-      (own "/.local")
-      (own "/.local/share")
-      (own "/.local/state")
-      (own "/.local/state/nix")
-      (own "/.local/state/nix/profiles")
-      (own "/.var")
-      (own "/.var/app")
-    ];
+    ++ lib.optionals (upn != null && uid != null) (
+      [
+        "d /home/${upn} 0750 ${toString uid} ${toString uid} -"
+        "d /persist/home/${upn} 0750 ${toString uid} ${toString uid} -"
+        "L /home/${cn} - - - - ${upn}"
+      ]
+      ++ lib.concatMap ownBoth [
+        "/.config"
+        "/.cache"
+        "/.local"
+        "/.local/share"
+        "/.local/share/tmux"
+        "/.var"
+        "/.var/app"
+      ]
+      # No persisted children under .local/state -- home side only.
+      ++ map own [
+        "/.local/state"
+        "/.local/state/nix"
+        "/.local/state/nix/profiles"
+      ]
+    );
 
   # TPM resource-manager access for the static himmelblaud user (no
   # security.tpm2/tss group here).
