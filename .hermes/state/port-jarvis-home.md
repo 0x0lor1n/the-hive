@@ -451,8 +451,9 @@ DETAIL (rationale and facts for the steps above):
       lang-ai (OPENCODE_API_KEY from eval-time secrets, world-readable in the store on jarvis)
       NOT ported: `opencode auth login` once per account instead, state under ~/.local/share.
       Git identities were already done in phase 1 (home/default.nix programs.git.includes).
-      USER STEPS after switch: `opencode auth login`, `claude` login, `ln -s ~/.claude/skills/*
-      ~/.hermes/skills/` if hermes should see the 3 skills, add `@RTK.md` to ~/.claude/CLAUDE.md.
+      ~/.claude/CLAUDE.md declared too: "@RTK.md" + agents/CLAUDE.md (empty; global
+      instructions go there, not by hand). USER STEPS after switch (credentials only):
+      `opencode auth login`, `claude` login; optional `ln -s ~/.claude/skills/* ~/.hermes/skills/`.
 - [ ] desktop additions (foot, firefox, mpv, chat)
 - [ ] security/* + rekey vpn/ssh secrets for penrose (per-account key sets, phase 1 table)
 - [ ] grep gate: `grep -rn 'nixos-config\|nonNixos\|genericLinux\|nixGL' cells/workstation/home dotfiles` -> empty
