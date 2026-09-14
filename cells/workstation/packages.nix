@@ -64,6 +64,19 @@
                 [(sloth.mkdir sloth.appDataDir) sloth.xdgDataHome]
                 [(sloth.mkdir sloth.appCacheDir) sloth.xdgCacheHome]
                 (sloth.mkdir sloth.xdgDownloadDir)
+                # /tmp: bwrap starts from an empty root and nixpak adds none.
+                # Chromium/Electron keeps its SingletonSocket there (Qt its
+                # lock/IPC files); without it the main process hangs before
+                # mapping a window. It must also be the SAME directory for
+                # every instance of one app: a URL-handler launch (browser ->
+                # slack://) is a second instance that must reach the first
+                # over that socket. With a private tmpfs the symlink dangles,
+                # the lock's pid is invisible from the new pid namespace, so
+                # Chromium treats the lock as stale and opens a second, empty
+                # window. Same trick as Flatpak: a per-appId dir under
+                # XDG_RUNTIME_DIR (tmpfs, gone at logout, not shared between
+                # apps).
+                [(sloth.mkdir (sloth.concat' sloth.runtimeDir "/app/${appId}/tmp")) "/tmp"]
               ];
               # Host fontconfig: its <dir> entries are store paths, already bound.
               # os-release: Electron apps (Slack) read it at startup to collect
@@ -74,12 +87,13 @@
                 ["/etc/static/os-release" "/etc/os-release"]
                 ["/etc/static/lsb-release" "/etc/lsb-release"]
               ];
-              # bwrap starts from an empty root and nixpak adds no /tmp.
-              # Chromium/Electron needs one for its SingletonSocket (and
-              # Qt for its lock/IPC files); without it the main process
-              # hangs before mapping a window. Private per-app tmpfs.
-              tmpfs = ["/tmp"];
-              inherit env;
+              # xdg-open (Electron/Qt shell out to it for links) picks the
+              # flatpak backend by $XDG_RUNTIME_DIR/flatpak-info; nixpak only
+              # binds /.flatpak-info, so it falls to "generic", finds no
+              # browser on the sandbox PATH and drops the URL (SSO redirect
+              # never reaches Edge). NixOS' xdg-utils patch: force the portal
+              # (OpenURI), which the dbus policy above already allows.
+              env = {NIXOS_XDG_OPEN_USE_PORTAL = "1";} // env;
               newSession = true;
               dieWithParent = true;
             };

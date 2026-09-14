@@ -40,6 +40,23 @@ in {
 
   home.packages = extraPackages;
 
+  # Default browser for the OpenURI portal: sandboxed apps (Slack SSO
+  # redirect) hand links to xdg-desktop-portal, which resolves the
+  # x-scheme-handler default via GAppInfo and, with one set, launches it
+  # without an app-chooser dialog. Edge is a systemPackage, so its .desktop
+  # is on XDG_DATA_DIRS for both users.
+  xdg.mimeApps = {
+    enable = true;
+    defaultApplications = {
+      "x-scheme-handler/http" = "microsoft-edge.desktop";
+      "x-scheme-handler/https" = "microsoft-edge.desktop";
+      "text/html" = "microsoft-edge.desktop";
+      # The way back: slack.com hands the SSO token to the app through a
+      # slack:// link Edge must route to the (sandboxed) Slack entry.
+      "x-scheme-handler/slack" = "slack.desktop";
+    };
+  };
+
   # Declared, not `git config --global`: ~/.gitconfig is not persisted and
   # the repo-local user.* that got set by hand is what this replaces.
   # userName/userEmail/extraConfig: the release-25.05 API (settings is 25.11+).
