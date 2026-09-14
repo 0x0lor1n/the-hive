@@ -9,6 +9,17 @@
   inputs,
   cell,
   ...
-}: {
-  zsh = import ./homeModules/zsh.nix {inherit inputs cell;};
+}: let
+  mk = f: import f {inherit inputs cell;};
+in {
+  zsh = mk ./homeModules/zsh.nix;
+  skim = mk ./homeModules/skim.nix;
+  fzf = mk ./homeModules/fzf.nix;
+  zoxide = mk ./homeModules/zoxide.nix;
+  bat = mk ./homeModules/bat.nix;
+  eza = mk ./homeModules/eza.nix;
+  direnv = mk ./homeModules/direnv.nix;
+  dircolors = mk ./homeModules/dircolors.nix;
+  lazygit = mk ./homeModules/lazygit.nix;
+  git = mk ./homeModules/git.nix;
 }

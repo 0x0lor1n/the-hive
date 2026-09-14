@@ -414,8 +414,18 @@ DETAIL (rationale and facts for the steps above):
       Verified by eval: local shell -> zsh-5.9.2, rendered .zshrc has the right HISTFILE/HISTDB
       paths and sources config/functions/key-bindings by their ~/.config/zsh path.
       bash HISTFILE trick in auth-entra stays (bash is still there for scripts/fallback).
-- [ ] cli/* rest: fzf, skim (drop catppuccin colours -> theme), zoxide, bat, lazygit, eza,
-      dircolors (catppuccin call site -> theme), direnv, git.nix (delta: drop catppuccin features)
+- [x] cli/* rest — 2026-09-15 DONE, all in cells/deck/homeModules (skim, fzf, zoxide, bat, eza,
+      direnv, dircolors, lazygit, git), registered in deck/homeModules.nix via `mk`.
+      git.nix = account-agnostic half only (aliases, nvimdiff mergetool, delta pager, side-by-side);
+      identity/includeIf/ssh stay in workstation/home/default.nix, HM merges both into one config
+      (verified by eval: [alias]/[core] pager=delta/[delta]/[user]/[includeIf] all in git/config).
+      release-25.05 API: aliases/extraConfig/programs.git.delta (jarvis used settings/programs.delta = 25.11).
+      skim: HM fileWidget*/changeDirWidget* options instead of jarvis's hand-exported SKIM_* vars;
+      enableZshIntegration stays false (zsh.nix sources completion/key-bindings in zvm_after_init).
+      fzf: both shell integrations off (skim owns Ctrl-T/Alt-C). direnv whitelist prefix
+      ~/workspace -> /srv/workspace. bat's `help` fn inlined (was bat/functions.zsh).
+      DROPPED (theme-debt, see that section): catppuccin.{fzf,bat,eza,lazygit,delta}, skim's
+      `sk` wrapper + HISTDB_COLOR, catppuccin-dircolors input (HM default dircolors db instead).
 - [ ] dev/* incl. git identities; merge lang-ai with post-dellvis-tooling (pxpipe unit, hermes, claude, rtk)
 - [ ] desktop additions (foot, firefox, mpv, chat)
 - [ ] security/* + rekey vpn/ssh secrets for penrose (per-account key sets, phase 1 table)
@@ -604,6 +614,23 @@ works. Every such drop is listed here so nothing is forgotten. Format: tool — 
   kanagawa palette via lib._custom.unwrapHex or just pick theme+colorScheme in the HM module.
 (append below as more GUI modules are ported: foot colours, btop, delta, dircolors are CLI/TUI
  and tracked in the catppuccin call-site list under phase 1 instead)
+- deck CLI tools, ported 2026-09-15 with stock colours (all catppuccin/nix call sites, kanagawa target):
+  - zsh — catppuccin.zsh-syntax-highlighting (fsh theme) — fsh default — fast-theme with a kanagawa ini,
+    or set FAST_HIGHLIGHT_STYLES from theme.colors in deck/homeModules/zsh.nix
+  - skim — `sk` wrapper appending `--color fg:..,bg:..` + `export HISTDB_COLOR=--color=...` for
+    zsh-histdb-skim Ctrl-R — stock — programs.skim.defaultOptions ["--color ${kanagawaSkColors}"]
+    built from theme.colors, and HISTDB_COLOR in zsh.nix initContent (same string)
+  - fzf — catppuccin.fzf — stock — programs.fzf.colors = {fg/bg/hl/... from theme.colors}
+  - bat — catppuccin.bat (.tmTheme) — bat default — programs.bat.themes.kanagawa (tmTheme file) +
+    config.theme = "kanagawa"; a kanagawa tmTheme exists upstream (rebelot/kanagawa.nvim extras)
+  - eza — catppuccin.eza (EZA_COLORS) — stock — home.sessionVariables.EZA_COLORS from theme.colors
+  - dircolors — catppuccin-dircolors input (.dircolors per flavour) — dircolors built-in db —
+    programs.dircolors.settings or extraConfig with LS_COLORS derived from theme.colors
+  - lazygit — catppuccin.lazygit accent=mauve — stock — programs.lazygit.settings.gui.theme
+    {activeBorderColor/selectedLineBgColor/...} from theme.roles
+  - delta — catppuccin.delta + `features = catppuccin-<flavour> side-by-side` — delta default
+    syntax theme — programs.git.delta.options.syntax-theme = "kanagawa" once bat has the
+    theme (delta reads bat's theme dir), plus plus-style/minus-style from theme.colors
 
 ## notes
 - SOURCE MECHANICS, read before porting (verified 2026-09-14 against the clone):
