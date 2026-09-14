@@ -27,6 +27,9 @@ Also port users/shared/tui/ (coding-agents/opencode etc.) — missed in the inve
   tui/neovim references an account, a UPN or a workspace path, so these are plain shared imports —
   the account split applies ONLY to credentials (ssh keys, git identities, vpn) and to which
   project tree the shell starts in.
+  AMENDED 2026-09-14: the CONTENT stays identical, but the DELIVERY may differ per account —
+  live editing for nvim/tmux/zsh needs a readable checkout, which the Entra account may not
+  have (see blocked_on). Identical content, possibly different mechanism.
 - home/ is built TWICE (layer-compositor.nix:20-49): HM NixOS module for the local user, and
   standalone activationPackage for the Entra user. Decision 2026-09-14: the Entra account IS the
   daily driver, the local user only holds sudo/the checkout and rebuilds — so cli+dev go to BOTH,
@@ -46,23 +49,32 @@ Also port users/shared/tui/ (coding-agents/opencode etc.) — missed in the inve
 - Ubuntu jarvis keeps working the whole time; no destructive step on jarvis before phase 5.
 
 ## inventory (nixos-config/users -> where it goes)
+Checked against the real tree 2026-09-14 (clone at ~/nixos-config, nvim-wochap-resync fdb88b3).
+Rows marked [NEW] were missing from the first pass.
 | source                          | target                                  | note |
-| shared/cli/zsh (+p10k, fns)     | home/cli/zsh.nix + home/cli/zsh/        | keep config files verbatim, drop nonNixos guards |
+| shared/default.nix              | home/default.nix + home/cli/            | [NEW] top-level shared: ~20 home.packages, shellAliases, .bashrc HISTFILE=/dev/null trick, fonts.fontconfig, gpg, systemd.user.startServices="suggest". DROP slack (repo has cell.packages.slack under nixpak) and the nixGL-wrapped wine/slack branches; reconcile ungoogled-chromium with the repo's chromium+linux_entra_sso |
+| shared/cli/zsh (+p10k, fns)     | home/cli/zsh.nix + home/cli/zsh/        | keep config files verbatim, drop nonNixos guards. SEE the out-of-store symlink note below — 4 of its files are NOT store-backed today |
 | shared/cli/{fzf,skim,zoxide,bat,lazygit} | home/cli/*.nix                 | 1:1 |
-| shared/gui/foot (+foot.ini)     | home/desktop/terminal.nix                | penrose has dwl/greetd; foot fits |
+| shared/cli/{eza,dircolors,direnv} | home/cli/*.nix                        | [NEW] were not listed; dircolors is a catppuccin call site |
+| shared/gui/foot (+foot.ini)     | home/desktop/terminal.nix                | penrose has dwl/greetd; foot fits. foot.ini is out-of-store; colors come from theme via lib._custom.unwrapHex |
 | shared/gui/kitty                | DROPPED 2026-09-14                       | foot is the terminal |
-| shared/gui/firefox              | home/desktop/firefox.nix                 | check policies vs. Entra SSO extension (linux_entra_sso.json already in /etc/chromium) |
+| shared/gui/firefox              | a NEW workstation profile (not home/)     | REPLACED 2026-09-14 (user): librewolf decommissioned, nur dropped. Browser = STABLE firefox + Phoenix, wired as a NIXOS module (see the browser item in phase 1). The 8 nur addons and the librewolf pin both go away; the search engines (4get default, np/no/nl/gh/wru aliases) get re-declared as a SearchEngines policy, which works on stable since Fx139 |
 | shared/gui/microsoft-edge       | already covered by auth-entra.nix?       | verify, else home/desktop/edge.nix |
 | shared/gui/{simplex,mattermost,spicetify} | home/desktop/chat.nix, media.nix | telegram DROPPED: cell.packages.telegram-desktop (nixpak) already covers it; spicetify needs input |
 | shared/gui/mpv (+vpy)           | home/desktop/mpv.nix                     | vapoursynth plugin: check pkgs build |
-| shared/dev/lang-*.nix, android  | home/dev/*.nix                           | lang-ai: pxpipe/hermes/claude — merge with post-dellvis-tooling §2 |
+| shared/dev/lang-*.nix, android  | home/dev/*.nix                           | lang-ai is 5 lines (OPENCODE_API_KEY only) — merge with post-dellvis-tooling §2 |
+| shared/tui/{tmux,neovim}        | home/dev/ (or home/cli/)                 | [NEW] both out-of-store; neovim ships 93 files under config/nvim plus a dead config/nvim.bak (drop the .bak) |
 | shared/tui/coding-agents/claude | home/dev/claude.nix                      | keep llm-agents pkg + skills; drop the oh-my-claudecode marketplace wiring |
+| shared/tui/coding-agents/{opencode,skills} | home/dev/*.nix                | [NEW] opencode ships 3 json + omo.jsonc, skills ship 3 SKILL.md — all out-of-store |
 | shared/security/{ssh,vpn,tor,osint} | home/security/*.nix                  | vpn-{work-a,work-b,work-c} secrets -> agenix-rekey |
 | jarvis/default.nix sessionVariables (OTEL, SNYK) | home/default.nix via userSecrets equiv | secrets |
 | jarvis/secrets/ssh-keys.tar.age | NEW mechanism, see phase 1 "ssh identities" — NOT the user-ssh-key pattern | 8 outbound client keys |
 | ~/.ssh/ssh-identities/* (on disk) | same                                   | the live copies; tarball is the only backup |
 | ../../secrets/git-hosts-{work,personal}.nix.age | secrets/ + home/dev/git.nix | see phase 1 "git identities": drives BOTH programs.git.includes and ssh matchBlocks from one attrset |
 | modules/secrets.nix             | eval-time attrset via rageImportEncrypted (see invariants), not age.secrets.path | |
+| users/crookedmirror/default.nix | nothing to port                          | [NEW] 28 lines, a second account that already imports ../shared on dellvis with NO secrets at all (no repo.secretFiles, no userSecretsName). Useful as PRECEDENT — the shared home was always meant to build twice — but see notes: it probably does not evaluate today |
+| lib/default.nix (lib._custom)   | DROPPED if the symlink decision goes to "store" | [NEW] 4 helpers, 9 call sites. relativeSymlink/mkOutOfStoreSymlink/runtimePath exist only for out-of-store symlinks; unwrapHex (1 use, foot colors) is 20 characters and gets inlined |
+| modules/symlinks.nix            | DROPPED                                  | [NEW] home.symlinks option, zero call sites in users/ |
 
 ## next
 ### phase 1 — inputs + skeleton (runs on penrose, this repo, no deploy)
@@ -78,9 +90,10 @@ ORDER OF WORK (each step ends with a check; do not start the next before it pass
         FAIL -> devshells rebuild the kernel from source on the daily-driver account.
      c) `git --version` >= 2.36 (hasconfig: matcher) and `getent passwd <cn>` shows zsh.
      Record results under ## verified, they decide 3 and 5.
-  1. DECISIONS still open (blocked_on): client-e key/identity mismatch, client-a project vs key,
-     id_rsa ownership, vpn mechanism for a wheel-less account, project tree paths.
-     Only the vpn one blocks phase 1; the rest block phase 2.
+  1. DECISIONS still open (blocked_on): out-of-store symlinks (NEW — blocks every cli/tui
+     module, decide first), nur/librewolf, client-e key/identity mismatch, client-a project
+     vs key, id_rsa ownership, vpn mechanism for a wheel-less account, project tree paths.
+     Blocking phase 1: the vpn one and the symlink one. The rest block phase 2.
   2. flake.nix inputs — add/drop per the detail below. Check: `nix flake metadata` clean,
      `nix flake check` no worse than before.
   3. secrets channel — secrets/user-<name>.nix.age via rageImportEncrypted, own identity list.
@@ -101,23 +114,103 @@ ORDER OF WORK (each step ends with a check; do not start the next before it pass
 DETAIL (rationale and facts for the steps above):
 - [ ] flake.nix inputs, verified against `grep -r 'inputs\.' ~/nixos-config/users`:
       add llm-agents (claude-code, opencode), zsh-defer, zsh-vi-mode; spicetify if media.nix is kept.
-      DROP: nur, chaotic (unused in users/ — checked), nixgl (invariant),
+      DROP: chaotic (unused in users/ — checked), nixgl (invariant),
       oh-my-claudecode (user is on hermes + opencode; claude/default.nix keeps only the
       llm-agents package + skills, omcRoot/extraKnownMarketplaces/enabledPlugins go away),
       ayugram-desktop (repo already has cell.packages.telegram-desktop under nixpak).
+      DROP per user decision 2026-09-14: nur (the 8 firefox addons go with librewolf) and
+      nixpkgs-librewolf-pin (librewolf decommissioned). ADD: phoenix.
+      NOTE where they go: this repo has no root-level user inputs — every workstation input is
+      declared in cells/workstation/flake.nix (a cell flake with its own lock), which is where
+      phoenix/llm-agents/zsh-* belong. Cell flakes cannot `follows` a root input, so pin
+      phoenix.inputs.nixpkgs to the SAME rev as the cell's nixpkgs (34ab9907), exactly as the
+      existing comment for lanzaboote demands.
+- [ ] browser: stock firefox + Phoenix as a NIXOS module (decision 2026-09-14). Verified by
+      reading celenity/Phoenix nix/module.nix — it is NixOS-only by construction, so the user's
+      recollection is right and there is nothing to work around:
+      it sets environment.etc."firefox/*", environment.variables, programs.firefox.policies
+      (read from the flake's policies.json) and nixpkgs.overlays. home-manager has none of
+      those four options.
+      PITFALL specific to this repo: the module's `nixpkgs.overlays` is SILENTLY IGNORED here.
+      nixosConfigurations.nix:13-18 passes a ready `pkgs` to utilsLib.mkSystem (nixpkgs.pkgs is
+      set), and the file already documents that nixpkgs.overlays inside a module does nothing —
+      which is why the chaotic overlay is applied with `inputs.pkgs.extend` instead. So Phoenix's
+      withPhoenix wrapper will NOT be applied by importing the module alone: extend the pkgs at
+      nixosConfigurations.nix:18 with phoenix's overlay the same way, then import the module for
+      the /etc + policies half. Verify with `nix eval` that pkgs.firefox is the wrapped one.
+      Placement: firefox is a browser for the ENTRA account (daily driver) and Phoenix is system
+      scope, so this is a workstation profile next to layer-compositor (where microsoft-edge
+      already lives as a systemPackage for exactly this reason), not a home/ module.
+      Cost to accept: policies.json replaces programs.librewolf's declarative extensions and
+      search engines. ExtensionSettings is a normal (non-ESR) policy, so addons can be declared
+      there by AMO URL without nur.
+      CORRECTION 2026-09-14 (the agent's earlier "SearchEngines is ESR-only" was OUT OF DATE):
+      per Mozilla's own policy reference, SearchEngines is "available in all Firefox release
+      channels" as of Firefox 139. The nixpkgs pin ships firefox 154.0.1, so the 4get default
+      and the np/no/nl/gh/wru aliases CAN be declared whatever channel is chosen.
+      CHANNEL DECIDED 2026-09-14 (user): stable `firefox`. ESR dropped (it was only ever wanted
+      to preserve search settings, which turned out not to need it).
+      Channel facts measured on this pin, for whoever revisits it:
+        firefox 154.0.1 | firefox-esr 153.1.0esr | firefox-beta/devedition 155.0b5
+        | firefox_nightly 156.0a1-20260825
+      Phoenix's withPhoenix is a plain `.override { extraPoliciesFiles; extraPrefsFiles; }` and
+      evaluates cleanly on firefox, firefox-esr AND firefox_nightly (tryEval-checked), so the
+      channel choice is free as far as Phoenix is concerned.
+      NIGHTLY, user asked about it (chaotic ships `firefox_nightly`, attr confirmed present at
+      chaotic's pkgs/firefox-nightly/default.nix) — NOT recommended as the default browser here,
+      for two reasons found while checking:
+        1. STALENESS: the nightly in our closure is 156.0a1-20260825, i.e. ~3 weeks old as of
+           2026-09-14, because the chaotic input is PINNED (flake.nix:43-45 pins the nyx rev so
+           that its nixpkgs lock == ours, specifically to keep the CachyOS kernel a cache hit).
+           A pinned nightly is the worst of both worlds: pre-release instability without the
+           fresh fixes. Following nightly properly would mean bumping chaotic constantly, which
+           the kernel pin explicitly forbids.
+        2. It is a browser for the Entra WORK account with tenant SSO and enterprise policies;
+           pre-release regressions there cost working days.
+      Binary cache verified 2026-09-14 (narinfo probe, both wrapped and unwrapped):
+        firefox-unwrapped 154.0.1 -> cache.nixos.org 200, nyx 404
+        firefox-nightly-unwrapped -> nyx 200, cache.nixos.org 404
+      So both are substitutable today (nightly only via nyx-cache, which layer-kernel.nix:32
+      already configures system-wide). Note the wrapper output hash CHANGES when Phoenix's
+      extraPoliciesFiles/extraPrefsFiles are applied — but only the cheap wrapper derivation is
+      rebuilt locally; the expensive *-unwrapped stays a cache hit. No multi-hour browser build.
+      Sanity check done: nixpkgs firefox is 154.0.1 on this pin, and librewolf currently carries
+      NO knownVulnerabilities — i.e. the insecure-marking that forced nixpkgs-librewolf-pin has
+      since been resolved upstream. Decommissioning it is a choice now, not a workaround.
 - [ ] strip catppuccin while porting: users/shared/default.nix imports catppuccin.homeModules.catppuccin
       and modules read globals.theme.colors.flavour. Repo is kanagawa via theme.colors (_module.args.theme,
       home/default.nix:29) — rewrite those call sites, do NOT add the input. Also covers
       cli/dircolors.nix (catppuccin-dircolors input drops with it).
+      Call sites enumerated 2026-09-14 (7, all small): shared/default.nix (catppuccin.enable +
+      flavor + accent, catppuccin.nvim.enable=false, catppuccin.btop.enable), cli/zsh
+      (catppuccin.zsh-syntax-highlighting), cli/git.nix (catppuccin.delta.enable and
+      `features = "catppuccin-${flavour} side-by-side"` in programs.delta), cli/dircolors,
+      gui/spicetify (colorScheme CatppuccinMocha/Latte via globals.theme.preferDark).
+      Only 3 of the 12 globals refs are theme ones — the rest are configDirectory.
 - [ ] mkHome takes a per-account secret set, not a bool (layer-compositor.nix:20): cli+dev are
       unconditional for both accounts, while ssh keys / git includeIf blocks / vpn are selected
       per account (see the items below). Personal-only: osint, tor.
-      VPN is WORK-only, not personal: all three profiles are client networks (work-a/wireguard, work-b, work-c). But security/vpn.nix drives them through `sudo wg-quick` / `sudo openvpn`
-      shell aliases, and the Entra account has no wheel by design (auth-entra.nix:116-121).
-      So the aliases cannot work as-is for the account that actually needs them. Options:
-      NetworkManager profiles (Entra is in no netdev group either — check), a polkit rule, or
-      declarative wg-quick/openvpn systemd units the user may start. Decide before porting
-      security/*; do NOT solve it by putting the Entra user in wheel.
+      VPN SPLIT SETTLED 2026-09-14 (user). Three profiles, 1:1 with the three source secret
+      files, no collecting from jarvis needed:
+        entra (employer work): work-a (wireguard, secret vpn-owt) + work-b (openvpn, vpn-t)
+        local (FREELANCE, not employer): work-c (openvpn, vpn-w)
+      The user's "client-w"/"client-w" were the same network as work-c, remembered under other names.
+      Note the local account's profile is freelance work, which is why it sits with the personal
+      identity rather than with the tenant.
+      MECHANISM CONFIRMED by the user: the two Entra profiles go through NetworkManager, with
+      "networkmanager" added to himmelblau's local_groups (auth-entra.nix:119-123) — NOT wheel.
+      NM is already enabled (laptop.nix:15) and its system-connections are already persisted
+      (laptop.nix:33); group membership covers NM's polkit actions with no password prompt.
+      Declare with networking.networkmanager.ensureProfiles, secrets via environmentFiles ->
+      agenix runtime secrets. The local account needs nothing new (it already has wheel +
+      networkmanager), so its `sudo openvpn` alias ports unchanged.
+      SECURITY BUG TO FIX WHILE PORTING, do not copy as-is: security/vpn.nix writes credentials
+      into xdg.configFile as plain `text = ...` — wireguard PrivateKey, and the openvpn
+      auth-user-pass files with username+password. home-manager renders those through the NIX
+      STORE, i.e. world-readable on the machine. These must become runtime age.secrets (or NM
+      environmentFiles), never store-rendered text.
+      SETTLED: host-global VPN routing is ACCEPTABLE — a tunnel raised by one account carries
+      the other account's traffic too. No namespacing needed.
 - [ ] impermanence carve-outs for the Entra home — THE load-bearing part of "Entra is the daily
       driver". auth-entra.nix:189-223 is an explicit allowlist of absolute paths (NSS account, so
       no persistence.users.<name>); anything cli/dev writes and is not listed is gone next reboot.
@@ -214,7 +307,10 @@ DETAIL (rationale and facts for the steps above):
       (covers both branches: the Entra activationPackage is pulled in via layer-compositor.nix:150)
 
 ### phase 2 — port modules (on penrose, file by file, table above)
-- [ ] cli/* (zsh first — it is what everything else is used through)
+- [ ] cli/* (zsh first — it is what everything else is used through). NOTE from probe 0c:
+      zsh has a SYSTEM half in this repo — `programs.zsh.enable` (absent today), then
+      auth-entra.nix:135 `shell` repointed at it for the Entra account and
+      users.users.<local>.shell for the local one. HM's programs.zsh alone leaves both on bash.
 - [ ] dev/* incl. git identities; merge lang-ai with post-dellvis-tooling (pxpipe unit, hermes, claude, rtk)
 - [ ] desktop additions (foot, firefox, mpv, chat)
 - [ ] security/* + rekey vpn/ssh secrets for penrose (per-account key sets, phase 1 table)
@@ -258,21 +354,107 @@ DETAIL (rationale and facts for the steps above):
 - [ ] ~/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
 ## blocked_on
+- CHECKOUT LAYOUT DECIDED 2026-09-14 (user): ONE tree. /srv/the-hive is the single source of
+  config — no second dotfiles repo. The Entra account may write the dev-tool configs; it must
+  still not be able to write what root builds.
+  DESIGN THAT SATISFIES BOTH (measured, see below): one repo, per-directory ACLs.
+    /srv/the-hive            crookedmirror:<sharedgrp> 0750  — group reads, only owner writes
+    /srv/the-hive/cells      same — the rebuild source stays owner-write-only
+    /srv/the-hive/dotfiles/  group-writable via a DEFAULT POSIX ACL — nvim/tmux/zsh live here
+  home-manager then points at it with a plain
+    config.lib.file.mkOutOfStoreSymlink "/srv/the-hive/dotfiles/nvim"
+  for both accounts. Identical content, identical mechanism, one repo, and the flake never
+  reads those files at eval (see the runtime-path note below), so nothing in dotfiles/ can
+  influence a build.
+  WHY ACLs AND NOT THE OBVIOUS THINGS — all three were tried on this host 2026-09-14:
+    * `git config core.sharedRepository group`: does NOT affect worktree files. Measured: files
+      still land 0644 after checkout. It only fixes .git/ internals. Useless here.
+    * setgid bit (chmod 2770) on the dir: fixes the GROUP of new files, not the MODE. Measured:
+      0644 under the default umask, so group still cannot write.
+    * umask 002: works, but is a per-shell/per-session property. A `git checkout` run from a
+      shell with umask 022 silently re-creates files 0644 and quietly breaks group write.
+      Measured both ways. Too fragile to rely on.
+    * DEFAULT POSIX ACL on the directory: WORKS and is umask-proof. Measured — with
+      `setfacl -d -m g::rwx dotfiles`, a checkout under umask 022 still produced rw-rw----,
+      and the default ACL is inherited by subdirectories created later (nvim/lua/... came out
+      group-writable without further action). rpool already has acltype=posix and setfacl is
+      in the system closure, so nothing new is needed.
+  PITFALL, must be handled declaratively: ACLs are NOT stored in git and are LOST on a fresh
+  clone. Measured: cloning the repo produced a plain 0755 dotfiles/ with no ACL. So the rule
+  must be re-applied by the system, not by hand. systemd.tmpfiles with an `A+` line does
+  exactly this and was verified to work on this host:
+    A+ /srv/the-hive/dotfiles - - - - d:group:<grp>:rwx,group:<grp>:rwx
+  After that line, a file created under umask 022 came out rw-rw-r--+ as intended. Put it next
+  to the other tmpfiles rules (auth-entra.nix:321 is the precedent) so it survives re-clones
+  and reboots.
+  Group: the Entra account is NSS-only, so the shared group must be one himmelblau grants via
+  local_groups (auth-entra.nix:119-123) — same mechanism as the networkmanager grant.
+  KEY FACT that makes this safe (verified in nixos-config lib/default.nix): the symlink target
+  is a RUNTIME PATH STRING, never an eval-time input. mkOutOfStoreSymlink only does
+  `toString path` + `ln -s`; it never reads the file. So dotfiles/ being writable cannot affect
+  the system closure, and the whole runtimePath/relativeSymlink assertion machinery from
+  nixos-config collapses into a one-line mkOutOfStoreSymlink. Less code than the source.
+  * scope reminder: only nvim/tmux/zsh get the symlink treatment. foot.ini, opencode's 3 json
+    and the 3 SKILL.md stay store-backed.
+- /srv on this host is on rpool/local/root, which is ROLLED BACK to @blank every boot
+  (storage-zfs-rollback). Verified: /srv exists at 0755 but is not persisted and not a dataset.
+  So whatever lands in /srv needs one of:
+    (a) impermanence entries under environment.persistence."/persist" (bind mounts), or
+    (b) its OWN ZFS DATASET mounted there — no rollback applies, nothing to declare.
+  Recommend (b) for the project trees (tens of GB: bind-mounting 40G+ of source through
+  impermanence is pointless indirection) and either for the small repos. Datasets go in
+  cells/workstation/disks/penrose.nix next to local/nix and safe/persist.
+  NOTE for the disk file: new datasets on an ALREADY INSTALLED host are not created by disko —
+  add them to the .nix for reproducibility AND create them by hand once with `zfs create`.
+- NEW 2026-09-14: ~/nixos-config cannot be cloned by the agent (user did it manually, resolved).
+  Knock-on still open for phase 1 step 4: `ssh-keygen -y` on a passphrase-protected key
+  prompts, and this shell has no askpass/agent (crookedmirror has no logind session, see
+  MEMORY), so regenerating the 3-4 missing .pub files is a user-run step.
 - penrose not resolvable from jarvis right now (phase 3/4 need a route) — check NetworkManager/LAN, or use IP
 - (resolved) penrose has 1TB free
 - open: git.client-e.tld — work commit identity but local-account ssh key (see phase 1 git item)
-- open: does ~/.ssh/id_rsa still authenticate anywhere, and to which account does it belong?
-- open: where does each project tree live? proposal ~/work and ~/projects inside the respective
-  home; also work-org/poc and 0xOLOR1N/gopro-video-cutter have no remote, so assign them by hand
-- open: vpn belongs to the Entra account but needs root; pick the mechanism (see phase 1)
+- SETTLED 2026-09-14: project trees move to /srv too (user), not into either home:
+    /srv/work     — employer + client work, Entra-owned
+    /srv/projects — personal + freelance, crookedmirror-owned
+  This REPLACES the earlier "~/work and ~/projects inside the respective home" proposal and is
+  strictly better for phase 4: the account split becomes directory ownership on a shared parent
+  instead of two homes, and neither tree is subject to a home rollback. Same /srv persistence
+  question as above — give each its own ZFS dataset.
+  Consequence for the ssh/git split: the tree an account cannot read is the tree it cannot
+  commit from, so ownership must match the key table (phase 1 ssh identities).
+- open: git.client-e.tld — user does not recognise the client, so this cannot be answered from
+  memory. RESOLVE BY MEASUREMENT during phase 2, not by asking again: on jarvis, find which
+  worktrees have a git.client-e.tld remote (`grep -rl client-e ~/workspace/*/.git/config`),
+  read the last commit's author and date, and check whether the key still authenticates.
+  A tree with no commits in a year is dead weight — archive it and drop both key and identity.
+  Default if it is still live: it goes to /srv/work with the work identity, and client-e-key
+  moves to the entra key set (the commit identity is the stronger signal of who owns the work).
+- SETTLED 2026-09-14: the two remote-less repos (work-org/poc, 0xOLOR1N/gopro-video-cutter) go
+  to /srv/projects for now. Revisit only if one turns out to be employer property.
+- ~/.ssh/id_rsa: user believes it is the same key as `github` and only a git-clone default.
+  VERIFY before deleting, do not take it on faith — an RSA key and an ed25519 key cannot be the
+  same key, so at best the two are both registered on the same GitHub account. Check with
+  `ssh-keygen -y -f ~/.ssh/id_rsa` vs the github pubkey, and a `ssh -i ~/.ssh/id_rsa -T` probe
+  against the github host alias. If it authenticates nowhere, drop it (do NOT port it); if it
+  does, it needs an owner in the key table. Cheap to test, expensive to guess wrong.
+- open: vpn — SETTLED, nothing left (3 profiles, NM + networkmanager group for entra, confirmed).
 - open: playground/client-a is a client project but the client-a ssh key was assigned to local
 - open: hermes-in-a-container — does it get the ssh keys / git identities of BOTH accounts, or
   none (agent proposes, the user commits from their own session)? Decides how much of the
   credential split survives. Also: which project trees are bind-mounted into it.
   (shared session history itself is settled: acceptable)
 - otherwise only phase-3 reachability is blocking
-- settled 2026-09-14: nur/chaotic dropped (unused), oh-my-claudecode dropped (hermes + opencode),
+- settled 2026-09-14: chaotic dropped (unused), oh-my-claudecode dropped (hermes + opencode),
   ayugram-desktop dropped (nixpak telegram-desktop), stateVersion is 24.11 on both sides,
+  nur dropped and librewolf DECOMMISSIONED — browser is STABLE firefox + Phoenix as a NixOS
+  module (ESR and chaotic's firefox_nightly both considered and rejected 2026-09-14; see the
+  browser item in phase 1 for the measured reasons),
+  vpn: 3 profiles (entra work-a+work-b employer, local work-c freelance), NM + networkmanager
+  group for the entra pair, host-global routing accepted,
+  /srv is the shared parent: /srv/the-hive (ONE repo, cells/ owner-write-only, dotfiles/
+  group-writable via default POSIX ACL + a tmpfiles A+ rule), /srv/work (entra),
+  /srv/projects (local) — each needs its own ZFS dataset, /srv itself is rolled back,
+  live editing (out-of-store symlinks) KEPT for nvim/tmux/zsh and dropped for everything else,
   Entra = daily driver / local = sudo+rebuild only (both get the same cli+dev tooling),
   Entra already has a shell login, kitty dropped, catppuccin dropped (kanagawa only),
   certs/ stays on /home (~2.5G after excluding .venv), ssh keys split per account,
@@ -282,11 +464,51 @@ DETAIL (rationale and facts for the steps above):
   shared agent session history across work/personal accepted
 
 ## verified
-- (none yet)
+phase 1 step 0 PROBES, run on penrose 2026-09-14:
+- 0c git: `git --version` -> 2.55.0, >= 2.36 -> hasconfig: matcher available. PASS
+- 0c shell: `getent passwd <entra-upn>` -> /run/current-system/sw/bin/bash, NOT zsh.
+  FAIL, and worse than a per-user setting: the Entra shell is himmelblau's `shell` string
+  (auth-entra.nix:135, hardcoded bash) and zsh is not in the system at all (no programs.zsh
+  anywhere in cells/, no /run/current-system/sw/bin/zsh). Porting cli/zsh therefore has a
+  SYSTEM half: enable programs.zsh, then point auth-entra's shell at it, and set
+  users.users.<local>.shell separately. Neither account gets zsh from home-manager alone.
+- 0b substituters: /etc/nix/nix.conf carries `extra-substituters = https://nyx-cache.chaotic.cx/`
+  + its trusted-public-key at DAEMON level, so every user inherits it regardless of
+  trusted-users. PASS, devshells on the Entra account hit the cache.
+  Corollary confirmed: `trusted-substituters` is empty, so that account can never ADD one
+  (flake nixConfig prompts will just be declined) — it does not need to.
+- 0a agenix owner for an NSS-only account: PASS by inspection, no tmpfiles fallback needed.
+  Evidence: agenix modules/age.nix:126-128 emits a literal `chown ${owner}:${group} "$_truePath"`
+  into the activation script — no users.users lookup at activation time, so a numeric uid
+  string works (same trick the repo already uses at auth-entra.nix:193). `/run/agenix.d` and
+  the per-generation dir are 0751 root:keys (o+x, traversable by any uid); secrets land 0400
+  owned by the declared owner. CAVEAT: the `group` default is `users.${owner}.group or "0"`,
+  which for a numeric owner silently resolves to root — pass group = the uid explicitly.
+  Empirical confirmation rides along with step 4 (the first real entra age.secrets entry);
+  no separate throwaway rebuild spent on it.
 
 ## notes
+- SOURCE MECHANICS, read before porting (verified 2026-09-14 against the clone):
+  - `repo.secrets` lives in TOP-LEVEL modules/secrets.nix (not users/modules/), and is the
+    generic half: secretFiles (attrsOf path) -> secrets (readOnly, mapAttrs importEncrypted).
+    users/modules/secrets.nix is only 22 lines of sugar on top: `userSecretsName` (defaults to
+    "user-${name}") and `userSecrets` = repo.secrets.${userSecretsName}. Port BOTH halves or
+    neither — ssh.nix/vpn.nix/lang-ai.nix read userSecrets, git.nix/ssh.nix read repo.secrets.
+  - importEncrypted wraps a bare attrset in a function (`constSet`) and returns {} for a
+    missing path, so a host with no secret files still evaluates. Worth keeping: it is what
+    lets the shared home build for an account that has no secrets at all.
+  - the jarvis home is a flake-parts homeConfigurations."jarvis" (flake/home-configurations.nix)
+    with 3 overlays that DO NOT come along: packages/default.nix, the librewolf pin, and
+    `nix = nixVersions.nix_2_31` (needed because HM activation must be ABI-compatible with the
+    repo's nix-plugins build — this repo pins its own nix elsewhere, check before dropping).
+- users/crookedmirror/default.nix (dellvis) is the precedent that ../shared builds for a second
+  account — BUT it sets no repo.secretFiles and no userSecretsName, so `userSecrets` resolves to
+  repo.secrets.user-crookedmirror = missing attr. It is imported by hosts/dellvis, and dellvis is
+  the machine this repo already replaced, so it is likely simply broken/unevaluated rather than a
+  working example of the split. Do not treat it as proof the deny-list approach evaluates.
 - users/jarvis/default.nix drops: nonNixos.enable, targets.genericLinux/nixGL, make-zsh-default-shell
-  (NixOS sets users.users.<name>.shell).
+  (NixOS sets users.users.<name>.shell). Confirmed the whole file is 63 lines and contains
+  nothing else except the 6 repo.secretFiles bindings and the OTEL/SNYK sessionVariables.
 - home.stateVersion: both are 24.11 (home/default.nix:34, nixosConfigurations.nix:114) — nothing to
   reconcile, no release-note sweep needed.
 - The Intune dead end on jarvis is documented in the session of 2026-09-09; do not retry
