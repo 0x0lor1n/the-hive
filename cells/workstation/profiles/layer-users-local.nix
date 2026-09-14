@@ -87,6 +87,11 @@
       # tmux-resurrect snapshots (prefix+C-s), restored with prefix+C-r.
       ".local/share/tmux/resurrect"
       ".cache/nix"
+      # First zsh after boot otherwise pays ~3 s: zsh-autocomplete's compdump
+      # (.cache/zsh) is rebuilt and .envrc re-fetches the pinned direnvrc into
+      # direnv's content store (.cache/direnv) over the network.
+      ".cache/zsh"
+      ".cache/direnv"
       ".config/opencode"
       {
         directory = ".local/share/opencode";

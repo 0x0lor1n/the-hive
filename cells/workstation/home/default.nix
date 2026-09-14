@@ -133,6 +133,13 @@ in {
         "\\x1b[116;6u" = "Control+Shift+t";
         "\\x1b[117;6u" = "Control+Shift+u";
         "\\x1b[119;6u" = "Control+Shift+w";
+        # Enter chords: tmux binds C-Enter / C-S-Enter (swap / split), and
+        # hermes/claude take Shift+Enter as newline. foot only encodes these
+        # once an app pushes kitty-keyboard/modifyOtherKeys — which never
+        # reaches it through tmux — so emit CSI-u unconditionally.
+        "\\x1b[13;2u" = "Shift+Return";
+        "\\x1b[13;5u" = "Control+Return";
+        "\\x1b[13;6u" = "Control+Shift+Return";
       };
       # Palette from cells/theme (foot uses rrggbb, no #); the 16 ANSI slots
       # come from theme.ansi, same list the VT console uses.
