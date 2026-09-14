@@ -597,8 +597,19 @@ works. Every such drop is listed here so nothing is forgotten. Format: tool — 
   (users/shared/gui/spicetify.nix) — stock Spotify look, no theme, extensions only —
   spicetify-nix ships `themes.text`/catppuccin under legacyPackages.themes; wire to the repo's
   kanagawa palette via lib._custom.unwrapHex or just pick theme+colorScheme in the HM module.
-(append below as more GUI modules are ported: foot colours, btop, delta, dircolors are CLI/TUI
- and tracked in the catppuccin call-site list under phase 1 instead)
+USER 2026-09-15: EVERYTHING colour-related goes here, CLI/TUI included — do not stop to
+ask, do not wire lib._custom.unwrapHex mid-port; upstream default now, one theming pass later.
+- zsh-syntax-highlighting — catppuccin.zsh-syntax-highlighting (mocha/latte by preferDark) —
+  fsh default theme — catppuccin/zsh-syntax-highlighting themes dir, source in config.zsh.
+- p10k — CONTEXT_FOREGROUND=3 (yellow) picked ad hoc for the user segment — keep or map to
+  palette in the theming pass.
+- skim — SKIM_DEFAULT_OPTIONS colour string from catppuccin{Mocha,Latte}Colors — no --color
+  flag — rebuild the string from the repo palette.
+- dircolors — catppuccin call site — programs.dircolors default — catppuccin/dircolors.
+- delta (git.nix) — catppuccin features — plain delta — catppuccin/delta include.
+- foot — colours via lib._custom.unwrapHex in jarvis foot.ini — foot default — theme pass.
+- btop — catppuccin theme — default — btop theme file.
+(append as more modules are ported)
 
 ## notes
 - SOURCE MECHANICS, read before porting (verified 2026-09-14 against the clone):
