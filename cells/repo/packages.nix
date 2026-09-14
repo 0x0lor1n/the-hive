@@ -4,11 +4,17 @@
   ...
 }: let
   pkgs = inputs.pkgs;
+  llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
 in {
   # Re-exported from this cell's own llm-agents input (cells/repo/flake.nix),
   # so the workstation cell installs the SAME pin the devshell runs, without
   # declaring llm-agents a second time.
-  hermes-agent = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hermes-agent;
+  hermes-agent = llmAgents.hermes-agent;
+  # The two per-tty agents + opencode's plugin bundle, installed into both
+  # homes by workstation/home/dev/agents.nix.
+  claude-code = llmAgents.claude-code;
+  opencode = llmAgents.opencode;
+  oh-my-opencode = llmAgents.oh-my-opencode;
 
   # Anthropic loopback proxy that images the bulky, hash-free parts of each
   # request (system prompt, tool docs, cold history). Lossy: hashes read back

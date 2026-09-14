@@ -1,0 +1,76 @@
+# Language toolchains, ported 1:1 from jarvis users/shared/dev/lang-*.nix +
+# android.nix (plain package lists, nothing account-specific). Grouped in one
+# file: ten 5-line modules were more directory than content.
+{
+  lib,
+  pkgs,
+  ...
+}: let
+  # Single source of truth for the Python version: the built env and the
+  # site-packages path exported to Neovim (lang-python.lua) both follow it.
+  pythonPkg = pkgs.python311;
+  python-final = pythonPkg.withPackages (_ps: []);
+  python-site-packages = "${python-final}/${pythonPkg.sitePackages}";
+in {
+  home.packages = with pkgs; [
+    # lua
+    lua51Packages.lua
+    lua51Packages.luarocks
+    # go
+    go
+    # haskell
+    ghc
+    haskell-language-server
+    ormolu
+    cabal-install
+    stack
+    # nix
+    statix
+    nixfmt
+    nixd
+    deadnix
+    # web
+    nodejs_24
+    deno
+    typescript # nvim-lspconfig
+    htmx-lsp # nvim-lspconfig
+    # python
+    python-final
+    pipenv
+    poetry
+    uv
+    # typst — tinymist/typstyle are NOT mason-managed (lang-typst.lua sets
+    # `mason = false`; mason has no typstyle at all).
+    typst
+    tinymist
+    typstyle
+    # latex: latexmk, xelatex, chktex, latexindent, biber for lang-texlive.lua.
+    # The top-level scheme already ships biber; adding it separately collides
+    # in buildEnv. Downgrade to texliveMedium if closure size bites.
+    texliveFull
+    zathura # forward-search PDF viewer wired up in lang-texlive.lua
+    # misc
+    d2
+    # android
+    android-tools # adb, fastboot
+  ];
+
+  home.sessionPath = ["$HOME/.local/bin"];
+
+  # Read by the neovim config (lang-python.lua); derived from pythonPkg so
+  # the python3.x version segment is never hardcoded downstream.
+  home.sessionVariables = {
+    GLOBAL_PYTHON_FOLDER_PATH = "${python-final}";
+    GLOBAL_PYTHON_SITE_PACKAGES = python-site-packages;
+  };
+
+  # HACK (jarvis): a global venv so `pip install` outside a project has
+  # somewhere to go; created on first shell, activated lazily after that.
+  programs.zsh.initContent = lib.mkOrder 999 ''
+    if [ -d "$HOME/.venv" ]; then
+      zsh-defer source "$HOME/.venv/bin/activate"
+    else
+      ${python-final}/bin/python -m venv "$HOME/.venv"
+    fi
+  '';
+}
