@@ -143,9 +143,34 @@ DETAIL (rationale and facts for the steps above):
       already lives as a systemPackage for exactly this reason), not a home/ module.
       Cost to accept: policies.json replaces programs.librewolf's declarative extensions and
       search engines. ExtensionSettings is a normal (non-ESR) policy, so addons can be declared
-      there by AMO URL without nur; SearchEngines is ESR-ONLY, so the 4get default + np/no/nl/gh
-      aliases will NOT apply to stock firefox — either accept setting them by hand once, or run
-      firefox-esr. Decide before porting.
+      there by AMO URL without nur.
+      CORRECTION 2026-09-14 (the agent's earlier "SearchEngines is ESR-only" was OUT OF DATE):
+      per Mozilla's own policy reference, SearchEngines is "available in all Firefox release
+      channels" as of Firefox 139. The nixpkgs pin ships firefox 154.0.1, so the 4get default
+      and the np/no/nl/gh/wru aliases CAN be declared on the stable channel. ESR is therefore
+      NOT required to keep the user's search config — it stays a free choice.
+      ESR vs stable, the actual trade-off (both verified present on this pin):
+        firefox 154.0.1 | firefox-esr 153.1.0esr | firefox-esr-140 140.14.0esr
+        - ESR = Extended Support Release: one feature-frozen base for ~a year, receiving only
+          security backports. Stable ships new features every ~4 weeks.
+        - Consequence for a WORK machine: fewer UI/behaviour changes mid-quarter, and tenant
+          SSO/enterprise-policy behaviour stays put. That is the real argument, not policy
+          availability.
+        - Cost: new web platform features land up to a year later; Phoenix's own configs track
+          Firefox's current prefs, so a pref Phoenix sets may not exist yet in a 140-series ESR
+          (harmless — unknown prefs are ignored — but the hardening is then partial).
+        - nixpkgs has TWO esr attrs. `firefox-esr` (153.1.0esr) is the current series;
+          `firefox-esr-140` (140.14.0esr) is the older LTS. Prefer the unversioned alias so the
+          series advances on nixpkgs bumps instead of pinning to a dying branch.
+        - Neither ESR attr carries knownVulnerabilities on this pin.
+      VERIFIED 2026-09-14: Phoenix's wrapper is channel-agnostic. nix/overlay.nix defines
+      withPhoenix as a plain `firefoxPackage.override { extraPoliciesFiles; extraPrefsFiles; }`,
+      and `.override` with those two args evaluates cleanly on firefox, firefox-esr AND
+      firefox-esr-140 (checked with tryEval). So Phoenix + ESR compose fine — just add "firefox-esr"
+      to the module's `firefoxPackages` option (default is [ "firefox" ]).
+      DECISION STILL OPEN: user asked for ESR to preserve their settings, but that premise was
+      based on the agent's wrong ESR-only claim. Confirm whether ESR is still wanted on its own
+      merits (stability on a work machine) now that search engines work either way.
       Sanity check done: nixpkgs firefox is 154.0.1 on this pin, and librewolf currently carries
       NO knownVulnerabilities — i.e. the insecure-marking that forced nixpkgs-librewolf-pin has
       since been resolved upstream. Decommissioning it is a choice now, not a workaround.
@@ -162,12 +187,31 @@ DETAIL (rationale and facts for the steps above):
 - [ ] mkHome takes a per-account secret set, not a bool (layer-compositor.nix:20): cli+dev are
       unconditional for both accounts, while ssh keys / git includeIf blocks / vpn are selected
       per account (see the items below). Personal-only: osint, tor.
-      VPN is WORK-only, not personal: all three profiles are client networks (work-a/wireguard, work-b, work-c). But security/vpn.nix drives them through `sudo wg-quick` / `sudo openvpn`
-      shell aliases, and the Entra account has no wheel by design (auth-entra.nix:116-121).
-      So the aliases cannot work as-is for the account that actually needs them. Options:
-      NetworkManager profiles (Entra is in no netdev group either — check), a polkit rule, or
-      declarative wg-quick/openvpn systemd units the user may start. Decide before porting
-      security/*; do NOT solve it by putting the Entra user in wheel.
+      VPN SPLIT DECIDED 2026-09-14 (user). Five profiles, not three — two do not exist in the
+      source repo yet and have no secrets there:
+        entra: work-a (wireguard, the employer's own net), work-b (openvpn)
+        local: work-c (openvpn) + work-d, work-e  [NEW — no .age in nixos-config, must be
+               collected from the live jarvis/from the user before phase 2]
+      This SHRINKS the wheel-less problem: the local account already has wheel AND is in the
+      `networkmanager` group (verified on penrose: uid 1000, groups wheel+networkmanager), so its
+      three profiles work with the existing `sudo wg-quick`/`sudo openvpn` aliases unchanged.
+      Only the two ENTRA profiles need a new mechanism.
+      RECOMMENDED mechanism for those two: NetworkManager profiles, and add "networkmanager" to
+      himmelblau's local_groups (auth-entra.nix:119-123), NOT wheel. Rationale: NM is already
+      enabled (laptop.nix:15), its system-connections are already persisted (laptop.nix:33), it
+      speaks both wireguard and openvpn natively, and group membership lets a user bring
+      connections up/down through NM's own polkit actions with no password. That satisfies the
+      "do NOT put the Entra user in wheel" constraint — networkmanager is a far narrower grant.
+      Declare them with networking.networkmanager.ensureProfiles (secrets via environmentFiles ->
+      agenix runtime secrets), not by hand in /etc.
+      SECURITY BUG TO FIX WHILE PORTING, do not copy as-is: security/vpn.nix writes credentials
+      into xdg.configFile as plain `text = ...` — wireguard PrivateKey, and the openvpn
+      auth-user-pass files with username+password. home-manager renders those through the NIX
+      STORE, i.e. world-readable on the machine. These must become runtime age.secrets (or NM
+      environmentFiles), never store-rendered text.
+      OPEN, ask the user: VPN routing is GLOBAL to the host, not per-account. If the Entra user
+      brings up work-a while the local user is logged in on another VT, both sessions are on that
+      tunnel. Confirm that is acceptable, or the profiles need namespacing.
 - [ ] impermanence carve-outs for the Entra home — THE load-bearing part of "Entra is the daily
       driver". auth-entra.nix:189-223 is an explicit allowlist of absolute paths (NSS account, so
       no persistence.users.<name>); anything cli/dev writes and is not listed is gone next reboot.
@@ -311,21 +355,23 @@ DETAIL (rationale and facts for the steps above):
 - [ ] ~/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
 ## blocked_on
-- NEW 2026-09-14, DECIDED by the user: out-of-store symlinks STAY for nvim, tmux and zsh —
+- NEW 2026-09-14, RESOLVED by the user: out-of-store symlinks STAY for nvim, tmux and zsh —
   live editing without a rebuild is a requirement, so lib._custom.relativeSymlink is ported,
-  not dropped. Consequences to settle in phase 1:
-  * a `configDirectory` equivalent must exist here (nixos-config gets it from
-    globals.myuser.configDirectory; this repo has no such global).
-  * the Entra account has NO checkout — the repo lives in the LOCAL user's home, 0700. So
-    either the checkout moves somewhere both accounts can read, or Entra gets store-backed
-    copies of these three while the local user gets symlinks. That splits the DELIVERY
-    mechanism between accounts, not the content; the "SHARED verbatim" invariant needs
-    rewording either way.
-  * impermanence must carve out the checkout path for whichever home(s) point at it.
+  not dropped. The checkout location is settled: the-hive becomes a SHARED repo readable by
+  both accounts; only crookedmirror (wheel) can rebuild. Still to implement in phase 1:
+  * a `configDirectory` equivalent (nixos-config gets it from globals.myuser.configDirectory;
+    this repo has no such global) pointing at the shared checkout path.
+  * pick the path + ownership so an account with no wheel can READ but not WRITE it. Today the
+    repo sits in the local user's 0700 home (persisted as "the-hive", layer-users-local.nix:52).
+    Moving it means updating that persistence entry AND layer-users-local's home perms.
+    Group-readable (e.g. a shared group, 0750) is the obvious shape; the Entra account is
+    NSS-only, so the group must be one himmelblau grants via local_groups.
+  * WATCH OUT: a writable checkout for the daily-driver account would let a desktop-plane
+    compromise edit what root later rebuilds. Read-only for Entra is the whole point — do not
+    "fix" a permission error by widening it to 0770.
+  * impermanence must carve out the new checkout path.
   * scope: the user named only nvim/tmux/zsh. foot.ini, opencode's 3 json and the 3 SKILL.md
     default to store-backed — no reason to carry the mechanism for files nobody edits live.
-  Still open, and the reason this is not fully settled: WHERE does the shared checkout live
-  so that an account without wheel can read it?
 - NEW 2026-09-14: ~/nixos-config cannot be cloned by the agent (user did it manually, resolved).
   Knock-on still open for phase 1 step 4: `ssh-keygen -y` on a passphrase-protected key
   prompts, and this shell has no askpass/agent (crookedmirror has no logind session, see
@@ -336,7 +382,12 @@ DETAIL (rationale and facts for the steps above):
 - open: does ~/.ssh/id_rsa still authenticate anywhere, and to which account does it belong?
 - open: where does each project tree live? proposal ~/work and ~/projects inside the respective
   home; also work-org/poc and 0xOLOR1N/gopro-video-cutter have no remote, so assign them by hand
-- open: vpn belongs to the Entra account but needs root; pick the mechanism (see phase 1)
+- open: vpn — mechanism settled for the local account (it has wheel + networkmanager already);
+  for the two ENTRA profiles the proposal is NetworkManager + "networkmanager" in himmelblau's
+  local_groups. Remaining: user must confirm that, supply the two MISSING profiles (work-d,
+  work-e have no .age in nixos-config), and confirm host-global tunnels are acceptable.
+- open: browser channel — ESR vs stable is now a free choice (the "ESR-only search engines"
+  claim was wrong, see phase 1 browser item). User asked for ESR; confirm on the real merits.
 - open: playground/client-a is a client project but the client-a ssh key was assigned to local
 - open: hermes-in-a-container — does it get the ssh keys / git identities of BOTH accounts, or
   none (agent proposes, the user commits from their own session)? Decides how much of the
