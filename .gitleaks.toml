@@ -14,6 +14,7 @@ regexes = [
   '''example\.com''',
   '''0x0lor1n@''',            # public contact on the hisilome site
   '''nikita\.vyach\.ivanov@''', # upstream dwl movestack patch author
+  '''git@[A-Za-z0-9.*-]+:''', # ssh remote URL (git@host:path), not an address
 ]
 
 [[rules]]
