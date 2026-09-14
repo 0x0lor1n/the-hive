@@ -1,0 +1,23 @@
+{
+  "require": {
+    "prefix": "req",
+    "body": ["require(\"${1:module}\")"],
+    "description": "Require module"
+  },
+  "function": {
+    "prefix": "fn",
+    "body": ["function ${1:name}($2)", "\t${3:-- code}", "end$0"]
+  },
+  "anonymous function": {
+    "prefix": "afn",
+    "body": ["function($1)", "\t${2:-- code}", "end$0"]
+  },
+  "if": {
+    "prefix": "if",
+    "body": ["if ${1:true} then", "\t$0", "end"]
+  },
+  "elseif": {
+    "prefix": "elseif",
+    "body": ["elseif ${1:true} then", "\t$0"]
+  }
+}

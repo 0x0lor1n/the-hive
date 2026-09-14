@@ -1,0 +1,51 @@
+local constants = require "custom.constants"
+
+if constants.in_fast then
+  return {}
+end
+
+return {
+  {
+    "nvim-treesitter/nvim-treesitter",
+    optional = true,
+    opts = {
+      ensure_installed = { "nix" },
+    },
+  },
+
+  {
+    "neovim/nvim-lspconfig",
+    optional = true,
+    opts = {
+      servers = {
+        nixd = {
+          enabled = false,
+        },
+        nil_ls = {
+          mason = false,
+        },
+      },
+    },
+  },
+
+  {
+    "stevearc/conform.nvim",
+    optional = true,
+    opts = {
+      formatters_by_ft = {
+        nix = { "nixfmt" },
+      },
+    },
+  },
+
+  {
+    "mfussenegger/nvim-lint",
+    optional = true,
+    opts = {
+      linters_by_ft = {
+        -- TODO: add deadnix
+        nix = { "statix", "nix" },
+      },
+    },
+  },
+}

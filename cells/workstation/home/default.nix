@@ -25,6 +25,9 @@
   # cells/deck/homeModules: the shell toolkit, shared by every account on
   # every workstation. Passed in, not imported: home/ has no `inputs`.
   deck ? {},
+  # cells/repo/packages: claude-code, opencode, oh-my-opencode, rtk -- the
+  # agent CLIs dev/agents.nix installs. Same reason as deck: no `inputs` here.
+  agentPkgs ? {},
 }: {
   pkgs,
   lib,
@@ -38,6 +41,7 @@ in {
   # account's encrypted key/vpn set.
   _module.args.theme = theme;
   _module.args.secrets = sec;
+  _module.args.agentPkgs = agentPkgs;
 
   home.username = userName;
   home.homeDirectory = homeDir;

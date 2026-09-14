@@ -1,0 +1,72 @@
+{
+  "base": {
+    "prefix": "base",
+    "body": [
+      "#import \"/common.typ\": *",
+      "",
+      "#set page(",
+      "\tpaper: \"a4\",",
+      "\tmargin: 0.75in,",
+      ")",
+      "",
+      "#set text(",
+      "\tlang: \"es\",",
+      "\tfont: \"Calibri\",",
+      "\tsize: 11pt,",
+      ")"
+    ]
+  },
+  "taskCover": {
+    "prefix": "task-cover",
+    "body": [
+      "#show: task-cover.with(",
+      "  course: \"\",",
+      "  teacher: \"\",",
+      "  task: \"\",",
+      "  week: 1,",
+      "  class: \"\",",
+      "  show-instructions: true,",
+      ")"
+    ]
+  },
+  "apa": {
+    "prefix": "apa",
+    "body": [
+      "#import \"/common.typ\": *",
+      "",
+      "#set page(paper: \"us-letter\", margin: 2.30cm)",
+      "",
+      "#set text(lang: \"es\", font: \"Arial\", size: 11pt)",
+      "",
+      "#show: task-cover.with(",
+      "  course: \"\",",
+      "  teacher: \"\",",
+      "  task: \"\",",
+      "  week: 1,",
+      "  class: \"\",",
+      "  show-instructions: true,",
+      "  students: (",
+      "    // (",
+      "    //   fullName: [],",
+      "    //   code: [],",
+      "    // ),",
+      "  ),",
+      ")",
+      "",
+      "#pagebreak()",
+      "",
+      "#show: course-header.with(title: [])",
+      "",
+      "#counter(page).update(1)",
+      "#set page(numbering: \"1\")",
+      "",
+      "#apa-custom()[",
+      "  #bibliography(",
+      "    \"references.yml\",",
+      "    style: \"/apa.csl\",",
+      "    full: true,",
+      "  )",
+      "]"
+    ]
+  }
+}

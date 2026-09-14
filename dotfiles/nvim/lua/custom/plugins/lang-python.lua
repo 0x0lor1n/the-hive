@@ -1,0 +1,93 @@
+local constants = require "custom.constants"
+
+if constants.in_fast then
+  return {}
+end
+
+local lsp_utils = require "custom.utils.lsp"
+
+-- source: https://github.com/serranomorante/.dotfiles/blob/main/docs/python-dev-setup.md
+-- Full site-packages path is exported from Nix (users/shared/dev/lang-python.nix)
+-- as GLOBAL_PYTHON_SITE_PACKAGES, so the python3.x version segment is never
+-- hardcoded here (single source of truth = pythonPkg in that .nix file).
+local global_python_site_packages = os.getenv "GLOBAL_PYTHON_SITE_PACKAGES" or ""
+local venv_path = table.concat({
+  "import sys",
+  'sys.path.append("' .. global_python_site_packages .. '")',
+  "import pylint_venv",
+  "pylint_venv.inithook(force_venv_activation=True, quiet=True)",
+}, "; ")
+
+return {
+  {
+    import = "lazyvim.plugins.extras.lang.python",
+  },
+
+  {
+    "nvim-treesitter/nvim-treesitter",
+    optional = true,
+    opts = {
+      ensure_installed = { "python" },
+    },
+  },
+
+  {
+    "neovim/nvim-lspconfig",
+    optional = true,
+    opts = {
+      servers = {
+        ruff = {
+          keys = {
+            {
+              "<leader>co",
+              false,
+            },
+            {
+              "<leader>lo",
+              lsp_utils.code_action "source.organizeImports",
+              desc = "Organize Imports",
+            },
+          },
+        },
+      },
+    },
+  },
+
+  -- undo none-ls changes added by LazyVim
+  {
+    "nvimtools/none-ls.nvim",
+    enabled = false,
+  },
+
+  {
+    "mfussenegger/nvim-lint",
+    dependencies = {
+      {
+        "mason-org/mason.nvim",
+        optional = true,
+        opts = {
+          ensure_installed = { "pylint" },
+        },
+      },
+    },
+    opts = {
+      linters_by_ft = {
+        python = { "pylint" },
+      },
+      linters = {
+        pylint = {
+          args = {
+            "--init-hook",
+            venv_path,
+            "-f",
+            "json",
+            "--from-stdin",
+            function()
+              return vim.api.nvim_buf_get_name(0)
+            end,
+          },
+        },
+      },
+    },
+  },
+}
