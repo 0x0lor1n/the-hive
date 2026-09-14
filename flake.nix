@@ -28,6 +28,7 @@
         (simple "nixosConfigurations")
         (simple "packages")
         (simple "nixosModules")
+        (simple "homeModules")
         (simple "devshells")
         (simple "agenixRekey")
       ];

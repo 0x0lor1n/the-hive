@@ -135,7 +135,7 @@ in {
       home_alias = "cn";
 
       # programs.zsh.enable (layer-users-local.nix) puts it there; the rc
-      # files come from home/cli/zsh.nix. Was bash until phase 2 of the
+      # files come from deck/homeModules/zsh.nix. Was bash until phase 2 of the
       # jarvis port.
       shell = "/run/current-system/sw/bin/zsh";
       # Lets the local console accept password-only; MFA still enforced
