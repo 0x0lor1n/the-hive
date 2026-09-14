@@ -15,7 +15,10 @@
   # so nixpkgs.overlays inside the module system is ignored. Purely additive
   # attrs at this rev; the hashes match nyx's own CI (== cache hits) because
   # our nixpkgs pin equals nyx's lock.
-  pkgs = inputs.pkgs.extend inputs.chaotic.overlays.default;
+  # phoenix's overlay is additive too (pkgs.phoenix, pkgs.withPhoenix); the
+  # browser profile applies withPhoenix itself. Phoenix's own module would do
+  # it via nixpkgs.overlays, which is the ignored path described above.
+  pkgs = (inputs.pkgs.extend inputs.chaotic.overlays.default).extend inputs.phoenix.overlays.default;
   globals = inputs.cells.common.globals;
   common = inputs.cells.common.profiles;
   p = cell.profiles;
