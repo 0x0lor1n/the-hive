@@ -23,11 +23,22 @@
   # Out-of-store: a plain symlink to the runtime path, no copy into the store.
   live = f: config.lib.file.mkOutOfStoreSymlink "${dotfiles}/${f}";
 
-  # All plugins from the nixpkgs pin; jarvis pinned zsh-histdb to a 2020 rev
-  # ("versions after are broken"), nixpkgs' 2024-04-18 rev works (checked:
-  # sqlite-history.zsh present, same entry points).
+  # All plugins from the nixpkgs pin except zsh-histdb: nixpkgs ships
+  # 90a6c10 (2024-04-18), which merged the HISTORY_IGNORE change (7b010a6 +
+  # f73d9c8) that broke this setup on jarvis. 30797f0 is the last commit
+  # before that series (checked against upstream master 2026-09-15; nothing
+  # else in between), so the derivation stays nixpkgs', only src moves.
+  zshHistdb = pkgs.zsh-histdb.overrideAttrs (_: {
+    version = "0-unstable-2022-01-18";
+    src = pkgs.fetchFromGitHub {
+      owner = "larkery";
+      repo = "zsh-histdb";
+      rev = "30797f0c50c31c8d8de32386970c5d480e5ab35d";
+      hash = "sha256-PQIFF8kz+baqmZWiSr+wc4EleZ/KD8Y+lxW2NT35/bg=";
+    };
+  });
   fsh = "${pkgs.zsh-fast-syntax-highlighting}/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh";
-  histdb = "${pkgs.zsh-histdb}/share/zsh-histdb/sqlite-history.zsh";
+  histdb = "${zshHistdb}/share/zsh-histdb/sqlite-history.zsh";
   histdbSkim = "${cellPackages.zsh-histdb-skim}/share/zsh-histdb-skim/zsh-histdb-skim.plugin.zsh";
 in {
   home.packages = with pkgs; [
