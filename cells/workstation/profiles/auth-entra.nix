@@ -239,6 +239,9 @@ in {
       (entraHome ".local/share/zoxide")
       (entraHome ".local/share/tmux/resurrect")
       (entraHome ".cache/nix")
+      # zsh compdump + direnv content store — see layer-users-local.nix.
+      (entraHome ".cache/zsh")
+      (entraHome ".cache/direnv")
       # opencode: config in .config, auth.json + sessions in .local/share.
       (entraHome ".config/opencode")
       (entraHome ".local/share/opencode")
