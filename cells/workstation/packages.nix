@@ -30,6 +30,9 @@
     appId,
     dbus ? {},
     env ? {},
+    # Webcam for calls. Microphone needs nothing extra: it already comes
+    # through the pipewire/pulse sockets below.
+    camera ? false,
     extra ? {},
   }:
     (mkNixPak {
@@ -82,11 +85,20 @@
               # os-release: Electron apps (Slack) read it at startup to collect
               # distro info; without it Slack throws "No unique release file
               # found!" in the main process and never creates a window.
-              bind.ro = [
-                "/etc/fonts"
-                ["/etc/static/os-release" "/etc/os-release"]
-                ["/etc/static/lsb-release" "/etc/lsb-release"]
-              ];
+              bind.ro =
+                [
+                  "/etc/fonts"
+                  ["/etc/static/os-release" "/etc/os-release"]
+                  ["/etc/static/lsb-release" "/etc/lsb-release"]
+                ]
+                # Chromium enumerates cameras by scanning /dev/video* and
+                # reads the display name from /sys/class/video4linux/<dev>/
+                # (the symlink target under /sys/devices/pci0000:00 is
+                # already bound by gpu.enable); libudev reads /run/udev.
+                ++ lib.optionals camera ["/sys/class/video4linux" "/run/udev"];
+              # --dev-bind-try: a missing node (no webcam) is skipped, not
+              # fatal. Access is the seat ACL logind puts on the nodes.
+              bind.dev = lib.optionals camera ["/dev/video0" "/dev/video1" "/dev/video2" "/dev/video3" "/dev/media0"];
               # xdg-open (Electron/Qt shell out to it for links) picks the
               # flatpak backend by $XDG_RUNTIME_DIR/flatpak-info; nixpak only
               # binds /.flatpak-info, so it falls to "generic", finds no
@@ -172,5 +184,6 @@ in {
     });
     appId = "com.slack.Slack";
     env = chromiumEnv;
+    camera = true;
   };
 }
