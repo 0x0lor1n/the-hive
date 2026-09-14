@@ -14,7 +14,7 @@
 }: {
   # /etc/zshenv + /run/current-system/sw/bin/zsh (also what auth-entra.nix
   # names as himmelblau's shell). Completion and prompt stay OFF here:
-  # home/cli/zsh.nix runs compinit through zsh-autocomplete, which must be
+  # deck/homeModules/zsh.nix runs compinit through zsh-autocomplete, which must be
   # the only compinit call, and p10k is the prompt.
   programs.zsh = {
     enable = true;
@@ -39,7 +39,7 @@
       then host.hashedPassword
       else globals.user.hashedPassword;
     home = host.homeDir;
-    # home/cli/zsh.nix writes the rc files; the login shell is a system
+    # deck/homeModules/zsh.nix writes the rc files; the login shell is a system
     # setting and HM alone would leave the account on bash.
     shell = pkgs.zsh;
 

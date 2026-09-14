@@ -162,9 +162,6 @@ in {
       '';
   });
 
-  # Ctrl-R for zsh-histdb (home/cli/zsh.nix); not in nixpkgs.
-  zsh-histdb-skim = pkgs.callPackage ./packages/zsh-histdb-skim.nix {};
-
   telegram-desktop = sandboxed {
     package = pkgs.telegram-desktop;
     appId = "org.telegram.desktop";
