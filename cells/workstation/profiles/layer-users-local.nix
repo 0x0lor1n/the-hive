@@ -86,12 +86,13 @@
       ".local/share/zoxide"
       # tmux-resurrect snapshots (prefix+C-s), restored with prefix+C-r.
       ".local/share/tmux/resurrect"
-      ".cache/nix"
-      # First zsh after boot otherwise pays ~3 s: zsh-autocomplete's compdump
-      # (.cache/zsh) is rebuilt and .envrc re-fetches the pinned direnvrc into
-      # direnv's content store (.cache/direnv) over the network.
-      ".cache/zsh"
-      ".cache/direnv"
+      # Whole ~/.cache. Started as nix + zsh compdump + direnv content store,
+      # but powerlevel10k hardcodes its dump/instant-prompt files to
+      # $XDG_CACHE_HOME root (typeset -gr, no override), and without them the
+      # first zsh after boot pays ~10 s (measured 2026-09-14). Nothing here is
+      # authoritative -- every app rebuilds its cache on miss -- so persisting
+      # the lot costs disk, not correctness.
+      ".cache"
       ".config/opencode"
       {
         directory = ".local/share/opencode";
