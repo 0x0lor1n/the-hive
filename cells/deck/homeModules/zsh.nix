@@ -12,11 +12,15 @@
 # Both halves are needed for zsh to be the login shell: this module writes
 # ~/.config/zsh/.zshrc; the SYSTEM side (programs.zsh.enable, the login
 # shell per account) is layer-users-local.nix and auth-entra.nix.
+#
+# Account-agnostic: the same module lands in the local and the Entra home.
 {
+  inputs,
+  cell,
+}: {
   config,
   pkgs,
   lib,
-  cellPackages,
   ...
 }: let
   dotfiles = "/srv/the-hive/dotfiles/zsh";
@@ -57,7 +61,7 @@
   });
   fsh = "${pkgs.zsh-fast-syntax-highlighting}/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh";
   histdb = "${zshHistdb}/share/zsh-histdb/sqlite-history.zsh";
-  histdbSkim = "${cellPackages.zsh-histdb-skim}/share/zsh-histdb-skim/zsh-histdb-skim.plugin.zsh";
+  histdbSkim = "${cell.packages.zsh-histdb-skim}/share/zsh-histdb-skim/zsh-histdb-skim.plugin.zsh";
 in {
   home.packages = with pkgs; [
     sqlite-interactive # histdb queries

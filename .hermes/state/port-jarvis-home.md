@@ -400,8 +400,13 @@ DETAIL (rationale and facts for the steps above):
       with src = 30797f0 (nixpkgs' sqlite3 substitution still applies). zsh-histdb-skim is NOT
       in nixpkgs: ported to
       cells/workstation/packages/zsh-histdb-skim.nix (0.9.7, cargoHash from jarvis), exported
-      as cell.packages.zsh-histdb-skim and handed to home/ via a new `cellPackages` arg
-      (home/default.nix -> _module.args.cellPackages; layer-compositor passes cell.packages).
+      as cell.packages.zsh-histdb-skim.
+      2026-09-15 MOVED to cells/deck (new cell, name from Neuromancer's cyberspace deck):
+      deck/homeModules/zsh.nix + deck/packages.nix. Block `homeModules` added to flake.nix.
+      Modules are `{inputs, cell, ...}: hmModule` so they read `cell.packages` directly;
+      home/default.nix takes `deck ? {}` (= inputs.cells.deck.homeModules from layer-compositor)
+      and imports `builtins.attrValues deck`. home/cli/ is gone; further account-agnostic
+      shell tools (fzf, skim, eza, bat, zoxide, direnv, dircolors, tmux, neovim) go to deck/.
       catppuccin.zsh-syntax-highlighting dropped (fsh default theme; theme-debt).
       SYSTEM half: layer-users-local.nix programs.zsh.enable (enableGlobalCompInit=false,
       promptInit="" — HM's compinit via zsh-autocomplete must be the only one) +

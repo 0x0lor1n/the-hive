@@ -22,9 +22,9 @@
   # the account's own age.secrets keys (profiles/secrets.nix). {} when the
   # file is absent, so a host without secrets still evaluates.
   secrets ? {},
-  # cells/workstation/packages.nix: repo-built packages home modules need
-  # (zsh-histdb-skim). Passed in, not imported: home/ has no `cell`.
-  cellPackages ? {},
+  # cells/deck/homeModules: the shell toolkit, shared by every account on
+  # every workstation. Passed in, not imported: home/ has no `inputs`.
+  deck ? {},
 }: {
   pkgs,
   lib,
@@ -38,7 +38,6 @@ in {
   # account's encrypted key/vpn set.
   _module.args.theme = theme;
   _module.args.secrets = sec;
-  _module.args.cellPackages = cellPackages;
 
   home.username = userName;
   home.homeDirectory = homeDir;
@@ -48,7 +47,7 @@ in {
   # nixpkgs is unstable, home-manager is release-25.05: intentional.
   home.enableNixpkgsReleaseCheck = false;
 
-  imports = [./desktop ./cli ./dev ./security];
+  imports = [./desktop ./dev ./security] ++ builtins.attrValues deck;
 
   home.packages = extraPackages;
 

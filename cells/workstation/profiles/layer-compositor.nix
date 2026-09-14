@@ -33,7 +33,7 @@
   }:
     import ../home {
       inherit userName homeDir theme extraPackages git secrets;
-      cellPackages = cell.packages;
+      deck = inputs.cells.deck.homeModules;
     };
 
   # The Entra user is an NSS user (himmelblau), not in users.users, so the HM
