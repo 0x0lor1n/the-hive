@@ -354,22 +354,29 @@ DETAIL (rationale and facts for the steps above):
 - [ ] ~/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
 ## blocked_on
-- NEW 2026-09-14: the checkout moves OUT of the local user's home to /srv (user decision), and
-  that immediately exposes a CONTRADICTION that must be resolved before any cli/tui module:
-  * live editing was wanted so the user can change nvim/tmux/zsh config without a rebuild;
-  * the daily driver is the ENTRA account;
-  * but the checkout must stay READ-ONLY to the Entra account, because it is what root later
-    rebuilds — a writable rebuild source on the desktop plane is exactly the hole the whole
-    "Entra has no wheel" design exists to close.
-  => a single read-only /srv/the-hive gives live editing only to crookedmirror, who is NOT the
-  account the user works in. The feature would be delivered to the wrong account.
-  RESOLUTION PROPOSED (needs the user): two trees, not one.
-    /srv/the-hive   — rebuild source. crookedmirror:<group> 0750, Entra reads, never writes.
-    /srv/dotfiles   — nvim/tmux/zsh config only, WRITABLE by the Entra account (its own repo or
-                      a subtree), and what relativeSymlink points at. Nothing in it is read by
-                      the rebuild, so a compromised desktop cannot influence the system closure.
-  This also keeps the "identical content for both accounts" invariant: both homes symlink the
-  same /srv/dotfiles paths.
+- NEW 2026-09-14: the checkout moves OUT of the local user's home to /srv (user decision).
+  User then clarified: nvim/tmux/zsh are dev tools and it is FINE for the Entra account to
+  modify their configs. That settles the dotfiles half but NOT the repo half — the two are
+  different grants and must not be conflated:
+  * writing ~/.config/nvim content = harmless. Whatever it executes already runs as that user.
+  * write access to the /srv/the-hive WORKING TREE = privilege escalation: any .nix under
+    cells/ is what root later builds via `nixos-rebuild`, so a desktop-plane compromise gets
+    root at the next rebuild. This is precisely the hole auth-entra.nix's no-wheel design
+    (auth-entra.nix:116-121) exists to close, so do not open it by accident.
+  KEY FACT that makes the split free (verified in nixos-config lib/default.nix): the symlink
+  target is a RUNTIME PATH STRING, never an eval-time input. mkOutOfStoreSymlink only does
+  `toString path` + `ln -s`, it never reads the file. So the dotfiles do NOT have to live in
+  the flake at all, and the whole runtimePath/relativeSymlink assertion machinery can be
+  replaced by a one-line `mkOutOfStoreSymlink "/srv/dotfiles/nvim"`. Splitting costs nothing
+  and deletes code.
+  RECOMMENDED (awaiting user's yes/no):
+    /srv/the-hive  — rebuild source. crookedmirror-owned 0750, Entra reads only.
+    /srv/dotfiles  — nvim/tmux/zsh configs, Entra-writable, its own git repo. Symlink target.
+  Considered and rejected: POSIX ACLs to make one repo partly writable (the pool does have
+  acltype=posix and setfacl exists, so it is technically possible) — git rewrites files on
+  every checkout/rebase and does not preserve ACLs, so the guarantee silently rots.
+  * scope reminder: only nvim/tmux/zsh get the symlink treatment. foot.ini, opencode's 3 json
+    and the 3 SKILL.md stay store-backed.
 - /srv on this host is on rpool/local/root, which is ROLLED BACK to @blank every boot
   (storage-zfs-rollback). Verified: /srv exists at 0755 but is not persisted and not a dataset.
   So whatever lands in /srv needs one of:
