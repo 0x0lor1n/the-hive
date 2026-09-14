@@ -354,27 +354,46 @@ DETAIL (rationale and facts for the steps above):
 - [ ] ~/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
 ## blocked_on
-- NEW 2026-09-14: the checkout moves OUT of the local user's home to /srv (user decision).
-  User then clarified: nvim/tmux/zsh are dev tools and it is FINE for the Entra account to
-  modify their configs. That settles the dotfiles half but NOT the repo half — the two are
-  different grants and must not be conflated:
-  * writing ~/.config/nvim content = harmless. Whatever it executes already runs as that user.
-  * write access to the /srv/the-hive WORKING TREE = privilege escalation: any .nix under
-    cells/ is what root later builds via `nixos-rebuild`, so a desktop-plane compromise gets
-    root at the next rebuild. This is precisely the hole auth-entra.nix's no-wheel design
-    (auth-entra.nix:116-121) exists to close, so do not open it by accident.
-  KEY FACT that makes the split free (verified in nixos-config lib/default.nix): the symlink
-  target is a RUNTIME PATH STRING, never an eval-time input. mkOutOfStoreSymlink only does
-  `toString path` + `ln -s`, it never reads the file. So the dotfiles do NOT have to live in
-  the flake at all, and the whole runtimePath/relativeSymlink assertion machinery can be
-  replaced by a one-line `mkOutOfStoreSymlink "/srv/dotfiles/nvim"`. Splitting costs nothing
-  and deletes code.
-  RECOMMENDED (awaiting user's yes/no):
-    /srv/the-hive  — rebuild source. crookedmirror-owned 0750, Entra reads only.
-    /srv/dotfiles  — nvim/tmux/zsh configs, Entra-writable, its own git repo. Symlink target.
-  Considered and rejected: POSIX ACLs to make one repo partly writable (the pool does have
-  acltype=posix and setfacl exists, so it is technically possible) — git rewrites files on
-  every checkout/rebase and does not preserve ACLs, so the guarantee silently rots.
+- CHECKOUT LAYOUT DECIDED 2026-09-14 (user): ONE tree. /srv/the-hive is the single source of
+  config — no second dotfiles repo. The Entra account may write the dev-tool configs; it must
+  still not be able to write what root builds.
+  DESIGN THAT SATISFIES BOTH (measured, see below): one repo, per-directory ACLs.
+    /srv/the-hive            crookedmirror:<sharedgrp> 0750  — group reads, only owner writes
+    /srv/the-hive/cells      same — the rebuild source stays owner-write-only
+    /srv/the-hive/dotfiles/  group-writable via a DEFAULT POSIX ACL — nvim/tmux/zsh live here
+  home-manager then points at it with a plain
+    config.lib.file.mkOutOfStoreSymlink "/srv/the-hive/dotfiles/nvim"
+  for both accounts. Identical content, identical mechanism, one repo, and the flake never
+  reads those files at eval (see the runtime-path note below), so nothing in dotfiles/ can
+  influence a build.
+  WHY ACLs AND NOT THE OBVIOUS THINGS — all three were tried on this host 2026-09-14:
+    * `git config core.sharedRepository group`: does NOT affect worktree files. Measured: files
+      still land 0644 after checkout. It only fixes .git/ internals. Useless here.
+    * setgid bit (chmod 2770) on the dir: fixes the GROUP of new files, not the MODE. Measured:
+      0644 under the default umask, so group still cannot write.
+    * umask 002: works, but is a per-shell/per-session property. A `git checkout` run from a
+      shell with umask 022 silently re-creates files 0644 and quietly breaks group write.
+      Measured both ways. Too fragile to rely on.
+    * DEFAULT POSIX ACL on the directory: WORKS and is umask-proof. Measured — with
+      `setfacl -d -m g::rwx dotfiles`, a checkout under umask 022 still produced rw-rw----,
+      and the default ACL is inherited by subdirectories created later (nvim/lua/... came out
+      group-writable without further action). rpool already has acltype=posix and setfacl is
+      in the system closure, so nothing new is needed.
+  PITFALL, must be handled declaratively: ACLs are NOT stored in git and are LOST on a fresh
+  clone. Measured: cloning the repo produced a plain 0755 dotfiles/ with no ACL. So the rule
+  must be re-applied by the system, not by hand. systemd.tmpfiles with an `A+` line does
+  exactly this and was verified to work on this host:
+    A+ /srv/the-hive/dotfiles - - - - d:group:<grp>:rwx,group:<grp>:rwx
+  After that line, a file created under umask 022 came out rw-rw-r--+ as intended. Put it next
+  to the other tmpfiles rules (auth-entra.nix:321 is the precedent) so it survives re-clones
+  and reboots.
+  Group: the Entra account is NSS-only, so the shared group must be one himmelblau grants via
+  local_groups (auth-entra.nix:119-123) — same mechanism as the networkmanager grant.
+  KEY FACT that makes this safe (verified in nixos-config lib/default.nix): the symlink target
+  is a RUNTIME PATH STRING, never an eval-time input. mkOutOfStoreSymlink only does
+  `toString path` + `ln -s`; it never reads the file. So dotfiles/ being writable cannot affect
+  the system closure, and the whole runtimePath/relativeSymlink assertion machinery from
+  nixos-config collapses into a one-line mkOutOfStoreSymlink. Less code than the source.
   * scope reminder: only nvim/tmux/zsh get the symlink treatment. foot.ini, opencode's 3 json
     and the 3 SKILL.md stay store-backed.
 - /srv on this host is on rpool/local/root, which is ROLLED BACK to @blank every boot
@@ -403,13 +422,15 @@ DETAIL (rationale and facts for the steps above):
   question as above — give each its own ZFS dataset.
   Consequence for the ssh/git split: the tree an account cannot read is the tree it cannot
   commit from, so ownership must match the key table (phase 1 ssh identities).
-- open: git.client-e.tld — the mismatch is NOT about github.com (that key is unambiguous and
-  stays with the personal identity). Restated: commits to git.client-e.tld carry the WORK
-  author identity (same one used for work-azure/work-gh), but its ssh key `client-e-key` was
-  put in the LOCAL account's set. After the /srv split the question becomes concrete: does
-  git.client-e.tld work live under /srv/work (Entra, work identity, key moves to entra) or
-  /srv/projects (crookedmirror, freelance — then the commit identity should become the personal
-  one)? Same question for playground/client-a. Answer by naming the tree, not the key.
+- open: git.client-e.tld — user does not recognise the client, so this cannot be answered from
+  memory. RESOLVE BY MEASUREMENT during phase 2, not by asking again: on jarvis, find which
+  worktrees have a git.client-e.tld remote (`grep -rl client-e ~/workspace/*/.git/config`),
+  read the last commit's author and date, and check whether the key still authenticates.
+  A tree with no commits in a year is dead weight — archive it and drop both key and identity.
+  Default if it is still live: it goes to /srv/work with the work identity, and client-e-key
+  moves to the entra key set (the commit identity is the stronger signal of who owns the work).
+- SETTLED 2026-09-14: the two remote-less repos (work-org/poc, 0xOLOR1N/gopro-video-cutter) go
+  to /srv/projects for now. Revisit only if one turns out to be employer property.
 - ~/.ssh/id_rsa: user believes it is the same key as `github` and only a git-clone default.
   VERIFY before deleting, do not take it on faith — an RSA key and an ed25519 key cannot be the
   same key, so at best the two are both registered on the same GitHub account. Check with
@@ -430,7 +451,8 @@ DETAIL (rationale and facts for the steps above):
   browser item in phase 1 for the measured reasons),
   vpn: 3 profiles (entra work-a+work-b employer, local work-c freelance), NM + networkmanager
   group for the entra pair, host-global routing accepted,
-  /srv is the shared parent: /srv/the-hive (rebuild source, ro for entra), /srv/work (entra),
+  /srv is the shared parent: /srv/the-hive (ONE repo, cells/ owner-write-only, dotfiles/
+  group-writable via default POSIX ACL + a tmpfiles A+ rule), /srv/work (entra),
   /srv/projects (local) — each needs its own ZFS dataset, /srv itself is rolled back,
   live editing (out-of-store symlinks) KEPT for nvim/tmux/zsh and dropped for everything else,
   Entra = daily driver / local = sudo+rebuild only (both get the same cli+dev tooling),
