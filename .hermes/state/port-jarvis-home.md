@@ -230,8 +230,14 @@ DETAIL (rationale and facts for the steps above):
       environmentFiles), never store-rendered text.
       SETTLED: host-global VPN routing is ACCEPTABLE — a tunnel raised by one account carries
       the other account's traffic too. No namespacing needed.
-- [ ] impermanence carve-outs for the Entra home — THE load-bearing part of "Entra is the daily
-      driver". auth-entra.nix:189-223 is an explicit allowlist of absolute paths (NSS account, so
+- [x] impermanence carve-outs for the Entra home — DONE 2026-09-14 (step 5). auth-entra.nix
+      allowlist += .ssh, .local/share/direnv, .local/share/zsh, .cache/nix, .config/opencode,
+      .local/share/opencode (entraHome, 0700). layer-users-local.nix += the same four new ones
+      (.ssh/direnv were already there). .config/git and .ssh/config deliberately NOT persisted:
+      HM store symlinks, re-created at activation. Verified via eval of persistence."/persist".
+      Phase 2 must point zsh HISTFILE at ~/.local/share/zsh (bash trick, auth-entra.nix:~240).
+      NSS account, so no persistence.users.<name>; original rationale kept below.
+      auth-entra.nix:189-223 is an explicit allowlist of absolute paths (NSS account, so
       no persistence.users.<name>); anything cli/dev writes and is not listed is gone next reboot.
       New entries needed, entraHome-style: .ssh (0700 — known_hosts, agent sockets; the identity
       keys themselves come from age.secrets, see below), .local/share/direnv, .local/share/zsh
