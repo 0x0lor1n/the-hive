@@ -31,7 +31,10 @@
     git ? null,
     secrets ? {},
   }:
-    import ../home {inherit userName homeDir theme extraPackages git secrets;};
+    import ../home {
+      inherit userName homeDir theme extraPackages git secrets;
+      cellPackages = cell.packages;
+    };
 
   # The Entra user is an NSS user (himmelblau), not in users.users, so the HM
   # NixOS module can't target it. Build the same home standalone and activate

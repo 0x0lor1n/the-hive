@@ -7,5 +7,5 @@
 # impermanence carve-out (auth-entra.nix / layer-users-local.nix), the home
 # root itself is rolled back at boot.
 {...}: {
-  imports = [];
+  imports = [./zsh.nix];
 }
