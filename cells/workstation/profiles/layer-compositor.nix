@@ -17,13 +17,21 @@
   ...
 }: let
   theme = inputs.cells.theme.palettes.kanagawa;
+  # Per-role encrypted attrset (git includeIf blocks, ssh matchBlocks), PIN
+  # identity. Same flakeRoot shape as cells/common/globals.nix.
+  userSecrets = role:
+    import ../home/secrets.nix {
+      flakeRoot = /. + builtins.unsafeDiscardStringContext inputs.self.outPath;
+      inherit role;
+    };
   mkHome = {
     userName,
     homeDir,
     extraPackages ? [],
     git ? null,
+    secrets ? {},
   }:
-    import ../home {inherit userName homeDir theme extraPackages git;};
+    import ../home {inherit userName homeDir theme extraPackages git secrets;};
 
   # The Entra user is an NSS user (himmelblau), not in users.users, so the HM
   # NixOS module can't target it. Build the same home standalone and activate
@@ -44,6 +52,7 @@
           cell.packages.slack
           cell.packages.telegram-desktop
         ];
+        secrets = userSecrets "entra";
       })
     ];
   };
@@ -130,6 +139,7 @@ in {
     home-manager.users.${host.userName} = mkHome {
       inherit (host) userName homeDir;
       git = globals.user.git;
+      secrets = userSecrets "local";
     };
 
     # HM for the Entra user (see entraHome above). Runs in the user manager
