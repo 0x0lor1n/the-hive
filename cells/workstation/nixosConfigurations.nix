@@ -52,6 +52,8 @@
       p.maintenance
       # pxpipe system unit + /etc/hosts alias, shared by every session's Hermes
       p.agent-proxy
+      # /srv/the-hive: one checkout for both accounts, dotfiles/ group-writable
+      p.srv-the-hive
     ];
 
   # Hardware: exactly one per host. The playground VMs mount the host's flake

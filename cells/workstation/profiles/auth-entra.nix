@@ -120,6 +120,8 @@ in {
         "video"
         "audio"
         "input"
+        # read /srv/the-hive, write /srv/the-hive/dotfiles (srv-the-hive.nix)
+        "hive"
       ];
 
       # Software HSM with its AuthCode sealed to the TPM if present — pairs
@@ -132,7 +134,10 @@ in {
       home_attr = "spn";
       home_alias = "cn";
 
-      shell = "/run/current-system/sw/bin/bash";
+      # programs.zsh.enable (layer-users-local.nix) puts it there; the rc
+      # files come from home/cli/zsh.nix. Was bash until phase 2 of the
+      # jarvis port.
+      shell = "/run/current-system/sw/bin/zsh";
       # Lets the local console accept password-only; MFA still enforced
       # over SSH. Without this, console login can force the device-code flow.
       allow_console_password_only = true;

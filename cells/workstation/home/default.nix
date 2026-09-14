@@ -22,6 +22,9 @@
   # the account's own age.secrets keys (profiles/secrets.nix). {} when the
   # file is absent, so a host without secrets still evaluates.
   secrets ? {},
+  # cells/workstation/packages.nix: repo-built packages home modules need
+  # (zsh-histdb-skim). Passed in, not imported: home/ has no `cell`.
+  cellPackages ? {},
 }: {
   pkgs,
   lib,
@@ -35,6 +38,7 @@ in {
   # account's encrypted key/vpn set.
   _module.args.theme = theme;
   _module.args.secrets = sec;
+  _module.args.cellPackages = cellPackages;
 
   home.username = userName;
   home.homeDirectory = homeDir;

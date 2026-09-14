@@ -65,7 +65,7 @@ Rows marked [NEW] were missing from the first pass.
 | shared/dev/lang-*.nix, android  | home/dev/*.nix                           | lang-ai is 5 lines (OPENCODE_API_KEY only) — merge with post-dellvis-tooling §2 |
 | shared/tui/{tmux,neovim}        | home/dev/ (or home/cli/)                 | [NEW] both out-of-store; neovim ships 93 files under config/nvim plus a dead config/nvim.bak (drop the .bak) |
 | shared/tui/coding-agents/claude | home/dev/claude.nix                      | keep llm-agents pkg + skills; drop the oh-my-claudecode marketplace wiring |
-| shared/tui/coding-agents/{opencode,skills} | home/dev/*.nix                | [NEW] opencode ships 3 json + omo.jsonc, skills ship 3 SKILL.md — all out-of-store |
+| shared/tui/coding-agents/{opencode,skills} | home/dev/*.nix                | [NEW] opencode ships 3 json + omo.jsonc, skills ship 3 SKILL.md — all out-of-store. USER 2026-09-15: anthropic is no longer used with opencode — keep ONLY the `go` profile from omo.jsonc (opencode-go/* models) and make it the default; drop `work` + `work-uncensored` (38 anthropic model refs), the `opencode-anthropic-oauth` plugin in opencode.json, and the omg/omw/omwc aliases (one profile = plain `opencode`). oc-swap in functions.zsh already deleted for the same reason |
 | shared/security/{ssh,vpn,tor,osint} | home/security/*.nix                  | vpn-{work-a,work-b,work-c} secrets -> agenix-rekey |
 | jarvis/default.nix sessionVariables (OTEL, SNYK) | home/default.nix via userSecrets equiv | secrets |
 | jarvis/secrets/ssh-keys.tar.age | NEW mechanism, see phase 1 "ssh identities" — NOT the user-ssh-key pattern | 8 outbound client keys |
@@ -375,14 +375,47 @@ DETAIL (rationale and facts for the steps above):
       PHASE 1 CLOSED. Phase 2 (port modules) starts in a fresh session.
 
 ### phase 2 — port modules (on penrose, file by file, table above)
-- [ ] cli/* (zsh first — it is what everything else is used through). NOTE from probe 0c:
-      zsh has a SYSTEM half in this repo — `programs.zsh.enable` (absent today), then
-      auth-entra.nix:135 `shell` repointed at it for the Entra account and
-      users.users.<local>.shell for the local one. HM's programs.zsh alone leaves both on bash.
+- [x] /srv/the-hive infra — DONE 2026-09-15 (prerequisite for the live-edited dotfiles):
+      disks/{penrose,sevastopol}.nix += rpool/safe/srv (canmount=off) + safe/srv/the-hive
+      (legacy, mounted /srv/the-hive); profiles/srv-the-hive.nix = users.groups.hive, local
+      user in it, tmpfiles `z /srv/the-hive 0750 <local> hive` + `A+ .../dotfiles d:group:hive:rwx,
+      group:hive:rwx`; auth-entra local_groups += hive. Verified by eval: fileSystems entry,
+      both tmpfiles lines, extraGroups. dotfiles/ lives at REPO ROOT (the-hive/dotfiles/zsh/).
+      USER STEPS still open (new datasets are not created by disko on an installed host):
+        sudo -S -p '' zfs create -o canmount=off -o mountpoint=none rpool/safe/srv
+        sudo -S -p '' zfs create -o mountpoint=legacy rpool/safe/srv/the-hive
+        rebuild; git clone the-hive /srv/the-hive (as local user); sudo -S -p '' systemd-tmpfiles --create
+      Until then the 4 zsh symlinks dangle and .zshrc's `source` of them fails at shell start
+      (the p10k line is guarded, the other three are not — acceptable, this is the deploy step).
+- [x] cli/zsh — DONE 2026-09-15. home/cli/zsh.nix (initContent kept verbatim modulo paths),
+      dotfiles/zsh/{config,key-bindings}.zsh + .p10k.zsh copied VERBATIM; functions.zsh minus
+      oc-swap (user 2026-09-15: anthropic/opencode model toggling is dead, see the opencode row).
+      HM points at them with config.lib.file.mkOutOfStoreSymlink — verified the built
+      xdg.configFile source is a bare symlink to /srv/the-hive/dotfiles/zsh/config.zsh.
+      HISTFILE = ~/.local/share/zsh/history, HISTDB_FILE = ~/.local/share/zsh/history.db (the
+      carve-out). Plugins from the nixpkgs pin (zsh-defer, zsh-vi-mode, ...) EXCEPT zsh-histdb:
+      nixpkgs ships 90a6c10 (2024-04-18) = the HISTORY_IGNORE merge (7b010a6 + f73d9c8) that
+      broke jarvis; upstream has nothing newer (checked 2026-09-15), and jarvis's 30797f0
+      (2022-01-18) is exactly the last commit before it. Kept via pkgs.zsh-histdb.overrideAttrs
+      with src = 30797f0 (nixpkgs' sqlite3 substitution still applies). zsh-histdb-skim is NOT
+      in nixpkgs: ported to
+      cells/workstation/packages/zsh-histdb-skim.nix (0.9.7, cargoHash from jarvis), exported
+      as cell.packages.zsh-histdb-skim and handed to home/ via a new `cellPackages` arg
+      (home/default.nix -> _module.args.cellPackages; layer-compositor passes cell.packages).
+      catppuccin.zsh-syntax-highlighting dropped (fsh default theme; theme-debt).
+      SYSTEM half: layer-users-local.nix programs.zsh.enable (enableGlobalCompInit=false,
+      promptInit="" — HM's compinit via zsh-autocomplete must be the only one) +
+      users.users.<local>.shell = pkgs.zsh; auth-entra.nix shell = /run/current-system/sw/bin/zsh.
+      Verified by eval: local shell -> zsh-5.9.2, rendered .zshrc has the right HISTFILE/HISTDB
+      paths and sources config/functions/key-bindings by their ~/.config/zsh path.
+      bash HISTFILE trick in auth-entra stays (bash is still there for scripts/fallback).
+- [ ] cli/* rest: fzf, skim (drop catppuccin colours -> theme), zoxide, bat, lazygit, eza,
+      dircolors (catppuccin call site -> theme), direnv, git.nix (delta: drop catppuccin features)
 - [ ] dev/* incl. git identities; merge lang-ai with post-dellvis-tooling (pxpipe unit, hermes, claude, rtk)
 - [ ] desktop additions (foot, firefox, mpv, chat)
 - [ ] security/* + rekey vpn/ssh secrets for penrose (per-account key sets, phase 1 table)
-- [ ] grep gate: `grep -rn 'nixos-config\|nonNixos\|genericLinux\|nixGL' cells/workstation/home` -> empty
+- [ ] grep gate: `grep -rn 'nixos-config\|nonNixos\|genericLinux\|nixGL' cells/workstation/home dotfiles` -> empty
+      (2026-09-15: clean after zsh; three comment-only mentions reworded to "jarvis")
 - [ ] eval + build toplevel for penrose AND sevastopol/osgiliath (shared home must not break them)
 
 ### phase 3 — deploy to penrose
