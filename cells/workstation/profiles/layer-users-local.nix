@@ -64,6 +64,16 @@
         directory = ".claude";
         mode = "0700";
       }
+      # cli/dev state — keep in sync with the Entra allowlist in auth-entra.nix.
+      # zsh histfile (phase 2), nix fetcher/eval caches, opencode config +
+      # auth.json/sessions.
+      ".local/share/zsh"
+      ".cache/nix"
+      ".config/opencode"
+      {
+        directory = ".local/share/opencode";
+        mode = "0700";
+      }
     ];
     files = [".bash_history"];
   };

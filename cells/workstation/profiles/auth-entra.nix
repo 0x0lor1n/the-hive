@@ -220,6 +220,20 @@ in {
       (entraHome ".hermes")
       (entraHome ".claude")
       (entraHome ".local/share/bash")
+      # cli/dev state (step: impermanence carve-outs; mirror of
+      # layer-users-local.nix). .ssh: known_hosts only — identity keys are
+      # age.secrets, the agent socket is in $XDG_RUNTIME_DIR. Not persisted
+      # on purpose: .config/git and .ssh/config are store symlinks HM
+      # re-creates at every activation.
+      (entraHome ".ssh")
+      # direnv allow-list, zsh histfile (phase 2 zsh points HISTFILE here),
+      # nix fetcher/eval caches (flake inputs would re-download every boot).
+      (entraHome ".local/share/direnv")
+      (entraHome ".local/share/zsh")
+      (entraHome ".cache/nix")
+      # opencode: config in .config, auth.json + sessions in .local/share.
+      (entraHome ".config/opencode")
+      (entraHome ".local/share/opencode")
     ];
 
   # HISTFILE into the persisted dir instead of persisting ~/.bash_history
