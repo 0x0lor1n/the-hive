@@ -65,6 +65,9 @@
       }
       # The fleet repo checkout: what `nixos-rebuild --flake .#<host>` runs from.
       "the-hive"
+      # Projects / scratch clones (jarvis convention: ~/workspace/...). Anything
+      # cloned outside this dir is gone at next reboot.
+      "workspace"
       # direnv's allow-list, so `cd the-hive` does not re-prompt every boot.
       ".local/share/direnv"
       # Agent state: hermes config/sessions/skills; claude credentials +
