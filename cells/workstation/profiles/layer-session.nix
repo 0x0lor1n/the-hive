@@ -16,6 +16,12 @@ in {
   # contend for seat0.
   security.polkit.enable = true;
 
+  # pipewire arrives implicitly (greetd -> displayManager -> graphical-desktop),
+  # but that chain does not pull rtkit: without it pipewire and wireplumber log
+  # "RTKit error: ServiceUnknown" and fall back to MaxRealtimePriority 1,
+  # leaving the audio graph without realtime scheduling.
+  security.rtkit.enable = true;
+
   # Any local active session may power off / reboot / suspend without the
   # admin password. The default is active=yes only for the single-session
   # case; with the local user's SSH session or a second seat open, logind
