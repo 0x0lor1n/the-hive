@@ -1,0 +1,26 @@
+# lazygit: git TUI, diffs rendered through delta (git.nix enables delta
+# globally). Ported from jarvis's users/shared/cli/lazygit.nix.
+#
+# theme-debt: catppuccin.lazygit (accent mauve) dropped; stock lazygit colours.
+{
+  inputs,
+  cell,
+}: {...}: {
+  programs.lazygit = {
+    enable = true;
+    settings.git = {
+      # NOTE: camelCase matters. lazygit parses with yaml.v3, which is
+      # case-sensitive and silently ignores unknown keys -- the old
+      # `autofetch` spelling was a no-op and autofetch was actually enabled.
+      autoFetch = false;
+      # Renamed from `git.pagers` (item key `pager` -> `command`) in lazygit 0.61+.
+      # `type` defaults to "stdinFilter", which is what delta needs, so it's omitted.
+      diffRenderers = [
+        {
+          command = "delta --paging=never --line-numbers --hyperlinks --hyperlinks-file-link-format=\"lazygit-edit://{path}:{line}\"";
+          colorArg = "always";
+        }
+      ];
+    };
+  };
+}
