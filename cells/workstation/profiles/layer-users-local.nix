@@ -82,6 +82,10 @@
       # zsh histfile (phase 2), nix fetcher/eval caches, opencode config +
       # auth.json/sessions.
       ".local/share/zsh"
+      # zoxide's frecency db (db.zo) — empty after every boot otherwise.
+      ".local/share/zoxide"
+      # tmux-resurrect snapshots (prefix+C-s), restored with prefix+C-r.
+      ".local/share/tmux/resurrect"
       ".cache/nix"
       ".config/opencode"
       {
