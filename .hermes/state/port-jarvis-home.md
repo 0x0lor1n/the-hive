@@ -65,7 +65,7 @@ Rows marked [NEW] were missing from the first pass.
 | shared/dev/lang-*.nix, android  | home/dev/*.nix                           | lang-ai is 5 lines (OPENCODE_API_KEY only) — merge with post-dellvis-tooling §2 |
 | shared/tui/{tmux,neovim}        | home/dev/ (or home/cli/)                 | [NEW] both out-of-store; neovim ships 93 files under config/nvim plus a dead config/nvim.bak (drop the .bak) |
 | shared/tui/coding-agents/claude | home/dev/claude.nix                      | keep llm-agents pkg + skills; drop the oh-my-claudecode marketplace wiring |
-| shared/tui/coding-agents/{opencode,skills} | home/dev/*.nix                | [NEW] opencode ships 3 json + omo.jsonc, skills ship 3 SKILL.md — all out-of-store |
+| shared/tui/coding-agents/{opencode,skills} | home/dev/*.nix                | [NEW] opencode ships 3 json + omo.jsonc, skills ship 3 SKILL.md — all out-of-store. USER 2026-09-15: anthropic is no longer used with opencode — keep ONLY the `go` profile from omo.jsonc (opencode-go/* models) and make it the default; drop `work` + `work-uncensored` (38 anthropic model refs), the `opencode-anthropic-oauth` plugin in opencode.json, and the omg/omw/omwc aliases (one profile = plain `opencode`). oc-swap in functions.zsh already deleted for the same reason |
 | shared/security/{ssh,vpn,tor,osint} | home/security/*.nix                  | vpn-{work-a,work-b,work-c} secrets -> agenix-rekey |
 | jarvis/default.nix sessionVariables (OTEL, SNYK) | home/default.nix via userSecrets equiv | secrets |
 | jarvis/secrets/ssh-keys.tar.age | NEW mechanism, see phase 1 "ssh identities" — NOT the user-ssh-key pattern | 8 outbound client keys |
@@ -388,15 +388,17 @@ DETAIL (rationale and facts for the steps above):
       Until then the 4 zsh symlinks dangle and .zshrc's `source` of them fails at shell start
       (the p10k line is guarded, the other three are not — acceptable, this is the deploy step).
 - [x] cli/zsh — DONE 2026-09-15. home/cli/zsh.nix (initContent kept verbatim modulo paths),
-      dotfiles/zsh/{config,functions,key-bindings}.zsh + .p10k.zsh copied VERBATIM except one
-      line: functions.zsh oc-swap's config_file was $HOME/nixos-config/.../oh-my-opencode.json,
-      now ${XDG_CONFIG_HOME}/opencode/oh-my-opencode.json (the opencode item must put the file
-      there). HM points at them with config.lib.file.mkOutOfStoreSymlink — verified the built
+      dotfiles/zsh/{config,key-bindings}.zsh + .p10k.zsh copied VERBATIM; functions.zsh minus
+      oc-swap (user 2026-09-15: anthropic/opencode model toggling is dead, see the opencode row).
+      HM points at them with config.lib.file.mkOutOfStoreSymlink — verified the built
       xdg.configFile source is a bare symlink to /srv/the-hive/dotfiles/zsh/config.zsh.
       HISTFILE = ~/.local/share/zsh/history, HISTDB_FILE = ~/.local/share/zsh/history.db (the
-      carve-out). Plugins all from the nixpkgs pin (zsh-defer, zsh-vi-mode, zsh-histdb
-      2024-04-18 instead of jarvis's 2020 pin — entry point sqlite-history.zsh identical,
-      revisit only if histdb misbehaves). zsh-histdb-skim is NOT in nixpkgs: ported to
+      carve-out). Plugins from the nixpkgs pin (zsh-defer, zsh-vi-mode, ...) EXCEPT zsh-histdb:
+      nixpkgs ships 90a6c10 (2024-04-18) = the HISTORY_IGNORE merge (7b010a6 + f73d9c8) that
+      broke jarvis; upstream has nothing newer (checked 2026-09-15), and jarvis's 30797f0
+      (2022-01-18) is exactly the last commit before it. Kept via pkgs.zsh-histdb.overrideAttrs
+      with src = 30797f0 (nixpkgs' sqlite3 substitution still applies). zsh-histdb-skim is NOT
+      in nixpkgs: ported to
       cells/workstation/packages/zsh-histdb-skim.nix (0.9.7, cargoHash from jarvis), exported
       as cell.packages.zsh-histdb-skim and handed to home/ via a new `cellPackages` arg
       (home/default.nix -> _module.args.cellPackages; layer-compositor passes cell.packages).
