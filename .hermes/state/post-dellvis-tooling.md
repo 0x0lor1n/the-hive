@@ -29,6 +29,9 @@ nixq:     shipped as `nix` in devshell (cells/repo/nixq)
 - [ ] verify: journalctl --user -u pxpipe shows applied=true for fable, applied=false for others
 
 ### 2. hermes + claude configs
+- [ ] SUPERSEDED in part (2026-09-14, see port-jarvis-home): hermes moves into a nixos-container
+      shared by both accounts; claude-code/opencode stay per-home packages. The config work below
+      still applies, but the hermes half lands inside the container, not in a home.
 - [ ] home.file / xdg.configFile for ~/.hermes/config.yaml base_url (or at least the
       anthropic provider block) -- check what hermes tolerates as read-only
 - [ ] ~/.claude/settings.json: env.ANTHROPIC_BASE_URL + hooks as home-manager json
