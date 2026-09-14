@@ -204,7 +204,9 @@ DETAIL (rationale and facts for the steps above):
       `features = "catppuccin-${flavour} side-by-side"` in programs.delta), cli/dircolors,
       gui/spicetify (colorScheme CatppuccinMocha/Latte via globals.theme.preferDark).
       Only 3 of the 12 globals refs are theme ones — the rest are configDirectory.
-- [ ] mkHome takes a per-account secret set, not a bool (layer-compositor.nix:20): cli+dev are
+- [~] mkHome takes a per-account secret set, not a bool (layer-compositor.nix:20): cli+dev are
+      DONE for the secrets arg 2026-09-14 (step 4): `secrets = userSecrets "<role>"` per call
+      site; vpn still open (below).
       unconditional for both accounts, while ssh keys / git includeIf blocks / vpn are selected
       per account (see the items below). Personal-only: osint, tor.
       VPN SPLIT SETTLED 2026-09-14 (user). Three profiles, 1:1 with the three source secret
@@ -236,7 +238,12 @@ DETAIL (rationale and facts for the steps above):
       (histfile — mirror the bash HISTFILE trick at auth-entra.nix:227), .config/opencode +
       whatever opencode/hermes keep outside .hermes, .cache/nix. Local user already has its own
       list (layer-users-local.nix:44-68) — keep the two in sync.
-- [ ] git identities — one encrypted attrset feeds TWO consumers, port them together or neither
+- [x] git identities — DONE 2026-09-14 (step 4). secrets/user-{local,entra}.nix.age now carry
+      `git.includes` (includeIf blocks) + `ssh.matchBlocks`; home/default.nix reads both
+      (`sec.git.includes or []`, `sec.ssh.matchBlocks or {}`). Local: mdaudit block on top of the
+      public default author; entra: tiko.ch, azure-owt, gh-work blocks, no default. Verified in
+      the built generations (.config/git/config, .ssh/config) for both accounts.
+      One encrypted attrset feeds TWO consumers, port them together or neither
       works. Each entry in git-hosts-{work,personal}.nix.age carries `.git.includes`,
       `.git.defaultUser` and `.ssh.matchBlocks`; cli/git.nix and security/ssh.nix each collect
       every `repo.secrets` attr prefixed "git-identities" and merge them (foldl'), so adding a
@@ -254,12 +261,27 @@ DETAIL (rationale and facts for the steps above):
       not carry a block whose remote it cannot authenticate to:
         entra: git@*.work-gitlab.tld (work identity A), git@work-azure + git@work-gh (work identity B)
         local: github.com remotes (personal identity)
-      MISMATCH to resolve first: git.client-e.tld commits under a WORK identity (same as
-      work-azure/work-gh) but its key was assigned to the local account. Either the key moves to
-      entra or the commit identity becomes the personal one — pick before writing the module.
+      MISMATCH RESOLVED 2026-09-14 (user): the key table below is final — client-e stays on the
+      local account together with github and client-a; every work-* key is entra. So the
+      git.client-e.tld includeIf block lives in user-local.nix.age, not in entra's; which
+      name/email it carries is that file's business (encrypted, never a public path). The rule
+      "no block whose remote the account cannot authenticate to" is what decides, not the
+      identity string.
       Entra keeps no default `user` (nothing in globals for it); a repo outside every glob must
       fail rather than silently commit under a work UPN.
-- [ ] ssh identities — NEW mechanism, nothing in either repo does this today.
+- [x] ssh identities — DONE 2026-09-14 (step 4). secrets/ssh/<name>{,.pub}.age (7 keys, 14
+      files, master identities + recovery) -> profiles/secrets.nix `sshIdentities`: static
+      age.secrets, no generator, mode 0600/0644, rekeyed/penrose written directly with
+      `rage -r <hostPubkey>` (identHash = sha256(sha256(pubkey)+sha256(file))[0:32]) so no PIN
+      round-trip through `agenix rekey`. .pub shipped next to each key: the private halves are
+      passphrase-protected, without the .pub ssh prompts even when the agent holds the key.
+      Owner for entra = numeric uid (chown takes it; users.users has no entry) — the "STILL
+      OPEN" below is settled by that, verify on first login. Skipped on isVm hosts (no rekeyed
+      bundle for sevastopol). HM: programs.ssh addKeysToAgent=yes + services.ssh-agent per
+      account. Names: ssh-github, ssh-qvalon, ssh-git-mdaudit (local); ssh-azure-owt,
+      ssh-github-owt, ssh-id-engie, ssh-id-engie-prod (entra). Real aliases replace the
+      work-*/client-* placeholders of the table below.
+      NEW mechanism, nothing in either repo does this today.
       Keys were placed BY HAND on jarvis (ssh-keys.tar.age is referenced by zero .nix files —
       a backup tarball, not a deployment) because agenix-rekey did not work with standalone
       home-manager. They must be transplanted VERBATIM: the pubkeys are registered on
