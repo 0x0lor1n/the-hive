@@ -1,6 +1,6 @@
 # port-jarvis-home (make penrose the daily driver; jarvis = Ubuntu 24.04 + home-manager standalone)
 
-Source: ~/nixos-config/users/{shared,jarvis,modules} (home-manager standalone,
+Source: /srv/workspace/projects/nixos-config/users/{shared,jarvis,modules} (home-manager standalone,
 targets.genericLinux + nixGL, 1647 lines / ~45 files) + ~/workspace (146G, 9 git repos).
 Target: penrose (cells/workstation, home-manager as NixOS module, home/ = 363 lines,
 only desktop/ + default.nix so far).
@@ -11,7 +11,7 @@ then jarvis gets reinstalled from cells/workstation (own host, not a port of pen
 ## where this runs
 Phases 1-3 run ON PENROSE (hermes there). Setup on penrose:
   git clone https://github.com/0x0lor1n/the-hive.git ~/workspace/playground/nix-rensa   # this repo, main
-  git clone -b nvim-wochap-resync https://github.com/crookedmirror/nixos-config.git ~/nixos-config  # SOURCE, read-only
+  git clone -b nvim-wochap-resync https://github.com/crookedmirror/nixos-config.git /srv/workspace/projects/nixos-config  # SOURCE, read-only (shared clone, 2026-09-14)
   (branch nvim-wochap-resync = jarvis's live state as of 2026-09-09; main is 6 commits behind it)
 Phase 4 (workspace rsync) is a PULL from penrose: `rsync jarvis:~/workspace/...` — only step
 that needs a route between the two hosts; penrose has 1TB free, space is not a concern.
@@ -49,7 +49,7 @@ Also port users/shared/tui/ (coding-agents/opencode etc.) — missed in the inve
 - Ubuntu jarvis keeps working the whole time; no destructive step on jarvis before phase 5.
 
 ## inventory (nixos-config/users -> where it goes)
-Checked against the real tree 2026-09-14 (clone at ~/nixos-config, nvim-wochap-resync fdb88b3).
+Checked against the real tree 2026-09-14 (clone at /srv/workspace/projects/nixos-config, nvim-wochap-resync 355ea40).
 Rows marked [NEW] were missing from the first pass.
 | source                          | target                                  | note |
 | shared/default.nix              | home/default.nix + home/cli/            | [NEW] top-level shared: ~20 home.packages, shellAliases, .bashrc HISTFILE=/dev/null trick, fonts.fontconfig, gpg, systemd.user.startServices="suggest". DROP slack (repo has cell.packages.slack under nixpak) and the nixGL-wrapped wine/slack branches; reconcile ungoogled-chromium with the repo's chromium+linux_entra_sso |
@@ -452,7 +452,7 @@ DETAIL (rationale and facts for the steps above):
 - [ ] jarvis daily work stops; penrose is primary for >= 3 working days without going back
 - [ ] jarvis: new host in nixosConfigurations.nix (hardware facts: Latitude? see nix-rensa/latitude-5580-upgrade.md if that is jarvis; else collect lspci/disks first), disks/jarvis.nix, secrets/generated/jarvis
 - [ ] install via same path as port-dellvis phase 4 (Secure Boot user keys, ZFS+TPM, himmelblau enroll)
-- [ ] ~/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
+- [ ] /srv/workspace/projects/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
 ## blocked_on
 - CHECKOUT LAYOUT DECIDED 2026-09-14 (user): ONE tree. /srv/the-hive is the single source of
