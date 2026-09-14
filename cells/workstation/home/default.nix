@@ -17,6 +17,11 @@
   # the checkout, commits; the Entra account gets git without a configured
   # author so a stray commit fails loudly instead of leaking a work UPN.
   git ? null,
+  # Per-role attrset from home/secrets.nix (secrets/user-<role>.nix.age):
+  # git.includes (includeIf blocks) and ssh.matchBlocks, both pointing at
+  # the account's own age.secrets keys (profiles/secrets.nix). {} when the
+  # file is absent, so a host without secrets still evaluates.
+  secrets ? {},
 }: {
   pkgs,
   lib,
@@ -24,6 +29,7 @@
 }: let
   k = theme.colors;
   ansi = theme.ansi;
+  sec = secrets;
 in {
   # Every desktop module below reads the palette from this arg.
   _module.args.theme = theme;
@@ -64,12 +70,27 @@ in {
     enable = true;
     userName = lib.mkIf (git != null) git.name;
     userEmail = lib.mkIf (git != null) git.email;
+    # includeIf per remote glob (git >= 2.36 hasconfig): the encrypted half
+    # decides which remotes get which author. Only remotes this account holds
+    # a key for are listed there, so alias, glob and key stay in lockstep.
+    includes = sec.git.includes or [];
     extraConfig = {
       init.defaultBranch = "main";
       pull.rebase = true;
       push.autoSetupRemote = true;
     };
   };
+
+  # Host aliases + IdentityFile from the encrypted half; the keys themselves
+  # are age.secrets owned by this account (profiles/secrets.nix). The
+  # private halves carry a passphrase, so an agent per account: keys are
+  # added on first use and the passphrase is typed once per session.
+  programs.ssh = {
+    enable = true;
+    addKeysToAgent = "yes";
+    matchBlocks = sec.ssh.matchBlocks or {};
+  };
+  services.ssh-agent.enable = true;
 
   # DWL's terminal keybind execs `foot` by name, so it must be on PATH.
   programs.foot = {
