@@ -235,6 +235,9 @@ in {
       # nix fetcher/eval caches (flake inputs would re-download every boot).
       (entraHome ".local/share/direnv")
       (entraHome ".local/share/zsh")
+      # zoxide frecency db + tmux-resurrect snapshots.
+      (entraHome ".local/share/zoxide")
+      (entraHome ".local/share/tmux/resurrect")
       (entraHome ".cache/nix")
       # opencode: config in .config, auth.json + sessions in .local/share.
       (entraHome ".config/opencode")
