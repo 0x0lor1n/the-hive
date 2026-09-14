@@ -27,6 +27,9 @@ Also port users/shared/tui/ (coding-agents/opencode etc.) — missed in the inve
   tui/neovim references an account, a UPN or a workspace path, so these are plain shared imports —
   the account split applies ONLY to credentials (ssh keys, git identities, vpn) and to which
   project tree the shell starts in.
+  AMENDED 2026-09-14: the CONTENT stays identical, but the DELIVERY may differ per account —
+  live editing for nvim/tmux/zsh needs a readable checkout, which the Entra account may not
+  have (see blocked_on). Identical content, possibly different mechanism.
 - home/ is built TWICE (layer-compositor.nix:20-49): HM NixOS module for the local user, and
   standalone activationPackage for the Entra user. Decision 2026-09-14: the Entra account IS the
   daily driver, the local user only holds sudo/the checkout and rebuilds — so cli+dev go to BOTH,
@@ -55,7 +58,7 @@ Rows marked [NEW] were missing from the first pass.
 | shared/cli/{eza,dircolors,direnv} | home/cli/*.nix                        | [NEW] were not listed; dircolors is a catppuccin call site |
 | shared/gui/foot (+foot.ini)     | home/desktop/terminal.nix                | penrose has dwl/greetd; foot fits. foot.ini is out-of-store; colors come from theme via lib._custom.unwrapHex |
 | shared/gui/kitty                | DROPPED 2026-09-14                       | foot is the terminal |
-| shared/gui/firefox              | home/desktop/firefox.nix                 | CORRECTION: the module is `programs.librewolf`, not firefox, and librewolf is pinned to nixpkgs-librewolf-pin because current nixpkgs marks it insecure. 8 addons come from pkgs.nur.repos.rycee.firefox-addons -> see the nur correction in blocked_on |
+| shared/gui/firefox              | home/desktop/ + a NEW workstation profile | REPLACED 2026-09-14 (user): librewolf is decommissioned, nur dropped for now. Browser becomes stock firefox hardened by Phoenix, wired as a NIXOS module (see the browser item in phase 1). The 8 nur addons and the librewolf pin both go away; the module's search engines (4get default, np/no/nl/gh/wru aliases) are the only part worth re-porting by hand |
 | shared/gui/microsoft-edge       | already covered by auth-entra.nix?       | verify, else home/desktop/edge.nix |
 | shared/gui/{simplex,mattermost,spicetify} | home/desktop/chat.nix, media.nix | telegram DROPPED: cell.packages.telegram-desktop (nixpak) already covers it; spicetify needs input |
 | shared/gui/mpv (+vpy)           | home/desktop/mpv.nix                     | vapoursynth plugin: check pkgs build |
@@ -115,14 +118,37 @@ DETAIL (rationale and facts for the steps above):
       oh-my-claudecode (user is on hermes + opencode; claude/default.nix keeps only the
       llm-agents package + skills, omcRoot/extraKnownMarketplaces/enabledPlugins go away),
       ayugram-desktop (repo already has cell.packages.telegram-desktop under nixpak).
-      CORRECTION 2026-09-14: `nur` is NOT unused — the earlier "settled: nur dropped (unused)"
-      was wrong. gui/firefox/default.nix:16 pulls 8 addons from pkgs.nur.repos.rycee.firefox-addons
-      (ublock-origin, localcdn, wappalyzer, darkreader, google-container, octotree, surfingkeys,
-      noscript). Either keep the nur input for declarative addons, or drop it and let the browser
-      manage its own extensions. Decide with the librewolf row.
-      ALSO NEW: nixpkgs-librewolf-pin — a whole second nixpkgs revision, pinned because current
-      nixpkgs marks librewolf insecure (no active committer). Carrying it means a second nixpkgs
-      eval; check whether librewolf is still marked insecure before copying the workaround.
+      DROP per user decision 2026-09-14: nur (the 8 firefox addons go with librewolf) and
+      nixpkgs-librewolf-pin (librewolf decommissioned). ADD: phoenix.
+      NOTE where they go: this repo has no root-level user inputs — every workstation input is
+      declared in cells/workstation/flake.nix (a cell flake with its own lock), which is where
+      phoenix/llm-agents/zsh-* belong. Cell flakes cannot `follows` a root input, so pin
+      phoenix.inputs.nixpkgs to the SAME rev as the cell's nixpkgs (34ab9907), exactly as the
+      existing comment for lanzaboote demands.
+- [ ] browser: stock firefox + Phoenix as a NIXOS module (decision 2026-09-14). Verified by
+      reading celenity/Phoenix nix/module.nix — it is NixOS-only by construction, so the user's
+      recollection is right and there is nothing to work around:
+      it sets environment.etc."firefox/*", environment.variables, programs.firefox.policies
+      (read from the flake's policies.json) and nixpkgs.overlays. home-manager has none of
+      those four options.
+      PITFALL specific to this repo: the module's `nixpkgs.overlays` is SILENTLY IGNORED here.
+      nixosConfigurations.nix:13-18 passes a ready `pkgs` to utilsLib.mkSystem (nixpkgs.pkgs is
+      set), and the file already documents that nixpkgs.overlays inside a module does nothing —
+      which is why the chaotic overlay is applied with `inputs.pkgs.extend` instead. So Phoenix's
+      withPhoenix wrapper will NOT be applied by importing the module alone: extend the pkgs at
+      nixosConfigurations.nix:18 with phoenix's overlay the same way, then import the module for
+      the /etc + policies half. Verify with `nix eval` that pkgs.firefox is the wrapped one.
+      Placement: firefox is a browser for the ENTRA account (daily driver) and Phoenix is system
+      scope, so this is a workstation profile next to layer-compositor (where microsoft-edge
+      already lives as a systemPackage for exactly this reason), not a home/ module.
+      Cost to accept: policies.json replaces programs.librewolf's declarative extensions and
+      search engines. ExtensionSettings is a normal (non-ESR) policy, so addons can be declared
+      there by AMO URL without nur; SearchEngines is ESR-ONLY, so the 4get default + np/no/nl/gh
+      aliases will NOT apply to stock firefox — either accept setting them by hand once, or run
+      firefox-esr. Decide before porting.
+      Sanity check done: nixpkgs firefox is 154.0.1 on this pin, and librewolf currently carries
+      NO knownVulnerabilities — i.e. the insecure-marking that forced nixpkgs-librewolf-pin has
+      since been resolved upstream. Decommissioning it is a choice now, not a workaround.
 - [ ] strip catppuccin while porting: users/shared/default.nix imports catppuccin.homeModules.catppuccin
       and modules read globals.theme.colors.flavour. Repo is kanagawa via theme.colors (_module.args.theme,
       home/default.nix:29) — rewrite those call sites, do NOT add the input. Also covers
@@ -285,20 +311,21 @@ DETAIL (rationale and facts for the steps above):
 - [ ] ~/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
 ## blocked_on
-- NEW 2026-09-14, DECIDE BEFORE PORTING ANY cli/tui MODULE: out-of-store symlinks.
-  9 call sites (zsh x4, foot.ini, tmux x3, neovim's whole 93-file config/nvim, opencode x3,
-  skills x3) do NOT put their config in the store. They go through
-  lib._custom.relativeSymlink -> mkOutOfStoreSymlink(globals.myuser.configDirectory + path),
-  i.e. ~/.config/nvim is a symlink to the live CHECKOUT, editable without a rebuild.
-  That is why globals.myuser.configDirectory exists (6 of the 12 globals references).
-  This repo has no equivalent and no configDirectory global. It also breaks two things here:
-  the Entra account has no checkout at all (the repo lives in the LOCAL user's home, 0700),
-  and impermanence would need the checkout path carved out for both homes.
-  Options: (a) port to plain store-backed xdg.configFile.source — loses live editing, kills
-  lib/default.nix and modules/symlinks.nix, simplest and matches the rest of the repo;
-  (b) keep out-of-store for the local user only and store-backed for Entra — breaks the
-  "SHARED verbatim between both accounts" invariant; (c) reproduce configDirectory as a global.
-  Agent recommends (a). The user edits nvim/zsh config often enough that this is their call.
+- NEW 2026-09-14, DECIDED by the user: out-of-store symlinks STAY for nvim, tmux and zsh —
+  live editing without a rebuild is a requirement, so lib._custom.relativeSymlink is ported,
+  not dropped. Consequences to settle in phase 1:
+  * a `configDirectory` equivalent must exist here (nixos-config gets it from
+    globals.myuser.configDirectory; this repo has no such global).
+  * the Entra account has NO checkout — the repo lives in the LOCAL user's home, 0700. So
+    either the checkout moves somewhere both accounts can read, or Entra gets store-backed
+    copies of these three while the local user gets symlinks. That splits the DELIVERY
+    mechanism between accounts, not the content; the "SHARED verbatim" invariant needs
+    rewording either way.
+  * impermanence must carve out the checkout path for whichever home(s) point at it.
+  * scope: the user named only nvim/tmux/zsh. foot.ini, opencode's 3 json and the 3 SKILL.md
+    default to store-backed — no reason to carry the mechanism for files nobody edits live.
+  Still open, and the reason this is not fully settled: WHERE does the shared checkout live
+  so that an account without wheel can read it?
 - NEW 2026-09-14: ~/nixos-config cannot be cloned by the agent (user did it manually, resolved).
   Knock-on still open for phase 1 step 4: `ssh-keygen -y` on a passphrase-protected key
   prompts, and this shell has no askpass/agent (crookedmirror has no logind session, see
@@ -318,8 +345,9 @@ DETAIL (rationale and facts for the steps above):
 - otherwise only phase-3 reachability is blocking
 - settled 2026-09-14: chaotic dropped (unused), oh-my-claudecode dropped (hermes + opencode),
   ayugram-desktop dropped (nixpak telegram-desktop), stateVersion is 24.11 on both sides,
-  (nur was on this list as "dropped, unused" — WRONG, see the flake.nix inputs item: 8 firefox
-  addons depend on it; moved back to open)
+  nur dropped and librewolf DECOMMISSIONED — browser is stock firefox + Phoenix as a NixOS
+  module (user decision; the 8 nur addons go with it, see the browser item in phase 1),
+  live editing (out-of-store symlinks) KEPT for nvim/tmux/zsh and dropped for everything else,
   Entra = daily driver / local = sudo+rebuild only (both get the same cli+dev tooling),
   Entra already has a shell login, kitty dropped, catppuccin dropped (kanagawa only),
   certs/ stays on /home (~2.5G after excluding .venv), ssh keys split per account,
