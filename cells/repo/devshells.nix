@@ -144,8 +144,8 @@ in {
       cell.packages.rtk
       pkgs.direnv
 
-      # From this cell's input, not the root's: see cells/repo/flake.nix.
-      inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hermes-agent
+      # Same pin the workstation installs system-wide (agent-proxy.nix).
+      cell.packages.hermes-agent
 
       treefmtWrapper
       go-test-all

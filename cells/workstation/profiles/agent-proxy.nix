@@ -3,13 +3,20 @@
 # instance, not a user unit: the port is shared, two logged-in users (Entra
 # on seat0, the local user over ssh) would fight over it. Stateless -- the
 # API key travels in each request -- so sharing the instance leaks nothing.
+#
+# Hermes itself is installed here too, system-wide: the Entra user is an
+# NSS-only account (no users.users, no home-manager), so systemPackages is
+# the only PATH both sessions share. State stays per-user in ~/.hermes
+# (persisted for both: layer-users-local.nix, auth-entra.nix).
 {
   inputs,
   cell,
 }: {lib, ...}: let
-  pxpipe = inputs.cells.repo.packages.pxpipe;
+  inherit (inputs.cells.repo.packages) pxpipe hermes-agent;
   port = 47821;
 in {
+  environment.systemPackages = [hermes-agent];
+
   systemd.services.pxpipe = {
     description = "pxpipe: Anthropic loopback proxy";
     wantedBy = ["multi-user.target"];

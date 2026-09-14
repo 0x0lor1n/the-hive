@@ -5,6 +5,11 @@
 }: let
   pkgs = inputs.pkgs;
 in {
+  # Re-exported from this cell's own llm-agents input (cells/repo/flake.nix),
+  # so the workstation cell installs the SAME pin the devshell runs, without
+  # declaring llm-agents a second time.
+  hermes-agent = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system}.hermes-agent;
+
   # Anthropic loopback proxy that images the bulky, hash-free parts of each
   # request (system prompt, tool docs, cold history). Lossy: hashes read back
   # from imaged history are a confabulation risk; fresh tool output stays text.
