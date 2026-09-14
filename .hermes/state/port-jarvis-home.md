@@ -58,7 +58,7 @@ Rows marked [NEW] were missing from the first pass.
 | shared/cli/{eza,dircolors,direnv} | home/cli/*.nix                        | [NEW] were not listed; dircolors is a catppuccin call site |
 | shared/gui/foot (+foot.ini)     | home/desktop/terminal.nix                | penrose has dwl/greetd; foot fits. foot.ini is out-of-store; colors come from theme via lib._custom.unwrapHex |
 | shared/gui/kitty                | DROPPED 2026-09-14                       | foot is the terminal |
-| shared/gui/firefox              | home/desktop/ + a NEW workstation profile | REPLACED 2026-09-14 (user): librewolf is decommissioned, nur dropped for now. Browser becomes stock firefox hardened by Phoenix, wired as a NIXOS module (see the browser item in phase 1). The 8 nur addons and the librewolf pin both go away; the module's search engines (4get default, np/no/nl/gh/wru aliases) are the only part worth re-porting by hand |
+| shared/gui/firefox              | a NEW workstation profile (not home/)     | REPLACED 2026-09-14 (user): librewolf decommissioned, nur dropped. Browser = STABLE firefox + Phoenix, wired as a NIXOS module (see the browser item in phase 1). The 8 nur addons and the librewolf pin both go away; the search engines (4get default, np/no/nl/gh/wru aliases) get re-declared as a SearchEngines policy, which works on stable since Fx139 |
 | shared/gui/microsoft-edge       | already covered by auth-entra.nix?       | verify, else home/desktop/edge.nix |
 | shared/gui/{simplex,mattermost,spicetify} | home/desktop/chat.nix, media.nix | telegram DROPPED: cell.packages.telegram-desktop (nixpak) already covers it; spicetify needs input |
 | shared/gui/mpv (+vpy)           | home/desktop/mpv.nix                     | vapoursynth plugin: check pkgs build |
@@ -147,30 +147,33 @@ DETAIL (rationale and facts for the steps above):
       CORRECTION 2026-09-14 (the agent's earlier "SearchEngines is ESR-only" was OUT OF DATE):
       per Mozilla's own policy reference, SearchEngines is "available in all Firefox release
       channels" as of Firefox 139. The nixpkgs pin ships firefox 154.0.1, so the 4get default
-      and the np/no/nl/gh/wru aliases CAN be declared on the stable channel. ESR is therefore
-      NOT required to keep the user's search config — it stays a free choice.
-      ESR vs stable, the actual trade-off (both verified present on this pin):
-        firefox 154.0.1 | firefox-esr 153.1.0esr | firefox-esr-140 140.14.0esr
-        - ESR = Extended Support Release: one feature-frozen base for ~a year, receiving only
-          security backports. Stable ships new features every ~4 weeks.
-        - Consequence for a WORK machine: fewer UI/behaviour changes mid-quarter, and tenant
-          SSO/enterprise-policy behaviour stays put. That is the real argument, not policy
-          availability.
-        - Cost: new web platform features land up to a year later; Phoenix's own configs track
-          Firefox's current prefs, so a pref Phoenix sets may not exist yet in a 140-series ESR
-          (harmless — unknown prefs are ignored — but the hardening is then partial).
-        - nixpkgs has TWO esr attrs. `firefox-esr` (153.1.0esr) is the current series;
-          `firefox-esr-140` (140.14.0esr) is the older LTS. Prefer the unversioned alias so the
-          series advances on nixpkgs bumps instead of pinning to a dying branch.
-        - Neither ESR attr carries knownVulnerabilities on this pin.
-      VERIFIED 2026-09-14: Phoenix's wrapper is channel-agnostic. nix/overlay.nix defines
-      withPhoenix as a plain `firefoxPackage.override { extraPoliciesFiles; extraPrefsFiles; }`,
-      and `.override` with those two args evaluates cleanly on firefox, firefox-esr AND
-      firefox-esr-140 (checked with tryEval). So Phoenix + ESR compose fine — just add "firefox-esr"
-      to the module's `firefoxPackages` option (default is [ "firefox" ]).
-      DECISION STILL OPEN: user asked for ESR to preserve their settings, but that premise was
-      based on the agent's wrong ESR-only claim. Confirm whether ESR is still wanted on its own
-      merits (stability on a work machine) now that search engines work either way.
+      and the np/no/nl/gh/wru aliases CAN be declared whatever channel is chosen.
+      CHANNEL DECIDED 2026-09-14 (user): stable `firefox`. ESR dropped (it was only ever wanted
+      to preserve search settings, which turned out not to need it).
+      Channel facts measured on this pin, for whoever revisits it:
+        firefox 154.0.1 | firefox-esr 153.1.0esr | firefox-beta/devedition 155.0b5
+        | firefox_nightly 156.0a1-20260825
+      Phoenix's withPhoenix is a plain `.override { extraPoliciesFiles; extraPrefsFiles; }` and
+      evaluates cleanly on firefox, firefox-esr AND firefox_nightly (tryEval-checked), so the
+      channel choice is free as far as Phoenix is concerned.
+      NIGHTLY, user asked about it (chaotic ships `firefox_nightly`, attr confirmed present at
+      chaotic's pkgs/firefox-nightly/default.nix) — NOT recommended as the default browser here,
+      for two reasons found while checking:
+        1. STALENESS: the nightly in our closure is 156.0a1-20260825, i.e. ~3 weeks old as of
+           2026-09-14, because the chaotic input is PINNED (flake.nix:43-45 pins the nyx rev so
+           that its nixpkgs lock == ours, specifically to keep the CachyOS kernel a cache hit).
+           A pinned nightly is the worst of both worlds: pre-release instability without the
+           fresh fixes. Following nightly properly would mean bumping chaotic constantly, which
+           the kernel pin explicitly forbids.
+        2. It is a browser for the Entra WORK account with tenant SSO and enterprise policies;
+           pre-release regressions there cost working days.
+      Binary cache verified 2026-09-14 (narinfo probe, both wrapped and unwrapped):
+        firefox-unwrapped 154.0.1 -> cache.nixos.org 200, nyx 404
+        firefox-nightly-unwrapped -> nyx 200, cache.nixos.org 404
+      So both are substitutable today (nightly only via nyx-cache, which layer-kernel.nix:32
+      already configures system-wide). Note the wrapper output hash CHANGES when Phoenix's
+      extraPoliciesFiles/extraPrefsFiles are applied — but only the cheap wrapper derivation is
+      rebuilt locally; the expensive *-unwrapped stays a cache hit. No multi-hour browser build.
       Sanity check done: nixpkgs firefox is 154.0.1 on this pin, and librewolf currently carries
       NO knownVulnerabilities — i.e. the insecure-marking that forced nixpkgs-librewolf-pin has
       since been resolved upstream. Decommissioning it is a choice now, not a workaround.
@@ -187,14 +190,15 @@ DETAIL (rationale and facts for the steps above):
 - [ ] mkHome takes a per-account secret set, not a bool (layer-compositor.nix:20): cli+dev are
       unconditional for both accounts, while ssh keys / git includeIf blocks / vpn are selected
       per account (see the items below). Personal-only: osint, tor.
-      VPN SPLIT DECIDED 2026-09-14 (user). Five profiles, not three — two do not exist in the
-      source repo yet and have no secrets there:
-        entra: work-a (wireguard, the employer's own net), work-b (openvpn)
-        local: work-c (openvpn) + work-d, work-e  [NEW — no .age in nixos-config, must be
-               collected from the live jarvis/from the user before phase 2]
+      VPN SPLIT DECIDED 2026-09-14 (user). THREE profiles, not five — the user's "client-w" and
+      "client-w" are the same network as work-c, named from memory. Final mapping:
+        entra: work-a (wireguard) + work-b (openvpn)
+        local: work-c (openvpn)
+      So every profile already has its .age in nixos-config (vpn-{owt,t,w}); nothing needs
+      collecting from jarvis. The 1:1 source mapping stays: 3 secret files, 3 profiles.
       This SHRINKS the wheel-less problem: the local account already has wheel AND is in the
       `networkmanager` group (verified on penrose: uid 1000, groups wheel+networkmanager), so its
-      three profiles work with the existing `sudo wg-quick`/`sudo openvpn` aliases unchanged.
+      one profile works with the existing `sudo openvpn` alias unchanged.
       Only the two ENTRA profiles need a new mechanism.
       RECOMMENDED mechanism for those two: NetworkManager profiles, and add "networkmanager" to
       himmelblau's local_groups (auth-entra.nix:119-123), NOT wheel. Rationale: NM is already
@@ -209,9 +213,8 @@ DETAIL (rationale and facts for the steps above):
       auth-user-pass files with username+password. home-manager renders those through the NIX
       STORE, i.e. world-readable on the machine. These must become runtime age.secrets (or NM
       environmentFiles), never store-rendered text.
-      OPEN, ask the user: VPN routing is GLOBAL to the host, not per-account. If the Entra user
-      brings up work-a while the local user is logged in on another VT, both sessions are on that
-      tunnel. Confirm that is acceptable, or the profiles need namespacing.
+      SETTLED 2026-09-14 (user): host-global VPN routing is ACCEPTABLE — a tunnel raised by one
+      account carries the other account's traffic too. No namespacing needed.
 - [ ] impermanence carve-outs for the Entra home — THE load-bearing part of "Entra is the daily
       driver". auth-entra.nix:189-223 is an explicit allowlist of absolute paths (NSS account, so
       no persistence.users.<name>); anything cli/dev writes and is not listed is gone next reboot.
@@ -382,12 +385,9 @@ DETAIL (rationale and facts for the steps above):
 - open: does ~/.ssh/id_rsa still authenticate anywhere, and to which account does it belong?
 - open: where does each project tree live? proposal ~/work and ~/projects inside the respective
   home; also work-org/poc and 0xOLOR1N/gopro-video-cutter have no remote, so assign them by hand
-- open: vpn — mechanism settled for the local account (it has wheel + networkmanager already);
-  for the two ENTRA profiles the proposal is NetworkManager + "networkmanager" in himmelblau's
-  local_groups. Remaining: user must confirm that, supply the two MISSING profiles (work-d,
-  work-e have no .age in nixos-config), and confirm host-global tunnels are acceptable.
-- open: browser channel — ESR vs stable is now a free choice (the "ESR-only search engines"
-  claim was wrong, see phase 1 browser item). User asked for ESR; confirm on the real merits.
+- open: vpn — only the mechanism for the two ENTRA profiles is left: proposal is NetworkManager
+  + "networkmanager" in himmelblau's local_groups (NOT wheel). Local account needs nothing new.
+  Profile count, ownership and host-global routing are all settled.
 - open: playground/client-a is a client project but the client-a ssh key was assigned to local
 - open: hermes-in-a-container — does it get the ssh keys / git identities of BOTH accounts, or
   none (agent proposes, the user commits from their own session)? Decides how much of the
@@ -396,8 +396,10 @@ DETAIL (rationale and facts for the steps above):
 - otherwise only phase-3 reachability is blocking
 - settled 2026-09-14: chaotic dropped (unused), oh-my-claudecode dropped (hermes + opencode),
   ayugram-desktop dropped (nixpak telegram-desktop), stateVersion is 24.11 on both sides,
-  nur dropped and librewolf DECOMMISSIONED — browser is stock firefox + Phoenix as a NixOS
-  module (user decision; the 8 nur addons go with it, see the browser item in phase 1),
+  nur dropped and librewolf DECOMMISSIONED — browser is STABLE firefox + Phoenix as a NixOS
+  module (ESR and chaotic's firefox_nightly both considered and rejected 2026-09-14; see the
+  browser item in phase 1 for the measured reasons),
+  vpn: 3 profiles (entra work-a+work-b, local work-c), host-global routing accepted,
   live editing (out-of-store symlinks) KEPT for nvim/tmux/zsh and dropped for everything else,
   Entra = daily driver / local = sudo+rebuild only (both get the same cli+dev tooling),
   Entra already has a shell login, kitty dropped, catppuccin dropped (kanagawa only),
