@@ -216,7 +216,6 @@ in {
     ]
     ++ lib.optionals (upn != null && uid != null) [
       (entraHome ".config/microsoft-edge")
-      (entraHome ".cache/microsoft-edge")
       (entraHome ".config/teams-for-linux")
       (entraHome ".config/o365-profiles")
       # nixpak apps: config/data/cache under one Flatpak-style dir each.
@@ -238,10 +237,11 @@ in {
       # zoxide frecency db + tmux-resurrect snapshots.
       (entraHome ".local/share/zoxide")
       (entraHome ".local/share/tmux/resurrect")
-      (entraHome ".cache/nix")
-      # zsh compdump + direnv content store — see layer-users-local.nix.
-      (entraHome ".cache/zsh")
-      (entraHome ".cache/direnv")
+      # Whole ~/.cache (p10k dump/instant-prompt live at its root, no
+      # override) -- see layer-users-local.nix. Also covers
+      # .cache/microsoft-edge, which used to be its own entry: impermanence
+      # does not dedup nested bind mounts, so no children of .cache here.
+      (entraHome ".cache")
       # opencode: config in .config, auth.json + sessions in .local/share.
       (entraHome ".config/opencode")
       (entraHome ".local/share/opencode")
