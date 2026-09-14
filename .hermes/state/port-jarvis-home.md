@@ -190,31 +190,27 @@ DETAIL (rationale and facts for the steps above):
 - [ ] mkHome takes a per-account secret set, not a bool (layer-compositor.nix:20): cli+dev are
       unconditional for both accounts, while ssh keys / git includeIf blocks / vpn are selected
       per account (see the items below). Personal-only: osint, tor.
-      VPN SPLIT DECIDED 2026-09-14 (user). THREE profiles, not five — the user's "client-w" and
-      "client-w" are the same network as work-c, named from memory. Final mapping:
-        entra: work-a (wireguard) + work-b (openvpn)
-        local: work-c (openvpn)
-      So every profile already has its .age in nixos-config (vpn-{owt,t,w}); nothing needs
-      collecting from jarvis. The 1:1 source mapping stays: 3 secret files, 3 profiles.
-      This SHRINKS the wheel-less problem: the local account already has wheel AND is in the
-      `networkmanager` group (verified on penrose: uid 1000, groups wheel+networkmanager), so its
-      one profile works with the existing `sudo openvpn` alias unchanged.
-      Only the two ENTRA profiles need a new mechanism.
-      RECOMMENDED mechanism for those two: NetworkManager profiles, and add "networkmanager" to
-      himmelblau's local_groups (auth-entra.nix:119-123), NOT wheel. Rationale: NM is already
-      enabled (laptop.nix:15), its system-connections are already persisted (laptop.nix:33), it
-      speaks both wireguard and openvpn natively, and group membership lets a user bring
-      connections up/down through NM's own polkit actions with no password. That satisfies the
-      "do NOT put the Entra user in wheel" constraint — networkmanager is a far narrower grant.
-      Declare them with networking.networkmanager.ensureProfiles (secrets via environmentFiles ->
-      agenix runtime secrets), not by hand in /etc.
+      VPN SPLIT SETTLED 2026-09-14 (user). Three profiles, 1:1 with the three source secret
+      files, no collecting from jarvis needed:
+        entra (employer work): work-a (wireguard, secret vpn-owt) + work-b (openvpn, vpn-t)
+        local (FREELANCE, not employer): work-c (openvpn, vpn-w)
+      The user's "client-w"/"client-w" were the same network as work-c, remembered under other names.
+      Note the local account's profile is freelance work, which is why it sits with the personal
+      identity rather than with the tenant.
+      MECHANISM CONFIRMED by the user: the two Entra profiles go through NetworkManager, with
+      "networkmanager" added to himmelblau's local_groups (auth-entra.nix:119-123) — NOT wheel.
+      NM is already enabled (laptop.nix:15) and its system-connections are already persisted
+      (laptop.nix:33); group membership covers NM's polkit actions with no password prompt.
+      Declare with networking.networkmanager.ensureProfiles, secrets via environmentFiles ->
+      agenix runtime secrets. The local account needs nothing new (it already has wheel +
+      networkmanager), so its `sudo openvpn` alias ports unchanged.
       SECURITY BUG TO FIX WHILE PORTING, do not copy as-is: security/vpn.nix writes credentials
       into xdg.configFile as plain `text = ...` — wireguard PrivateKey, and the openvpn
       auth-user-pass files with username+password. home-manager renders those through the NIX
       STORE, i.e. world-readable on the machine. These must become runtime age.secrets (or NM
       environmentFiles), never store-rendered text.
-      SETTLED 2026-09-14 (user): host-global VPN routing is ACCEPTABLE — a tunnel raised by one
-      account carries the other account's traffic too. No namespacing needed.
+      SETTLED: host-global VPN routing is ACCEPTABLE — a tunnel raised by one account carries
+      the other account's traffic too. No namespacing needed.
 - [ ] impermanence carve-outs for the Entra home — THE load-bearing part of "Entra is the daily
       driver". auth-entra.nix:189-223 is an explicit allowlist of absolute paths (NSS account, so
       no persistence.users.<name>); anything cli/dev writes and is not listed is gone next reboot.
@@ -358,23 +354,32 @@ DETAIL (rationale and facts for the steps above):
 - [ ] ~/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
 ## blocked_on
-- NEW 2026-09-14, RESOLVED by the user: out-of-store symlinks STAY for nvim, tmux and zsh —
-  live editing without a rebuild is a requirement, so lib._custom.relativeSymlink is ported,
-  not dropped. The checkout location is settled: the-hive becomes a SHARED repo readable by
-  both accounts; only crookedmirror (wheel) can rebuild. Still to implement in phase 1:
-  * a `configDirectory` equivalent (nixos-config gets it from globals.myuser.configDirectory;
-    this repo has no such global) pointing at the shared checkout path.
-  * pick the path + ownership so an account with no wheel can READ but not WRITE it. Today the
-    repo sits in the local user's 0700 home (persisted as "the-hive", layer-users-local.nix:52).
-    Moving it means updating that persistence entry AND layer-users-local's home perms.
-    Group-readable (e.g. a shared group, 0750) is the obvious shape; the Entra account is
-    NSS-only, so the group must be one himmelblau grants via local_groups.
-  * WATCH OUT: a writable checkout for the daily-driver account would let a desktop-plane
-    compromise edit what root later rebuilds. Read-only for Entra is the whole point — do not
-    "fix" a permission error by widening it to 0770.
-  * impermanence must carve out the new checkout path.
-  * scope: the user named only nvim/tmux/zsh. foot.ini, opencode's 3 json and the 3 SKILL.md
-    default to store-backed — no reason to carry the mechanism for files nobody edits live.
+- NEW 2026-09-14: the checkout moves OUT of the local user's home to /srv (user decision), and
+  that immediately exposes a CONTRADICTION that must be resolved before any cli/tui module:
+  * live editing was wanted so the user can change nvim/tmux/zsh config without a rebuild;
+  * the daily driver is the ENTRA account;
+  * but the checkout must stay READ-ONLY to the Entra account, because it is what root later
+    rebuilds — a writable rebuild source on the desktop plane is exactly the hole the whole
+    "Entra has no wheel" design exists to close.
+  => a single read-only /srv/the-hive gives live editing only to crookedmirror, who is NOT the
+  account the user works in. The feature would be delivered to the wrong account.
+  RESOLUTION PROPOSED (needs the user): two trees, not one.
+    /srv/the-hive   — rebuild source. crookedmirror:<group> 0750, Entra reads, never writes.
+    /srv/dotfiles   — nvim/tmux/zsh config only, WRITABLE by the Entra account (its own repo or
+                      a subtree), and what relativeSymlink points at. Nothing in it is read by
+                      the rebuild, so a compromised desktop cannot influence the system closure.
+  This also keeps the "identical content for both accounts" invariant: both homes symlink the
+  same /srv/dotfiles paths.
+- /srv on this host is on rpool/local/root, which is ROLLED BACK to @blank every boot
+  (storage-zfs-rollback). Verified: /srv exists at 0755 but is not persisted and not a dataset.
+  So whatever lands in /srv needs one of:
+    (a) impermanence entries under environment.persistence."/persist" (bind mounts), or
+    (b) its OWN ZFS DATASET mounted there — no rollback applies, nothing to declare.
+  Recommend (b) for the project trees (tens of GB: bind-mounting 40G+ of source through
+  impermanence is pointless indirection) and either for the small repos. Datasets go in
+  cells/workstation/disks/penrose.nix next to local/nix and safe/persist.
+  NOTE for the disk file: new datasets on an ALREADY INSTALLED host are not created by disko —
+  add them to the .nix for reproducibility AND create them by hand once with `zfs create`.
 - NEW 2026-09-14: ~/nixos-config cannot be cloned by the agent (user did it manually, resolved).
   Knock-on still open for phase 1 step 4: `ssh-keygen -y` on a passphrase-protected key
   prompts, and this shell has no askpass/agent (crookedmirror has no logind session, see
@@ -382,12 +387,29 @@ DETAIL (rationale and facts for the steps above):
 - penrose not resolvable from jarvis right now (phase 3/4 need a route) — check NetworkManager/LAN, or use IP
 - (resolved) penrose has 1TB free
 - open: git.client-e.tld — work commit identity but local-account ssh key (see phase 1 git item)
-- open: does ~/.ssh/id_rsa still authenticate anywhere, and to which account does it belong?
-- open: where does each project tree live? proposal ~/work and ~/projects inside the respective
-  home; also work-org/poc and 0xOLOR1N/gopro-video-cutter have no remote, so assign them by hand
-- open: vpn — only the mechanism for the two ENTRA profiles is left: proposal is NetworkManager
-  + "networkmanager" in himmelblau's local_groups (NOT wheel). Local account needs nothing new.
-  Profile count, ownership and host-global routing are all settled.
+- SETTLED 2026-09-14: project trees move to /srv too (user), not into either home:
+    /srv/work     — employer + client work, Entra-owned
+    /srv/projects — personal + freelance, crookedmirror-owned
+  This REPLACES the earlier "~/work and ~/projects inside the respective home" proposal and is
+  strictly better for phase 4: the account split becomes directory ownership on a shared parent
+  instead of two homes, and neither tree is subject to a home rollback. Same /srv persistence
+  question as above — give each its own ZFS dataset.
+  Consequence for the ssh/git split: the tree an account cannot read is the tree it cannot
+  commit from, so ownership must match the key table (phase 1 ssh identities).
+- open: git.client-e.tld — the mismatch is NOT about github.com (that key is unambiguous and
+  stays with the personal identity). Restated: commits to git.client-e.tld carry the WORK
+  author identity (same one used for work-azure/work-gh), but its ssh key `client-e-key` was
+  put in the LOCAL account's set. After the /srv split the question becomes concrete: does
+  git.client-e.tld work live under /srv/work (Entra, work identity, key moves to entra) or
+  /srv/projects (crookedmirror, freelance — then the commit identity should become the personal
+  one)? Same question for playground/client-a. Answer by naming the tree, not the key.
+- ~/.ssh/id_rsa: user believes it is the same key as `github` and only a git-clone default.
+  VERIFY before deleting, do not take it on faith — an RSA key and an ed25519 key cannot be the
+  same key, so at best the two are both registered on the same GitHub account. Check with
+  `ssh-keygen -y -f ~/.ssh/id_rsa` vs the github pubkey, and a `ssh -i ~/.ssh/id_rsa -T` probe
+  against the github host alias. If it authenticates nowhere, drop it (do NOT port it); if it
+  does, it needs an owner in the key table. Cheap to test, expensive to guess wrong.
+- open: vpn — SETTLED, nothing left (3 profiles, NM + networkmanager group for entra, confirmed).
 - open: playground/client-a is a client project but the client-a ssh key was assigned to local
 - open: hermes-in-a-container — does it get the ssh keys / git identities of BOTH accounts, or
   none (agent proposes, the user commits from their own session)? Decides how much of the
@@ -399,7 +421,10 @@ DETAIL (rationale and facts for the steps above):
   nur dropped and librewolf DECOMMISSIONED — browser is STABLE firefox + Phoenix as a NixOS
   module (ESR and chaotic's firefox_nightly both considered and rejected 2026-09-14; see the
   browser item in phase 1 for the measured reasons),
-  vpn: 3 profiles (entra work-a+work-b, local work-c), host-global routing accepted,
+  vpn: 3 profiles (entra work-a+work-b employer, local work-c freelance), NM + networkmanager
+  group for the entra pair, host-global routing accepted,
+  /srv is the shared parent: /srv/the-hive (rebuild source, ro for entra), /srv/work (entra),
+  /srv/projects (local) — each needs its own ZFS dataset, /srv itself is rolled back,
   live editing (out-of-store symlinks) KEPT for nvim/tmux/zsh and dropped for everything else,
   Entra = daily driver / local = sudo+rebuild only (both get the same cli+dev tooling),
   Entra already has a shell login, kitty dropped, catppuccin dropped (kanagawa only),
