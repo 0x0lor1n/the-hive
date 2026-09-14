@@ -108,6 +108,32 @@ in {
       # 10 fits more on 1920x1080 than the default 12 and stays readable.
       main.font = "monospace:size=10";
       main.pad = "8x8";
+      # Every foot window lands in tmux (jarvis parity): sesh attaches to the
+      # "the-hive" session or creates it. Ctrl+Shift+<key> is translated to
+      # CSI-u so the tmux prefix (C-S-b) and the C-S-* binds actually arrive;
+      # foot's own bindings for those chords are disabled so they don't eat them.
+      main.shell = "${pkgs.sesh}/bin/sesh connect the-hive";
+      key-bindings = {
+        scrollback-up-page = "none";
+        scrollback-down-page = "none";
+        spawn-terminal = "none";
+        unicode-input = "none";
+        prompt-prev = "none";
+        prompt-next = "none";
+      };
+      text-bindings = {
+        "\\x1b[98;6u" = "Control+Shift+b";
+        "\\x1b[100;6u" = "Control+Shift+d";
+        "\\x1b[102;6u" = "Control+Shift+f";
+        "\\x1b[107;6u" = "Control+Shift+k";
+        "\\x1b[108;6u" = "Control+Shift+l";
+        "\\x1b[110;6u" = "Control+Shift+n";
+        "\\x1b[112;6u" = "Control+Shift+p";
+        "\\x1b[113;6u" = "Control+Shift+q";
+        "\\x1b[116;6u" = "Control+Shift+t";
+        "\\x1b[117;6u" = "Control+Shift+u";
+        "\\x1b[119;6u" = "Control+Shift+w";
+      };
       # Palette from cells/theme (foot uses rrggbb, no #); the 16 ANSI slots
       # come from theme.ansi, same list the VT console uses.
       # foot >= 1.23 moved cursor.color into the colors section, and 1.27
