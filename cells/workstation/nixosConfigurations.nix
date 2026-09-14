@@ -54,6 +54,8 @@
       p.agent-proxy
       # /srv/the-hive: one checkout for both accounts, dotfiles/ group-writable
       p.srv-the-hive
+      # /srv/workspace: shared project clones (work/, projects/), both accounts write
+      p.srv-workspace
     ];
 
   # Hardware: exactly one per host. The playground VMs mount the host's flake
