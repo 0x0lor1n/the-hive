@@ -81,18 +81,22 @@ in {
 
   # The server outlives the login session so continuum can restore it.
   #
-  # `tmux -D` runs the server in the foreground as the unit's main process
-  # (Type=simple), so systemd tracks it directly. The previous
-  # Type=forking + `new-session -d` + ExecStop=kill-server design had no
-  # main PID: every `nixos-rebuild switch` rewrote the unit (store path
-  # of the ExecStart script changes), HM reloaded it, systemd ran
-  # ExecStop (kill-server → all sessions gone) and, since the stop was
+  # `tmux start-server \; set -g exit-empty off`: the client forks the
+  # server and exits 0; Type=forking + GuessMainPID makes the daemonised
+  # server the unit's main process. (`tmux -D` is not usable here: tmux 3.7
+  # insists on a controlling tty under systemd and dies with
+  # "open terminal failed: not a terminal" — verified 2026-09-14.)
+  #
+  # The previous Type=forking + `new-session -d` + ExecStop=kill-server
+  # design had no main PID: every `nixos-rebuild switch` rewrote the unit
+  # (store path of the ExecStart script changed), HM reloaded it, systemd
+  # ran ExecStop (kill-server → all sessions gone) and, since the stop was
   # clean, Restart=on-failure never brought it back (found 2026-09-14).
   #
   # Now: no ExecStop, KillMode=process leaves panes' children alone, and
-  # the unit is restarted on any exit. -D also disables exit-empty, so the
-  # server stays up with zero sessions until continuum restores them or a
-  # client attaches.
+  # the unit is restarted on failure. exit-empty is forced off on the
+  # command line so the server stays up with zero sessions until continuum
+  # restores them or a client attaches.
   systemd.user.services.tmux-server = {
     Unit = {
       Description = "tmux server (session persistence)";
@@ -101,12 +105,15 @@ in {
       # HM's sd-switch must not stop+start this unit on every rebuild
       # (that would kill every session). Restart only on explicit request.
       X-SwitchMethod = "keep-old";
+      # A broken config must not wedge sd-switch / nixos-rebuild.
+      StartLimitIntervalSec = "60";
+      StartLimitBurst = "5";
     };
     Service = {
-      Type = "simple";
+      Type = "forking";
       Environment = ["TERM=xterm-256color" "COLORTERM=truecolor"];
-      ExecStart = "${pkgs.tmux}/bin/tmux -D";
-      Restart = "always";
+      ExecStart = "${pkgs.tmux}/bin/tmux start-server \\; set -g exit-empty off";
+      Restart = "on-failure";
       RestartSec = "2";
       KillMode = "process";
     };
