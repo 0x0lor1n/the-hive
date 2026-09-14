@@ -1,6 +1,6 @@
 /* nix-rensa dwl config: copy of upstream config.def.h (dwl v0.8) with local
  * changes. On a dwl bump: diff against the new config.def.h and re-apply.
- * Changes vs upstream: MODKEY=Super, Ctrl+Shift+Return terminal, fuzzel on
+ * Changes vs upstream: MODKEY=Super, Super+Shift+Return terminal, fuzzel on
  * Mod+D/Mod+P, swaylock on Mod+L, somebar toggle on Mod+B, cliphist/grim
  * binds, XF86 media keys; displaced incnmaster-/setmfact+ moved to
  * Mod+Shift+D / Mod+Shift+L. */
@@ -127,8 +127,10 @@ static const Key keys[] = {
 	/* Note that Shift changes certain key codes: 2 -> at, etc. */
 	/* modifier                  key                  function          argument */
 	{ MODKEY,                    XKB_KEY_p,           spawn,            {.v = menucmd} },
-	/* Ctrl+Shift+Return: works before the host has handed Super to a QEMU guest */
-	{ WLR_MODIFIER_CTRL|WLR_MODIFIER_SHIFT, XKB_KEY_Return, spawn,        {.v = termcmd} },
+	/* Super+Shift+Return (upstream default). Was Ctrl+Shift+Return for the
+	 * QEMU era; that chord is now tmux's split-window (dotfiles/tmux) and the
+	 * compositor must not eat it. */
+	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_Return,      spawn,            {.v = termcmd} },
 	{ MODKEY,                    XKB_KEY_d,           spawn,            {.v = menucmd} },
 	{ MODKEY,                    XKB_KEY_v,           spawn,            SHCMD("cliphist list | fuzzel --dmenu | cliphist decode | wl-copy") },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_s,           spawn,            SHCMD("slurp | grim -g - - | wl-copy") },
