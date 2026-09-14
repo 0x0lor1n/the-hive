@@ -1,0 +1,42 @@
+if vim.env.PROF then
+  local snacks = vim.fn.stdpath "data" .. "/lazy/snacks.nvim"
+  vim.opt.rtp:append(snacks)
+  require("snacks.profiler").startup {
+    startup = {
+      event = "VeryLazy",
+    },
+  }
+end
+
+vim.loader.enable()
+
+local constants = require "custom.constants"
+local nvim_utils = require "custom.utils.nvim"
+
+vim.cmd.syntax "manual"
+
+require "custom.options"
+require "custom.globals"
+
+require "custom.lazy"
+
+if constants.has_file_arg then
+  require "custom.autocmds"
+end
+
+require("custom.utils.title").setup()
+
+nvim_utils.autocmd("User", {
+  group = nvim_utils.augroup "load_core",
+  pattern = "VeryLazy",
+  callback = function()
+    if not constants.has_file_arg then
+      require "custom.autocmds"
+    end
+    require "custom.keymaps"
+    require "custom.macros"
+    require "custom.commands"
+  end,
+})
+
+vim.cmd.colorscheme "catppuccin-nvim"

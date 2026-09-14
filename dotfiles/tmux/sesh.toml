@@ -1,0 +1,6 @@
+[default_session]
+startup_command = ""
+
+[[session]]
+name = "the-hive"
+path = "/srv/the-hive"

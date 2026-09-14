@@ -22,4 +22,6 @@ in {
   dircolors = mk ./homeModules/dircolors.nix;
   lazygit = mk ./homeModules/lazygit.nix;
   git = mk ./homeModules/git.nix;
+  tmux = mk ./homeModules/tmux.nix;
+  neovim = mk ./homeModules/neovim.nix;
 }

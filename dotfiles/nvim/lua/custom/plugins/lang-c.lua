@@ -1,0 +1,45 @@
+local constants = require "custom.constants"
+
+if constants.in_fast then
+  return {}
+end
+
+return {
+  {
+    import = "lazyvim.plugins.extras.lang.clangd",
+  },
+  -- {
+  --   import = "lazyvim.plugins.extras.lang.cmake",
+  -- },
+
+  {
+    "nvim-treesitter/nvim-treesitter",
+    optional = true,
+    opts = {
+      ensure_installed = { "make", "meson" },
+    },
+  },
+  {
+    "neovim/nvim-lspconfig",
+    optional = true,
+    opts = {
+      servers = {
+        -- autotools_ls = {},
+        clangd = {
+          keys = {
+            {
+              "<leader>cR",
+              false,
+            },
+            {
+              "<leader>lh",
+              "<cmd>ClangdSwitchSourceHeader<cr>",
+              desc = "Switch Source/Header (C/C++)",
+            },
+          },
+          mason = false,
+        },
+      },
+    },
+  },
+}

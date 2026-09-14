@@ -4,5 +4,5 @@
 # here: they come from the encrypted per-role attrset (home/secrets.nix) and
 # are wired in ../default.nix (programs.git.includes).
 {...}: {
-  imports = [];
+  imports = [./languages.nix ./agents.nix];
 }
