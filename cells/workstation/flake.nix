@@ -45,6 +45,22 @@
     # Only lib.nixpak is consumed; its NixOS module targets systemPackages.
     nixpak.url = "github:nixpak/nixpak/333bd8c7ca0c014e61be1933b3c131c9dfa20218";
     nixpak.inputs.nixpkgs.follows = "nixpkgs";
+    # Firefox hardening (policies.json + phoenix.cfg) for the Entra user's
+    # browser. Pinned to a release tag; `dev` is the default branch and moves
+    # daily. Two halves, both needed: `overlays.default` (withPhoenix wrapper)
+    # goes through inputs.pkgs.extend in nixosConfigurations.nix -- a module's
+    # nixpkgs.overlays is ignored here -- and nixosModules.default supplies the
+    # /etc/firefox files + programs.firefox.policies.
+    phoenix.url = "git+https://gitlab.com/celenityy/Phoenix?ref=refs/tags/2026.09.01.1";
+    phoenix.inputs.nixpkgs.follows = "nixpkgs";
+    # Spotify client patching (adblock, keyboardShortcut, ...) for the desktop
+    # home. Consumed as a home-manager module + legacyPackages catalogue; its
+    # nixpkgs is a channel tarball, so follow ours. Weekly "CI update" bumps
+    # track Spotify's own releases; pin to the current HEAD, bump on demand.
+    spicetify.url = "github:Gerg-L/spicetify-nix/09eed5c95105aada9ffabd4c7eb6b345dc4ba66f";
+    spicetify.inputs.nixpkgs.follows = "nixpkgs";
+    # zsh-defer / zsh-vi-mode / llm-agents are NOT inputs: the first two ship
+    # in the nixpkgs pin, llm-agents is re-exported by cells/repo/packages.nix.
     # tuigreet is NOT an input: the nixpkgs pin already ships the maintained
     # fork (tuigreet/tuigreet 0.11.1, ex NotAShelf).
     # colmena deliberately not declared: this cell is never deployed by colmena.
