@@ -37,6 +37,24 @@
       hash = "sha256-PQIFF8kz+baqmZWiSr+wc4EleZ/KD8Y+lxW2NT35/bg=";
     };
   });
+  # nixpkgs' zsh-autocomplete 26.08.03 is missing its z-async git submodule
+  # (upstream .gitmodules points at git@github.com:, so fetchSubmodules
+  # can't get it either) -> "z-async: function definition file not found"
+  # on every .autocomplete:async:* call. Fetch it at the commit the 26.08.03
+  # tag pins (5370537) and put it where the plugin expects it.
+  zAsync = pkgs.fetchFromGitHub {
+    owner = "marlonrichert";
+    repo = "z-async";
+    rev = "5370537de80670b4a97e49cd253d15067709c0a6";
+    hash = "sha256-tPosFoZSaUShaRpv7ca9BdOMREfmhnzjd/VKHSshhXo=";
+  };
+  zshAutocomplete = pkgs.zsh-autocomplete.overrideAttrs (old: {
+    installPhase =
+      old.installPhase
+      + ''
+        cp -R ${zAsync} $out/share/zsh-autocomplete/z-async
+      '';
+  });
   fsh = "${pkgs.zsh-fast-syntax-highlighting}/share/zsh/plugins/fast-syntax-highlighting/fast-syntax-highlighting.plugin.zsh";
   histdb = "${zshHistdb}/share/zsh-histdb/sqlite-history.zsh";
   histdbSkim = "${cellPackages.zsh-histdb-skim}/share/zsh-histdb-skim/zsh-histdb-skim.plugin.zsh";
@@ -65,7 +83,7 @@ in {
       zstyle ':autocomplete:key-bindings' enabled no
       zstyle ':autocomplete:*' delay 0.1  # Add delay to reduce lag
       zstyle ':autocomplete:*' min-input 2  # Only complete after 2 chars
-      source ${pkgs.zsh-autocomplete}/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
+      source ${zshAutocomplete}/share/zsh-autocomplete/zsh-autocomplete.plugin.zsh
       source ${pkgs.zsh-defer}/share/zsh-defer/zsh-defer.plugin.zsh
     '';
 
