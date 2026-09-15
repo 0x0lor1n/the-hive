@@ -468,8 +468,8 @@ DETAIL (rationale and facts for the steps above):
       jarvis's vpn-{owt,t,w}.nix.age + user.nix.age (all readable by dellvis-nix-rage, verified
       by stanza tags), splits, encrypts to masters+recovery and writes rekeyed/penrose. Until it
       runs, penrose eval fails on the missing rekeyFile (by design).
-- [ ] grep gate: `grep -rn 'nixos-config\|nonNixos\|genericLinux\|nixGL' cells/workstation/home dotfiles` -> empty
-      (2026-09-15: clean after zsh; three comment-only mentions reworded to "jarvis")
+- [x] grep gate: `grep -rn 'nixos-config\|nonNixos\|genericLinux\|nixGL' cells/workstation/home dotfiles` -> empty
+      (2026-09-15: clean after zsh; re-run after desktop+security — clean, comment mentions say "jarvis")
 - [ ] eval + build toplevel for penrose AND sevastopol/osgiliath (shared home must not break them)
 
 ### phase 3 — deploy to penrose

@@ -1,4 +1,4 @@
-# tor with obfs4 bridges, ported from ~/nixos-config users/shared/security/
+# tor with obfs4 bridges, ported from jarvis users/shared/security/
 # tor.nix (2026-09-15). Personal-account only (see ./default.nix).
 #
 # Kept as a user-level torrc + tor-start/stop/status helpers rather than
