@@ -50,6 +50,8 @@
       p.input-vial
       # firefox + Phoenix: system package (Entra users have no HM profile)
       p.browser-firefox
+      # the three VPN tunnels as system units, secrets in /run/agenix
+      p.vpn
       # 3 generations, weekly nh clean
       p.maintenance
       # pxpipe system unit + /etc/hosts alias, shared by every session's Hermes
