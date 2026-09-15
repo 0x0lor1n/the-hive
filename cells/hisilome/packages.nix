@@ -55,8 +55,10 @@
       export D2_FONT_ITALIC=${d2-fonts}/regular.ttf
       export D2_FONT_BOLD=${d2-fonts}/bold.ttf
       export D2_FONT_SEMIBOLD=${d2-fonts}/bold.ttf
+      # Engine is per file: a leading "# layout: dagre" line overrides elk.
       find content -name '[0-9]*.d2' -print0 | while IFS= read -r -d "" f; do
-        d2 --layout elk --theme 200 --pad 20 --scale 1 "$f" "''${f%.d2}.svg"
+        layout=$(sed -n '1,3s/^# layout: *//p' "$f" | head -1)
+        d2 --layout "''${layout:-elk}" --theme 200 --pad 20 --scale 1 "$f" "''${f%.d2}.svg"
       done
       # Drafts are in unless SITE_DRAFTS=0: local builds are for reading what
       # is not published yet; the deploy derivation sets 0 explicitly.
@@ -93,7 +95,21 @@
       file = "now-playing.txt";
       type = "text/plain";
     }
+    {
+      # Empty while liquidsoap runs; the station unit's ExecStopPost writes the
+      # offline <style> into it. Missing (never started) falls to the SSI stub.
+      name = "status.html";
+      file = "status.html";
+      type = "text/html";
+    }
   ];
+
+  # What the shell includes when the station is down: hide the player and the
+  # link row, stop the loader; live.html carries its own "offline" line.
+  # What the shell includes when the station is down. SSI cannot add a class
+  # to <body>, so the fragment is a <style> that flips a custom property;
+  # style.css keys the loader and the hidden player off it.
+  offlineStyle = "<style>:root{--station-ui:none;--ld-image:var(--ld-loader);--ld-anim:ld-crawl 1.8s steps(14,end) infinite}</style>";
 
   # A top-level navigation to any page gets the shell, which frames the
   # original URL via SSI `request_uri` (never rewritten by nginx). The frame's
@@ -204,6 +220,23 @@
     '';
 in {
   inherit nginxLocations nginxHttpConfig build-site;
+
+  # Marks the station offline (see `fragments`). Run from the unit's
+  # ExecStopPost, or by hand in dev. `station-online` clears it.
+  station-offline = pkgs.writeShellApplication {
+    name = "station-offline";
+    text = ''
+      printf '%s' '${offlineStyle}' > radio/state/status.html.tmp
+      mv radio/state/status.html.tmp radio/state/status.html
+    '';
+  };
+  station-online = pkgs.writeShellApplication {
+    name = "station-online";
+    text = ''
+      : > radio/state/status.html.tmp
+      mv radio/state/status.html.tmp radio/state/status.html
+    '';
+  };
 
   site = pkgs.runCommand "hisilome-site" {} ''
     set -e

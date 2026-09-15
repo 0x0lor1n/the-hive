@@ -1,3 +1,4 @@
+# layout: dagre
 ...@classes
 
 direction: down
@@ -25,14 +26,15 @@ zola: "" {
 nginx: "" {
   class: ours
   style.font-size: 16
+  direction: right
   ico: "" {shape: image; icon: icons/nginx.svg; width: 48; height: 48}
   ssi: "ssi on;\n<!--# include virtual=... -->" {class: box}
 }
 
 browser: "" {
   class: box
-  direction: down
   style.font-size: 16
+  direction: right
   ico: "" {shape: image; icon: icons/browser.svg; width: 48; height: 48}
   shell: "shell page\n<audio> never reloads" {class: box}
 }
@@ -42,5 +44,5 @@ browser.shell -> frame: embeds {style.stroke: "#727169"}
 liq -> state: file.write.stream(atomic=true) {style.stroke: "#98bb6c"}
 zola -> nginx: "zola build: templates\nwith SSI comments (at deploy)" {style.stroke: "#727169"}
 state -> nginx.ssi: read on every request {style.stroke: "#98bb6c"}
-nginx -> frame: "assembled HTML\nfragment, every 10 s" {style.stroke: "#98bb6c"}
 nginx -> browser.shell: once {style.stroke: "#727169"}
+nginx -> frame: "assembled HTML\nfragment, every 10 s" {style.stroke: "#98bb6c"}

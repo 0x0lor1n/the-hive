@@ -51,7 +51,7 @@ processes:
       period_seconds: 2
 
   liquidsoap:
-    command: "liquidsoap radio/radio.liq"
+    command: "station-online; liquidsoap radio/radio.liq; station-offline"
     depends_on:
       icecast:
         condition: process_healthy
