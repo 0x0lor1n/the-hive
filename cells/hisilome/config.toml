@@ -13,6 +13,9 @@ taxonomies = [
 ]
 
 [markdown]
+external_links_target_blank = true
+external_links_no_follow = false
+external_links_no_referrer = false
 [markdown.highlighting]
 extra_grammars = ["syntaxes/liquidsoap.tmLanguage.json"]
 theme = "kanagawa-wave"
