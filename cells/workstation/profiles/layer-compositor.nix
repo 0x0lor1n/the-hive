@@ -92,13 +92,16 @@
     export XDG_CURRENT_DESKTOP="''${XDG_CURRENT_DESKTOP:-dwl}"
     ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
-    # A previous dwl session (relogin via greeter) leaves the oneshot bridge
+    # A previous dwl session (relogin via greeter) can leave the oneshot bridge
     # active and graphical-session.target up, so a plain `start` is a no-op
-    # and avizo/swayidle stay in their start-limit-hit state from the moment
-    # the old compositor went away (measured 2026-09-15). Reset + restart
-    # re-pulls the target's wants against the new WAYLAND_DISPLAY.
+    # and avizo/swayidle stay dead from the moment the old compositor went
+    # away (measured 2026-09-15 twice: first as start-limit-hit, then as
+    # plain inactive after the exit hook stopped only the bridge). Take the
+    # target down first, then start the bridge: its Wants= re-pulls the
+    # target and every WantedBy= unit against the new WAYLAND_DISPLAY.
+    ${pkgs.systemd}/bin/systemctl --user stop graphical-session.target dwl-session-bridge.service 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user reset-failed 2>/dev/null || true
-    ${pkgs.systemd}/bin/systemctl --user restart dwl-session-bridge.service 2>/dev/null || true
+    ${pkgs.systemd}/bin/systemctl --user start dwl-session-bridge.service 2>/dev/null || true
 
     ${pkgs.swaybg}/bin/swaybg -c '#${theme.roles.bg}' &
     ${pkgs.wl-clipboard}/bin/wl-paste --type text  --watch ${pkgs.cliphist}/bin/cliphist store &
@@ -118,16 +121,20 @@
     # Last crash log survives in the (persisted) home. Never let the log be
     # the reason the session dies: if $HOME is not there yet (first login
     # after boot raced himmelblaud_tasks), fall back to the journal.
-    # Not exec: when dwl exits, take graphical-session.target down with the
-    # bridge (BindsTo) so PartOf= units (avizo, swayidle) stop cleanly
-    # instead of crash-looping into their start limit.
+    # Not exec: when dwl exits, stop graphical-session.target itself so
+    # PartOf= units (avizo, swayidle) stop cleanly instead of crash-looping
+    # into their start limit, and the bridge follows it down (BindsTo is
+    # one-way: stopping the bridge does NOT stop the target — verified
+    # 2026-09-15, MOD+Shift+Q left the target active and both units in
+    # start-limit-hit). On re-login dwl-startup restarts the bridge, whose
+    # Wants= pulls the target and its WantedBy= units back up.
     if mkdir -p "$HOME/.cache/dwl" 2>/dev/null; then
       ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
     else
       ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar}
     fi
     rc=$?
-    ${pkgs.systemd}/bin/systemctl --user stop dwl-session-bridge.service 2>/dev/null || true
+    ${pkgs.systemd}/bin/systemctl --user stop graphical-session.target dwl-session-bridge.service 2>/dev/null || true
     exit $rc
   '';
 in {
