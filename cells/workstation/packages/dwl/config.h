@@ -1,9 +1,12 @@
 /* nix-rensa dwl config: copy of upstream config.def.h (dwl v0.8) with local
  * changes. On a dwl bump: diff against the new config.def.h and re-apply.
  * Changes vs upstream: MODKEY=Super, Super+Shift+Return terminal, fuzzel on
- * Mod+D/Mod+P, swaylock on Mod+L, somebar toggle on Mod+B, cliphist/grim
+ * Mod+D/Mod+P, swaylock on Mod+L, waybar toggle on Mod+B, cliphist/grim
  * binds, XF86 media keys; displaced incnmaster-/setmfact+ moved to
- * Mod+Shift+D / Mod+Shift+L. */
+ * Mod+Shift+D / Mod+Shift+L. Ported from wochap/nix-config dwl:
+ * Super+Esc power menu, Super+C calc, Super+Alt+T terminal, Super+Alt+F
+ * Thunar, Super+Alt+N notification mode, Super+R layout mode (modes patch,
+ * packages/dwl/patches/modes-0.8.patch). */
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
 #define COLOR(hex)    { ((hex >> 24) & 0xFF) / 255.0f, \
                         ((hex >> 16) & 0xFF) / 255.0f, \
@@ -23,6 +26,18 @@ static const float fullscreen_bg[]         = {0.0f, 0.0f, 0.0f, 1.0f}; /* You ca
 
 /* tagging - TAGCOUNT must be no greater than 31 */
 #define TAGCOUNT (9)
+
+/* modes patch: a prefix key enters a mode, the next key acts and (usually)
+ * returns to NORMAL. dwl-status receives a "<output> mode <label>" status line
+ * and ignores it. */
+enum {
+	LAYOUT,
+	NOTIFICATION,
+};
+const char *modes_labels[] = {
+	"layout",
+	"notification",
+};
 
 /* logging */
 static int log_level = WLR_ERROR;
@@ -135,10 +150,24 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_v,           spawn,            SHCMD("cliphist list | fuzzel --dmenu | cliphist decode | wl-copy") },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_s,           spawn,            SHCMD("slurp | grim -g - - | wl-copy") },
 	{ 0,                         XKB_KEY_Print,       spawn,            SHCMD("grim - | wl-copy") },
+	/* takeshot (home/desktop/screenshot.nix): full screen / frozen area, saved + notified */
+	{ MODKEY,                    XKB_KEY_Print,       spawn,            SHCMD("takeshot --now") },
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_s,           spawn,            SHCMD("takeshot --area") },
+	/* recorder (home/desktop/recorder.nix): area screen recording, same key stops it */
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_r,           spawn,            SHCMD("recorder --area") },
 	{ MODKEY,                    XKB_KEY_l,           spawn,            SHCMD("swaylock -fF") },
-	/* somebar reads $XDG_RUNTIME_DIR/somebar-0; "all", not "selected": the bar
-	 * is one process for every output */
-	{ MODKEY,                    XKB_KEY_b,           spawn,            SHCMD("somebar -c toggle all") },
+	/* wochap ports (home/desktop/menus.nix): fuzzel-dmenu power menu and calc */
+	{ MODKEY,                    XKB_KEY_Escape,      spawn,            SHCMD("powermenu") },
+	{ MODKEY,                    XKB_KEY_c,           spawn,            SHCMD("calcmenu") },
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_w,           spawn,            SHCMD("wifimenu") },
+	/* wochap: Super+Alt+T second terminal bind, Super+Alt+F file manager */
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_t,           spawn,            {.v = termcmd} },
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_f,           spawn,            SHCMD("thunar") },
+	/* modes (see modekeys[] below): Super+R layout, Super+Alt+N notifications */
+	{ MODKEY,                    XKB_KEY_r,           entermode,        {.i = LAYOUT} },
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_n,           entermode,        {.i = NOTIFICATION} },
+	/* waybar (home/desktop/bar.nix) toggles on SIGUSR1 */
+	{ MODKEY,                    XKB_KEY_b,           spawn,            SHCMD("pkill -USR1 -x waybar") },
 	{ 0, XKB_KEY_XF86AudioRaiseVolume,  spawn, SHCMD("volumectl -u up") },
 	{ 0, XKB_KEY_XF86AudioLowerVolume,  spawn, SHCMD("volumectl -u down") },
 	{ 0, XKB_KEY_XF86AudioMute,         spawn, SHCMD("volumectl toggle-mute") },
@@ -187,6 +216,37 @@ static const Key keys[] = {
 #define CHVT(n) { WLR_MODIFIER_CTRL|WLR_MODIFIER_ALT,XKB_KEY_XF86Switch_VT_##n, chvt, {.ui = (n)} }
 	CHVT(1), CHVT(2), CHVT(3), CHVT(4), CHVT(5), CHVT(6),
 	CHVT(7), CHVT(8), CHVT(9), CHVT(10), CHVT(11), CHVT(12),
+};
+
+/* Mode bindings. ONESHOT: run the action and drop back to NORMAL (two
+ * entries, both match the same chord). Plain entries stay in the mode so
+ * ratios can be nudged repeatedly; Escape leaves. Vanilla dwl has no
+ * movecenter/setcfact/sizes, so wochap's c/1/2/3 and cfact keys are absent. */
+#define ONESHOT(mode, mod, key, func, arg) \
+	{ mode, { mod, key, func, arg } }, \
+	{ mode, { mod, key, entermode, {.i = NORMAL} } }
+
+static const Modekey modekeys[] = {
+	/* mode          modifier                                 key            function        argument */
+	/* Super+R: layout. Left/Right master count, Shift+Left/Right master ratio,
+	 * t/f/m tile/float/monocle, Shift+F togglefloating the focused window. */
+	{ LAYOUT,      { 0,                                       XKB_KEY_Left,   incnmaster,     {.i = +1} } },
+	{ LAYOUT,      { 0,                                       XKB_KEY_Right,  incnmaster,     {.i = -1} } },
+	{ LAYOUT,      { WLR_MODIFIER_SHIFT,                      XKB_KEY_Left,   setmfact,       {.f = -0.05f} } },
+	{ LAYOUT,      { WLR_MODIFIER_SHIFT,                      XKB_KEY_Right,  setmfact,       {.f = +0.05f} } },
+	ONESHOT(LAYOUT,  0,                                       XKB_KEY_t,      setlayout,      {.v = &layouts[0]}),
+	ONESHOT(LAYOUT,  0,                                       XKB_KEY_f,      setlayout,      {.v = &layouts[1]}),
+	ONESHOT(LAYOUT,  0,                                       XKB_KEY_m,      setlayout,      {.v = &layouts[2]}),
+	ONESHOT(LAYOUT,  WLR_MODIFIER_SHIFT,                      XKB_KEY_f,      togglefloating, {0}),
+	{ LAYOUT,      { 0,                                       XKB_KEY_Escape, entermode,      {.i = NORMAL} } },
+
+	/* Super+Alt+N: notifications (mako; wochap has dunst). h restores the
+	 * last dismissed one, a runs its default action, c/Shift+C dismiss one/all. */
+	ONESHOT(NOTIFICATION, 0,                                  XKB_KEY_h,      spawn,          SHCMD("makoctl restore")),
+	ONESHOT(NOTIFICATION, 0,                                  XKB_KEY_a,      spawn,          SHCMD("makoctl invoke")),
+	ONESHOT(NOTIFICATION, 0,                                  XKB_KEY_c,      spawn,          SHCMD("makoctl dismiss")),
+	ONESHOT(NOTIFICATION, WLR_MODIFIER_SHIFT,                 XKB_KEY_c,      spawn,          SHCMD("makoctl dismiss --all")),
+	{ NOTIFICATION, { 0,                                      XKB_KEY_Escape, entermode,      {.i = NORMAL} } },
 };
 
 static const Button buttons[] = {

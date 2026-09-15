@@ -1,20 +1,24 @@
 # Desktop companions for the local user's home-manager config: fuzzel,
-# swaylock, mako, swayidle, swaybg, cliphist, avizo, gtk/cursor/fonts, plus
+# swaylock, mako, swayidle, swaybg, cliphist, avizo, waybar, gtk/cursor/fonts, plus
 # mpv, the non-nixpak chat clients and KeePassXC. One small module each.
 #
 # A plain helper directory, NOT a cell block: imported from
 # ../default.nix, which layer-compositor.nix feeds to home-manager.users.
-# somebar has no module here on purpose -- its patched binary is a system
-# package (layer-compositor.nix); a home.packages entry would add the
-# unpatched one next to it.
+# The bar (waybar, bar.nix) is an HM user unit; dwl's status pipe reaches it
+# through dwl-status in layer-compositor.nix.
 {...}: {
   imports = [
     ./launcher.nix
     ./lock.nix
     ./notify.nix
     ./idle.nix
+    ./outputs.nix
     ./wallpaper.nix
     ./clipboard.nix
+    ./screenshot.nix
+    ./recorder.nix
+    ./bar.nix
+    ./menus.nix
     ./osd.nix
     ./gtk.nix
     ./mpv
