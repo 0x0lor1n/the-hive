@@ -221,6 +221,11 @@ in {
     ]
     ++ lib.optionals (upn != null && uid != null) [
       (entraHome ".config/microsoft-edge")
+      # Firefox profile (profiles.ini, places/logins/session store). The
+      # browser lives in browser-firefox.nix as a NixOS module, so nothing
+      # in HM claims this dir -- without it every boot is a fresh profile
+      # (reported 2026-09-15). Phoenix + policies still come from /etc.
+      (entraHome ".mozilla")
       (entraHome ".config/teams-for-linux")
       (entraHome ".config/o365-profiles")
       # nixpak apps: config/data/cache under one Flatpak-style dir each.
