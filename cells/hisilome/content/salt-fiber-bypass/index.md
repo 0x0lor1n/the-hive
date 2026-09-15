@@ -52,8 +52,8 @@ $ sudo ethtool -m enp1s0f0 | grep 'Module temperature'
 ```
 
 <figure class="pair small">
-  <img src="/img/stick-outside.jpg" alt="FLIR i5 thermal image of the WAS-110 stick's tail sticking out of the CWWK case: 57.7 °C spot, scale 24–58 °C">
-  <img src="/img/stick-inside.jpg" alt="FLIR i5 thermal image of the stick inside the open case with the copper heatsink: 56.0 °C spot, scale 25–56 °C">
+  <img src="stick-outside.jpg" alt="FLIR i5 thermal image of the WAS-110 stick's tail sticking out of the CWWK case: 57.7 °C spot, scale 24–58 °C">
+  <img src="stick-inside.jpg" alt="FLIR i5 thermal image of the stick inside the open case with the copper heatsink: 56.0 °C spot, scale 25–56 °C">
   <figcaption>FLIR i5: the stick's tail outside the case (57.7 °C) and the body inside, heatsink on (56.0 °C)</figcaption>
 </figure>
 
@@ -438,8 +438,8 @@ After the fix, measured results:
 - The whole thing is one `configuration.nix` (the relevant parts are all quoted above) and two Python scripts. `nixos-rebuild switch` and done
 
 <figure class="pair">
-  <img src="/img/speedtest-powersave.png" alt="Speedtest CLI, powersave governor: 7819 Mbps down, 2740 Mbps up, 5 ms ping, Salt, Lausanne">
-  <img src="/img/speedtest-performance.jpg" alt="Speedtest CLI, performance governor: 7970 Mbps down, 2949 Mbps up, 4 ms ping, Salt, Lausanne">
+  <img src="speedtest-powersave.png" alt="Speedtest CLI, powersave governor: 7819 Mbps down, 2740 Mbps up, 5 ms ping, Salt, Lausanne">
+  <img src="speedtest-performance.jpg" alt="Speedtest CLI, performance governor: 7970 Mbps down, 2949 Mbps up, 4 ms ping, Salt, Lausanne">
   <figcaption>powersave vs performance, same server, same box</figcaption>
 </figure>
 

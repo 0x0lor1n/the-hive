@@ -8,8 +8,8 @@ processes:
   watch-site:
     command: >
       watchexec
-      --watch content --watch templates --watch static --watch diagrams --watch config.toml
-      --ignore 'static/diagrams/**'
+      --watch content --watch templates --watch static --watch syntaxes --watch config.toml
+      --ignore 'content/**/*.svg'
       --debounce 300ms --on-busy-update=queue
       -- build-site
     depends_on:

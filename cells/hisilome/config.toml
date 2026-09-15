@@ -2,6 +2,9 @@ base_url = "https://hisilo.me"
 title = "Hísilómë"
 description = "Self-taught web developer and Dev[Sec]Ops engineer with a passion for internet research. Dedicated Nix evangelist and cybersecurity enthusiast."
 
+# d2 sources sit next to each post; the compiled svg is what the page inlines.
+ignored_content = ["*.d2"]
+
 generate_feeds = true
 feed_filenames = ["rss.xml"]
 
@@ -11,5 +14,6 @@ taxonomies = [
 
 [markdown]
 [markdown.highlighting]
+extra_grammars = ["syntaxes/liquidsoap.tmLanguage.json"]
 theme = "kanagawa-wave"
 style = "inline"
