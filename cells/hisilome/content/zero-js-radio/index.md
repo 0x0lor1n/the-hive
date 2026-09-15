@@ -6,9 +6,11 @@ description = "Progress bar, ticking clock, persistent player, a now-playing wid
 tags = ["nojs", "html", "css", "nginx", "icecast", "liquidsoap", "zola", "nix", "nixos", "lain", "radio", "web"]
 +++
 
-This site's [radio page](/listen/) shows the current track, a progress bar that moves, a clock that counts up, the listener count, the schedule, and the player keeps playing while you read the blog. Normally that's a few hundred lines of JavaScript and a WebSocket. Here the `Content-Security-Policy` is `default-src 'none'` plus fonts, styles, images and media. No `script-src`, because there is nothing to allow.
+This site's [radio page](/listen/) shows the current track, a progress bar that moves, a clock that counts up, the listener count, the schedule, and the player keeps playing while you read the blog. Normally that's a few hundred lines of JavaScript and a WebSocket.
 
-I didn't set out to avoid JS on principle. I wanted to know how much of a live page the server and CSS can carry before the client has to run code. For a page this size the answer is all of it, with seven tricks, none of them new; I just had not seen them used together.
+Here the `Content-Security-Policy` is `default-src 'none'` plus fonts, styles, images and media. No `script-src`, because there is nothing to allow.
+
+I didn't set out to avoid JS on principle. I wanted to know how much of a live page the server and CSS can carry before the client has to run code. For a page this size the answer is all of it. Seven tricks. None of them new, I just had not seen them together.
 
 Stack: [Zola](https://www.getzola.org/) renders the static pages, [liquidsoap](https://www.liquidsoap.info/) runs the station and feeds icecast, nginx serves everything. One NixOS module, one `process-compose.yaml` for the dev loop.
 
@@ -32,18 +34,18 @@ nginx assembles them with [SSI](https://nginx.org/en/docs/http/ngx_http_ssi_modu
 <!--# include virtual="/state/now-playing.txt" -->
 ```
 
-`ssi on;` in the server block, a location for `/state/` pointing at liquidsoap's directory. That is all the plumbing there is.
+`ssi on;` in the server block, a location for `/state/` pointing at liquidsoap's directory. That's the whole plumbing.
 
 ## 2. A ten-second `<meta refresh>` inside an iframe
 
-The widget has to update. `<meta http-equiv="refresh" content="10">` is the oldest way and it works fine when the reloading document is small and isolated. So the now-playing block is its own document, `live.html`, in an `<iframe>` inside the console. It reloads itself; the page around it doesn't move.
+The widget has to update. `<meta http-equiv="refresh" content="10">` is the oldest way and it works fine when the reloading document is small and isolated. So the now-playing block is its own document, `live.html`, in an `<iframe>` inside the console. It reloads itself. The page around it doesn't move.
 
 Two details cost me an evening:
 
 - Styles are inlined, not `<link>`ed. With a linked stylesheet each reload painted an unstyled frame for a moment. With `<style>` in `<head>` the reload is invisible.
 - `background: transparent` on the frame body, so the console's background shows through and the frame isn't a visible rectangle.
 
-Cost: one ~2 KB request per listener every ten seconds. `limit_req` covers the abusive case.
+Cost: one ~2 KB request per listener every ten seconds. `limit_req` for the abusive case, that's it.
 
 ## 3. Progress bar and clock between refreshes: negative `animation-delay`
 
@@ -62,7 +64,7 @@ Ten seconds is too coarse for a progress bar. CSS animations have an `animation-
 
 The bar starts at 87/213 and reaches the end when the track does. When the frame reloads it gets fresh numbers and lands within a frame of where it already was.
 
-The clock is the same idea, except you cannot animate text. You can animate a registered custom property of type `<integer>` and feed it to a CSS counter:
+The clock is the same idea, except you cannot animate text. What you can animate is a registered custom property of type `<integer>` and feed it to a CSS counter:
 
 ```css
 @property --m { syntax: "<integer>"; initial-value: 0; inherits: false; }
@@ -80,11 +82,13 @@ Minutes run with `steps(N)` over `N*60` seconds, seconds with `steps(60)` over `
 
 ## 4. The player survives navigation: `Sec-Fetch-Dest` picks the page
 
-An `<audio>` element dies with its page, which is why radio sites end up as SPAs. Without JS, the only thing that survives navigation is a frame.
+An `<audio>` element dies with its page. That is why every radio site ends up an SPA. Without JS the only thing that survives navigation is a frame, so a frame it is.
 
 So there is a shell: topbar, console with the player, footer, and an `<iframe name="content">` in the middle. Every link in the shell has `target="content"`. Blog pages load into the frame; the audio element in the shell is never touched.
 
-The hard part is the URL. Land on `/salt-fiber-bypass/` directly and you should get the shell with that post in the frame, and the frame should request the same URL and get the bare post. Same URL, two responses, decided by nginx from one header:
+The hard part is the URL.
+
+Land on `/salt-fiber-bypass/` directly and you should get the shell with that post in the frame, and the frame should request the same URL and get the bare post. Same URL, two responses, decided by nginx from one header:
 
 {{ d2(name="02-sec-fetch-dest", alt="The same GET /salt-fiber-bypass/ arrives at nginx three ways: with Sec-Fetch-Dest document from a top-level navigation, with Sec-Fetch-Dest iframe from the shell's frame, or with no header from curl and crawlers. A map on the header routes the first to /listen/index.html, the shell, whose iframe then requests the same URL again; the other two get the bare post.") }}
 
@@ -97,7 +101,7 @@ map "$http_sec_fetch_dest$uri" $shell_page {
 
 [`Sec-Fetch-Dest`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-Fetch-Dest) is set by the browser: `document` for a top-level navigation, `iframe` for a frame load. A top-level navigation to any `/`-terminated page gets the shell. The shell's frame does `src="<!--# echo var="request_uri" -->"`, SSI again; `$request_uri` is never rewritten, so it is the URL the user typed. That request carries `Sec-Fetch-Dest: iframe` and falls through to the real page.
 
-curl, crawlers, RSS readers and old Safari don't send the header and get the bare page, which is what they want anyway. Zola pages end in `/`, so assets and `/stream.*` never match the map.
+curl, crawlers, RSS readers, old Safari: no header, bare page. Which is what they wanted anyway. Zola pages end in `/`, so assets and `/stream.*` never match the map.
 
 `Sec-Fetch-Dest` works like a server-side media query: the same URL renders differently depending on where it is embedded.
 
@@ -110,13 +114,13 @@ The console has a "files: list" toggle that opens a panel. That is a `<details>`
 .console:has(.sc-toggle[open]) { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }
 ```
 
-The content frame slides down, the console squares its corners to meet the panel, the glow stops at the seam. The state is one attribute the browser flips; everything else is selectors.
+The content frame slides down, the console squares its corners to meet the panel, the glow stops at the seam. One attribute the browser flips. The rest is selectors.
 
 ## 6. Diagrams inlined, so they're text
 
 The d2 diagrams in the fiber post aren't `<img>`. A Zola shortcode does `load_data(path=…svg) | safe` and inlines the SVG into the page. Labels on the diagram are selectable, Ctrl+F finds them, the theme's fonts apply. The `.d2` sources live next to the post's `index.md` and `build-site` compiles them before `zola build`.
 
-Not a no-JS trick as such, but the same habit: do the work at build time and ship a document, not a viewer.
+Not a no-JS trick as such. Same habit though: do the work at build time, ship a document, not a viewer.
 
 ## 7. One-click copy without a button
 
@@ -130,7 +134,7 @@ pre code[data-lang]::after { content: "Copy"; }
 pre code[data-lang]:active::after { content: "Ctrl+C"; }
 ```
 
-The cost: you can't drag one line out of a block. I tried two behaviours, normal selection on multi-line blocks and one-click on one-liners via `:has(> .giallo-l:only-of-type)` on the highlighter's line spans. It worked, but the same-looking element behaving two ways confused me on my own site. Snippets here are meant to be taken whole, so there is one behaviour.
+The cost: you can't drag one line out of a block. I tried two behaviours, normal selection on multi-line blocks and one-click on one-liners via `:has(> .giallo-l:only-of-type)` on the highlighter's line spans. It worked. It also confused me, on my own site, because two identical-looking blocks behaved differently. Snippets here are meant to be taken whole. One behaviour.
 
 The language tab on the left is the same idea, `content: attr(data-lang)` on `::before`, from the attribute Zola already puts on `<code>`.
 
@@ -146,7 +150,7 @@ The language tab on the left is the same idea, `content: attr(data-lang)` on `::
 - Bar and clock are dead reckoning between refreshes. If the stream stutters they drift up to ten seconds until the next fragment.
 - The address bar never changes. Navigating inside the frame leaves the bar at whatever URL you entered on. Reload still gives you the right page (the shell reads `request_uri`), but copying the address after a few clicks hands out the wrong post.
 - `@property` and `:has()` need a 2023-ish browser. Older ones get a static clock (`.rc-static` fallback), the bar at its start, and a console that doesn't slide.
-- Shell and `live.html` share a stylesheet by copy. The comment says "keep in sync", which means it will drift.
+- Shell and `live.html` share a stylesheet by copy. The comment says "keep in sync". It will drift.
 
 ## Credits
 
