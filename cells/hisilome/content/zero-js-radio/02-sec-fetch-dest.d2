@@ -1,0 +1,33 @@
+...@classes
+
+direction: down
+
+title: One URL, two responses {
+  near: top-center
+  shape: text
+  style: {font-color: "#727169"; font-size: 20; bold: true}
+}
+
+nav: "GET /salt-fiber-bypass/\nSec-Fetch-Dest: document" {class: box; icon: icons/browser.svg}
+frame: "GET /salt-fiber-bypass/\nSec-Fetch-Dest: iframe" {class: box; icon: icons/browser.svg}
+curl: "GET /salt-fiber-bypass/\n(curl, RSS reader, crawler: no header)" {
+  class: carrier
+  icon: icons/curl.svg
+}
+
+nginx: nginx {
+  class: ours
+  style.font-size: 16
+  ico: "" {shape: image; icon: icons/nginx.svg; width: 48; height: 48}
+  map: "map \$http_sec_fetch_dest\$uri  \$shell_page\n~^document.*/\$  /listen/index.html\ndefault  /__none" {class: note}
+}
+
+shell: "/listen/index.html\nshell + <audio>\n<iframe src=<!--# echo var=request_uri -->>" {class: ours}
+post: /salt-fiber-bypass/index.html\nbare post {class: box}
+
+nav -> nginx.map {style.stroke: "#98bb6c"}
+frame -> nginx.map {style.stroke: "#98bb6c"}
+curl -> nginx.map {style.stroke: "#727169"}
+nginx.map -> shell: document {style.stroke: "#98bb6c"}
+nginx.map -> post: iframe / no header {style.stroke: "#98bb6c"}
+shell -> frame: the frame requests\nthe same URL {style.stroke: "#e6c384"; style.stroke-dash: 3}

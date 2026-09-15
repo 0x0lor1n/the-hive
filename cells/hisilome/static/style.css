@@ -351,6 +351,12 @@ p {
 }
 
 pre {
+  /* UA default is `font-family: monospace`, and a bare generic `monospace`
+     makes browsers apply their separate monospace size preference (Firefox:
+     13px by default, whatever the user set otherwise) instead of the body
+     size. Inherit both so code matches the prose exactly. */
+  font-family: inherit;
+  font-size: inherit;
   background: var(--bg-dim);
   border: 1px solid var(--border);
   /* scroll lives on the inner <code>; the frame itself never moves, so the
@@ -432,32 +438,62 @@ del {
 
 pre code {
   display: block;
-  padding: 1rem;
+  /* extra top room for the corner tabs */
+  padding: 1.75rem 1rem 1rem;
   overflow-x: auto;
   color: inherit;
   background: none;
   border-radius: 0;
+  /* One click selects the whole block, Ctrl+C does the rest. The cost is
+     that a single line cannot be lifted out of a block; snippets here are
+     meant to be taken whole. The "copy" tab (::after) is part of the block,
+     so clicking it selects too - a copy button with no clipboard API. */
+  user-select: all;
+  cursor: copy;
 }
 
-/* Language tab on fenced blocks. Zola sets data-lang on <code>; the label is
-   absolutely positioned against the non-scrolling <pre>, so it stays in the
-   corner while the code underneath scrolls. */
+/* Corner tabs on fenced blocks: language on the left, "copy" on the right.
+   Zola sets data-lang on <code>; the tabs are absolutely positioned against
+   the non-scrolling <pre>, so they stay put while the code underneath
+   scrolls. */
 pre {
   position: relative;
 }
 
-pre code[data-lang]::before {
-  content: attr(data-lang);
+pre code[data-lang]::before,
+pre code[data-lang]::after {
   position: absolute;
   top: 0;
-  right: 0;
   padding: 0.1rem 0.5rem;
   font-size: 0.75rem;
-  color: var(--muted);
+  line-height: 1.4;
   background: var(--sumi-ink-4);
-  border-left: 1px solid var(--border);
   border-bottom: 1px solid var(--border);
-  border-radius: 0 3px 0 3px;
+}
+
+pre code[data-lang]::before {
+  content: attr(data-lang);
+  left: 0;
+  color: var(--muted);
+  border-right: 1px solid var(--border);
+  border-radius: 0 0 3px 0;
+}
+
+pre code[data-lang]::after {
+  content: "Copy";
+  right: 0;
+  color: var(--link);
+  border-left: 1px solid var(--border);
+  border-radius: 0 0 0 3px;
+}
+
+pre code[data-lang]:hover::after {
+  color: var(--hover);
+}
+
+/* While the mouse is down the block is already selected; say what's next. */
+pre code[data-lang]:active::after {
+  content: "Ctrl+C";
 }
 
 pre code[data-lang="plain"]::before { content: none; }

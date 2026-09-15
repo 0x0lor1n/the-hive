@@ -39,7 +39,9 @@
       done
     '';
 
-  # d2 -> static/ before zola build; zola copies static/ into the output root.
+  # d2 -> svg next to each post's index.md before zola build; Zola copies
+  # colocated assets into the page directory and the d2 shortcode inlines
+  # the svg from there, so everything a post owns lives in one folder.
   # --scale 1 writes width/height on the <svg>, so the browser draws diagrams at
   # native size instead of stretching a 360px chain to the column width.
   # classes.d2 is import-only, so compile the numbered diagrams only. One
@@ -47,16 +49,18 @@
   # No italic subset is shipped, so italic falls back to regular.
   build-site = pkgs.writeShellApplication {
     name = "build-site";
-    runtimeInputs = [pkgs.d2 pkgs.zola pkgs.coreutils];
+    runtimeInputs = [pkgs.d2 pkgs.zola pkgs.coreutils pkgs.findutils];
     text = ''
       export D2_FONT_REGULAR=${d2-fonts}/regular.ttf
       export D2_FONT_ITALIC=${d2-fonts}/regular.ttf
       export D2_FONT_BOLD=${d2-fonts}/bold.ttf
       export D2_FONT_SEMIBOLD=${d2-fonts}/bold.ttf
-      mkdir -p static/diagrams
-      for f in diagrams/[0-9]*.d2; do
-        d2 --theme 200 --pad 20 --scale 1 "$f" "static/diagrams/$(basename "$f" .d2).svg"
+      find content -name '[0-9]*.d2' -print0 | while IFS= read -r -d "" f; do
+        d2 --layout elk --theme 200 --pad 20 --scale 1 "$f" "''${f%.d2}.svg"
       done
+      # Drafts are in unless SITE_DRAFTS=0: local builds are for reading what
+      # is not published yet; the deploy derivation sets 0 explicitly.
+      if [ "''${SITE_DRAFTS:-1}" != 0 ]; then set -- --drafts "$@"; fi
       zola build "$@"
     '';
   };
@@ -202,7 +206,7 @@ in {
     chmod -R u+w s
     cd s
     export HOME=$TMPDIR
-    ${build-site}/bin/build-site --output-dir $out
+    SITE_DRAFTS=0 ${build-site}/bin/build-site --output-dir $out
   '';
 
   # Preview through the same nginx config as prod (SSI, fragments, headers).
@@ -216,8 +220,8 @@ in {
       trap 'kill $!' EXIT
       echo "site: http://localhost:8099 (stream/console 502 unless the station is up)"
       exec watchexec \
-        --watch content --watch templates --watch static --watch diagrams --watch config.toml \
-        --ignore 'static/diagrams/**' \
+        --watch content --watch templates --watch static --watch syntaxes --watch config.toml \
+        --ignore 'content/**/*.svg' \
         --debounce 300ms --on-busy-update=queue \
         -- build-site
     '';

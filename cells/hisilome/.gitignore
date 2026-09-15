@@ -13,9 +13,8 @@ radio/state/
 result
 result-*
 
-# Regenerable d2 previews; the site derivation compiles diagrams/*.d2 itself.
-diagrams/out/
-static/diagrams/
+# Compiled diagrams; build-site regenerates them from the .d2 next to each post.
+content/**/[0-9]*.svg
 
 # trailing slash, no leading slash: also catches the copy under content/
 .omc/
