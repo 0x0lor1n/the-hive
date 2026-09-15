@@ -2,7 +2,7 @@
 # come up in stock Adwaita with the default X cursor. nixpkgs dropped
 # kanagawa-gtk-theme (GTK2 murrine dep), so: adw-gtk3 as the base and the
 # palette from cells/theme injected via libadwaita named colours -- same
-# source as foot/somebar/tuigreet.
+# source as foot/waybar/tuigreet.
 {
   pkgs,
   theme,

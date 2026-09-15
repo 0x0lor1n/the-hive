@@ -101,7 +101,7 @@ in {
     enable = true;
     settings.default_session = {
       # /etc/dwl/session (layer-compositor.nix) runs `dwl -s <startup>`; dwl's
-      # own pipe feeds somebar, so nothing here may sit between them.
+      # own pipe feeds dwl-status, so nothing here may sit between them.
       command = lib.concatStringsSep " " [
         "${pkgs.tuigreet}/bin/tuigreet"
         "--time --remember --asterisks"
