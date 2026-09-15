@@ -4,19 +4,19 @@ direction: down
 
 nav: "GET /salt-fiber-bypass/\nSec-Fetch-Dest: document" {
   class: box
+  label.near: top-center
   style.font-size: 16
-  shape: rectangle
-  icon: icons/browser.svg
-  width: 270
-  height: 130
+  grid-rows: 1
+  grid-gap: 24
+  b: "" {class: ico; i: "" {shape: image; icon: icons/browser.svg; width: 48; height: 48}}
 }
 frame: "GET /salt-fiber-bypass/\nSec-Fetch-Dest: iframe" {
   class: box
+  label.near: top-center
   style.font-size: 16
-  shape: rectangle
-  icon: icons/browser.svg
-  width: 270
-  height: 130
+  grid-rows: 1
+  grid-gap: 24
+  b: "" {class: ico; i: "" {shape: image; icon: icons/browser.svg; width: 48; height: 48}}
 }
 curl: "GET /salt-fiber-bypass/\nno Sec-Fetch-Dest header" {
   class: carrier
