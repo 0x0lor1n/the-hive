@@ -101,7 +101,11 @@ in {
     Unit = {
       Description = "tmux server (session persistence)";
       Documentation = "man:tmux(1)";
-      After = ["default.target"];
+      # No After=default.target: on the Entra account home-manager-entra is
+      # itself wanted by default.target and its sd-switch starts this unit
+      # (blocking) -> this unit waits for the target -> the target waits for
+      # home-manager-entra -> deadlock until TimeoutStartSec (3 min, measured
+      # 2026-09-15). The server needs nothing from the session.
       # HM's sd-switch must not stop+start this unit on every rebuild
       # (that would kill every session). Restart only on explicit request.
       X-SwitchMethod = "keep-old";
