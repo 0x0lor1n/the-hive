@@ -11,14 +11,14 @@
   # stored twice.
   addressOf = h: lib.head (lib.splitString "/" globals.hosts.${h}.ipv4.address);
 
-  # Encrypted to the PIN-less identity: the deploy is already gated by the
-  # PIN-protected deploy key, and icecast is loopback-only.
+  # Decrypted on the deploying workstation with its own TPM PIN identity
+  # (same prompt as the deploy key). rage stops at the first TPM identity it
+  # cannot open, so pick the one for this host instead of listing both.
   icecastKey = file: {
     keyCommand = [
-      "rage"
-      "-d"
-      "-i"
-      "${inputs.self}/secrets/jarvis-nopin-rage.pub"
+      "bash"
+      "-c"
+      ''exec rage -d -i "${inputs.self}/secrets/$(uname -n)-nix-rage.pub" "$0"''
       "${inputs.self}/secrets/hisilome/${file}.age"
     ];
     destDir = "/run/keys";
