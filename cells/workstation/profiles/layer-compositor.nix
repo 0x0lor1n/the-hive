@@ -30,9 +30,10 @@
     extraPackages ? [],
     git ? null,
     secrets ? {},
+    personal ? false,
   }:
     import ../home {
-      inherit userName homeDir theme extraPackages git secrets;
+      inherit userName homeDir theme extraPackages git secrets personal;
       deck = inputs.cells.deck.homeModules;
       agentPkgs = {inherit (inputs.cells.repo.packages) claude-code opencode oh-my-opencode rtk;};
     };
@@ -144,6 +145,7 @@ in {
       inherit (host) userName homeDir;
       git = globals.user.git;
       secrets = userSecrets "local";
+      personal = true;
     };
 
     # HM for the Entra user (see entraHome above). Runs in the user manager

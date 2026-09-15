@@ -22,6 +22,9 @@
   # the account's own age.secrets keys (profiles/secrets.nix). {} when the
   # file is absent, so a host without secrets still evaluates.
   secrets ? {},
+  # The personal account: osint + tor (home/security). The Entra home gets
+  # neither -- the employer's desktop plane carries no bridges or recon kit.
+  personal ? false,
   # cells/deck/homeModules: the shell toolkit, shared by every account on
   # every workstation. Passed in, not imported: home/ has no `inputs`.
   deck ? {},
@@ -37,8 +40,8 @@
   ansi = theme.ansi;
   sec = secrets;
 in {
-  # Every module below reads the palette from this arg; security/ reads the
-  # account's encrypted key/vpn set.
+  # Every module below reads the palette from this arg; ssh matchBlocks /
+  # git includes below read the account's encrypted set.
   _module.args.theme = theme;
   _module.args.secrets = sec;
   _module.args.agentPkgs = agentPkgs;
@@ -51,7 +54,7 @@ in {
   # nixpkgs is unstable, home-manager is release-25.05: intentional.
   home.enableNixpkgsReleaseCheck = false;
 
-  imports = [./desktop ./dev ./security] ++ builtins.attrValues deck;
+  imports = [./desktop ./dev] ++ lib.optional personal ./security ++ builtins.attrValues deck;
 
   home.packages = extraPackages;
 

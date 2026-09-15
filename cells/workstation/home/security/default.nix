@@ -1,10 +1,14 @@
-# Per-account key/VPN material (phase 2). This is the only module that
-# differs between the two homes: it consumes the role's `secrets` attrset
-# (home/secrets.nix, decrypted from secrets/user-<role>.nix.age) via
-# _module.args.secrets and never hard-codes a key or a host. ssh matchBlocks
-# and the ssh-agent are already wired in ../default.nix; VPN profiles land
-# here as NetworkManager connections keyed by age.secrets (see plan:
-# "host-global VPN routing is ACCEPTABLE").
+# Personal-account extras (home/default.nix imports this only with
+# `personal = true`, i.e. for the local user): OSINT tools and tor with the
+# user's obfs4 bridges. Ported from ~/nixos-config users/shared/security/.
+#
+# Not here any more: ssh matchBlocks + agent (home/default.nix, from the
+# role's encrypted set) and the VPN profiles, which became system units with
+# agenix runtime secrets in profiles/vpn.nix -- jarvis rendered wireguard and
+# openvpn credentials into the nix store through xdg.configFile.text.
 {...}: {
-  imports = [];
+  imports = [
+    ./osint.nix
+    ./tor.nix
+  ];
 }
