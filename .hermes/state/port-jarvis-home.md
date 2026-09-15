@@ -578,30 +578,55 @@ DETAIL (rationale and facts for the steps above):
             checked on next login: `findmnt -T ~/.mozilla`).
       PHASE 3 CLOSED 2026-09-15 (toplevel 95f5d78). Phases 1–3 have no open items.
 
-### phase 4 — workspace to penrose (split work / personal)
+### phase 4 — workspace to penrose (shared /srv/workspace, NOT per-home)
 - [x] free space check on penrose — 1TB free, not a constraint
-- [ ] the split is by ACCOUNT HOME, not by subdirectory: an Entra-only tree under the local
-      user's home would be readable by the wrong account and vice versa. Measured on jarvis:
+- [x] DECIDED 2026-09-15 (user): project trees are SHARED between the two accounts in
+      /srv/workspace (dataset rpool/safe/srv/workspace, 2770 <local>:hive + default ACL
+      group:hive:rwx, direnv whitelist.prefix, git safe.directory /srv/workspace/* —
+      all live since 097996c/3c61b9c). This supersedes both the "per account home" text
+      that used to sit here and the "/srv/work Entra-owned vs /srv/projects local-owned"
+      note in blocked_on: ownership-based isolation only isolates the admin account from
+      itself (local user has sudo and rebuilds the box), costs a user switch to touch the
+      other tree, and splits zoxide/sesh/hermes state — for nothing. Work vs personal is
+      decided by the REMOTE (git includeIf hasconfig + ssh IdentityFile per host, verified
+      round 1), the directory is for humans only.
+        /srv/workspace/work/<org>/<repo>     employer + client repos (Parallax already there)
+        /srv/workspace/projects/<repo>       personal + freelance (nixos-config already there)
+      What stays per-account and OUT of /srv: anything holding a credential or agent state —
+      .env, .venv, .direnv, ~/.hermes, ~/.claude, ~/.claude.json. Excluded from the rsync,
+      regenerated on penrose.
+      Exception clause: if a client ever demands "code only under the managed identity",
+      THAT client gets ~<entra>/work/<client> (own carve-out in auth-entra.nix); nothing
+      else moves. No such client today.
+- [x] nix-rensa: no longer an exception — ordinary tenant of /srv/workspace/projects/
+      (the-hive itself is the rebuild source and already lives in /srv/the-hive).
+- [ ] inventory on jarvis (measured 2026-09-14, re-check sizes before the copy):
         work     -> Clients/ 26G (client-b 23G, client-c 1.5G, client-d 1.1G), work-org/ 6.2G
                     (3 of 5 repos point at work-azure), playground/client-a 7.1G
         personal -> 0xOLOR1N/ 2.3G, playground/nix-rensa 8.3G, playground/personal-b 5.7G,
-                    certs/ ~2.5G (htb-cjca, after excluding .venv)
-      Cross-check each repo's remote against the ssh key table in phase 1 before moving it —
-      remote host decides the account, not the current directory.
-- [ ] nix-rensa is the exception: it lives in the LOCAL user's home (already persisted as
-      "the-hive" in layer-users-local.nix:52) because that account is the one that rebuilds.
-- [ ] order & method:
-      1. git repos first, personal set: `rsync -aHAXS --info=progress2 --exclude target
-         --exclude node_modules --exclude .direnv --exclude .venv --exclude result`
-         (or clone + rsync untracked); nix-rensa before everything so penrose can rebuild itself
-      2. work set into the Entra home, same excludes; Clients/ verify with `rsync -nc`
-      3. certs/ ~2.5G real (see notes: 85 of 92G are 17 disposable .venv) — plain rsync with
-         --exclude .venv, no external disk needed
-- [ ] impermanence: both project trees must be carved out — the Entra one in auth-entra.nix
-      (absolute paths, NSS account), the local one in layer-users-local.nix. Neither is
-      covered today beyond "the-hive".
-- [ ] devshell smoke test on penrose per repo (`nix develop` in nix-rensa, pxpipe, nixq)
-- [ ] hermes/claude state: ~/.hermes, ~/.claude, ~/.claude.json — rsync after home-manager lands (post-dellvis-tooling §2 decides which parts become declarative)
+                    certs/ ~2.5G (htb-cjca, after excluding .venv — 85 of 92G are 17
+                    disposable .venv)
+      Per repo before moving: `git remote -v` -> host must be in the phase 1 ssh key table
+      (so includeIf/IdentityFile resolve on penrose); anything with a host not in the table
+      is a NEW identity to add first, not a copy problem.
+- [ ] route: jarvis not resolvable from penrose (2026-09-15: only .1 and .179 answer on
+      :22 on 192.168.10.0/24). Either same LAN + IP, or ssh from jarvis -> penrose
+      (penrose sshd: layer-users-local.nix authorizedKeys) and PUSH with rsync.
+- [ ] order & method (run as the LOCAL user on penrose; the setgid dir + default ACL make
+      the result group-writable for Entra without chmod):
+      1. `rsync -aHAXS --info=progress2 --exclude target --exclude node_modules
+         --exclude .direnv --exclude .venv --exclude result --exclude .env
+         jarvis:~/workspace/<x>/ /srv/workspace/{work,projects}/<x>/`
+      2. Clients/ (26G): verify with `rsync -nc` after the first pass
+      3. after every batch: `chmod -R o-rwx` is NOT needed (ACL), but check one repo as
+         Entra: `git -C /srv/workspace/work/<repo> status` -> no Permission denied
+- [ ] devshell smoke test on penrose per repo (`nix develop` in nix-rensa, pxpipe, nixq),
+      once as local, once as Entra (direnv whitelist covers both).
+- [ ] hermes/claude state: ~/.hermes, ~/.claude, ~/.claude.json — rsync into EACH home
+      that needs it (per-account by design), after home-manager lands. post-dellvis-tooling
+      §2 decides which parts become declarative.
+- [ ] impermanence: nothing to do — rpool/safe/srv/workspace survives the @blank rollback;
+      the two homes only hold the per-account state above, already on persist.
 
 ### phase 5 — jarvis cutover
 - [ ] jarvis daily work stops; penrose is primary for >= 3 working days without going back
@@ -669,7 +694,8 @@ DETAIL (rationale and facts for the steps above):
 - penrose not resolvable from jarvis right now (phase 3/4 need a route) — check NetworkManager/LAN, or use IP
 - (resolved) penrose has 1TB free
 - open: git.client-e.tld — work commit identity but local-account ssh key (see phase 1 git item)
-- SETTLED 2026-09-14: project trees move to /srv too (user), not into either home:
+- SUPERSEDED 2026-09-15 by phase 4: /srv/workspace/{work,projects}, SHARED (group hive),
+  not per-account ownership. Original note kept for the record:
     /srv/work     — employer + client work, Entra-owned
     /srv/projects — personal + freelance, crookedmirror-owned
   This REPLACES the earlier "~/work and ~/projects inside the respective home" proposal and is
