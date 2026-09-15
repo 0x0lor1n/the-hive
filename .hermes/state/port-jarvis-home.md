@@ -651,12 +651,32 @@ DETAIL (rationale and facts for the steps above):
       ~/.mozilla, ~/.config/{Slack,teams-for-linux,opencode}, ~/.claude, ~/.hermes, certs/,
       all .env* outside node_modules, nixos-config/secrets/*.age + jarvis rage key,
       remotes.txt (`git remote get-url origin` per repo) for the re-clone on penrose.
-- [ ] hardware facts from jarvis still needed: product_name, lspci -nn, lsblk MODEL/SIZE;
-      role after reinstall (second workstation = penrose clone, or something else) — decides
-      whether disks/jarvis.nix + host entry are a copy of penrose or a new cell.
+- [x] hardware facts from jarvis — MEASURED 2026-09-15 (dmidecode/lscpu/lspci/lsblk/efibootmgr on jarvis):
+      HP ZBook Firefly 16 G10 (board 8B41, BIOS V70 01.11.00) — this is "the ZBook" of globals.nix:59.
+      NOT a Latitude; nix-rensa/latitude-5580-upgrade.md is about penrose's future board, unrelated.
+      i7-1370P Raptor Lake-P 14c/20t VT-x | 64G DDR5-5600 (2x32) no swap | Iris Xe only (i915), no dGPU
+      disk: SK hynix PC801 1T /dev/nvme0n1 (by-id nvme-SK_hynix_PC801_*), today LUKS+LVM ext4, 609G USED
+        -> backup HDD must hold >= 650G; diskDevice = "/dev/nvme0n1" like penrose
+      TPM 2.0 (/dev/tpmrm0) -> hasTpm = true | UEFI, shim, Secure Boot DISABLED -> Setup Mode for user keys
+      net: Intel AX211 wifi (iwlwifi, cnvi) | MediaTek T700 5G modem, mtk_t7xx, wwan0mbim0 (NOT in plan —
+        ask if used; ModemManager + recent kernel) | USB ethernet via dock | TB4 x2 (dock on TB4)
+      kernel on ubuntu: 6.17 mainline -> linuxPackages_latest or >= 6.6 for mtk_t7xx/AX211
+      dock: Lenovo ThinkPad Hybrid USB-C (17e9:6015 DisplayLink inside) — on TB4 host it runs DP alt-mode;
+        on penrose (no TB, USB-C DP only) verify whether evdi/displaylink is needed
+      also on jarvis today: docker (3 live containers), libvirt (virbr0), Synaptics fprint 06cb:00f0,
+        2 NM vpn profiles (one l2tp — check vpn-transplant covered it), ergohaven K:03 (input-vial ok)
+      serial/MACs deliberately not recorded (public repo).
       NOTE: jarvis is a nonNixos HM host today (nixos-config/users/jarvis, nonNixos.enable),
       so there is no existing hardware-configuration to port from.
-- [ ] jarvis: new host in nixosConfigurations.nix (hardware facts: Latitude? see nix-rensa/latitude-5580-upgrade.md if that is jarvis; else collect lspci/disks first), disks/jarvis.nix, secrets/generated/jarvis
+- [ ] ROLE (user decision, open): jarvis is 3x penrose (14c/64G vs 4c/31G). Options:
+        (a) second workstation, same module set as penrose + nix remote builder for penrose
+        (b) something else. Also: is the ZBook employer property? If yes, reinstall + own SB keys
+        + public host entry is a policy question, must be settled before the install step.
+- [ ] NAME (user decision, open): Signalis pool proposed — falke (workstation), kolibri (helper/builder);
+      dixie (Neuromancer) if it becomes a coreboot test bench. No hyphens (hostname == globals key == secrets dir).
+- [ ] jarvis: new host in nixosConfigurations.nix (mkHost like penrose), hosts.<name> in globals
+      (diskDevice, hasTpm, sshHostPubkey generated on penrose), disks/<name>.nix (penrose layout, 1T),
+      secrets/generated/<name>; hardware: raptor-lake + intel gpu, no dGPU
 - [ ] install via same path as port-dellvis phase 4 (Secure Boot user keys, ZFS+TPM, himmelblau enroll)
 - [ ] /srv/workspace/projects/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
 
