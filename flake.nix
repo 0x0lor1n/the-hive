@@ -69,7 +69,8 @@
       devShells.x86_64-linux =
         ren.get self [["repo" "devshells"]]
         // ren.get self [["workstation" "devshells"]]
-        // ren.get self [["wintermute" "devshells"]];
+        // ren.get self [["wintermute" "devshells"]]
+        // ren.get self [["hisilome" "devshells"]];
       # `agenix` (agenix-rekey CLI) runs `nix run .#agenix-rekey.<system>.<app>`.
       agenix-rekey = ren.get self [["workstation" "agenixRekey"]];
 
