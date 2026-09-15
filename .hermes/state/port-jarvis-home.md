@@ -645,7 +645,17 @@ DETAIL (rationale and facts for the steps above):
       histdb/.mozilla on rpool/safe/persist for Entra, ~/.hermes + ~/.claude intact for local.
 
 ### phase 5 — jarvis cutover
-- [ ] jarvis daily work stops; penrose is primary for >= 3 working days without going back
+- [x] jarvis daily work stops; penrose is primary for >= 3 working days without going back
+      CONFIRMED 2026-09-15 (user): day 3 on penrose, no issues, no return to jarvis.
+- [ ] HDD backup of jarvis BEFORE reinstall (user, by hand): ~/workspace, ~/.ssh, ~/.gnupg,
+      ~/.mozilla, ~/.config/{Slack,teams-for-linux,opencode}, ~/.claude, ~/.hermes, certs/,
+      all .env* outside node_modules, nixos-config/secrets/*.age + jarvis rage key,
+      remotes.txt (`git remote get-url origin` per repo) for the re-clone on penrose.
+- [ ] hardware facts from jarvis still needed: product_name, lspci -nn, lsblk MODEL/SIZE;
+      role after reinstall (second workstation = penrose clone, or something else) — decides
+      whether disks/jarvis.nix + host entry are a copy of penrose or a new cell.
+      NOTE: jarvis is a nonNixos HM host today (nixos-config/users/jarvis, nonNixos.enable),
+      so there is no existing hardware-configuration to port from.
 - [ ] jarvis: new host in nixosConfigurations.nix (hardware facts: Latitude? see nix-rensa/latitude-5580-upgrade.md if that is jarvis; else collect lspci/disks first), disks/jarvis.nix, secrets/generated/jarvis
 - [ ] install via same path as port-dellvis phase 4 (Secure Boot user keys, ZFS+TPM, himmelblau enroll)
 - [ ] /srv/workspace/projects/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
