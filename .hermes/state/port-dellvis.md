@@ -4,8 +4,9 @@ Source: sevastopol (this repo, cells/workstation) + ~/nixos-config/hosts/dellvis
 (the machine's current NixOS: btrfs on nvme0n1p3, services.intune + mdatp).
 Target: penrose as a second host in cells/workstation, same `workstation` base,
 its own `hardware` list. Sevastopol was the rehearsal; this is the real disk.
-Naming (user, 2026-09-03): osgiliath = LotR, sevastopol = Alien, penrose = the
-Ergo Proxy/Signalis-adjacent pick; hostname == globals key == secrets dirs.
+Naming (user, 2026-09-03): osgiliath = LotR, sevastopol = Alien, penrose = Signalis
+(corrected 2026-09-15); wintermute = Neuromancer (cell, not a host);
+hostname == globals key == secrets dirs.
 
 phase: DONE -- closed 2026-09-05 (user: "everything on this file is finished").
 All phases 0-4 complete; penrose is the daily driver. Config + fixes landed in

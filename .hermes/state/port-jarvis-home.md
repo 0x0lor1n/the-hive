@@ -34,6 +34,9 @@ Also port users/shared/tui/ (coding-agents/opencode etc.) — missed in the inve
   standalone activationPackage for the Entra user. Decision 2026-09-14: the Entra account IS the
   daily driver, the local user only holds sudo/the checkout and rebuilds — so cli+dev go to BOTH,
   same modules, and the split is a short deny-list, not a profile system.
+  AMENDED 2026-09-15: the two-account layout is the shape of the WORK laptop. It was proven on
+  penrose and moves to elster (ZBook) whole; once elster is the daily driver, penrose drops the
+  Entra account and becomes single-user personal (phase 6). Until then both hosts carry it.
   Entra must NOT get: git commit identity (stays null, home/default.nix:16-19 — a stray commit
   must fail loudly rather than leak the work UPN) and personal security/* (vpn, osint, personal ssh).
 - Anything from nixos-config that only exists for standalone/genericLinux is DROPPED, not ported:
@@ -527,7 +530,7 @@ DETAIL (rationale and facts for the steps above):
             dwl-session-bridge After=home-manager-entra.service so graphical-session.target
             sees avizo/swayidle. Local account unaffected (HM via NixOS module, sd-switch runs
             at switch time with a live manager).
-      - [ ] vpn-transplant.sh: first run `mktemp: /run/user/1000/tmp.XXXX: No such file` —
+      - [x] vpn-transplant.sh: first run `mktemp: /run/user/1000/tmp.XXXX: No such file` —
             stale XDG_RUNTIME_DIR in the shell (fresh boot, tty not yet a logind session?);
             second run in the same shell went through (4 files rekeyed, PIN once). Not fixed:
             script already falls back to /dev/shm when the dir is missing; this was a race
@@ -559,43 +562,152 @@ DETAIL (rationale and facts for the steps above):
               vpn-transplant.sh and the agents rsync. One-off `chmod o+rX`, not in git.
               Rule for later: anything copied into /srv/the-hive by hand gets `chmod -R
               o+rX` (the checkout's 0750 + hive group is the only gate).
-      - [ ] ROUND 3 (after reboot, toplevel 020f84b), Entra in foot:
+      - [x] ROUND 3 (after reboot, toplevel 020f84b), Entra in foot:
             systemctl --user is-active home-manager-entra tmux-server ssh-agent avizo swayidle   # 5x active
             cd /srv/the-hive && git status --short | head -3                                      # no Permission denied
             then log out of dwl (kill it / greeter) and log in again:
             systemctl --user is-active avizo swayidle dwl-session-bridge                          # 3x active (the relogin path)
             Green -> phase 3 closed; phase 4 next (workspace rsync jarvis -> penrose).
+            RESULT 2026-09-15: after reboot 5x active, git status clean (no Permission
+            denied). Relogin path (MOD+Shift+Q -> greeter): dwl-session-bridge active but
+            avizo/swayidle inactive — the bridge's stop on dwl exit did not take
+            graphical-session.target down, so the PartOf units were never re-pulled.
+            FIXED 2a20831 (layer-compositor.nix): dwl exit stops graphical-session.target
+            explicitly, not just the bridge. Re-verified after switch + relogin: 3x active.
+      - [x] Firefox fresh on every boot (found by user post-round-3): ~/.mozilla was not in
+            the impermanence carve-out for either account — Phoenix + policies rebuilt the
+            profile from scratch each reboot. FIXED 95f5d78: ~/.mozilla persisted for both
+            accounts (findmnt shows rpool/safe/persist bind for the local one; Entra side
+            checked on next login: `findmnt -T ~/.mozilla`).
+      PHASE 3 CLOSED 2026-09-15 (toplevel 95f5d78). Phases 1–3 have no open items.
 
-### phase 4 — workspace to penrose (split work / personal)
+### phase 4 — workspace to penrose (shared /srv/workspace, NOT per-home)
 - [x] free space check on penrose — 1TB free, not a constraint
-- [ ] the split is by ACCOUNT HOME, not by subdirectory: an Entra-only tree under the local
-      user's home would be readable by the wrong account and vice versa. Measured on jarvis:
+- [x] DECIDED 2026-09-15 (user): project trees are SHARED between the two accounts in
+      /srv/workspace (dataset rpool/safe/srv/workspace, 2770 <local>:hive + default ACL
+      group:hive:rwx, direnv whitelist.prefix, git safe.directory /srv/workspace/* —
+      all live since 097996c/3c61b9c). This supersedes both the "per account home" text
+      that used to sit here and the "/srv/work Entra-owned vs /srv/projects local-owned"
+      note in blocked_on: ownership-based isolation only isolates the admin account from
+      itself (local user has sudo and rebuilds the box), costs a user switch to touch the
+      other tree, and splits zoxide/sesh/hermes state — for nothing. Work vs personal is
+      decided by the REMOTE (git includeIf hasconfig + ssh IdentityFile per host, verified
+      round 1), the directory is for humans only.
+        /srv/workspace/work/<org>/<repo>     employer + client repos (Parallax already there)
+        /srv/workspace/projects/<repo>       personal + freelance (nixos-config already there)
+      What stays per-account and OUT of /srv: anything holding a credential or agent state —
+      .env, .venv, .direnv, ~/.hermes, ~/.claude, ~/.claude.json. Excluded from the rsync,
+      regenerated on penrose.
+      Exception clause: if a client ever demands "code only under the managed identity",
+      THAT client gets ~<entra>/work/<client> (own carve-out in auth-entra.nix); nothing
+      else moves. No such client today.
+- [x] nix-rensa: no longer an exception — ordinary tenant of /srv/workspace/projects/
+      (the-hive itself is the rebuild source and already lives in /srv/the-hive).
+- [-] inventory on jarvis (measured 2026-09-14; now only sizes the HDD backup):
         work     -> Clients/ 26G (client-b 23G, client-c 1.5G, client-d 1.1G), work-org/ 6.2G
                     (3 of 5 repos point at work-azure), playground/client-a 7.1G
         personal -> 0xOLOR1N/ 2.3G, playground/nix-rensa 8.3G, playground/personal-b 5.7G,
-                    certs/ ~2.5G (htb-cjca, after excluding .venv)
-      Cross-check each repo's remote against the ssh key table in phase 1 before moving it —
-      remote host decides the account, not the current directory.
-- [ ] nix-rensa is the exception: it lives in the LOCAL user's home (already persisted as
-      "the-hive" in layer-users-local.nix:52) because that account is the one that rebuilds.
-- [ ] order & method:
-      1. git repos first, personal set: `rsync -aHAXS --info=progress2 --exclude target
-         --exclude node_modules --exclude .direnv --exclude .venv --exclude result`
-         (or clone + rsync untracked); nix-rensa before everything so penrose can rebuild itself
-      2. work set into the Entra home, same excludes; Clients/ verify with `rsync -nc`
-      3. certs/ ~2.5G real (see notes: 85 of 92G are 17 disposable .venv) — plain rsync with
-         --exclude .venv, no external disk needed
-- [ ] impermanence: both project trees must be carved out — the Entra one in auth-entra.nix
-      (absolute paths, NSS account), the local one in layer-users-local.nix. Neither is
-      covered today beyond "the-hive".
-- [ ] devshell smoke test on penrose per repo (`nix develop` in nix-rensa, pxpipe, nixq)
-- [ ] hermes/claude state: ~/.hermes, ~/.claude, ~/.claude.json — rsync after home-manager lands (post-dellvis-tooling §2 decides which parts become declarative)
+                    certs/ ~2.5G (htb-cjca, after excluding .venv — 85 of 92G are 17
+                    disposable .venv)
+      Per repo before moving: `git remote -v` -> host must be in the phase 1 ssh key table
+      (so includeIf/IdentityFile resolve on penrose); anything with a host not in the table
+      is a NEW identity to add first, not a copy problem.
+- [-] SUPERSEDED 2026-09-15 (user): no rsync over the network. jarvis ~/workspace goes to an
+      external HDD as a static backup; repos are re-cloned on penrose from their remotes
+      (phase 1 ssh key table), only non-git material (certs/, playground dumps) is restored
+      from the disk by hand. Steps below kept for reference only.
+- [-] route: jarvis not resolvable from penrose (2026-09-15: only .1 and .179 answer on
+      :22 on 192.168.10.0/24). Either same LAN + IP, or ssh from jarvis -> penrose
+      (penrose sshd: layer-users-local.nix authorizedKeys) and PUSH with rsync.
+- [-] order & method (run as the LOCAL user on penrose; the setgid dir + default ACL make
+      the result group-writable for Entra without chmod):
+      1. `rsync -aHAXS --info=progress2 --exclude target --exclude node_modules
+         --exclude .direnv --exclude .venv --exclude result --exclude .env
+         jarvis:~/workspace/<x>/ /srv/workspace/{work,projects}/<x>/`
+      2. Clients/ (26G): verify with `rsync -nc` after the first pass
+      3. after every batch: `chmod -R o-rwx` is NOT needed (ACL), but check one repo as
+         Entra: `git -C /srv/workspace/work/<repo> status` -> no Permission denied
+- [~] devshell smoke test on penrose per repo (`nix develop` in nix-rensa, pxpipe, nixq),
+      once as local, once as Entra (direnv whitelist covers both).
+      LOCAL DONE 2026-09-15: `nix develop .#default` and `.#workstation` -> go, treefmt,
+      colmena, deploy-key on PATH; `go-test-all` -> nixq ok, pxpipe no test files.
+      NOT phase 4: `.#wintermute` (coreboot toolchain) builds >7 min from cold — do not
+      block the cutover on it.
+      ENTRA: pending — user runs the same two lines from the Entra foot (see checklist).
+- [~] hermes/claude state: ~/.hermes, ~/.claude, ~/.claude.json — rsync into EACH home
+      that needs it (per-account by design), after home-manager lands. post-dellvis-tooling
+      §2 decides which parts become declarative.
+      LOCAL DONE 2026-09-15: ~/.hermes 54M + ~/.claude 7.2M live on penrose (persist
+      carve-outs layer-users-local.nix:74/78; HM symlinks CLAUDE.md/RTK.md/settings.json/
+      statusline.sh in place, ~/.claude/.claude.json via CLAUDE_CONFIG_DIR). Entra: carve-outs
+      auth-entra.nix:234/235 exist, dirs get created on first `claude`/`hermes` login there —
+      nothing to copy unless the user wants the local session history duplicated.
+- [x] impermanence: nothing to do — rpool/safe/srv/workspace survives the @blank rollback;
+      the two homes only hold the per-account state above, already on persist.
+      VERIFIED 2026-09-15 (round 3, after reboot): /srv/workspace dataset present, zoxide/
+      histdb/.mozilla on rpool/safe/persist for Entra, ~/.hermes + ~/.claude intact for local.
 
 ### phase 5 — jarvis cutover
-- [ ] jarvis daily work stops; penrose is primary for >= 3 working days without going back
-- [ ] jarvis: new host in nixosConfigurations.nix (hardware facts: Latitude? see nix-rensa/latitude-5580-upgrade.md if that is jarvis; else collect lspci/disks first), disks/jarvis.nix, secrets/generated/jarvis
-- [ ] install via same path as port-dellvis phase 4 (Secure Boot user keys, ZFS+TPM, himmelblau enroll)
+- [x] jarvis daily work stops; penrose is primary for >= 3 working days without going back
+      CONFIRMED 2026-09-15 (user): day 3 on penrose, no issues, no return to jarvis.
+- [ ] HDD backup of jarvis BEFORE reinstall (user, by hand): ~/workspace, ~/.ssh, ~/.gnupg,
+      ~/.mozilla, ~/.config/{Slack,teams-for-linux,opencode}, ~/.claude, ~/.hermes, certs/,
+      all .env* outside node_modules, nixos-config/secrets/*.age + jarvis rage key,
+      remotes.txt (`git remote get-url origin` per repo) for the re-clone on penrose.
+- [x] hardware facts from jarvis — MEASURED 2026-09-15 (dmidecode/lscpu/lspci/lsblk/efibootmgr on jarvis):
+      HP ZBook Firefly 16 G10 (board 8B41, BIOS V70 01.11.00) — this is "the ZBook" of globals.nix:59.
+      NOT a Latitude; nix-rensa/latitude-5580-upgrade.md is about penrose's future board, unrelated.
+      i7-1370P Raptor Lake-P 14c/20t VT-x | 64G DDR5-5600 (2x32) no swap | Iris Xe only (i915), no dGPU
+      disk: SK hynix PC801 1T /dev/nvme0n1 (by-id nvme-SK_hynix_PC801_*), today LUKS+LVM ext4, 609G USED
+        -> backup HDD must hold >= 650G; diskDevice = "/dev/nvme0n1" like penrose
+      TPM 2.0 (/dev/tpmrm0) -> hasTpm = true | UEFI, shim, Secure Boot DISABLED -> Setup Mode for user keys
+      net: Intel AX211 wifi (iwlwifi, cnvi) | MediaTek T700 5G modem, mtk_t7xx, wwan0mbim0 (NOT in plan —
+        ask if used; ModemManager + recent kernel) | USB ethernet via dock | TB4 x2 (dock on TB4)
+      kernel on ubuntu: 6.17 mainline -> linuxPackages_latest or >= 6.6 for mtk_t7xx/AX211
+      dock: Lenovo ThinkPad Hybrid USB-C (17e9:6015 DisplayLink inside) — on TB4 host it runs DP alt-mode;
+        on penrose (no TB, USB-C DP only) verify whether evdi/displaylink is needed
+      also on jarvis today: docker (3 live containers), libvirt (virbr0), Synaptics fprint 06cb:00f0,
+        2 NM vpn profiles (one l2tp — check vpn-transplant covered it), ergohaven K:03 (input-vial ok)
+      serial/MACs deliberately not recorded (public repo).
+      NOTE: jarvis is a nonNixos HM host today (nixos-config/users/jarvis, nonNixos.enable),
+      so there is no existing hardware-configuration to port from.
+- [x] ROLE DECIDED 2026-09-15 (user): elster is the DAILY DRIVER and the Entra machine. The whole
+      penrose config moves over unchanged: both accounts (crookedmirror + Entra), hive group,
+      shared /srv/workspace, /srv/the-hive ACL layout. penrose was the rehearsal on real hardware
+      (as sevastopol was for penrose); after the soak on elster, Entra is REMOVED from penrose and
+      penrose becomes personal-only (phase 6). Corporate wifi ("corporate" NM profile) is the
+      reason this all exists — it lives on elster.
+- [x] NAME DECIDED 2026-09-15 (user): **elster** (Signalis pilot, pairs with penrose). kolibri kept in
+      reserve for a builder/NAS. No hyphens (hostname == globals key == secrets dir).
+- [x] 5G modem (mtk_t7xx): NOT used by the user -> no ModemManager, driver stays in-kernel, nothing to add.
+- [ ] DOCK: Lenovo ThinkPad Hybrid USB-C (17e9:6015): on TB4 it is DP alt-mode, DisplayLink only for
+      the extra outputs. Add hardware.displaylink (evdi, unfree: `nix-prefetch-url` the Synaptics zip
+      by hand, hash into the store before build) as a separate host-only module — NOT in intelLaptop,
+      penrose has no TB and must not carry evdi.
+- [ ] DOCKER (user 2026-09-15): some work projects need it. virtualisation.docker.enable on elster only,
+      Entra user (host.entraUser) + crookedmirror in "docker" group, persist /var/lib/docker
+      (dataset rpool/safe/docker, NOT in the @blank rollback). libvirt: NOT ported unless asked.
+      Before backup, on jarvis: `docker ps -a --format '{{.Names}}\t{{.Image}}'; docker volume ls -q`
+      -> named volumes with real data go on the HDD (`docker run --rm -v X:/v -v $PWD:/b alpine tar czf /b/X.tgz /v`).
+- [ ] elster: new host in nixosConfigurations.nix (mkHost, base = workstation, hardware = raptorLaptop,
+      encryption = zfsNative), hosts.elster in globals (diskDevice = "/dev/nvme0n1", hasTpm = true,
+      sshHostPubkey generated on penrose), disks/elster.nix (copy of penrose.nix, 1T), secrets/generated/elster,
+      secrets/hosts/elster/ host key, rekey.
+      raptorLaptop = platform-baremetal + gpu-intel + laptop + host-elster (docker, displaylink,
+      linuxPackages_latest for AX211/i915 RPL). gpu-intel: the nouveau blacklist + udev rule are
+      harmless on a no-dGPU box, leave as is. laptop.nix: elster HAS a battery (BAT0) -> lid handling
+      and powerOnBoot wording assume penrose; split when it becomes annoying, not before.
+- [ ] install via same path as port-dellvis phase 4 (Secure Boot user keys in Setup Mode, ZFS+TPM,
+      himmelblau enroll with the same Entra tenant). Overlap: penrose keeps Entra until phase 6.
 - [ ] /srv/workspace/projects/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
+
+### phase 6 — penrose goes personal (after >= 3 working days on elster, no return)
+- [ ] remove auth-entra + vpn work-a/work-b + browser work profile from penrose's mkHost
+      (Entra bits move behind a `withEntra` flag or a host-level list; the module set is otherwise shared)
+- [ ] penrose: hive group + /srv/workspace/work stay (crookedmirror still reads work code from home),
+      but no Entra principal can log in; himmelblau cache purged (`/var/cache/himmelblau`, /persist copy)
+- [ ] globals: penrose.entraUser = null; agenix rekey drops the Entra-scoped secrets for penrose
+- [ ] update invariants §21-38 (Entra as daily driver) to say elster, not penrose
 
 ## blocked_on
 - CHECKOUT LAYOUT DECIDED 2026-09-14 (user): ONE tree. /srv/the-hive is the single source of
@@ -657,7 +769,8 @@ DETAIL (rationale and facts for the steps above):
 - penrose not resolvable from jarvis right now (phase 3/4 need a route) — check NetworkManager/LAN, or use IP
 - (resolved) penrose has 1TB free
 - open: git.client-e.tld — work commit identity but local-account ssh key (see phase 1 git item)
-- SETTLED 2026-09-14: project trees move to /srv too (user), not into either home:
+- SUPERSEDED 2026-09-15 by phase 4: /srv/workspace/{work,projects}, SHARED (group hive),
+  not per-account ownership. Original note kept for the record:
     /srv/work     — employer + client work, Entra-owned
     /srv/projects — personal + freelance, crookedmirror-owned
   This REPLACES the earlier "~/work and ~/projects inside the respective home" proposal and is
