@@ -121,6 +121,10 @@ radio = playlist(prefix="replaygain:", mode="normal", reload_mode="watch",
 # pre-written by tag-replaygain (~2ms read vs ~5s analysis).
 radio = normalize_track_gain(radio)
 
+# -6 dB after gain: browsers open <audio> at 100% and there is no HTML
+# attribute for volume. The only no-JS default is to ship it quieter.
+radio = amplify(0.5, radio)
+
 radio = mksafe(radio)
 radio.on_metadata(synchronous=true, write_now_playing)
 
