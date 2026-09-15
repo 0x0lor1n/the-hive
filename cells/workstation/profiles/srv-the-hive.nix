@@ -53,5 +53,12 @@
     # line is a no-op with a warning. Named-group entries so the files' own
     # group (users, from the cloning account) does not matter.
     "A+ /srv/the-hive/dotfiles - - - - d:group:hive:rwx,group:hive:rwx"
+    # .ren/ is rensa's direnv layout (REN_STATE): the hook writes
+    # .ren/.gitignore and .ren/direnv/ on every load, for whichever account
+    # cd's in. Same ACL as dotfiles, or the Entra side dies with EACCES right
+    # after git's safe.directory lets it through (2026-09-15). `d` is fine
+    # here: the dir is gitignored and the clone never has to create it.
+    "d  /srv/the-hive/.ren 2770 ${host.userName} hive -"
+    "A+ /srv/the-hive/.ren - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 }

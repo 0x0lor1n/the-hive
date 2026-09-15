@@ -66,11 +66,17 @@ in {
 
   # HACK (jarvis): a global venv so `pip install` outside a project has
   # somewhere to go; created on first shell, activated lazily after that.
+  # Test bin/activate, not the dir, and create under flock: sesh restores
+  # several tmux panes at once and every zsh raced into `python -m venv`
+  # ("[Errno 17] File exists: ~/.venv/include/python3.11", 2026-09-15). On the
+  # Entra side ~/.venv is not persisted (home is recreated by himmelblau each
+  # boot), so this runs on every first login; losers of the lock skip quietly.
   programs.zsh.initContent = lib.mkOrder 999 ''
-    if [ -d "$HOME/.venv" ]; then
+    if [ -f "$HOME/.venv/bin/activate" ]; then
       zsh-defer source "$HOME/.venv/bin/activate"
     else
-      ${python-final}/bin/python -m venv "$HOME/.venv"
+      ( ${pkgs.util-linux}/bin/flock -n 9 && ${python-final}/bin/python -m venv "$HOME/.venv" ) \
+        9>"$HOME/.venv.lock" 2>/dev/null
     fi
   '';
 }

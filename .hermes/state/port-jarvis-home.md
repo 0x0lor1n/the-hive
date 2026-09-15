@@ -476,9 +476,67 @@ DETAIL (rationale and facts for the steps above):
       2026-09-15 all three build; penrose switched, /run/agenix/vpn-* present.
 
 ### phase 3 — deploy to penrose
-- [ ] penrose reachable from jarvis (ssh alias resolves; today: "Could not resolve hostname penrose" — LAN name / tailscale / yggdrasil? fix first)
-- [ ] colmena apply / nixos-rebuild switch --flake .#penrose --target-host
-- [ ] login as Entra user, verify zsh/p10k, foot, firefox+SSO, git identities, vpn profiles
+- [-] OBSOLETE 2026-09-15: penrose reachable from jarvis — not needed. penrose rebuilds
+      itself from its own checkout (/srv/the-hive, local user); nothing is pushed from
+      jarvis in phases 3-4 (workspace comes over by rsync jarvis -> penrose in phase 4, a
+      route is needed in THAT direction only, or a disk). Left unfixed on purpose.
+- [-] OBSOLETE 2026-09-15: colmena / --target-host — superseded by the local
+      `nixos-rebuild switch --sudo --flake .#penrose` already run at the end of phase 2
+      (toplevel = fe3333f). Remote deploy of penrose stays out of scope for this plan.
+- [~] verify on penrose as the Entra user (daily driver) and the local user. Checks run
+      by the user in foot; agent cannot su into the Entra account (fixes go to cells/,
+      declarative only, no imperative edits in either home). ROUND 1 run 2026-09-15 after
+      the reboot (toplevel 3c61b9c); results + fixes, round 2 pending switch+relogin:
+      - [x] zsh first start: 0.10s wall, p10k instant prompt, 4 gitstatusd, histdb 99 rows,
+            zoxide on rpool/safe/persist (Entra). NEW BUG: `[Errno 17] File exists
+            ~/.venv/include/python3.11` — sesh restores N panes, every zsh raced into
+            `python -m venv` (dir test, not bin/activate). FIXED: languages.nix tests
+            bin/activate + flock -n on ~/.venv.lock.
+      - [x] foot lands in tmux (sesh the-hive, panes 2->3 on C-S-Enter); foot's own
+            spawn-terminal=none; Shift+Enter = \e[13;2u
+      - [x] direnv whitelist.prefix [/srv/workspace /srv/the-hive] from /etc/direnv (both
+            accounts). BUT under Entra the rensa hook fails: `git rev-parse --show-toplevel`
+            -> "Not inside a git repository" — git 2.55 safe.directory refuses a repo owned by
+            another uid (0750 crookedmirror:hive). FIXED: programs.git extraConfig
+            safe.directory [/srv/the-hive /srv/workspace/*] (home/default.nix). Next failure
+            behind it: .ren/ (REN_STATE) is 0755 owner-only -> EACCES for Entra. FIXED:
+            tmpfiles `d .ren 2770 + A+ d:group:hive:rwx` (srv-the-hive.nix), same as dotfiles.
+      - [x] firefox = Phoenix (801 hits in mozilla.cfg), policies.json has SearchEngines/
+            ExtensionSettings/Nix Packages. himmelblau-broker.service inactive on Entra:
+            EXPECTED — Type=dbus BusName=com.microsoft.identity.broker1, dbus-activated on
+            first SSO request, not at login. M365 SSO itself not yet exercised.
+      - [x] git identities: Entra 3 includeIf (tiko, azure-owt, gh-work) -> 3 distinct
+            emails via hasconfig:remote.*.url, no default identity ("OK: no default identity").
+            local: git.client-e.tld (mdaudit) + github -> 0xolorin. gh-work ssh auth OK
+            (vsevolod-kokurin), passphrase prompted once (agent, see below).
+      - [x] ssh matchBlocks resolve on both; IdentityFile /run/agenix/ssh-* 0600 owned by
+            the account (Entra: 4 keys, local: 3 keys/6 hosts)
+      - [x] vpn: `vpn up owt` as Entra -> active, tun 192.168.4.31/32, no prompt. `vpn up
+            wrs` as local -> active but polkit ASKED A PASSWORD (wheel = auth_admin_keep on
+            manage-units). FIXED: explicit polkit YES for wheel on openvpn-wrs.service only.
+      - [!] HM user units on Entra never start: tmux-server.service + ssh-agent.service
+            inactive (SSH_AUTH_SOCK=/ssh-agent points at nothing; the gh-work passphrase
+            prompt every time proves it), avizo/swayidle no journal lines. ROOT CAUSE
+            (journal 10:37:07): HM activate `reloadSystemd` -> "User systemd daemon not
+            running. Skipping reload." — it gates on `is-system-running` == running|degraded
+            and home-manager-entra runs INSIDE default.target startup, where the manager
+            reports "starting". Links in default.target.wants get created after the target's
+            job was already queued, so nothing pulls them in; sd-switch never runs. FIXED
+            (layer-compositor.nix): ExecStartPost = daemon-reload + `systemctl --user start
+            --no-block` every unit in the generation's default.target.wants;
+            dwl-session-bridge After=home-manager-entra.service so graphical-session.target
+            sees avizo/swayidle. Local account unaffected (HM via NixOS module, sd-switch runs
+            at switch time with a live manager).
+      - [ ] vpn-transplant.sh: first run `mktemp: /run/user/1000/tmp.XXXX: No such file` —
+            stale XDG_RUNTIME_DIR in the shell (fresh boot, tty not yet a logind session?);
+            second run in the same shell went through (4 files rekeyed, PIN once). Not fixed:
+            script already falls back to /dev/shm when the dir is missing; this was a race
+            with the runtime dir appearing. Re-check on round 2; drop if it does not repeat.
+      - [ ] ROUND 2 (after `nixos-rebuild switch --sudo --flake .#penrose` + relogin Entra):
+            `systemctl --user is-active tmux-server ssh-agent avizo swayidle` all active,
+            `echo $SSH_AUTH_SOCK` -> /run/user/<uid>/ssh-agent, `cd /srv/the-hive` under
+            Entra loads the rensa devshell with no git/EACCES errors, `vpn up wrs` as local
+            with no password, a second foot pane opens without the venv traceback.
 
 ### phase 4 — workspace to penrose (split work / personal)
 - [x] free space check on penrose — 1TB free, not a constraint

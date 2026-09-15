@@ -151,6 +151,18 @@ in {
     # HM for the Entra user (see entraHome above). Runs in the user manager
     # PAM starts at login, so dbus is up and dconfSettings works. Idempotent:
     # re-activating the same generation is a no-op.
+    #
+    # HM's own reloadSystemd step is a no-op here: it gates on
+    # `systemctl --user is-system-running` == running|degraded, and a unit
+    # wanted by default.target always sees "starting" (measured 2026-09-15:
+    # "User systemd daemon not running. Skipping reload" -> tmux-server and
+    # ssh-agent linked into default.target.wants but never started, avizo/
+    # swayidle the same via graphical-session.target). ExecStartPost does what
+    # sd-switch would have: reload so the manager sees the freshly linked
+    # ~/.config/systemd/user, then start default.target's wants by hand (the
+    # target's job was queued before the links existed, so it will not pull
+    # them in itself). graphical-session.target.wants are picked up by the
+    # dwl bridge below, which is ordered After= this unit.
     systemd.user.services.home-manager-entra = lib.mkIf (entra.upn != null && entra.uid != null) {
       description = "Home Manager environment for the Entra user";
       unitConfig.ConditionUser = toString entra.uid;
@@ -158,12 +170,20 @@ in {
       # activate registers the generation via nix-env, which the unit's
       # default PATH lacks. ~/.local/state/nix/profiles is created by the
       # tmpfiles rules in auth-entra.nix. coreutils: seq/sleep for the wait.
-      path = [config.nix.package pkgs.bash pkgs.coreutils];
+      path = [config.nix.package pkgs.bash pkgs.coreutils pkgs.systemd];
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
         ExecStartPre = "${waitForEntraHome} /home/${entraCn}";
         ExecStart = "${entraHome.activationPackage}/activate";
+        ExecStartPost = pkgs.writeShellScript "home-manager-entra-start-wants" ''
+          units=${entraHome.activationPackage}/home-files/.config/systemd/user
+          systemctl --user daemon-reload
+          for u in "$units"/default.target.wants/*; do
+            [ -e "$u" ] || continue
+            systemctl --user start --no-block "$(basename "$u")" || true
+          done
+        '';
         TimeoutStartSec = "180s";
       };
     };
@@ -205,13 +225,16 @@ in {
 
     # The sway-session.target pattern: Wants= is allowed to pull in a
     # RefuseManualStart target, BindsTo= ties this unit's lifecycle to it.
+    # After=home-manager-entra: graphical-session.target.wants (avizo,
+    # swayidle) come from HM's generation; on the local account the unit is
+    # skipped by ConditionUser and the ordering is inert.
     systemd.user.services.dwl-session-bridge = {
       description = "DWL session bridge to graphical-session.target";
       unitConfig = {
         BindsTo = ["graphical-session.target"];
         Before = ["graphical-session.target"];
         Wants = ["graphical-session-pre.target" "graphical-session.target"];
-        After = ["graphical-session-pre.target"];
+        After = ["graphical-session-pre.target" "home-manager-entra.service"];
       };
       serviceConfig = {
         Type = "oneshot";

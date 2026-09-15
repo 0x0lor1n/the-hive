@@ -90,6 +90,13 @@ in {
       init.defaultBranch = "main";
       pull.rebase = true;
       push.autoSetupRemote = true;
+      # /srv/the-hive is owned by the local account but shared with the Entra
+      # user over the hive group (0750). Without this git refuses every
+      # command there under Entra ("dubious ownership"), which also kills the
+      # rensa direnv hook (`git rev-parse --show-toplevel` -> "Not inside a
+      # git repository"). /srv/workspace/* the same way for cross-owned
+      # checkouts. Trailing /* needs git >= 2.46 (pinned 2.55).
+      safe.directory = ["/srv/the-hive" "/srv/workspace/*"];
     };
   };
 
