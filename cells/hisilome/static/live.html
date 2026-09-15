@@ -35,7 +35,9 @@
       }
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        background: transparent;
+        /* Opaque on purpose: this body is what hides the shell's retro loader
+           (painted on the iframe behind us). Same ink as the console. */
+        background: var(--bg-dim);
         overflow: hidden;
         text-align: center;
         font-family: "Iosevka Web", ui-monospace, "SF Mono", Consolas, monospace;
