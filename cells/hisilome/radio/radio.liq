@@ -137,8 +137,14 @@ output.icecast(%mp3, host="127.0.0.1", port=8000,
 
 # No Safari/iOS: listed first in <audio>, those fall through to mp3. Per-mount
 # burst in icecast.xml matches 8.192 s so stream_latency holds for both.
+#
+# One Ogg logical stream for the whole session: the encoder opens a new one on
+# every track mark / metadata (that is how Ogg carries tags), and Chrome and
+# Firefox <audio> stop decoding at the second BOS page - the listener hears
+# silence until reload. Titles come from on_metadata above, not the container.
 output.icecast(%opus(bitrate=128), format="audio/ogg", host="127.0.0.1", port=8000,
-               password=source_password, mount="/stream.opus", radio)
+               password=source_password, mount="/stream.opus",
+               drop_metadata(merge_tracks(radio)))
 
 # Listener position: while the encoder is under stream_latency into a track the
 # listener still hears the previous one; report that rather than clamp to 0,
@@ -218,6 +224,20 @@ def write_console() =
     write = file.write.stream(atomic=true, temp_dir="radio/state/tmp-console", "radio/state/console.html")
     write(html)
     write(null)
+
+    # The frame's reload interval, included in its <head>: the time left on
+    # the track plus a second, so the reload lands just after the switch and
+    # the bar never opens already 0-10 s in. Between switches, at most 30 s.
+    # A minute is not a track; under 1 s the frame would loop, so 1 is the floor.
+    left = int_of_float(du - el) + 1
+    refresh =
+      if du <= 0. then 10
+      elsif left > 30 then 30
+      elsif left < 1 then 1
+      else left end
+    wr = file.write.stream(atomic=true, temp_dir="radio/state/tmp-console", "radio/state/refresh.html")
+    wr('<meta http-equiv="refresh" content="' ^ string(refresh) ^ '" />')
+    wr(null)
   catch _ do
     log.important(label="write_console", "write failed; will retry next tick")
   end

@@ -74,6 +74,11 @@
       type = "text/html";
     }
     {
+      name = "refresh.html";
+      file = "refresh.html";
+      type = "text/html";
+    }
+    {
       name = "schedule-body.html";
       file = "schedule.html";
       type = "text/html";

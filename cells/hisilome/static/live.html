@@ -3,7 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="color-scheme" content="dark" />
-    <meta http-equiv="refresh" content="10" />
+    <!-- Reload interval comes from liquidsoap: seconds left on the track
+         (+1), capped at 30. The frame reloads right after a switch instead
+         of up to 10 s late. The stub is the fallback when liquidsoap is not
+         up yet: without it nginx splices its 404 page into <head>. -->
+    <!--#block name="refresh_fallback" --><meta http-equiv="refresh" content="10" /><!--#endblock -->
+    <!--#include virtual="/refresh.html" stub="refresh_fallback" -->
     <title>Now playing</title>
     <!-- Inline, not <link>: this document reloads; a linked stylesheet painted
          an unstyled frame on each reload (the flicker). Duplicated from
