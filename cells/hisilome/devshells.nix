@@ -34,6 +34,8 @@ in {
         dev-nginx
         build-site
         dev-site
+        station-online
+        station-offline
       ])
       ++ [dev];
 

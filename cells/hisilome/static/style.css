@@ -50,6 +50,20 @@
   --bg-dim: var(--sumi-ink-0);
   --fg: var(--old-white);
   --muted: var(--fuji-gray);
+  /* the shell's retro loader; lit by /status.html when the station is down */
+  --ld-loader:
+    /* the lit run: 5 segments, crawling left to right */
+    repeating-linear-gradient(
+      90deg,
+      var(--carp-yellow) 0 8px,
+      transparent 8px 12px
+    ),
+    /* the dim track: same pitch, full width */
+    repeating-linear-gradient(
+      90deg,
+      rgba(230, 195, 132, 0.18) 0 8px,
+      transparent 8px 12px
+    );
   --link: var(--crystal-blue);
   --hover: var(--oni-violet);
   --accent: var(--spring-green);
@@ -128,13 +142,19 @@ a:hover {
   gap: 0.5rem;
 }
 
+/* Plain green hostname, no chip: it reads as part of the prompt, not a button.
+   Still a link home; the hover glow is the only hint. */
 .prompt {
-  border: 1px solid var(--accent);
   color: var(--accent);
-  padding: 0.15rem 0.6rem;
-  border-radius: 3px;
   font-weight: 700;
-  box-shadow: 0 0 12px rgba(var(--accent-rgb), 0.18);
+  text-decoration: none;
+}
+
+.prompt:hover,
+.prompt:focus-visible {
+  color: var(--accent);
+  text-shadow: 0 0 10px rgba(var(--accent-rgb), 0.7);
+  text-decoration: underline;
 }
 
 .cmd {
@@ -744,32 +764,28 @@ body.framed {
   min-width: 0;
   height: 92px;
   border: 0;
-  /* Retro loader, painted on the frame itself. live.html paints an opaque
-     --bg-dim body, so the moment it lands it covers this; while nginx is
-     still assembling the SSI (or the radio is down) the segments crawl.
-     No state, no swap: the loaded document IS the hide.
-     y=51px is where .rc-bar sits in live.html, so the swap lands in place. */
-  --ld-y: 51px;
-  --ld-h: 8px;
-  background-color: transparent;
-  background-image:
-    /* the lit run: 5 segments, crawling left to right */
-    repeating-linear-gradient(
-      90deg,
-      var(--carp-yellow) 0 8px,
-      transparent 8px 12px
-    ),
-    /* the dim track: same pitch, full width */
-    repeating-linear-gradient(
-      90deg,
-      rgba(230, 195, 132, 0.18) 0 8px,
-      transparent 8px 12px
-    );
+  background: transparent;
+}
+
+/* Retro loader, painted on the frame itself. Off by default: hiding it under
+   an opaque .rc-bar in live.html meant guessing the bar's y to the pixel, and
+   it peeked out (rounding, fonts). Instead /status.html — written by the
+   station unit's ExecStopPost — is SSI-included into <head> while the radio
+   is down and sets --station-ui / --ld-image / --ld-anim; only then the
+   segments crawl where the bar would be, and the player row is hidden.
+   SSI cannot add a class, hence properties. The include IS the switch. */
+.console-live {
+  --ld-y: 54px;
+  --ld-h: 6px;
+  background-image: var(--ld-image, none);
   background-repeat: no-repeat, no-repeat;
   background-size: 60px var(--ld-h), 100% var(--ld-h);
   background-position: -60px var(--ld-y), 0 var(--ld-y);
-  animation: ld-crawl 1.8s steps(14, end) infinite;
+  animation: var(--ld-anim, none);
 }
+/* Down: no player, no channel/link row; the frame keeps its "offline" line. */
+.console-play,
+.console-meta { display: var(--station-ui, block); }
 
 @keyframes ld-crawl {
   from { background-position: -60px var(--ld-y), 0 var(--ld-y); }
@@ -1132,7 +1148,7 @@ body.framed {
     flex: 0 0 auto;
   }
   /* title + 6px bar; live.html hides album and clock at this width */
-  .console-live { height: 40px; --ld-y: 29px; }
+  .console-live { height: 40px; --ld-y: 32px; }
   .console-meta {
     padding: 0.25rem 0.6rem 0.4rem;
     font-size: 0.7rem;
