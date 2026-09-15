@@ -18,7 +18,35 @@
   # phoenix's overlay is additive too (pkgs.phoenix, pkgs.withPhoenix); the
   # browser profile applies withPhoenix itself. Phoenix's own module would do
   # it via nixpkgs.overlays, which is the ignored path described above.
-  pkgs = (inputs.pkgs.extend inputs.chaotic.overlays.default).extend inputs.phoenix.overlays.default;
+  pkgs =
+    ((inputs.pkgs.extend inputs.chaotic.overlays.default).extend inputs.phoenix.overlays.default).extend evdiOverlay;
+
+  # evdi (DisplayLink DRM shim, host-elster) at the nixpkgs pin is 1.14.15 and
+  # does not compile against 7.x: DRM renamed `drm_atomic_state` to
+  # `drm_atomic_commit` in the plane helpers. Upstream fixed it in v1.15.1
+  # (2026-09-15). Overriding the package inside both kernel sets keeps the
+  # kernels themselves untouched (same drvs, nyx cache hits); only elster's
+  # closure pulls evdi in. Drop once nixpkgs carries >= 1.15.1.
+  evdiOverlay = final: prev: let
+    bump = kp:
+      kp.extend (_: kprev: {
+        evdi = kprev.evdi.overrideAttrs (_old: rec {
+          version = "1.15.1";
+          src = final.fetchFromGitHub {
+            owner = "DisplayLink";
+            repo = "evdi";
+            tag = "v${version}";
+            hash = "sha256-3g6OETXJSf6AScJ2K9F67mPlh3Wpi20Yq+f+xe78p9Y=";
+          };
+          # nixpkgs' prePatch stubs out the Makefile's /etc/os-release read;
+          # 1.15.x no longer has it, and --replace-fail aborts on a miss.
+          prePatch = "";
+        });
+      });
+  in {
+    linuxPackages_cachyos = bump prev.linuxPackages_cachyos;
+    linuxPackages = bump prev.linuxPackages;
+  };
   globals = inputs.cells.common.globals;
   common = inputs.cells.common.profiles;
   p = cell.profiles;
