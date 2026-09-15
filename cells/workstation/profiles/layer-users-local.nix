@@ -104,6 +104,14 @@
       # (~/.config/<productName>), SimpleX keeps its db under XDG_DATA_HOME.
       ".config/Mattermost"
       ".local/share/simplex"
+      # home/desktop/keepass.nix: settings (.config) and the vault itself
+      # (.local/share/keepassxc/*.kdbx -- the one place in $HOME meant for
+      # it). Recent-db list is under .cache, already persisted whole.
+      ".config/keepassxc"
+      {
+        directory = ".local/share/keepassxc";
+        mode = "0700";
+      }
     ];
     files = [".bash_history"];
   };
