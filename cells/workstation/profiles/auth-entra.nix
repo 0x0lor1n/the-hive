@@ -245,6 +245,10 @@ in {
       # opencode: config in .config, auth.json + sessions in .local/share.
       (entraHome ".config/opencode")
       (entraHome ".local/share/opencode")
+      # home/desktop/chat.nix (unsandboxed): Mattermost is Electron
+      # (~/.config/<productName>), SimpleX keeps its db under XDG_DATA_HOME.
+      (entraHome ".config/Mattermost")
+      (entraHome ".local/share/simplex")
     ];
 
   # HISTFILE into the persisted dir instead of persisting ~/.bash_history

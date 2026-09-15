@@ -1,5 +1,6 @@
 # Desktop companions for the local user's home-manager config: fuzzel,
-# swaylock, mako, swayidle, swaybg, cliphist, avizo, gtk/cursor/fonts. One small module each.
+# swaylock, mako, swayidle, swaybg, cliphist, avizo, gtk/cursor/fonts, plus
+# mpv and the non-nixpak chat clients. One small module each.
 #
 # A plain helper directory, NOT a cell block: imported from
 # ../default.nix, which layer-compositor.nix feeds to home-manager.users.
@@ -16,5 +17,7 @@
     ./clipboard.nix
     ./osd.nix
     ./gtk.nix
+    ./mpv
+    ./chat.nix
   ];
 }

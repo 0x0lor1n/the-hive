@@ -48,6 +48,8 @@
       p.auth-entra
       # the user's split keyboard follows them to every machine
       p.input-vial
+      # firefox + Phoenix: system package (Entra users have no HM profile)
+      p.browser-firefox
       # 3 generations, weekly nh clean
       p.maintenance
       # pxpipe system unit + /etc/hosts alias, shared by every session's Hermes

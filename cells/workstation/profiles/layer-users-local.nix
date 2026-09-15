@@ -98,6 +98,10 @@
         directory = ".local/share/opencode";
         mode = "0700";
       }
+      # home/desktop/chat.nix (unsandboxed): Mattermost is Electron
+      # (~/.config/<productName>), SimpleX keeps its db under XDG_DATA_HOME.
+      ".config/Mattermost"
+      ".local/share/simplex"
     ];
     files = [".bash_history"];
   };
