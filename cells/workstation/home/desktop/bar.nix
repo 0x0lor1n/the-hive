@@ -1,7 +1,8 @@
 # waybar: the status bar, replacing somebar. Pieces of wochap's ags/quickshell
-# bar that make sense without his dwl fork: no tags (switched by keyboard,
-# never clicked), no dwl-ipc patch -- the layout/mode/title come from dwl's
-# own `-s` status pipe through dwl-status (profiles/layer-compositor.nix),
+# bar that make sense without his dwl fork. Tags are display only (switched
+# from the keyboard, never clicked) and there is no dwl-ipc patch: tags/
+# layout/mode/title come from dwl's own `-s` status pipe through dwl-status
+# (profiles/layer-compositor.nix),
 # which writes $XDG_RUNTIME_DIR/dwl/<field> and pokes waybar with
 # SIGRTMIN+1. Recorder (recorder.nix) pokes SIGRTMIN+2.
 #
@@ -27,6 +28,7 @@
       [ -r "$f" ] || exit 0
       ${json}
     '';
+  dwlTags = dwlField "tags" ''cat "$f"'';
   dwlLayout = dwlField "layout" ''cat "$f"'';
   dwlTitle = dwlField "title" ''cat "$f"'';
   # class = the mode label, so css can colour "layout" and "notification".
@@ -68,9 +70,9 @@ in {
     settings.bar = {
       layer = "top";
       position = "top";
-      height = 26;
-      spacing = 8;
-      modules-left = ["custom/dwl-layout" "custom/dwl-mode" "custom/recorder"];
+      height = 32;
+      spacing = 10;
+      modules-left = ["custom/dwl-tags" "custom/dwl-layout" "custom/dwl-mode" "custom/recorder"];
       modules-center = ["custom/dwl-title"];
       modules-right = [
         "tray"
@@ -86,6 +88,14 @@ in {
         "clock"
       ];
 
+      # Tags 1-9 of the selected monitor, pre-rendered as pango markup by
+      # dwl-status. Display only: tags are switched from the keyboard.
+      "custom/dwl-tags" = {
+        exec = dwlTags;
+        interval = "once";
+        signal = 1;
+        tooltip = false;
+      };
       "custom/dwl-layout" = {
         exec = dwlLayout;
         interval = "once";
@@ -205,7 +215,7 @@ in {
     style = ''
       * {
         font-family: monospace;
-        font-size: 11px;
+        font-size: 14px;
         min-height: 0;
         border: none;
         border-radius: 0;
@@ -216,11 +226,12 @@ in {
         border-bottom: 2px solid #${r.border};
       }
       .modules-left, .modules-center, .modules-right { margin: 0 6px; }
-      #custom-dwl-layout, #custom-dwl-mode, #custom-dwl-title, #custom-recorder,
+      #custom-dwl-tags, #custom-dwl-layout, #custom-dwl-mode, #custom-dwl-title, #custom-recorder,
       #tray, #custom-vpn, #custom-notifications, #idle_inhibitor, #temperature,
       #backlight, #pulseaudio, #bluetooth, #network, #battery, #clock {
         padding: 0 6px;
       }
+      #custom-dwl-tags { padding: 0; }
       #custom-dwl-layout { color: #${r.focus}; }
       #custom-dwl-mode { color: #${r.bg}; background: #${r.highlight}; font-weight: bold; }
       #custom-dwl-mode.notification { background: #${r.hover}; }
