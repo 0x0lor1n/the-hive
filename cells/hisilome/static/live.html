@@ -40,9 +40,9 @@
       }
       * { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        /* Opaque on purpose: this body is what hides the shell's retro loader
-           (painted on the iframe behind us). Same ink as the console. */
-        background: var(--bg-dim);
+        /* Transparent: the console's scanlines and vignette show through, so
+           the frame is not a flat window cut into the textured panel. */
+        background: transparent;
         overflow: hidden;
         text-align: center;
         font-family: "Iosevka Web", ui-monospace, "SF Mono", Consolas, monospace;
@@ -63,7 +63,7 @@
         margin: 0.5rem 0 0.25rem;
         height: 6px;
         background: var(--sumi-ink-0);
-        border: 1px solid rgba(149, 127, 184, 0.45);
+        border: 1px solid #4f4563;
         overflow: hidden;
       }
       /* keep in sync with style.css */
@@ -125,6 +125,7 @@
   <!-- Reloads every 10s; the clock animates itself. Anything stateful
        (<audio>, <details>) lives in the shell for that reason. -->
   <body class="rc-body">
-    <!--#include virtual="/console.html" -->
+    <!--#block name="console_stub" --><span class="rc-off">station offline</span><!--#endblock -->
+    <!--#include virtual="/console.html" stub="console_stub" -->
   </body>
 </html>

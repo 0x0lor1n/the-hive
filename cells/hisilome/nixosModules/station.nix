@@ -117,7 +117,12 @@ in {
       unitConfig.ConditionPathExists = "${radioState}/queue.m3u";
       serviceConfig =
         {
+          # status.html: empty while up, the offline <style> otherwise. The
+          # shell SSI-includes it; ExecStopPost runs on crash and stop alike,
+          # so a dead liquidsoap hides the player without any client logic.
+          ExecStartPre = "${cell.packages.station-online}/bin/station-online";
           ExecStart = "${pkgs.liquidsoap}/bin/liquidsoap ${runtime}/radio/radio.liq";
+          ExecStopPost = "${cell.packages.station-offline}/bin/station-offline";
           EnvironmentFile = "${radioState}/source.env";
           User = cfg.user;
           Group = cfg.group;
