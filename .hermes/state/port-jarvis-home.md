@@ -143,7 +143,9 @@ DETAIL (rationale and facts for the steps above):
       phoenix/llm-agents/zsh-* belong. Cell flakes cannot `follows` a root input, so pin
       phoenix.inputs.nixpkgs to the SAME rev as the cell's nixpkgs (34ab9907), exactly as the
       existing comment for lanzaboote demands.
-- [ ] browser: stock firefox + Phoenix as a NIXOS module (decision 2026-09-14). Verified by
+- [x] browser: stock firefox + Phoenix as a NIXOS module (decision 2026-09-14). DONE 2026-09-15:
+      profiles/browser-firefox.nix + phoenix overlay via pkgs.extend in nixosConfigurations.nix,
+      built + switched on penrose. Original analysis kept below. Verified by
       reading celenity/Phoenix nix/module.nix — it is NixOS-only by construction, so the user's
       recollection is right and there is nothing to work around:
       it sets environment.etc."firefox/*", environment.variables, programs.firefox.policies
@@ -195,7 +197,8 @@ DETAIL (rationale and facts for the steps above):
       Sanity check done: nixpkgs firefox is 154.0.1 on this pin, and librewolf currently carries
       NO knownVulnerabilities — i.e. the insecure-marking that forced nixpkgs-librewolf-pin has
       since been resolved upstream. Decommissioning it is a choice now, not a workaround.
-- [ ] strip catppuccin while porting: users/shared/default.nix imports catppuccin.homeModules.catppuccin
+- [x] strip catppuccin while porting (DONE 2026-09-15: no catppuccin option/input left in cells/, only
+      theme-debt comments — see ## theme-debt). Original: users/shared/default.nix imports catppuccin.homeModules.catppuccin
       and modules read globals.theme.colors.flavour. Repo is kanagawa via theme.colors (_module.args.theme,
       home/default.nix:29) — rewrite those call sites, do NOT add the input. Also covers
       cli/dircolors.nix (catppuccin-dircolors input drops with it).
@@ -205,7 +208,7 @@ DETAIL (rationale and facts for the steps above):
       `features = "catppuccin-${flavour} side-by-side"` in programs.delta), cli/dircolors,
       gui/spicetify (colorScheme CatppuccinMocha/Latte via globals.theme.preferDark).
       Only 3 of the 12 globals refs are theme ones — the rest are configDirectory.
-- [~] mkHome takes a per-account secret set, not a bool (layer-compositor.nix:20): cli+dev are
+- [x] mkHome takes a per-account secret set, not a bool (layer-compositor.nix:20): cli+dev are
       DONE for the secrets arg 2026-09-14 (step 4): `secrets = userSecrets "<role>"` per call
       site; vpn still open (below).
       unconditional for both accounts, while ssh keys / git includeIf blocks / vpn are selected
@@ -469,7 +472,8 @@ DETAIL (rationale and facts for the steps above):
       `vpn up owt` as the Entra user (no password prompt), `vpn up wrs` as local.
 - [x] grep gate: `grep -rn 'nixos-config\|nonNixos\|genericLinux\|nixGL' cells/workstation/home dotfiles` -> empty
       (2026-09-15: clean after zsh; re-run after desktop+security — clean, comment mentions say "jarvis")
-- [ ] eval + build toplevel for penrose AND sevastopol/osgiliath (shared home must not break them)
+- [x] eval + build toplevel for penrose AND sevastopol/osgiliath (shared home must not break them) —
+      2026-09-15 all three build; penrose switched, /run/agenix/vpn-* present.
 
 ### phase 3 — deploy to penrose
 - [ ] penrose reachable from jarvis (ssh alias resolves; today: "Could not resolve hostname penrose" — LAN name / tailscale / yggdrasil? fix first)
