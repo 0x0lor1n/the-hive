@@ -108,12 +108,20 @@ in
 
     # The Entra account (no wheel) may raise and drop the two employer
     # tunnels; nothing else in systemd. w stays with the local user (wheel).
+    # wheel alone is auth_admin_keep on manage-units (password prompt every
+    # `vpn up w`, seen 2026-09-15), so grant that one unit explicitly too —
+    # symmetric with owt/t on the Entra side, checklist says "no password".
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {
         if (action.id == "org.freedesktop.systemd1.manage-units" &&
             subject.isInGroup("networkmanager") &&
             (action.lookup("unit") == "${units.owt}" ||
              action.lookup("unit") == "${units.t}")) {
+          return polkit.Result.YES;
+        }
+        if (action.id == "org.freedesktop.systemd1.manage-units" &&
+            subject.isInGroup("wheel") &&
+            action.lookup("unit") == "${units.w}") {
           return polkit.Result.YES;
         }
       });
