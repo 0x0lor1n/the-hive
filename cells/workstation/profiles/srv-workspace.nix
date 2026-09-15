@@ -23,4 +23,9 @@
     "d /srv/workspace/projects 2770 ${host.userName} hive -"
     "A+ /srv/workspace - - - - d:group:hive:rwx,group:hive:rwx"
   ];
+
+  # Project .envrc files load without `direnv allow` (jarvis had the same
+  # prefix rule for ~/workspace). System-level for the same reason as in
+  # srv-the-hive.nix: DIRENV_CONFIG=/etc/direnv, HM toml is never read.
+  programs.direnv.settings.whitelist.prefix = ["/srv/workspace"];
 }
