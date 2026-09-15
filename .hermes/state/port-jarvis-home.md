@@ -527,7 +527,7 @@ DETAIL (rationale and facts for the steps above):
             dwl-session-bridge After=home-manager-entra.service so graphical-session.target
             sees avizo/swayidle. Local account unaffected (HM via NixOS module, sd-switch runs
             at switch time with a live manager).
-      - [ ] vpn-transplant.sh: first run `mktemp: /run/user/1000/tmp.XXXX: No such file` —
+      - [x] vpn-transplant.sh: first run `mktemp: /run/user/1000/tmp.XXXX: No such file` —
             stale XDG_RUNTIME_DIR in the shell (fresh boot, tty not yet a logind session?);
             second run in the same shell went through (4 files rekeyed, PIN once). Not fixed:
             script already falls back to /dev/shm when the dir is missing; this was a race
@@ -559,12 +559,24 @@ DETAIL (rationale and facts for the steps above):
               vpn-transplant.sh and the agents rsync. One-off `chmod o+rX`, not in git.
               Rule for later: anything copied into /srv/the-hive by hand gets `chmod -R
               o+rX` (the checkout's 0750 + hive group is the only gate).
-      - [ ] ROUND 3 (after reboot, toplevel 020f84b), Entra in foot:
+      - [x] ROUND 3 (after reboot, toplevel 020f84b), Entra in foot:
             systemctl --user is-active home-manager-entra tmux-server ssh-agent avizo swayidle   # 5x active
             cd /srv/the-hive && git status --short | head -3                                      # no Permission denied
             then log out of dwl (kill it / greeter) and log in again:
             systemctl --user is-active avizo swayidle dwl-session-bridge                          # 3x active (the relogin path)
             Green -> phase 3 closed; phase 4 next (workspace rsync jarvis -> penrose).
+            RESULT 2026-09-15: after reboot 5x active, git status clean (no Permission
+            denied). Relogin path (MOD+Shift+Q -> greeter): dwl-session-bridge active but
+            avizo/swayidle inactive — the bridge's stop on dwl exit did not take
+            graphical-session.target down, so the PartOf units were never re-pulled.
+            FIXED 2a20831 (layer-compositor.nix): dwl exit stops graphical-session.target
+            explicitly, not just the bridge. Re-verified after switch + relogin: 3x active.
+      - [x] Firefox fresh on every boot (found by user post-round-3): ~/.mozilla was not in
+            the impermanence carve-out for either account — Phoenix + policies rebuilt the
+            profile from scratch each reboot. FIXED 95f5d78: ~/.mozilla persisted for both
+            accounts (findmnt shows rpool/safe/persist bind for the local one; Entra side
+            checked on next login: `findmnt -T ~/.mozilla`).
+      PHASE 3 CLOSED 2026-09-15 (toplevel 95f5d78). Phases 1–3 have no open items.
 
 ### phase 4 — workspace to penrose (split work / personal)
 - [x] free space check on penrose — 1TB free, not a constraint
