@@ -1,6 +1,6 @@
 # The one theme for the whole repo, as data. Read as
 # `inputs.cells.theme.palettes.kanagawa` from any cell; everything that
-# paints a pixel (foot, fuzzel, mako, swaylock, swaybg, dwl, somebar, the VT
+# paints a pixel (foot, fuzzel, mako, swaylock, swaybg, dwl, waybar, the VT
 # console + tuigreet) derives its colours from here so a hex change is one
 # edit. Hexes are rrggbb without '#': each consumer adds its own prefix/alpha.
 {...}: {

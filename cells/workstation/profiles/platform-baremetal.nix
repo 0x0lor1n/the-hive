@@ -22,7 +22,7 @@
     "sd_mod"
     "rtsx_pci_sdmmc"
   ];
-  boot.kernelModules = ["kvm-intel"];
+  boot.kernelModules = ["kvm-intel" "ntfs3"];
 
   # Firmware owns its NVRAM here: lanzaboote/systemd-boot may write boot
   # entries. Plain `true` overrides the mkDefault false in

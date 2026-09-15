@@ -94,7 +94,8 @@
       # the lot costs disk, not correctness.
       ".cache"
       # Firefox profile dir -- see the same entry in auth-entra.nix.
-      ".mozilla"
+      # Firefox 154+ uses XDG_CONFIG_HOME/mozilla instead of ~/.mozilla.
+      ".config/mozilla"
       ".config/opencode"
       {
         directory = ".local/share/opencode";

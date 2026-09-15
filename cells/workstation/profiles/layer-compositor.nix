@@ -78,9 +78,44 @@
   '';
 
   # `dwl -s <cmd>`: dwl makes the child's stdin the read end of its status
-  # pipe, so somebar must be exec'd (not backgrounded) to hold it open. swaybg
-  # and the cliphist watchers start here; mako/swayidle/avizo have HM user
-  # units and must NOT also be started here.
+  # pipe (SIGPIPE is ignored in dwl, so a dead reader is harmless, but the
+  # bar then shows stale text), so dwl-status must be exec'd (not
+  # backgrounded) to hold it open. swaybg and the cliphist watchers start
+  # here; mako/swayidle/avizo/waybar have HM user units and must NOT also be
+  # started here.
+  #
+  # dwl-status: the somebar replacement's back half. Lines are
+  # "<output> <field> <value...>" (title/appid/fullscreen/floating/selmon/
+  # tags/layout, plus "mode" from the modes patch). Keep layout/title/mode of
+  # the selected monitor in $XDG_RUNTIME_DIR/dwl/<field> and poke waybar's
+  # custom/dwl-* modules (home/desktop/bar.nix, signal = 1 -> SIGRTMIN+1).
+  dwl-status = pkgs.writeShellScript "dwl-status" ''
+    d="''${XDG_RUNTIME_DIR:-/tmp}/dwl"
+    mkdir -p "$d"
+    sel=""
+    last=""
+    declare -A layout title mode
+    while read -r out field rest; do
+      case "$field" in
+        selmon) [ "$rest" = 1 ] && sel="$out" ;;
+        layout) layout["$out"]="$rest" ;;
+        title) title["$out"]="$rest" ;;
+        mode) mode["$out"]="$rest" ;;
+        *) continue ;;
+      esac
+      [ -n "$sel" ] || continue
+      # printstatus emits ~8 lines per monitor per event; write and signal
+      # once per actual change, not once per line.
+      cur="''${layout[$sel]-}"$'\n'"''${title[$sel]-}"$'\n'"''${mode[$sel]-}"
+      [ "$cur" != "$last" ] || continue
+      last="$cur"
+      printf '%s\n' "''${layout[$sel]-}" > "$d/layout"
+      printf '%s\n' "''${title[$sel]-}" > "$d/title"
+      printf '%s\n' "''${mode[$sel]-}" > "$d/mode"
+      ${pkgs.procps}/bin/pkill -RTMIN+1 -x waybar 2>/dev/null || true
+    done
+  '';
+
   dwl-startup-with-bar = pkgs.writeShellScript "dwl-startup-with-bar" ''
     # systemd 257+ refuses `systemctl --user start graphical-session.target`
     # (RefuseManualStart=yes), silently stranding every WantedBy= unit. Start
@@ -106,7 +141,7 @@
     ${pkgs.swaybg}/bin/swaybg -c '#${theme.roles.bg}' &
     ${pkgs.wl-clipboard}/bin/wl-paste --type text  --watch ${pkgs.cliphist}/bin/cliphist store &
     ${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store &
-    exec ${cell.packages.somebar}/bin/somebar
+    exec ${dwl-status}
   '';
 
   # greetd starts the session with a PAM-clean env (systemd.services.greetd.
@@ -209,7 +244,6 @@ in {
 
     environment.systemPackages = [
       cell.packages.dwl
-      cell.packages.somebar
       pkgs.foot
       pkgs.fuzzel
       pkgs.swaylock
@@ -223,6 +257,19 @@ in {
       # Silent M365 SSO through himmelblau's broker DBus service.
       pkgs.microsoft-edge
     ];
+
+    # File manager (Super+Alt+F in packages/dwl/config.h), wochap's choice.
+    # System-level rather than home.packages: the NixOS module also wires
+    # xfconf (settings persist) and the D-Bus bits; gvfs gives it trash://,
+    # mtp/smb and the removable-drive sidebar, udisks2 lets it mount them.
+    programs.thunar = {
+      enable = true;
+      plugins = [pkgs.thunar-archive-plugin];
+    };
+    services.gvfs.enable = true;
+    services.udisks2.enable = true;
+    # Thumbnails in Thunar (tumbler is what gvfs/thunar ask over D-Bus).
+    services.tumbler.enable = true;
 
     # Edge managed policy (ported from ~/nixos-config gui/microsoft-edge.nix,
     # which wrote the same JSON under ~/.config/microsoft-edge/policies --

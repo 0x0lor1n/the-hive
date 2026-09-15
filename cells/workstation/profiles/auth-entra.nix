@@ -224,8 +224,9 @@ in {
       # Firefox profile (profiles.ini, places/logins/session store). The
       # browser lives in browser-firefox.nix as a NixOS module, so nothing
       # in HM claims this dir -- without it every boot is a fresh profile
-      # (reported 2026-09-15). Phoenix + policies still come from /etc.
-      (entraHome ".mozilla")
+      # (reported 2026-09-15). Firefox 154+ uses XDG_CONFIG_HOME/mozilla
+      # instead of ~/.mozilla. Phoenix + policies still come from /etc.
+      (entraHome ".config/mozilla")
       (entraHome ".config/teams-for-linux")
       (entraHome ".config/o365-profiles")
       # nixpak apps: config/data/cache under one Flatpak-style dir each.
