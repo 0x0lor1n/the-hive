@@ -600,7 +600,7 @@ DETAIL (rationale and facts for the steps above):
       else moves. No such client today.
 - [x] nix-rensa: no longer an exception — ordinary tenant of /srv/workspace/projects/
       (the-hive itself is the rebuild source and already lives in /srv/the-hive).
-- [ ] inventory on jarvis (measured 2026-09-14, re-check sizes before the copy):
+- [-] inventory on jarvis (measured 2026-09-14; now only sizes the HDD backup):
         work     -> Clients/ 26G (client-b 23G, client-c 1.5G, client-d 1.1G), work-org/ 6.2G
                     (3 of 5 repos point at work-azure), playground/client-a 7.1G
         personal -> 0xOLOR1N/ 2.3G, playground/nix-rensa 8.3G, playground/personal-b 5.7G,
@@ -609,10 +609,14 @@ DETAIL (rationale and facts for the steps above):
       Per repo before moving: `git remote -v` -> host must be in the phase 1 ssh key table
       (so includeIf/IdentityFile resolve on penrose); anything with a host not in the table
       is a NEW identity to add first, not a copy problem.
-- [ ] route: jarvis not resolvable from penrose (2026-09-15: only .1 and .179 answer on
+- [-] SUPERSEDED 2026-09-15 (user): no rsync over the network. jarvis ~/workspace goes to an
+      external HDD as a static backup; repos are re-cloned on penrose from their remotes
+      (phase 1 ssh key table), only non-git material (certs/, playground dumps) is restored
+      from the disk by hand. Steps below kept for reference only.
+- [-] route: jarvis not resolvable from penrose (2026-09-15: only .1 and .179 answer on
       :22 on 192.168.10.0/24). Either same LAN + IP, or ssh from jarvis -> penrose
       (penrose sshd: layer-users-local.nix authorizedKeys) and PUSH with rsync.
-- [ ] order & method (run as the LOCAL user on penrose; the setgid dir + default ACL make
+- [-] order & method (run as the LOCAL user on penrose; the setgid dir + default ACL make
       the result group-writable for Entra without chmod):
       1. `rsync -aHAXS --info=progress2 --exclude target --exclude node_modules
          --exclude .direnv --exclude .venv --exclude result --exclude .env
