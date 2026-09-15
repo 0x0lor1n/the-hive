@@ -155,7 +155,12 @@ in {
       # Required for Entra login: tenant Conditional Access blocks the
       # PRT->access-token exchange for non-compliant devices, and
       # apply_policy is what lets enrollment/compliance happen at all.
-      apply_policy = true;
+      apply_policy = false; # TEMP: проверка, что Hello PIN работает без Intune gate
+
+      # TEMP (2026-09-15, elster): trace why greetd restarts the PAM
+      # conversation after a successful PIN auth_step (second auth_init
+      # falls back to password+MFA). Remove once diagnosed.
+      debug = true;
     };
   };
 

@@ -86,18 +86,39 @@
   #
   # dwl-status: the somebar replacement's back half. Lines are
   # "<output> <field> <value...>" (title/appid/fullscreen/floating/selmon/
-  # tags/layout, plus "mode" from the modes patch). Keep layout/title/mode of
-  # the selected monitor in $XDG_RUNTIME_DIR/dwl/<field> and poke waybar's
-  # custom/dwl-* modules (home/desktop/bar.nix, signal = 1 -> SIGRTMIN+1).
+  # tags/layout, plus "mode" from the modes patch). Keep tags/layout/title/
+  # mode of the selected monitor in $XDG_RUNTIME_DIR/dwl/<field> and poke
+  # waybar's custom/dwl-* modules (home/desktop/bar.nix, signal = 1 ->
+  # SIGRTMIN+1). tags is rendered here as pango markup: "tags <occ> <tagset>
+  # <sel> <urg>" are bitmasks; the number is bold on the focus colour when
+  # viewed, plain when it has a window, dimmed when empty, urgent in red.
   dwl-status = pkgs.writeShellScript "dwl-status" ''
     d="''${XDG_RUNTIME_DIR:-/tmp}/dwl"
     mkdir -p "$d"
     sel=""
     last=""
-    declare -A layout title mode
+    declare -A layout title mode tags
+    render_tags() {
+      read -r occ tagset _ urg <<<"$1"
+      local i bit out=""
+      for i in 1 2 3 4 5 6 7 8 9; do
+        bit=$((1 << (i - 1)))
+        if (( urg & bit )); then
+          out+="<span foreground='#${theme.roles.bg}' background='#${theme.roles.urgent}' weight='bold'> $i </span>"
+        elif (( tagset & bit )); then
+          out+="<span foreground='#${theme.roles.bg}' background='#${theme.roles.focus}' weight='bold'> $i </span>"
+        elif (( occ & bit )); then
+          out+="<span foreground='#${theme.roles.fg}'> $i </span>"
+        else
+          out+="<span foreground='#${theme.roles.muted}'> $i </span>"
+        fi
+      done
+      printf '%s' "$out"
+    }
     while read -r out field rest; do
       case "$field" in
         selmon) [ "$rest" = 1 ] && sel="$out" ;;
+        tags) tags["$out"]="$(render_tags "$rest")" ;;
         layout) layout["$out"]="$rest" ;;
         title) title["$out"]="$rest" ;;
         mode) mode["$out"]="$rest" ;;
@@ -106,9 +127,10 @@
       [ -n "$sel" ] || continue
       # printstatus emits ~8 lines per monitor per event; write and signal
       # once per actual change, not once per line.
-      cur="''${layout[$sel]-}"$'\n'"''${title[$sel]-}"$'\n'"''${mode[$sel]-}"
+      cur="''${tags[$sel]-}"$'\n'"''${layout[$sel]-}"$'\n'"''${title[$sel]-}"$'\n'"''${mode[$sel]-}"
       [ "$cur" != "$last" ] || continue
       last="$cur"
+      printf '%s\n' "''${tags[$sel]-}" > "$d/tags"
       printf '%s\n' "''${layout[$sel]-}" > "$d/layout"
       printf '%s\n' "''${title[$sel]-}" > "$d/title"
       printf '%s\n' "''${mode[$sel]-}" > "$d/mode"
