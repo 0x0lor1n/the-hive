@@ -1,6 +1,6 @@
 # Chat clients outside the nixpak set (packages.nix has slack + telegram
-# for the Entra home). Ported from ~/nixos-config users/shared/gui/
-# {simplex,mattermost}.nix (2026-09-15); the nonNixos/nixGL branches are gone
+# for the Entra home). Ported from jarvis users/shared/gui/
+# {simplex,mattermost}.nix (2026-09-15); the Ubuntu-host GL-wrapper branches are gone
 # with the platform.
 #
 # Both stay unsandboxed on purpose:
