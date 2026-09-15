@@ -259,6 +259,9 @@ in {
       # (~/.config/<productName>), SimpleX keeps its db under XDG_DATA_HOME.
       (entraHome ".config/Mattermost")
       (entraHome ".local/share/simplex")
+      # home/desktop/keepass.nix: settings + recent-database list.
+      (entraHome ".config/keepassxc")
+      (entraHome ".cache/keepassxc")
     ];
 
   # HISTFILE into the persisted dir instead of persisting ~/.bash_history
