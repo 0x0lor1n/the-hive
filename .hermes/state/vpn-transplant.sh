@@ -18,7 +18,11 @@ recips=(
 )
 hostpub=$(nix eval --raw "$root#nixosConfigurations.penrose.config.age.rekey.hostPubkey")
 
-tmp=$(mktemp -d -p /run/user/"$UID")
+# tmpfs only: $XDG_RUNTIME_DIR when the session has one, /dev/shm otherwise
+# (a plain ssh/sudo shell on penrose may have no /run/user/$UID).
+tmpbase=${XDG_RUNTIME_DIR:-/dev/shm}
+[ -d "$tmpbase" ] || tmpbase=/dev/shm
+tmp=$(mktemp -d -p "$tmpbase" vpn-transplant.XXXXXX)
 trap 'rm -rf "$tmp"' EXIT
 umask 077
 
