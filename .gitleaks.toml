@@ -16,6 +16,8 @@ regexes = [
   '''nikita\.vyach\.ivanov@''', # upstream dwl movestack patch author
   '''git@[A-Za-z0-9.*-]+:''', # ssh remote URL (git@host:path), not an address
   '''deathray-testing x@y\.com''', # p10k config template's example gcloud account
+  '''addon@darkreader\.org''',     # Firefox addon GUIDs (AMO), not addresses
+  '''wappalyzer@crunchlabz\.com''',
 ]
 
 [[rules]]

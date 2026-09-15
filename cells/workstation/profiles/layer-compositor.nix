@@ -183,6 +183,18 @@ in {
       pkgs.microsoft-edge
     ];
 
+    # Edge managed policy (ported from ~/nixos-config gui/microsoft-edge.nix,
+    # which wrote the same JSON under ~/.config/microsoft-edge/policies --
+    # a path Chromium-on-Linux never reads; the system dir is the documented
+    # one). Force-installs Dark Reader + Surfingkeys from the Edge Add-ons
+    # store for every account.
+    environment.etc."opt/edge/policies/managed/extensions.json".text = builtins.toJSON {
+      ExtensionInstallForcelist = map (id: "${id};https://edge.microsoft.com/extensionwebstorebase/v1/crx") [
+        "eimadpbcbfnmbkopoojfekhnkhdbieeh" # Dark Reader
+        "kgnghhfkloifoabeaobjkgagcecbnppg" # Surfingkeys
+      ];
+    };
+
     # Known path for greetd's --cmd.
     environment.etc."dwl/session" = {
       source = dwl-session;
