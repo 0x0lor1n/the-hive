@@ -7,11 +7,11 @@ liq: "" {
   class: ours
   style.font-size: 16
   grid-rows: 1
-  grid-gap: 30
-  ico: "" {class: ico; i: "" {shape: image; icon: icons/liquidsoap.svg; width: 48; height: 48}}
-  np: now-playing.txt\nper track {class: box}
-  con: console.txt\nevery second {class: box}
-  sch: schedule.txt\nevery 10 s {class: box}
+  grid-gap: 16
+  ico: "" {class: ico; icon: icons/liquidsoap.svg; width: 72; height: 72}
+  np: now-playing.txt\nper track {class: box; height: 72}
+  con: console.txt\nevery second {class: box; height: 72}
+  sch: schedule.txt\nevery 10 s {class: box; height: 72}
 }
 
 state: radio/state/\n(atomic renames) {class: drawer}
@@ -28,18 +28,18 @@ nginx: "" {
   class: ours
   style.font-size: 16
   grid-rows: 1
-  grid-gap: 30
-  ico: "" {class: ico; i: "" {shape: image; icon: icons/nginx.svg; width: 48; height: 48}}
-  ssi: "ssi on;\n<!--# include virtual=... -->" {class: box}
+  grid-gap: 16
+  ico: "" {class: ico; icon: icons/nginx.svg; width: 72; height: 72}
+  ssi: "ssi on;\n<!--# include virtual=... -->" {class: box; height: 72}
 }
 
 browser: "" {
   class: box
   style.font-size: 16
   grid-rows: 1
-  grid-gap: 30
-  ico: "" {class: ico; i: "" {shape: image; icon: icons/browser.svg; width: 48; height: 48}}
-  shell: "shell page\n<audio> never reloads" {class: box}
+  grid-gap: 16
+  ico: "" {class: ico; icon: icons/browser.svg; width: 72; height: 72}
+  shell: "shell page\n<audio> never reloads" {class: box; height: 72}
 }
 frame: "<iframe> live.html\n<meta refresh 10>" {class: note}
 browser -> frame: embeds {style.stroke: "#727169"}
