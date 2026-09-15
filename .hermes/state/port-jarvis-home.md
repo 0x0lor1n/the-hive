@@ -693,6 +693,20 @@ DETAIL (rationale and facts for the steps above):
       encryption = zfsNative), hosts.elster in globals (diskDevice = "/dev/nvme0n1", hasTpm = true,
       sshHostPubkey generated on penrose), disks/elster.nix (copy of penrose.nix, 1T), secrets/generated/elster,
       secrets/hosts/elster/ host key, rekey.
+      2026-09-15: all of the above written; `agenix rekey` succeeded on penrose once told to use only
+      penrose's identity (AGENIX_REKEY_PRIMARY_IDENTITY[_ONLY]) — rage aborts on the first TPM
+      identity it cannot open ("unable to acquire SRK"), it does not fall through. Consequences:
+      nopin identity DROPPED (user: it existed only for the swtpm VM): masterIdentities = penrose-nix
+      + elster-nix (+ KeePass extra); nix/agenix-primary.sh (sourced by both devshells) pins the
+      host's identity; nix/rageImportEncrypted.sh tries `<hostname>-nix-rage.pub` first, one
+      identity per rage call; globals.nix + home/secrets.nix identities = both PIN identities;
+      deploy-osgiliath icecast keyCommand decrypts with `$(uname -n)-nix-rage`.
+      DONE 2026-09-15: `.ren/drop-nopin.sh` ran on penrose; every eval-time .age now has recipients
+      p256tag(penrose)+p256tag(elster)+X25519(KeePass), jarvis-nopin-rage.pub `git rm`-ed, rekey
+      passed, eval cache re-primed, both `nixosConfigurations.{penrose,elster}` toplevel eval OK.
+      gitleaks: agenix-primary.sh no longer carries the age1tag1 literals — it reads the
+      `# Recipient:` header of secrets/$(uname -n)-nix-rage.pub (one source of truth).
+      Uncommitted as of this note — commit is the next action.
       raptorLaptop = platform-baremetal + gpu-intel + laptop + host-elster (docker, displaylink,
       linuxPackages_latest for AX211/i915 RPL). gpu-intel: the nouveau blacklist + udev rule are
       harmless on a no-dGPU box, leave as is. laptop.nix: elster HAS a battery (BAT0) -> lid handling

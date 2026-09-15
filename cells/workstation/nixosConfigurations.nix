@@ -77,6 +77,10 @@
     p.laptop
   ];
 
+  # HP ZBook Firefly 16 G10 (Raptor Lake, iGPU only, TB4 dock): the same
+  # laptop shape plus what only this host needs (docker, DisplayLink).
+  raptorLaptop = intelLaptop ++ [p.host-elster];
+
   # Encryption + unlock; must match what the host's disk file created.
   zfsNative = [
     p.hardware-zfs-unlock # zfsUnlock: pre-unseal PCR 15 gate + anti-replay
@@ -140,6 +144,16 @@ in {
     hostKey = "penrose";
     base = workstation;
     hardware = intelLaptop;
+    encryption = zfsNative;
+  };
+
+  # HP ZBook Firefly 16 G10 (ex-jarvis): the daily driver and the Entra
+  # machine. Whole penrose config, unchanged, plus host-elster; after the soak
+  # penrose drops Entra (phase 6).
+  elster = mkHost {
+    hostKey = "elster";
+    base = workstation;
+    hardware = raptorLaptop;
     encryption = zfsNative;
   };
 }
