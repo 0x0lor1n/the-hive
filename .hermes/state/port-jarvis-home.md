@@ -532,11 +532,39 @@ DETAIL (rationale and facts for the steps above):
             second run in the same shell went through (4 files rekeyed, PIN once). Not fixed:
             script already falls back to /dev/shm when the dir is missing; this was a race
             with the runtime dir appearing. Re-check on round 2; drop if it does not repeat.
-      - [ ] ROUND 2 (after `nixos-rebuild switch --sudo --flake .#penrose` + relogin Entra):
-            `systemctl --user is-active tmux-server ssh-agent avizo swayidle` all active,
-            `echo $SSH_AUTH_SOCK` -> /run/user/<uid>/ssh-agent, `cd /srv/the-hive` under
-            Entra loads the rensa devshell with no git/EACCES errors, `vpn up w` as local
-            with no password, a second foot pane opens without the venv traceback.
+      - [x] ROUND 2 run 2026-09-15 (toplevel c23594f, switch + relogin): ssh-agent active,
+            SSH_AUTH_SOCK=/run/user/1737034432/ssh-agent, gh-work auth OK; direnv loads the
+            rensa devshell, git sees the repo; `vpn up w` as local with no password; no
+            venv traceback. THREE NEW, all diagnosed + fixed in 020f84b:
+            - tmux-server inactive: DEADLOCK. sd-switch (inside home-manager-entra's
+              activate) starts tmux-server blocking -> After=default.target waits for the
+              target -> the target waits for home-manager-entra -> 180s timeout, unit
+              killed, ExecStartPost never ran (journal 11:15:35 -> 11:18:34). FIXED: no
+              After=default.target on tmux-server (tmux.nix). Confirmed after switch:
+              home-manager-entra finishes in 1s, "Starting units: avizo, swayidle,
+              tmux-server". Unit still shows inactive ONLY because the user's manual
+              `tmux new-session -s the-hive` (pid 4397, pre-dates the switch) holds the
+              socket; start-server exits 0 -> forking unit with no process. Resolves at
+              next login/reboot, not a bug.
+            - avizo/swayidle failed (start-limit-hit): relogin via greeter at 11:28:23 —
+              old dwl died, Restart=always with no delay -> 5 crashes/s -> limit. The
+              oneshot dwl-session-bridge stayed active from the old session, so the new
+              dwl-startup's `systemctl start` was a no-op. FIXED (layer-compositor.nix):
+              dwl-session no longer execs dwl — after dwl exits it stops the bridge
+              (BindsTo takes graphical-session.target down -> PartOf units stop cleanly);
+              dwl-startup does reset-failed + `restart` bridge so a relogin re-pulls the
+              target's wants against the new WAYLAND_DISPLAY.
+            - `git status` under Entra: Permission denied on secrets/vpn (0700) and
+              home/dev/agents/* (0750, group users) — created under umask 077/027 by
+              vpn-transplant.sh and the agents rsync. One-off `chmod o+rX`, not in git.
+              Rule for later: anything copied into /srv/the-hive by hand gets `chmod -R
+              o+rX` (the checkout's 0750 + hive group is the only gate).
+      - [ ] ROUND 3 (after reboot, toplevel 020f84b), Entra in foot:
+            systemctl --user is-active home-manager-entra tmux-server ssh-agent avizo swayidle   # 5x active
+            cd /srv/the-hive && git status --short | head -3                                      # no Permission denied
+            then log out of dwl (kill it / greeter) and log in again:
+            systemctl --user is-active avizo swayidle dwl-session-bridge                          # 3x active (the relogin path)
+            Green -> phase 3 closed; phase 4 next (workspace rsync jarvis -> penrose).
 
 ### phase 4 — workspace to penrose (split work / personal)
 - [x] free space check on penrose — 1TB free, not a constraint
