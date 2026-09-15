@@ -150,6 +150,6 @@ The language tab on the left is the same idea, `content: attr(data-lang)` on `::
 
 ## Credits
 
-The station layout is a tribute to [lainonlife](https://github.com/barrucadu/lainonlife). The frame-with-a-persistent-player navigation is borrowed from [geanmar.com](https://geanmar.com/).
+The station layout is a tribute to [lainonlife](https://github.com/barrucadu/lainonlife). The shell-prompt navigation (`$ cd ./archive ./series ./tags`) is lifted from [geanmar.com](https://geanmar.com/). Frames for keeping state across page loads are older than most of my readers; that is how we built SPAs before the term existed.
 
 Config, liquidsoap script and nginx module: [the-hive/cells/hisilome](https://github.com/0x0lor1n/the-hive/tree/main/cells/hisilome).
