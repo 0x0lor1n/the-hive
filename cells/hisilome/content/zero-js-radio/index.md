@@ -6,7 +6,7 @@ description = "Progress bar, ticking clock, persistent player, a now-playing wid
 tags = ["nojs", "html", "css", "nginx", "icecast", "liquidsoap", "zola", "nix", "nixos", "lain", "radio", "web"]
 +++
 
-This site's [radio page](/listen/) shows the current track, a progress bar that moves, a clock that counts up, the listener count, the schedule, and the player keeps playing while you read the blog. Normally that's a few hundred lines of JavaScript and a WebSocket.
+This site's radio page shows the current track, a progress bar that moves, a clock that counts up, the listener count, the schedule, and the player keeps playing while you read the blog. Normally that's a few hundred lines of JavaScript and a WebSocket.
 
 Here the `Content-Security-Policy` is `default-src 'none'` plus fonts, styles, images and media. No `script-src`, because there is nothing to allow.
 
