@@ -39,6 +39,12 @@
   # The mount itself comes from disko (disks/<host>.nix declares the
   # dataset with mountpoint = "/srv/the-hive"); nothing to repeat here.
 
+  # .envrc is trusted for both accounts without `direnv allow`: the checkout
+  # is 0750 owner-only writable and its .envrc is pinned by content hash.
+  # Here and not in home-manager: the NixOS direnv module (common/base.nix)
+  # sets DIRENV_CONFIG=/etc/direnv, so only its settings are ever read.
+  programs.direnv.settings.whitelist.prefix = ["/srv/the-hive"];
+
   systemd.tmpfiles.rules = [
     # `z`, not `d`: adjust the mountpoint's owner/mode, never create a dir
     # that would then block `git clone` into it.

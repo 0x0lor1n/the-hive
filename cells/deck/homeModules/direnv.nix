@@ -1,25 +1,19 @@
-# direnv + nix-direnv: per-project envs. Ported from jarvis; the whitelist
-# prefix moves from ~/workspace to /srv/workspace, where projects live on
-# penrose (profiles/srv-workspace, both accounts) — .envrc files under it
-# are trusted without a manual `direnv allow`. /srv/the-hive too: the fleet
-# checkout is shared by both accounts and its .envrc is pinned by content
-# hash, so neither login should have to allow it by hand.
+# direnv: per-project envs. Ported from jarvis, but on NixOS the SYSTEM
+# module owns it (common/profiles/base.nix: programs.direnv + nix-direnv).
+# That module exports DIRENV_CONFIG=/etc/direnv, so direnv never reads
+# ~/.config/direnv/direnv.toml -- an HM-side whitelist is dead config
+# (measured on penrose 2026-09-15: `direnv status` -> whitelist.prefix [],
+# `direnv allow` demanded in /srv/the-hive despite the HM toml). And
+# programs.direnv here would hook zsh a second time on top of /etc/zshrc.
+#
+# So: no programs.direnv, no toml. The whitelist lives next to the paths it
+# trusts (workstation/profiles/srv-the-hive.nix, srv-workspace.nix) as
+# programs.direnv.settings.whitelist.prefix. What stays HM-side is the
+# jarvis quirk of a silent direnv (empty DIRENV_LOG_FORMAT = no
+# "direnv: export ..." lines) -- per account, not for root/scripts.
 {
   inputs,
   cell,
 }: {...}: {
   home.sessionVariables.DIRENV_LOG_FORMAT = "";
-
-  programs.direnv = {
-    enable = true;
-    nix-direnv.enable = true;
-    enableBashIntegration = true;
-    enableZshIntegration = true;
-  };
-
-  # https://github.com/direnv/direnv/pull/1475
-  xdg.configFile."direnv/direnv.toml".text = ''
-    [whitelist]
-    prefix = [ "/srv/workspace" "/srv/the-hive" ]
-  '';
 }
