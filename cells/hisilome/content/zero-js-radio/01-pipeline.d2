@@ -8,7 +8,7 @@ title: Server renders, browser displays {
   style: {font-color: "#727169"; font-size: 20; bold: true}
 }
 
-liq: liquidsoap {
+liq: "" {
   class: ours
   style.font-size: 16
   direction: right
@@ -20,7 +20,7 @@ liq: liquidsoap {
 
 state: radio/state/\n(atomic renames) {class: drawer}
 
-zola: zola build\n(static pages, at deploy) {
+zola: "" {
   class: carrier
   shape: image
   icon: icons/zola.svg
@@ -28,14 +28,14 @@ zola: zola build\n(static pages, at deploy) {
   height: 48
 }
 
-nginx: nginx {
+nginx: "" {
   class: ours
   style.font-size: 16
   ico: "" {shape: image; icon: icons/nginx.svg; width: 48; height: 48}
   ssi: "ssi on;\n<!--# include virtual=... -->" {class: box}
 }
 
-browser: browser {
+browser: "" {
   class: box
   direction: down
   style.font-size: 16
@@ -46,7 +46,7 @@ frame: "<iframe> live.html\n<meta refresh 10>" {class: note}
 browser.shell -> frame: embeds {style.stroke: "#727169"}
 
 liq -> state: file.write.stream(atomic=true) {style.stroke: "#98bb6c"}
-zola -> nginx: templates with SSI comments {style.stroke: "#727169"}
+zola -> nginx: "zola build: templates\nwith SSI comments (at deploy)" {style.stroke: "#727169"}
 state -> nginx.ssi: read on every request {style.stroke: "#98bb6c"}
 nginx -> frame: "assembled HTML\nfragment, every 10 s" {style.stroke: "#98bb6c"}
 nginx -> browser.shell: once {style.stroke: "#727169"}
