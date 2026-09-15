@@ -7,7 +7,7 @@
 <meta name="color-scheme" content="dark">
 <title>{% block title %}{{ config.title }}{% endblock title %}</title>
 {% block description %}<meta name="description" content="{{ config.description }}">{% endblock description %}
-<link rel="stylesheet" href="/style.css">
+<link rel="stylesheet" href="/style.css?v={{ get_hash(path="style.css") | truncate(length=12, end="") }}">
 <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
 <link rel="icon" href="data:,">
 </head>

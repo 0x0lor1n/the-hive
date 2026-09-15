@@ -10,6 +10,9 @@ processes:
         exit 1
       fi
 
+  # Drafts included by default; SITE_DRAFTS=0 process-compose up ... for the
+  # published view. The env var is read by build-site itself, so the same
+  # switch works for dev-site and a bare build-site.
   build-site:
     command: "build-site"
 

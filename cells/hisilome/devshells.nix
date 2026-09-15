@@ -39,7 +39,7 @@ in {
 
     shellHook = ''
       echo "dev-site                                     build + nginx :8099 + rebuild on change (use this, not zola serve)"
-      echo "build-site                                   d2 -> static/diagrams, then zola build into public/"
+      echo "build-site                                   d2 -> svg next to each post, then zola build into public/ (SITE_DRAFTS=0 to hide drafts)"
       echo "process-compose up -f process-compose.yaml   local stack: icecast+liquidsoap+nginx"
       echo "tag-replaygain music                         write ReplayGain tags (-n to preview)"
       echo "tag-album music                              write ALBUM tags from [bracket] prefixes"
