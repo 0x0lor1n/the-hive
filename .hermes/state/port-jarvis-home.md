@@ -620,13 +620,25 @@ DETAIL (rationale and facts for the steps above):
       2. Clients/ (26G): verify with `rsync -nc` after the first pass
       3. after every batch: `chmod -R o-rwx` is NOT needed (ACL), but check one repo as
          Entra: `git -C /srv/workspace/work/<repo> status` -> no Permission denied
-- [ ] devshell smoke test on penrose per repo (`nix develop` in nix-rensa, pxpipe, nixq),
+- [~] devshell smoke test on penrose per repo (`nix develop` in nix-rensa, pxpipe, nixq),
       once as local, once as Entra (direnv whitelist covers both).
-- [ ] hermes/claude state: ~/.hermes, ~/.claude, ~/.claude.json — rsync into EACH home
+      LOCAL DONE 2026-09-15: `nix develop .#default` and `.#workstation` -> go, treefmt,
+      colmena, deploy-key on PATH; `go-test-all` -> nixq ok, pxpipe no test files.
+      NOT phase 4: `.#wintermute` (coreboot toolchain) builds >7 min from cold — do not
+      block the cutover on it.
+      ENTRA: pending — user runs the same two lines from the Entra foot (see checklist).
+- [~] hermes/claude state: ~/.hermes, ~/.claude, ~/.claude.json — rsync into EACH home
       that needs it (per-account by design), after home-manager lands. post-dellvis-tooling
       §2 decides which parts become declarative.
-- [ ] impermanence: nothing to do — rpool/safe/srv/workspace survives the @blank rollback;
+      LOCAL DONE 2026-09-15: ~/.hermes 54M + ~/.claude 7.2M live on penrose (persist
+      carve-outs layer-users-local.nix:74/78; HM symlinks CLAUDE.md/RTK.md/settings.json/
+      statusline.sh in place, ~/.claude/.claude.json via CLAUDE_CONFIG_DIR). Entra: carve-outs
+      auth-entra.nix:234/235 exist, dirs get created on first `claude`/`hermes` login there —
+      nothing to copy unless the user wants the local session history duplicated.
+- [x] impermanence: nothing to do — rpool/safe/srv/workspace survives the @blank rollback;
       the two homes only hold the per-account state above, already on persist.
+      VERIFIED 2026-09-15 (round 3, after reboot): /srv/workspace dataset present, zoxide/
+      histdb/.mozilla on rpool/safe/persist for Entra, ~/.hermes + ~/.claude intact for local.
 
 ### phase 5 — jarvis cutover
 - [ ] jarvis daily work stops; penrose is primary for >= 3 working days without going back

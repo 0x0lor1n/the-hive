@@ -95,3 +95,12 @@ vpn down w; vpn status
   missing group = himmelblau has not reconciled yet (`local_groups_reconcile_interval=300`),
   relogin and retry before reporting as a failure.
 - Anything that fails: paste it, it gets fixed declaratively in cells/ (no edits in either home).
+
+## phase 4 tails — run as ENTRA (foot), 2026-09-15
+# devshell smoke as Entra (direnv whitelist + srv-the-hive read access):
+cd /srv/the-hive && nix develop .#default -c sh -c 'command -v go treefmt colmena deploy-key'
+cd /srv/the-hive && nix develop -c go-test-all
+# one work repo readable/writable once Clients/ is rsynced (after the disk/route step):
+#   git -C /srv/workspace/work/<repo> status
+# claude/hermes as Entra: first launch creates ~/.claude ~/.hermes on persist (auth-entra.nix:234-235),
+# nothing to copy from the local account unless you want the session history too.
