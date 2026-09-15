@@ -273,11 +273,8 @@ main > h2:first-child {
   color: #3bf0ff;
 }
 
-.post-title:hover {
-  color: var(--carp-yellow);
-  text-shadow: 0 0 12px rgba(var(--carp-rgb), 0.6);
-}
-
+/* Hover only tears the RGB clones; the title itself keeps its resting colour,
+   so the effect is a flicker that settles back, not a state change. */
 .post-title:hover::before {
   opacity: 0.7;
   animation: tag-tear-r 420ms steps(1, end) 1;
@@ -363,7 +360,7 @@ main > h2:first-child {
 }
 
 .summary {
-  color: var(--muted);
+  color: var(--carp-yellow);
 }
 
 p {
