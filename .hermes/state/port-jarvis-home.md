@@ -59,9 +59,10 @@ Rows marked [NEW] were missing from the first pass.
 | shared/gui/foot (+foot.ini)     | home/desktop/terminal.nix                | penrose has dwl/greetd; foot fits. foot.ini is out-of-store; colors come from theme via lib._custom.unwrapHex |
 | shared/gui/kitty                | DROPPED 2026-09-14                       | foot is the terminal |
 | shared/gui/firefox              | a NEW workstation profile (not home/)     | REPLACED 2026-09-14 (user): librewolf decommissioned, nur dropped. Browser = STABLE firefox + Phoenix, wired as a NIXOS module (see the browser item in phase 1). The 8 nur addons and the librewolf pin both go away; the search engines (4get default, np/no/nl/gh/wru aliases) get re-declared as a SearchEngines policy, which works on stable since Fx139 |
-| shared/gui/microsoft-edge       | already covered by auth-entra.nix?       | verify, else home/desktop/edge.nix |
-| shared/gui/{simplex,mattermost,spicetify} | home/desktop/chat.nix, media.nix | telegram DROPPED: cell.packages.telegram-desktop (nixpak) already covers it; spicetify needs input |
-| shared/gui/mpv (+vpy)           | home/desktop/mpv.nix                     | vapoursynth plugin: check pkgs build |
+| shared/gui/microsoft-edge       | DONE 2026-09-15: pkg was already in layer-compositor.nix; the policy JSON moved to /etc/opt/edge/policies/managed (system scope) | jarvis wrote it under ~/.config/microsoft-edge/policies, which Chromium on Linux never reads — extensions were never force-installed there |
+| shared/gui/{simplex,mattermost} | DONE 2026-09-15: home/desktop/chat.nix (unsandboxed, both homes) + persist .config/Mattermost, .local/share/simplex | telegram DROPPED: cell.packages.telegram-desktop (nixpak) already covers it |
+| shared/gui/spicetify            | DEFERRED (input is in flake.nix, module not imported) | Spotify itself is not in the closure yet; wire in media.nix when someone actually needs it, with kanagawa colours (see accepted-loss list) |
+| shared/gui/mpv (+vpy)           | DONE 2026-09-15: home/desktop/mpv/ (default.nix + .vpy) | mpv-unwrapped built with vapoursynthSupport against vapoursynth.withPlugins [mvtools ffms] — K now works (jarvis had the binding but stock mpv); hwdec vaapi (iGPU), ao pipewire, `vf=format=rgba` dropped |
 | shared/dev/lang-*.nix, android  | home/dev/*.nix                           | lang-ai is 5 lines (OPENCODE_API_KEY only) — merge with post-dellvis-tooling §2 |
 | shared/tui/{tmux,neovim}        | home/dev/ (or home/cli/)                 | [NEW] both out-of-store; neovim ships 93 files under config/nvim plus a dead config/nvim.bak (drop the .bak) |
 | shared/tui/coding-agents/claude | home/dev/claude.nix                      | keep llm-agents pkg + skills; drop the oh-my-claudecode marketplace wiring |
@@ -454,7 +455,9 @@ DETAIL (rationale and facts for the steps above):
       ~/.claude/CLAUDE.md declared too: "@RTK.md" + agents/CLAUDE.md (empty; global
       instructions go there, not by hand). USER STEPS after switch (credentials only):
       `opencode auth login`, `claude` login; optional `ln -s ~/.claude/skills/* ~/.hermes/skills/`.
-- [ ] desktop additions (foot, firefox, mpv, chat)
+- [x] desktop additions — 2026-09-15 DONE: foot (earlier), firefox+Phoenix (profiles/browser-firefox.nix,
+      imported in nixosConfigurations.nix desktop list), mpv (home/desktop/mpv/), chat.nix, edge policy
+      in layer-compositor.nix. spicetify deferred (table above).
 - [ ] security/* + rekey vpn/ssh secrets for penrose (per-account key sets, phase 1 table)
 - [ ] grep gate: `grep -rn 'nixos-config\|nonNixos\|genericLinux\|nixGL' cells/workstation/home dotfiles` -> empty
       (2026-09-15: clean after zsh; three comment-only mentions reworded to "jarvis")
