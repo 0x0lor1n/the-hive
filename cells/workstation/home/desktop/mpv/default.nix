@@ -1,4 +1,4 @@
-# mpv, ported from ~/nixos-config users/shared/gui/mpv (2026-09-15).
+# mpv, ported from jarvis users/shared/gui/mpv (2026-09-15).
 #
 # Changes against jarvis:
 # - hwdec nvdec-copy -> vaapi: penrose runs the iGPU only (gpu-intel.nix
@@ -10,7 +10,7 @@
 #   libvapoursynth autoloads $out/lib/vapoursynth -- the script's
 #   `core.mv.*` / `core.ffms2.Source` resolve without LoadPlugin.
 # - ao openal -> pipewire (layer-session.nix runs pipewire; openal was a
-#   nonNixos workaround).
+#   non-NixOS workaround).
 # - dropped `vf = format=rgba`: an unconditional software RGBA convert on
 #   every frame, undocumented since the first commit (edd27d3), and it defeats
 #   hwdec (forces a readback). Nothing here needs RGB input.
