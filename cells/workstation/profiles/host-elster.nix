@@ -52,5 +52,13 @@
   systemd.services.dlm = {
     after = lib.mkForce ["systemd-udev-settle.service"];
     wantedBy = ["multi-user.target"];
+    # chaotic-nyx's cachyos module overlay strips the userspace half of evdi
+    # ("Don't build userspace stuff": no lib/libevdi.so), but the nixpkgs
+    # module links displaylink against boot.kernelPackages.evdi, so DLM's
+    # dlopen("libevdi.so") fails and it idles without ever creating a DRM
+    # node (strace: ENOENT on every RPATH entry, no /sys/devices/evdi/add).
+    # The library is kernel-agnostic; borrow it from the stock kernel set,
+    # which the evdiOverlay bumps to the same 1.15.1.
+    environment.LD_LIBRARY_PATH = "${pkgs.linuxPackages.evdi}/lib";
   };
 }
