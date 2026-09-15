@@ -22,6 +22,11 @@ classes: {
   note: {
     style: {fill: "#16161d"; stroke: "#e6c384"; font-color: "#e6c384"; stroke-width: 1; stroke-dash: 2}
   }
+  # Invisible cell for an icon inside a grid container: d2 stretches grid
+  # cells to the row height, which would deform a bare image.
+  ico: {
+    style: {fill: transparent; stroke: transparent; stroke-width: 0}
+  }
   grp: {
     style: {fill: "#16161d"; stroke: "#363646"; font-color: "#727169"; stroke-width: 1}
   }

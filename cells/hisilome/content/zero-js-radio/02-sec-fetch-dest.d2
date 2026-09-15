@@ -25,10 +25,9 @@ curl: "GET /salt-fiber-bypass/\nno Sec-Fetch-Dest header" {
   style.font-size: 16
   grid-rows: 1
   grid-gap: 24
-  height: 130
-  c: "" {shape: image; icon: icons/curl.svg; width: 48; height: 48}
-  r: "" {shape: image; icon: icons/rss.svg; width: 48; height: 48}
-  b: "" {shape: image; icon: icons/crawler.svg; width: 48; height: 48}
+  c: "" {class: ico; i: "" {shape: image; icon: icons/curl.svg; width: 48; height: 48}}
+  r: "" {class: ico; i: "" {shape: image; icon: icons/rss.svg; width: 48; height: 48}}
+  b: "" {class: ico; i: "" {shape: image; icon: icons/crawler.svg; width: 48; height: 48}}
 }
 
 nginx: "" {
@@ -36,7 +35,7 @@ nginx: "" {
   style.font-size: 16
   grid-rows: 1
   grid-gap: 30
-  ico: "" {shape: image; icon: icons/nginx.svg; width: 48; height: 48}
+  ico: "" {class: ico; i: "" {shape: image; icon: icons/nginx.svg; width: 48; height: 48}}
   map: "map \$http_sec_fetch_dest\$uri  \$shell_page\n~^document.*/\$  /listen/index.html\ndefault  /__none" {class: note}
 }
 
