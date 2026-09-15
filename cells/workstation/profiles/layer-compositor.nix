@@ -92,7 +92,13 @@
     export XDG_CURRENT_DESKTOP="''${XDG_CURRENT_DESKTOP:-dwl}"
     ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
-    ${pkgs.systemd}/bin/systemctl --user start dwl-session-bridge.service 2>/dev/null || true
+    # A previous dwl session (relogin via greeter) leaves the oneshot bridge
+    # active and graphical-session.target up, so a plain `start` is a no-op
+    # and avizo/swayidle stay in their start-limit-hit state from the moment
+    # the old compositor went away (measured 2026-09-15). Reset + restart
+    # re-pulls the target's wants against the new WAYLAND_DISPLAY.
+    ${pkgs.systemd}/bin/systemctl --user reset-failed 2>/dev/null || true
+    ${pkgs.systemd}/bin/systemctl --user restart dwl-session-bridge.service 2>/dev/null || true
 
     ${pkgs.swaybg}/bin/swaybg -c '#${theme.roles.bg}' &
     ${pkgs.wl-clipboard}/bin/wl-paste --type text  --watch ${pkgs.cliphist}/bin/cliphist store &
@@ -112,11 +118,17 @@
     # Last crash log survives in the (persisted) home. Never let the log be
     # the reason the session dies: if $HOME is not there yet (first login
     # after boot raced himmelblaud_tasks), fall back to the journal.
+    # Not exec: when dwl exits, take graphical-session.target down with the
+    # bridge (BindsTo) so PartOf= units (avizo, swayidle) stop cleanly
+    # instead of crash-looping into their start limit.
     if mkdir -p "$HOME/.cache/dwl" 2>/dev/null; then
-      exec ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
+      ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
     else
-      exec ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar}
+      ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar}
     fi
+    rc=$?
+    ${pkgs.systemd}/bin/systemctl --user stop dwl-session-bridge.service 2>/dev/null || true
+    exit $rc
   '';
 in {
   imports = [inputs.home-manager.nixosModules.home-manager];
