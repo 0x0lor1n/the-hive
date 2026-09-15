@@ -2,17 +2,27 @@
 
 direction: down
 
-nav: "GET /salt-fiber-bypass/\nSec-Fetch-Dest: document" {class: box; icon: icons/browser.svg}
-frame: "GET /salt-fiber-bypass/\nSec-Fetch-Dest: iframe" {class: box; icon: icons/browser.svg}
+nav: "GET /salt-fiber-bypass/\nSec-Fetch-Dest: document" {
+  class: box
+  label.near: top-center
+  style.font-size: 16
+  b: "" {shape: image; icon: icons/browser.svg; width: 48; height: 48}
+}
+frame: "GET /salt-fiber-bypass/\nSec-Fetch-Dest: iframe" {
+  class: box
+  label.near: top-center
+  style.font-size: 16
+  b: "" {shape: image; icon: icons/browser.svg; width: 48; height: 48}
+}
 curl: "GET /salt-fiber-bypass/\nno Sec-Fetch-Dest header" {
   class: carrier
   label.near: top-center
   style.font-color: "#dcd7ba"
   style.font-size: 16
   direction: right
-  c: "" {shape: image; icon: icons/curl.svg; width: 32; height: 32}
-  r: "" {shape: image; icon: icons/rss.svg; width: 32; height: 32}
-  b: "" {shape: image; icon: icons/crawler.svg; width: 32; height: 32}
+  c: "" {shape: image; icon: icons/curl.svg; width: 48; height: 48}
+  r: "" {shape: image; icon: icons/rss.svg; width: 48; height: 48}
+  b: "" {shape: image; icon: icons/crawler.svg; width: 48; height: 48}
 }
 
 nginx: "" {
