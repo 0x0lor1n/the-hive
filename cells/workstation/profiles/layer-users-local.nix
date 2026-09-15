@@ -93,6 +93,8 @@
       # authoritative -- every app rebuilds its cache on miss -- so persisting
       # the lot costs disk, not correctness.
       ".cache"
+      # Firefox profile dir -- see the same entry in auth-entra.nix.
+      ".mozilla"
       ".config/opencode"
       {
         directory = ".local/share/opencode";
