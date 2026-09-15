@@ -72,7 +72,7 @@
       fi
 
       rage -d \
-        -i "$root/secrets/jarvis-nix-rage.pub" \
+        -i "$root/secrets/elster-nix-rage.pub" \
         "$root/secrets/deploy.age" \
         | ssh-add -t 900 -
 
@@ -98,8 +98,9 @@
       # Same cache, same key as eval (see nix/rageImportEncrypted.sh).
       root=$(git rev-parse --show-toplevel)
       case "''${1:-$(hostname)}" in
-        penrose) identity=dellvis-nix-rage ;;
-        *)       identity=jarvis-nix-rage ;;
+        penrose) identity=penrose-nix-rage ;;
+        elster)  identity=elster-nix-rage ;;
+        *)       echo "unlock-secrets: no PIN identity for host $1" >&2; exit 1 ;;
       esac
       cache="/var/tmp/nix-import-encrypted/$UID"
       umask 077; mkdir -p "$cache"
@@ -205,6 +206,10 @@ in {
       ];
     };
 
+    enterShellCommands.agenix-primary.text = ''
+      # shellcheck disable=SC1091
+      . ${inputs.self.outPath}/nix/agenix-primary.sh
+    '';
     enterShellCommands.motd.text = ''
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"

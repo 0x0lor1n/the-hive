@@ -2,14 +2,15 @@
 # consumer live here; login hashes stay in globals so console login survives
 # an agenix outage.
 #
-# Master identities: jarvis-nopin-rage.pub (TPM-sealed, no PIN, so
-# `agenix generate/rekey` stay non-interactive; also decrypts
-# secrets/globals.nix.age at eval time) and dellvis-nix-rage.pub (TPM on
-# dellvis, PIN-gated). Every secret is additionally encrypted to the
-# recovery key held offline in KeePass (extraEncryptionPubkeys) so losing
-# both TPMs does not lose the secrets. `generated/` holds values encrypted
-# to those recipients, `rekeyed/<host>/` the same values re-encrypted to
-# host.sshHostPubkey.
+# Master identities: penrose-nix-rage.pub and elster-nix-rage.pub (each a
+# TPM-sealed, PIN-gated age-plugin-tpm identity on its own host). Every secret
+# is additionally encrypted to the recovery key held offline in KeePass
+# (extraEncryptionPubkeys) so losing both TPMs does not lose the secrets.
+# `agenix rekey/generate` on host X must be told to use X's identity only
+# (AGENIX_REKEY_PRIMARY_IDENTITY[_ONLY], set by the devshell): rage stops at
+# the first TPM identity it cannot open instead of trying the next one.
+# `generated/` holds values encrypted to those recipients, `rekeyed/<host>/`
+# the same values re-encrypted to host.sshHostPubkey.
 {
   inputs,
   cell,
@@ -89,14 +90,14 @@ in {
   age.rekey = {
     masterIdentities = [
       {
-        identity = "${flakeRoot}/secrets/jarvis-nopin-rage.pub";
+        identity = "${flakeRoot}/secrets/penrose-nix-rage.pub";
         # Required for TPM identities: age-plugin-tpm cannot derive the
         # recipient from the identity file without touching the TPM.
-        pubkey = "age1tag1q2vgn00whx3eukfv6n97udenlcl2nqx39ykq40z5gccc3exugtdq6kedkgm";
+        pubkey = "age1tag1q2ggf943ppzwpqwcf39m0r3ztj3vzg6yap2e3tewda7m7k6k0cxdv9dramt";
       }
       {
-        identity = "${flakeRoot}/secrets/dellvis-nix-rage.pub";
-        pubkey = "age1tag1q2ggf943ppzwpqwcf39m0r3ztj3vzg6yap2e3tewda7m7k6k0cxdv9dramt";
+        identity = "${flakeRoot}/secrets/elster-nix-rage.pub";
+        pubkey = "age1tag1qthur0dg6lhanph2gpgcnzuv07epumxxnw9ka3c7ltz2sr6nqhe9ktwgr2k";
       }
     ];
     # Offline recovery identity (plain age key, stored in KeePass). Never

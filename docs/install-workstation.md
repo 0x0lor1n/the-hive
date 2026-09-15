@@ -5,13 +5,19 @@ Written after penrose (Dell Latitude 5580); adjust names for the next box.
 
 ## Identities
 
-Three age master identities, `secrets/*.pub` holds the recipients:
+Two age master identities, `secrets/*.pub` holds the recipients:
 
 | identity | where the key lives | scope |
 |---|---|---|
-| `jarvis-nix-rage` | ZBook TPM, PIN | ZBook-only secrets |
-| `dellvis-nix-rage` | penrose TPM, PIN | penrose-only secrets |
-| `jarvis-nopin-rage` | ZBook TPM, no PIN (**temporary**) | secrets shared between VM/hosts, and host bootstrap |
+| `elster-nix-rage` | elster (ZBook) TPM, PIN | everything (was `jarvis-nix-rage`) |
+| `penrose-nix-rage` | penrose TPM, PIN | everything (was `dellvis-nix-rage`) |
+
+Both are recipients of every secret (globals, user-*.nix, generated/, host keys,
+hisilome); each host decrypts with its own. `jarvis-nopin-rage` (PIN-less, only
+ever needed for the swtpm VM) is gone. age-plugin-tpm aborts on the first identity
+whose key is not in the local TPM, so nothing ever passes both identities to one
+`rage` call: `nix/rageImportEncrypted.sh` tries `<hostname>-nix-rage` first, and
+the devshells export `AGENIX_REKEY_PRIMARY_IDENTITY(_ONLY)` for the host.
 
 KeePass holds a plain `AGE-SECRET-KEY-1...` as recovery recipient
 (`extraEncryptionPubkeys` in `cells/workstation/profiles/secrets.nix`).
@@ -34,15 +40,16 @@ Host SSH key must exist **before** install, otherwise rekeyed secrets don't decr
 
 ```sh
 mkdir -p /dev/shm/x/persist/etc/ssh
-rage -d -i secrets/jarvis-nopin-rage.pub secrets/hosts/<host>/ssh_host_ed25519_key.age \
+rage -d -i secrets/$(uname -n)-nix-rage.pub secrets/hosts/<host>/ssh_host_ed25519_key.age \
   > /dev/shm/x/persist/etc/ssh/ssh_host_ed25519_key
 cp secrets/hosts/<host>/ssh_host_ed25519_key.pub /dev/shm/x/persist/etc/ssh/
 chmod 600 /dev/shm/x/persist/etc/ssh/ssh_host_ed25519_key
-rage -d -i secrets/jarvis-nopin-rage.pub secrets/generated/<host>/zfs-rpool-passphrase.age \
+rage -d -i secrets/$(uname -n)-nix-rage.pub secrets/generated/<host>/zfs-rpool-passphrase.age \
   > /dev/shm/rpool.key
 ```
 
-(`rage -d -i <identity>` — the `.pub` here is the TPM identity file, not a public key.)
+(`rage -d -i <identity>` — the `.pub` here is the TPM identity file of the machine
+you run the install from, not a public key; it asks for that machine's PIN.)
 
 ## 3. Target
 
@@ -82,8 +89,11 @@ nixos-install → reboot.
   the pool key to the agenix passphrase and seals a credential into
   `/boot/zfs-unlock/rpool.cred`. Every boot after that unlocks silently.
 - Secure Boot — see next section. No `sbctl` in PATH is needed, the config does it.
-- Create the host TPM identity (`age-plugin-tpm --generate` with PIN), add it to
-  `masterIdentities`, rekey, and drop `jarvis-nopin-rage` from the recipients.
+- Create the host TPM identity (`age-plugin-tpm --generate` with PIN) as
+  `secrets/<host>-nix-rage.pub` and add it to `masterIdentities` (with its pubkey);
+  `nix/agenix-primary.sh` picks the recipient up from that file's `# Recipient:`
+  header by hostname. Then `agenix rekey` and re-encrypt the eval-time
+  files (globals, user-*.nix, hosts/*, hisilome/*) to the new recipient.
 - Log in as the fleet user from `secrets/globals.nix.age` (not `jarvis` — that's the
   zBook playground user). From the builder:
   `ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 <user>@<ip>` — without

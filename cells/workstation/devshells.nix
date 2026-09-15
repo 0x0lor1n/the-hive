@@ -212,6 +212,7 @@ in {
         plugin-files = ${nixPlugins}/lib/nix/plugins
         extra-builtins-file = ${inputs.self.outPath}/nix/extra-builtins.nix
       "
+      . ${inputs.self.outPath}/nix/agenix-primary.sh
       echo "workstation: WS_HOST=''${WS_HOST:-sevastopol}; state in .ren/vm/"
       echo "  ws-image             build the disko image"
       echo "  ws-switch            build toplevel, export closure for activation in the VM"

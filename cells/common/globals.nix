@@ -11,7 +11,14 @@
   # extra-builtins.nix asserts isPath; outPath carries store context.
   flakeRoot = /. + builtins.unsafeDiscardStringContext inputs.self.outPath;
 
-  identities = [(flakeRoot + "/secrets/jarvis-nopin-rage.pub")];
+  # PIN identities of the two workstations; rageImportEncrypted.sh tries the
+  # one named after the running host first and stops there when it works, so
+  # the foreign TPM is never touched. Plaintext is cached by ciphertext hash
+  # (unlock-secrets primes it without a tty).
+  identities = [
+    (flakeRoot + "/secrets/penrose-nix-rage.pub")
+    (flakeRoot + "/secrets/elster-nix-rage.pub")
+  ];
 
   encrypted = assert lib.assertMsg (builtins ? extraBuiltins) ''
     globals: `builtins.extraBuiltins` is missing. Run from the repo devshell,
@@ -60,6 +67,18 @@ in let
               # (rage, master identities + KeePass), shipped to /persist/etc/ssh
               # by nixos-anywhere --extra-files. Never keyscanned.
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMbQt3EL0KhxSadOnWnBDKVySy843hxcCPNbUtU8pqgi root@penrose";
+            };
+
+            # HP ZBook Firefly 16 G10 (ex-jarvis, Ubuntu): the daily driver and
+            # the Entra machine (state: port-jarvis-home, phase 5). Same shape
+            # as penrose; whole NVMe (SK hynix PC801 1T), user + hashes from the
+            # encrypted half. Host key generated on penrose into
+            # secrets/hosts/elster/ (rage: elster-nix + penrose-nix TPM identities +
+            # KeePass recovery), shipped via nixos-anywhere --extra-files.
+            hosts.elster = {
+              diskDevice = "/dev/nvme0n1";
+              hasTpm = true; # /dev/tpmrm0, TPM 2.0 (facts 2026-09-15)
+              sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN0MnzHtFzfGdAKGxda4bXNWCR9Kg+8ybwW8+6Lq/dvB root@elster";
             };
 
             persistence = {
