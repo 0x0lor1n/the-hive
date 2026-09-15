@@ -1,17 +1,14 @@
 +++
 title = "A Live Radio Page With Zero JavaScript"
 date = 2026-10-01
-draft = true
 description = "Progress bar, ticking clock, persistent player, a now-playing widget that refreshes every ten seconds, one-click copy, and no script-src in the CSP. Seven tricks: nginx SSI, Sec-Fetch-Dest, @property counters, :has(), and a liquidsoap that writes HTML."
 [taxonomies]
 tags = ["nojs", "html", "css", "nginx", "icecast", "liquidsoap", "zola", "nix", "nixos", "lain", "radio", "web"]
 +++
 
-<!-- TODO: screenshot of the shell with the console open → 01-shell.png -->
-
 This site's [radio page](/listen/) shows the current track, a progress bar that moves, a clock that counts up, the listener count, the schedule, and the player keeps playing while you read the blog. Normally that's a few hundred lines of JavaScript and a WebSocket. Here the `Content-Security-Policy` is `default-src 'none'` plus fonts, styles, images and media. No `script-src`, because there is nothing to allow.
 
-I didn't set out to avoid JS on principle. I wanted to know how much of a live page the server and CSS can carry before the client has to run code. Answer: all of it, for a page this size. Seven tricks did it. None of them is new, but I had not seen them used together.
+I didn't set out to avoid JS on principle. I wanted to know how much of a live page the server and CSS can carry before the client has to run code. For a page this size the answer is all of it, with seven tricks, none of them new; I just had not seen them used together.
 
 Stack: [Zola](https://www.getzola.org/) renders the static pages, [liquidsoap](https://www.liquidsoap.info/) runs the station and feeds icecast, nginx serves everything. One NixOS module, one `process-compose.yaml` for the dev loop.
 
@@ -133,7 +130,7 @@ pre code[data-lang]::after { content: "Copy"; }
 pre code[data-lang]:active::after { content: "Ctrl+C"; }
 ```
 
-The cost: you can't drag one line out of a block. I tried two behaviours, normal selection on multi-line blocks and one-click on one-liners via `:has(> .giallo-l:only-of-type)` on the highlighter's line spans. It worked, but the same-looking element behaving two ways confused me on my own site. Snippets here are meant to be taken whole, so: one behaviour.
+The cost: you can't drag one line out of a block. I tried two behaviours, normal selection on multi-line blocks and one-click on one-liners via `:has(> .giallo-l:only-of-type)` on the highlighter's line spans. It worked, but the same-looking element behaving two ways confused me on my own site. Snippets here are meant to be taken whole, so there is one behaviour.
 
 The language tab on the left is the same idea, `content: attr(data-lang)` on `::before`, from the attribute Zola already puts on `<code>`.
 
@@ -147,12 +144,12 @@ The language tab on the left is the same idea, `content: attr(data-lang)` on `::
 ## What doesn't work
 
 - Bar and clock are dead reckoning between refreshes. If the stream stutters they drift up to ten seconds until the next fragment.
-- The frame's URL isn't in the address bar. Reload gives you the right page (the shell reads `request_uri`), but copying the address after navigating inside the frame gives the URL you entered on, not the post you're reading. <!-- TODO: verify what the bar actually shows -->
+- The address bar never changes. Navigating inside the frame leaves the bar at whatever URL you entered on. Reload still gives you the right page (the shell reads `request_uri`), but copying the address after a few clicks hands out the wrong post.
 - `@property` and `:has()` need a 2023-ish browser. Older ones get a static clock (`.rc-static` fallback), the bar at its start, and a console that doesn't slide.
-- Shell and `live.html` share a stylesheet by copy. The comment says "keep in sync". It will drift.
+- Shell and `live.html` share a stylesheet by copy. The comment says "keep in sync", which means it will drift.
 
 ## Credits
 
-The station layout is a tribute to [lainonlife](https://github.com/barrucadu/lainonlife). <!-- TODO: link to the `@property` counter trick's origin, or drop this sentence -->
+The station layout is a tribute to [lainonlife](https://github.com/barrucadu/lainonlife). The frame-with-a-persistent-player navigation is borrowed from [geanmar.com](https://geanmar.com/).
 
-Config, liquidsoap script and nginx module: <!-- TODO: link to cells/hisilome once public -->.
+Config, liquidsoap script and nginx module: [the-hive/cells/hisilome](https://github.com/0x0lor1n/the-hive/tree/main/cells/hisilome).
