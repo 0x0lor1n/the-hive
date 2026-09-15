@@ -1,6 +1,7 @@
 +++
 title = "Replacing a Swiss ISP's Fiber Box: XGS-PON Bypass on NixOS, From Zero to RIPv2"
 date = 2026-09-13
+draft = true
 description = "Putting Salt's Fiber Box X6 in a drawer: cloning the ONU onto a WAS-110, and the RIPv2 announcement that turned out to gate the static IP. All in one NixOS config."
 
 [taxonomies]

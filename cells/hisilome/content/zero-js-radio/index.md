@@ -1,7 +1,6 @@
 +++
 title = "A Live Radio Page With Zero JavaScript"
 date = 2026-09-15
-draft = true
 description = "Progress bar, ticking clock, persistent player, a now-playing widget that refreshes every ten seconds, one-click copy, and no script-src in the CSP. Seven tricks: nginx SSI, Sec-Fetch-Dest, @property counters, :has(), and a liquidsoap that writes HTML."
 [taxonomies]
 tags = ["nojs", "html", "css", "nginx", "icecast", "liquidsoap", "zola", "nix", "nixos", "lain", "radio", "web"]
