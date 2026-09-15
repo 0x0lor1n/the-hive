@@ -34,6 +34,9 @@ Also port users/shared/tui/ (coding-agents/opencode etc.) — missed in the inve
   standalone activationPackage for the Entra user. Decision 2026-09-14: the Entra account IS the
   daily driver, the local user only holds sudo/the checkout and rebuilds — so cli+dev go to BOTH,
   same modules, and the split is a short deny-list, not a profile system.
+  AMENDED 2026-09-15: the two-account layout is the shape of the WORK laptop. It was proven on
+  penrose and moves to elster (ZBook) whole; once elster is the daily driver, penrose drops the
+  Entra account and becomes single-user personal (phase 6). Until then both hosts carry it.
   Entra must NOT get: git commit identity (stays null, home/default.nix:16-19 — a stray commit
   must fail loudly rather than leak the work UPN) and personal security/* (vpn, osint, personal ssh).
 - Anything from nixos-config that only exists for standalone/genericLinux is DROPPED, not ported:
@@ -668,17 +671,43 @@ DETAIL (rationale and facts for the steps above):
       serial/MACs deliberately not recorded (public repo).
       NOTE: jarvis is a nonNixos HM host today (nixos-config/users/jarvis, nonNixos.enable),
       so there is no existing hardware-configuration to port from.
-- [ ] ROLE (user decision, open): jarvis is 3x penrose (14c/64G vs 4c/31G). Options:
-        (a) second workstation, same module set as penrose + nix remote builder for penrose
-        (b) something else. Also: is the ZBook employer property? If yes, reinstall + own SB keys
-        + public host entry is a policy question, must be settled before the install step.
-- [ ] NAME (user decision, open): Signalis pool proposed — falke (workstation), kolibri (helper/builder);
-      dixie (Neuromancer) if it becomes a coreboot test bench. No hyphens (hostname == globals key == secrets dir).
-- [ ] jarvis: new host in nixosConfigurations.nix (mkHost like penrose), hosts.<name> in globals
-      (diskDevice, hasTpm, sshHostPubkey generated on penrose), disks/<name>.nix (penrose layout, 1T),
-      secrets/generated/<name>; hardware: raptor-lake + intel gpu, no dGPU
-- [ ] install via same path as port-dellvis phase 4 (Secure Boot user keys, ZFS+TPM, himmelblau enroll)
+- [x] ROLE DECIDED 2026-09-15 (user): elster is the DAILY DRIVER and the Entra machine. The whole
+      penrose config moves over unchanged: both accounts (crookedmirror + Entra), hive group,
+      shared /srv/workspace, /srv/the-hive ACL layout. penrose was the rehearsal on real hardware
+      (as sevastopol was for penrose); after the soak on elster, Entra is REMOVED from penrose and
+      penrose becomes personal-only (phase 6). Corporate wifi ("corporate" NM profile) is the
+      reason this all exists — it lives on elster.
+- [x] NAME DECIDED 2026-09-15 (user): **elster** (Signalis pilot, pairs with penrose). kolibri kept in
+      reserve for a builder/NAS. No hyphens (hostname == globals key == secrets dir).
+- [x] 5G modem (mtk_t7xx): NOT used by the user -> no ModemManager, driver stays in-kernel, nothing to add.
+- [ ] DOCK: Lenovo ThinkPad Hybrid USB-C (17e9:6015): on TB4 it is DP alt-mode, DisplayLink only for
+      the extra outputs. Add hardware.displaylink (evdi, unfree: `nix-prefetch-url` the Synaptics zip
+      by hand, hash into the store before build) as a separate host-only module — NOT in intelLaptop,
+      penrose has no TB and must not carry evdi.
+- [ ] DOCKER (user 2026-09-15): some work projects need it. virtualisation.docker.enable on elster only,
+      Entra user (host.entraUser) + crookedmirror in "docker" group, persist /var/lib/docker
+      (dataset rpool/safe/docker, NOT in the @blank rollback). libvirt: NOT ported unless asked.
+      Before backup, on jarvis: `docker ps -a --format '{{.Names}}\t{{.Image}}'; docker volume ls -q`
+      -> named volumes with real data go on the HDD (`docker run --rm -v X:/v -v $PWD:/b alpine tar czf /b/X.tgz /v`).
+- [ ] elster: new host in nixosConfigurations.nix (mkHost, base = workstation, hardware = raptorLaptop,
+      encryption = zfsNative), hosts.elster in globals (diskDevice = "/dev/nvme0n1", hasTpm = true,
+      sshHostPubkey generated on penrose), disks/elster.nix (copy of penrose.nix, 1T), secrets/generated/elster,
+      secrets/hosts/elster/ host key, rekey.
+      raptorLaptop = platform-baremetal + gpu-intel + laptop + host-elster (docker, displaylink,
+      linuxPackages_latest for AX211/i915 RPL). gpu-intel: the nouveau blacklist + udev rule are
+      harmless on a no-dGPU box, leave as is. laptop.nix: elster HAS a battery (BAT0) -> lid handling
+      and powerOnBoot wording assume penrose; split when it becomes annoying, not before.
+- [ ] install via same path as port-dellvis phase 4 (Secure Boot user keys in Setup Mode, ZFS+TPM,
+      himmelblau enroll with the same Entra tenant). Overlap: penrose keeps Entra until phase 6.
 - [ ] /srv/workspace/projects/nixos-config: archive (tag `pre-rensa`), stop using; post-dellvis-tooling §5 cleanup
+
+### phase 6 — penrose goes personal (after >= 3 working days on elster, no return)
+- [ ] remove auth-entra + vpn work-a/work-b + browser work profile from penrose's mkHost
+      (Entra bits move behind a `withEntra` flag or a host-level list; the module set is otherwise shared)
+- [ ] penrose: hive group + /srv/workspace/work stay (crookedmirror still reads work code from home),
+      but no Entra principal can log in; himmelblau cache purged (`/var/cache/himmelblau`, /persist copy)
+- [ ] globals: penrose.entraUser = null; agenix rekey drops the Entra-scoped secrets for penrose
+- [ ] update invariants §21-38 (Entra as daily driver) to say elster, not penrose
 
 ## blocked_on
 - CHECKOUT LAYOUT DECIDED 2026-09-14 (user): ONE tree. /srv/the-hive is the single source of
