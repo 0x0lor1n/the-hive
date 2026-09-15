@@ -250,7 +250,6 @@ main > h2:first-child {
   z-index: 0;
   color: var(--link);
   text-shadow: 0 0 4px rgba(var(--link-rgb), 0.18);
-  transition: color 160ms, text-shadow 160ms;
 }
 
 .post-title::before,
@@ -273,22 +272,42 @@ main > h2:first-child {
   color: #3bf0ff;
 }
 
-/* Hover only tears the RGB clones; the title itself keeps its resting colour,
-   so the effect is a flicker that settles back, not a state change. */
+/* Hover fires a one-shot flash: the title goes yellow and the RGB clones tear
+   for 420ms, then everything settles back to the resting look even while the
+   pointer stays. All of it lives in keyframes so there is no sticky hover
+   state to snap out of. */
+.post-title:hover {
+  animation: title-flash 420ms steps(1, end) 1 forwards;
+}
+
 .post-title:hover::before {
-  opacity: 0.7;
-  animation: tag-tear-r 420ms steps(1, end) 1;
+  animation: tag-tear-r 420ms steps(1, end) 1, clone-flash 420ms steps(1, end) 1;
 }
 
 .post-title:hover::after {
-  opacity: 0.7;
-  animation: tag-tear-c 420ms steps(1, end) 1;
+  animation: tag-tear-c 420ms steps(1, end) 1, clone-flash 420ms steps(1, end) 1;
+}
+
+@keyframes clone-flash {
+  0%, 99% { opacity: 0.7; }
+  100% { opacity: 0; }
+}
+
+@keyframes title-flash {
+  0%, 99% {
+    color: var(--carp-yellow);
+    text-shadow: 0 0 12px rgba(var(--carp-rgb), 0.6);
+  }
+  100% {
+    color: var(--link);
+    text-shadow: 0 0 4px rgba(var(--link-rgb), 0.18);
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .post-title { transition: none; }
+  .post-title:hover,
   .post-title:hover::before,
-  .post-title:hover::after { opacity: 0; animation: none; }
+  .post-title:hover::after { animation: none; }
 }
 
 .post-list {
