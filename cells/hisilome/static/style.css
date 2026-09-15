@@ -483,6 +483,7 @@ pre {
 pre code[data-lang]::before,
 pre code[data-lang]::after {
   position: absolute;
+  user-select: all;
   top: 0;
   padding: 0.1rem 0.5rem;
   font-size: 0.75rem;

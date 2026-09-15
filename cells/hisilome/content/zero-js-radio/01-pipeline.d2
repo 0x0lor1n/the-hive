@@ -6,7 +6,8 @@ direction: down
 liq: "" {
   class: ours
   style.font-size: 16
-  direction: right
+  grid-rows: 1
+  grid-gap: 30
   ico: "" {shape: image; icon: icons/liquidsoap.svg; width: 48; height: 48}
   np: now-playing.txt\nper track {class: box}
   con: console.txt\nevery second {class: box}
@@ -26,7 +27,8 @@ zola: "" {
 nginx: "" {
   class: ours
   style.font-size: 16
-  direction: right
+  grid-rows: 1
+  grid-gap: 30
   ico: "" {shape: image; icon: icons/nginx.svg; width: 48; height: 48}
   ssi: "ssi on;\n<!--# include virtual=... -->" {class: box}
 }
@@ -34,15 +36,16 @@ nginx: "" {
 browser: "" {
   class: box
   style.font-size: 16
-  direction: right
+  grid-rows: 1
+  grid-gap: 30
   ico: "" {shape: image; icon: icons/browser.svg; width: 48; height: 48}
   shell: "shell page\n<audio> never reloads" {class: box}
 }
 frame: "<iframe> live.html\n<meta refresh 10>" {class: note}
-browser.shell -> frame: embeds {style.stroke: "#727169"}
+browser -> frame: embeds {style.stroke: "#727169"}
 
 liq -> state: file.write.stream(atomic=true) {style.stroke: "#98bb6c"}
-zola -> nginx: "zola build: templates\nwith SSI comments (at deploy)" {style.stroke: "#727169"}
-state -> nginx.ssi: read on every request {style.stroke: "#98bb6c"}
-nginx -> browser.shell: once {style.stroke: "#727169"}
+zola -> nginx: "templates with\nSSI comments" {style.stroke: "#727169"}
+state -> nginx: read on every request {style.stroke: "#98bb6c"}
+nginx -> browser: once {style.stroke: "#727169"}
 nginx -> frame: "assembled HTML\nfragment, every 10 s" {style.stroke: "#98bb6c"}
