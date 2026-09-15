@@ -458,16 +458,15 @@ DETAIL (rationale and facts for the steps above):
 - [x] desktop additions — 2026-09-15 DONE: foot (earlier), firefox+Phoenix (profiles/browser-firefox.nix,
       imported in nixosConfigurations.nix desktop list), mpv (home/desktop/mpv/), chat.nix, edge policy
       in layer-compositor.nix. spicetify deferred (table above).
-- [~] security/* — 2026-09-15 code DONE, secrets pending one PIN run:
+- [x] security/* — 2026-09-15 DONE.
       osint.nix + tor.nix -> home/security/ (local account only: mkHome `personal = true`);
       vpn -> profiles/vpn.nix, SYSTEM units (wg-quick-owt, openvpn-{tiko,wrs}), credentials as
-      agenix runtime secrets secrets/vpn/{owt.conf,tiko.ovpn,tiko-auth,wrs.ovpn,wrs-auth}.age,
-      polkit lets the networkmanager group (Entra) manage the two employer units, `vpn up|down|status`
-      wrapper in systemPackages. ssh matchBlocks already in home/default.nix (step 4).
-      TODO (needs the TPM PIN, interactive): `bash .hermes/state/vpn-transplant.sh` — decrypts
-      jarvis's vpn-{owt,tiko,wrs}.nix.age + user.nix.age (all readable by dellvis-nix-rage, verified
-      by stanza tags), splits, encrypts to masters+recovery and writes rekeyed/penrose. Until it
-      runs, penrose eval fails on the missing rekeyFile (by design).
+      agenix runtime secrets secrets/vpn/{owt.conf,tiko.ovpn,tiko-auth,wrs.ovpn,wrs-auth}.age
+      (masters + recovery) + rekeyed/penrose, produced by .hermes/state/vpn-transplant.sh from
+      jarvis's vpn-*.nix.age + user.nix.age in one PIN run. polkit lets the networkmanager group
+      (Entra) manage the two employer units; `vpn up|down|status` in systemPackages.
+      ssh matchBlocks already in home/default.nix (step 4). Verify after switch: `vpn status`,
+      `vpn up owt` as the Entra user (no password prompt), `vpn up wrs` as local.
 - [x] grep gate: `grep -rn 'nixos-config\|nonNixos\|genericLinux\|nixGL' cells/workstation/home dotfiles` -> empty
       (2026-09-15: clean after zsh; re-run after desktop+security — clean, comment mentions say "jarvis")
 - [ ] eval + build toplevel for penrose AND sevastopol/osgiliath (shared home must not break them)
