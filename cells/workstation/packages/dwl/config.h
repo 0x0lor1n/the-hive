@@ -52,9 +52,10 @@ static const Rule rules[] = {
 /* layout(s) */
 static const Layout layouts[] = {
 	/* symbol     arrange function */
-	{ "[]=",      tile },
+	{ "[]=",      tile },    /* auto: master|stack landscape, master/stack portrait */
 	{ "><>",      NULL },    /* no layout function means floating behavior */
 	{ "[M]",      monocle },
+	{ "TTT",      bstack },  /* force master over stack (autotile patch) */
 };
 
 /* monitors */
@@ -237,6 +238,7 @@ static const Modekey modekeys[] = {
 	ONESHOT(LAYOUT,  0,                                       XKB_KEY_t,      setlayout,      {.v = &layouts[0]}),
 	ONESHOT(LAYOUT,  0,                                       XKB_KEY_f,      setlayout,      {.v = &layouts[1]}),
 	ONESHOT(LAYOUT,  0,                                       XKB_KEY_m,      setlayout,      {.v = &layouts[2]}),
+	ONESHOT(LAYOUT,  0,                                       XKB_KEY_b,      setlayout,      {.v = &layouts[3]}),
 	ONESHOT(LAYOUT,  WLR_MODIFIER_SHIFT,                      XKB_KEY_f,      togglefloating, {0}),
 	{ LAYOUT,      { 0,                                       XKB_KEY_Escape, entermode,      {.i = NORMAL} } },
 
