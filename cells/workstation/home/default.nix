@@ -147,9 +147,12 @@ in {
         # hermes/claude take Shift+Enter as newline. foot only encodes these
         # once an app pushes kitty-keyboard/modifyOtherKeys — which never
         # reaches it through tmux — so emit CSI-u unconditionally.
+        # Super+Shift+Return is the muscle-memory split chord; tmux has no
+        # Super modifier, so it is sent as the same C-S-Enter sequence (dwl
+        # deliberately does not bind it -- new window is Super+Alt+T).
         "\\x1b[13;2u" = "Shift+Return";
         "\\x1b[13;5u" = "Control+Return";
-        "\\x1b[13;6u" = "Control+Shift+Return";
+        "\\x1b[13;6u" = "Control+Shift+Return Super+Shift+Return";
       };
       # Palette from cells/theme (foot uses rrggbb, no #); the 16 ANSI slots
       # come from theme.ansi, same list the VT console uses.
