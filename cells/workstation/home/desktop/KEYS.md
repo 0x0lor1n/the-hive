@@ -87,7 +87,7 @@ Open / Copy PNG. Файлы: `~/Pictures/Screenshots`, `~/Videos/Recordings`.
 |---|---|---|
 | `←` / `→` | +1 / −1 окно в мастер-колонку | остаёшься — можно жать много раз |
 | `Shift + ←` / `→` | мастер-колонка уже / шире (±5%) | остаёшься |
-| `t` / `f` / `m` | tile / floating / monocle | сразу выход |
+| `t` / `f` / `m` / `b` | tile (auto по форме экрана) / floating / monocle / bstack (мастер сверху) | сразу выход |
 | `Shift + F` | float/unfloat текущего окна | сразу выход |
 | `Esc` | выход | — |
 
