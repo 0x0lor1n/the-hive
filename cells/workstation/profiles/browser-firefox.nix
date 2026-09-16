@@ -148,6 +148,14 @@ in {
       defaultPref("browser.startup.page", 3);
       defaultPref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
       defaultPref("privacy.resistFingerprinting.exemptedDomains", "claude.ai");
+      // linux-entra-sso is MV3: since Fx 127 its host_permissions
+      // (login.microsoftonline.com) are NOT granted at install, the user has
+      // to click "(enable)" in the addon popup -- which is unreadable here
+      // (2026-09-16), so the PRT cookie header never got injected. Grant
+      // origin permissions at install time again, MV2-style. Only affects
+      // installs after this lands; for an existing profile toggle it once in
+      // about:addons -> Linux Entra SSO -> Permissions.
+      lockPref("extensions.originControls.grantByDefault", true);
     '';
   };
 }

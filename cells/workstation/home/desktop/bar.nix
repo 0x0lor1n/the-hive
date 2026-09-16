@@ -21,10 +21,14 @@
   k = theme.colors;
   r = theme.roles;
 
-  # `<field>` file written by dwl-status for the selected monitor.
+  # `<field>` file written by dwl-status: per output (waybar exports
+  # WAYBAR_OUTPUT_NAME to custom execs, one bar per monitor), falling back
+  # to the selected monitor's copy.
   dwlField = field: json:
     pkgs.writeShellScript "dwl-${field}" ''
-      f="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/dwl/${field}"
+      d="''${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/dwl"
+      f="$d/''${WAYBAR_OUTPUT_NAME:-}/${field}"
+      [ -n "''${WAYBAR_OUTPUT_NAME:-}" ] && [ -r "$f" ] || f="$d/${field}"
       [ -r "$f" ] || exit 0
       ${json}
     '';
@@ -54,8 +58,10 @@
       printf '{"text":"󰂛","class":"dnd","tooltip":"do not disturb"}\n'
       exit 0
     fi
-    n=$(${pkgs.mako}/bin/makoctl list | ${pkgs.jq}/bin/jq '.data[0] | length')
-    [ "$n" -gt 0 ] || exit 0
+    # makoctl exits non-zero / prints nothing when mako is not (yet) up,
+    # which made `[ "" -gt 0 ]` log "integer expected" every 5s.
+    n=$(${pkgs.mako}/bin/makoctl list 2>/dev/null | ${pkgs.jq}/bin/jq -r '.data[0] | length' 2>/dev/null)
+    [ "''${n:-0}" -gt 0 ] 2>/dev/null || exit 0
     printf '{"text":"󰂚 %s","class":"pending","tooltip":"%s notifications"}\n' "$n" "$n"
   '';
 
@@ -91,7 +97,7 @@ in {
         "clock"
       ];
 
-      # Tags 1-9 of the selected monitor, pre-rendered as pango markup by
+      # Tags 1-9 of this bar's monitor, pre-rendered as pango markup by
       # dwl-status. Display only: tags are switched from the keyboard.
       "custom/dwl-tags" = {
         exec = dwlTags;
