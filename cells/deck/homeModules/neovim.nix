@@ -20,6 +20,10 @@
   home.packages = with pkgs; [
     neovim
     tree-sitter
+    # nvim-treesitter (main) compiles every grammar from source via `cc`;
+    # without a C compiler in PATH no parser installs and nothing gets
+    # highlighted (nix, lua, markdown, ...). gcc's wrapper provides `cc`.
+    gcc
     ast-grep
     ripgrep
     # `trash-put`, shelled out to by neo-tree delete (plugins/editor.lua);

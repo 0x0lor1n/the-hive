@@ -12,6 +12,9 @@
   host,
   ...
 }: {
+  # The machine lives in Geneva; base.nix's UTC is a mkDefault for servers.
+  time.timeZone = "Europe/Zurich";
+
   networking.networkmanager.enable = true;
   # The local user manages connections without a polkit prompt.
   users.users.${host.userName}.extraGroups = ["networkmanager"];

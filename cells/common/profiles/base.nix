@@ -1,6 +1,11 @@
 # Applied to every host.
-{inputs, ...}: {pkgs, ...}: {
-  time.timeZone = "UTC";
+{inputs, ...}: {
+  pkgs,
+  lib,
+  ...
+}: {
+  # Servers stay on UTC; the workstation shape (laptop.nix) sets the local zone.
+  time.timeZone = lib.mkDefault "UTC";
   i18n.defaultLocale = "en_US.UTF-8";
 
   nix.settings = {

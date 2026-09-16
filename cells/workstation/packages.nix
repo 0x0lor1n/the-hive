@@ -45,6 +45,14 @@
                 "org.freedesktop.portal.Documents" = "talk";
                 "org.freedesktop.Notifications" = "talk";
                 "org.freedesktop.ScreenSaver" = "talk";
+                # Tray icons (StatusNotifierItem): the app calls
+                # RegisterStatusNotifierItem on waybar's watcher and exports
+                # /StatusNotifierItem on its own unique bus name (Chromium/Qt
+                # both do; no well-known name to `own`). Without the watcher
+                # in the proxy policy the call never leaves the sandbox and
+                # the icon just doesn't appear -- same as flathub's
+                # com.slack.Slack / org.telegram.desktop --talk-name.
+                "org.kde.StatusNotifierWatcher" = "talk";
               }
               // dbus;
 

@@ -41,8 +41,16 @@ listen_status() {
 wait_recording() {
   local pid=$!
   echo "$pid" >"$stopfile"
+  poke_bar
   wait "$pid"
   rm -f "$stopfile"
+  poke_bar
+}
+
+# bar.nix custom/recorder: interval=once, signal=2. Process is
+# `.waybar-wrapped` under nixpkgs, so no -x.
+poke_bar() {
+  pkill -RTMIN+2 waybar 2>/dev/null || true
 }
 
 copy_to_cb() {
@@ -79,7 +87,10 @@ countdown() {
 }
 
 shotnow() {
-  cd "$dir" && wl-screenrec -f "$file" &
+  # Simple command in the background. `cd "$dir" && wl-screenrec ... &`
+  # forks a subshell: $! is the subshell (bash makes it ignore SIGINT) and
+  # the stop signal never reached wl-screenrec.
+  wl-screenrec -f "$dest" &
   wait_recording
   notify_user
 }
@@ -97,7 +108,7 @@ shotarea() {
   local area
   area=$(slurp -d -b "#@theme_bg@bf" -c "#@theme_focus@" -w 2)
   [[ -n $area ]] || exit 0
-  cd "$dir" && wl-screenrec -g "$area" -f "$file" &
+  wl-screenrec -g "$area" -f "$dest" &
   wait_recording
   notify_user
 }
