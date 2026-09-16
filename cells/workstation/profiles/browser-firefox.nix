@@ -67,7 +67,25 @@ in {
         "{a8332c60-5b6d-41ee-bfc8-e9bb331d34ad}" = addon "surfingkeys_ff";
         "{73a6fe31-595d-460b-a920-fcc0f8843232}" = addon "noscript";
         # uBlock Origin: Phoenix already normal_installed it.
+
+        # Entra SSO (silent PRT cookie for login.microsoftonline.com through
+        # himmelblau-broker). The himmelblau module already wires the native
+        # messaging host (programs.firefox.nativeMessagingHosts) and pins
+        # the webextension via Extensions.Install at v1.7.1. That release has
+        # a Firefox-only advisory (GHSA-g9vc-5j77-f2cm, fixed in 1.10.2) and
+        # Extensions.Install never updates a GitHub-hosted xpi, so install it
+        # here instead, force_installed so the user cannot lose it. The
+        # native side (himmelblau's rust_sso) is protocol-compatible: the
+        # commands are getVersion/getAccounts/acquirePrtSsoCookie/
+        # acquireTokenSilently in both.
+        "linux-entra-sso@example.com" = {
+          installation_mode = "force_installed";
+          install_url = "https://github.com/siemens/linux-entra-sso/releases/download/v1.10.2/linux_entra_sso-1.10.2.xpi";
+          default_area = "navbar";
+        };
       };
+      # ...and neutralise the module's older copy (see above).
+      Extensions.Install = lib.mkForce [];
 
       # SearchEngines is a release-channel policy since Fx139 (this pin: 154).
       # Phoenix removes Google/Bing/DDG builtins and adds its DDG/Mojeek/

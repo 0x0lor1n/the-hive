@@ -134,7 +134,10 @@
       printf '%s\n' "''${layout[$sel]-}" > "$d/layout"
       printf '%s\n' "''${title[$sel]-}" > "$d/title"
       printf '%s\n' "''${mode[$sel]-}" > "$d/mode"
-      ${pkgs.procps}/bin/pkill -RTMIN+1 -x waybar 2>/dev/null || true
+      # nixpkgs wraps the binary: the process is named `.waybar-wrapped`,
+      # so `pkill -x waybar` never matched and the bar stayed on tag 1
+      # (seen 2026-09-15). Match the comm without -x.
+      ${pkgs.procps}/bin/pkill -RTMIN+1 waybar 2>/dev/null || true
     done
   '';
 

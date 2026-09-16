@@ -155,7 +155,7 @@ in {
       # Required for Entra login: tenant Conditional Access blocks the
       # PRT->access-token exchange for non-compliant devices, and
       # apply_policy is what lets enrollment/compliance happen at all.
-      apply_policy = false; # TEMP: проверка, что Hello PIN работает без Intune gate
+      apply_policy = true;
 
       # TEMP (2026-09-15, elster): trace why greetd restarts the PAM
       # conversation after a successful PIN auth_step (second auth_init
@@ -253,6 +253,9 @@ in {
       # zoxide frecency db + tmux-resurrect snapshots.
       (entraHome ".local/share/zoxide")
       (entraHome ".local/share/tmux/resurrect")
+      # neovim: lazy.nvim plugins, mason, compiled treesitter parsers -- see
+      # layer-users-local.nix.
+      (entraHome ".local/share/nvim")
       # Whole ~/.cache (p10k dump/instant-prompt live at its root, no
       # override) -- see layer-users-local.nix. Also covers
       # .cache/microsoft-edge, which used to be its own entry: impermanence
