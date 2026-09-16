@@ -1,5 +1,5 @@
 # /srv/the-hive: the ONE checkout of this repo on the workstation, read by
-# both accounts (decision 2026-09-14, port-jarvis-home.md blocked_on).
+# both accounts (decision 2026-09-14).
 #
 #   /srv/the-hive           <local>:hive 0750 -- group reads, only the owner
 #                           (who rebuilds) writes. cells/ inherits that.

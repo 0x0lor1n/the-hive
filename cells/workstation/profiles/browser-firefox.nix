@@ -1,7 +1,7 @@
 # Firefox (stable) hardened by Phoenix, as a SYSTEM package: the browser is
 # the Entra account's daily driver, and Entra users never get a home.packages
-# profile (see layer-compositor.nix). Replaces jarvis's programs.librewolf +
-# nur addons: decision 2026-09-14 in .hermes/state/port-jarvis-home.md.
+# profile (see layer-compositor.nix). Replaces the old programs.librewolf +
+# nur addons setup (decision 2026-09-14).
 #
 # Phoenix has two halves:
 #   1. the wrapper: pkgs.withPhoenix = firefox.override { extraPoliciesFiles;

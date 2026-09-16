@@ -1,9 +1,10 @@
 # nix-rensa
 
 One flake for the fleet, on [rensa](https://gitlab.com/rensa-nix/). Ported from
-`divnix/hive`. Hosts: **osgiliath** (VPS, <https://hisilo.me>) and **sevastopol**
-(workstation rehearsal VM -- ZFS native encryption, TPM-sealed unlock, Secure
-Boot via lanzaboote, impermanence).
+`divnix/hive`. Hosts: **osgiliath** (VPS, <https://hisilo.me>), **penrose** (Dell
+Latitude 5580) and **elster** (HP ZBook Firefly 16 G10) -- workstations with ZFS
+native encryption, TPM-sealed unlock, Secure Boot via lanzaboote, impermanence;
+**sevastopol** is the retired QEMU rehearsal of the same config.
 
 ## Layout
 
@@ -40,8 +41,7 @@ equality, which is why colmena is pinned by rev and declared only at the root.
 
 Workstation hosts are plain `nixosConfigurations`, not colmena nodes. The VM is
 built and booted from `cells/workstation/devshells.nix` (`ws-image`, `ws-vm-run`,
-`ws-switch` -> `/mnt/share/activate.sh` inside the guest). Procedure and state
-for the rehearsal live in `.hermes/state/port-test-vm.md`.
+`ws-switch` -> `/mnt/share/activate.sh` inside the guest).
 
 `sevastopol` runs the CachyOS kernel + `zfs_cachyos` from the pinned `chaotic`
 input (`profiles/layer-kernel.nix`); `specialisation.safe` is stock nixpkgs
@@ -102,9 +102,8 @@ ABI match survives PATH shadowing.
 [rtk](https://github.com/rtk-ai/rtk) (Rust, pinned tag in
 `cells/repo/packages.nix`) compresses common command output (`git status/diff/log`,
 `cargo test`, `ls`, `grep`, …) before it reaches the model. Telemetry disabled
-via `RTK_TELEMETRY_DISABLED=1` in the shellHook. The Hermes plugin
-(`rtk init --agent hermes`) is not yet wired; see
-`.hermes/state/post-dellvis-tooling.md`.
+via `RTK_TELEMETRY_DISABLED=1` in the shellHook. The Hermes side is the
+`hermes-seed-proxy` user unit (`agent-proxy.nix`).
 
 ## Secrets
 

@@ -70,7 +70,7 @@ in let
             };
 
             # HP ZBook Firefly 16 G10 (ex-jarvis, Ubuntu): the daily driver and
-            # the Entra machine (state: port-jarvis-home, phase 5). Same shape
+            # the Entra machine. Same shape
             # as penrose; whole NVMe (SK hynix PC801 1T), user + hashes from the
             # encrypted half. Host key generated on penrose into
             # secrets/hosts/elster/ (rage: elster-nix + penrose-nix TPM identities +

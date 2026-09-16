@@ -1,7 +1,7 @@
 # Agent skills shared between claude-code and opencode (and, by hand,
 # hermes: `ln -s` into ~/.hermes/skills). Each skill is a directory with a
 # SKILL.md; some pull a package the skill shells out to. Store-backed (the
-# scope reminder in port-jarvis-home: only nvim/tmux/zsh are live-edited).
+# rule: only nvim/tmux/zsh are live-edited).
 {lib}: let
   skills = {
     nix-search = {

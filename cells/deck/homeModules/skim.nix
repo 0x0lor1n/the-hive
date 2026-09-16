@@ -7,7 +7,7 @@
 #
 # theme-debt: jarvis wrapped `sk` in a script that appended a catppuccin
 # --color string and exported HISTDB_COLOR for the histdb widget. Both are
-# dropped here (stock skim colours); see port-jarvis-home.md theme-debt.
+# dropped here (stock skim colours).
 {
   inputs,
   cell,
