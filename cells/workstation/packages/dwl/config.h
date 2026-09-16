@@ -65,7 +65,7 @@ static const MonitorRule monrules[] = {
    /* name        mfact  nmaster scale layout       rotate/reflect                x    y
     * example of a HiDPI laptop monitor:
     { "eDP-1",    0.5f,  1,      2,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL,   -1,  -1 }, */
-	{ NULL,       0.55f, 1,      1,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL,   -1,  -1 },
+	{ NULL,       0.5f,  1,      1,    &layouts[0], WL_OUTPUT_TRANSFORM_NORMAL,   -1,  -1 },
 	/* default monitor rule: can be changed but cannot be eliminated; at least one monitor rule must exist */
 };
 
@@ -167,7 +167,7 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_r,           entermode,        {.i = LAYOUT} },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_n,           entermode,        {.i = NOTIFICATION} },
 	/* waybar (home/desktop/bar.nix) toggles on SIGUSR1 */
-	{ MODKEY,                    XKB_KEY_b,           spawn,            SHCMD("pkill -USR1 -x waybar") },
+	{ MODKEY,                    XKB_KEY_b,           spawn,            SHCMD("pkill -USR1 waybar") },
 	{ 0, XKB_KEY_XF86AudioRaiseVolume,  spawn, SHCMD("volumectl -u up") },
 	{ 0, XKB_KEY_XF86AudioLowerVolume,  spawn, SHCMD("volumectl -u down") },
 	{ 0, XKB_KEY_XF86AudioMute,         spawn, SHCMD("volumectl toggle-mute") },

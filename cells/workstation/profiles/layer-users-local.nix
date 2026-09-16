@@ -86,6 +86,11 @@
       ".local/share/zoxide"
       # tmux-resurrect snapshots (prefix+C-s), restored with prefix+C-r.
       ".local/share/tmux/resurrect"
+      # neovim state: lazy.nvim plugin clones (~110 repos), mason binaries,
+      # compiled treesitter parsers (site/parser). Nothing authoritative
+      # (lazy-lock.json in dotfiles pins it), but without it every first
+      # nvim after boot re-clones and re-compiles for minutes.
+      ".local/share/nvim"
       # Whole ~/.cache. Started as nix + zsh compdump + direnv content store,
       # but powerlevel10k hardcodes its dump/instant-prompt files to
       # $XDG_CACHE_HOME root (typeset -gr, no override), and without them the

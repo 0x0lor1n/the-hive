@@ -59,8 +59,11 @@
     printf '{"text":"󰂚 %s","class":"pending","tooltip":"%s notifications"}\n' "$n" "$n"
   '';
 
+  # Same contract as `recorder --status` (recorder.nix): the pid file exists
+  # while wl-screenrec runs. Checked directly so the badge does not depend on
+  # `recorder` being on the unit's PATH.
   recorderStatus = pkgs.writeShellScript "bar-recorder" ''
-    [ "$(recorder --status)" = true ] || exit 0
+    [ -f "''${XDG_RUNTIME_DIR:-/tmp}/recorder.pid" ] || exit 0
     printf '{"text":"󰑊 REC","class":"recording","tooltip":"click to stop"}\n'
   '';
 in {
@@ -258,8 +261,11 @@ in {
   # The user unit gates on WAYLAND_DISPLAY like avizo/swayidle (the HM module
   # sets ConditionEnvironment; the bridge imports the variable). recorder /
   # wifimenu / vpn come from home.packages / systemPackages, which the user
-  # manager's PATH does not include by default.
-  systemd.user.services.waybar.Service.Environment = ["PATH=/run/current-system/sw/bin:/etc/profiles/per-user/%u/bin"];
+  # manager's PATH does not include by default. For the Entra user HM is
+  # activated via `activate` (not useUserPackages), so /etc/profiles/per-user/
+  # does not exist for them — home.packages live in ~/.nix-profile instead.
+  # Both are listed; the missing one is harmless.
+  systemd.user.services.waybar.Service.Environment = ["PATH=%h/.nix-profile/bin:/etc/profiles/per-user/%u/bin:/run/current-system/sw/bin"];
 
   home.packages = [pkgs.bluetui pkgs.pwvucontrol];
 }
