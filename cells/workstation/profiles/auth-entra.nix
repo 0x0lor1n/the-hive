@@ -83,6 +83,26 @@
     };'
   '';
   patchedHimmelblau = import "${patchedHimmelblauSrc}/default.nix" {inherit pkgs;};
+  # local_groups membership, declared. himmelblau adds the account with
+  # gpasswd (on login + every reconcile interval), but mutableUsers = false
+  # regenerates /etc/group from this spec at EVERY activation -- boot and
+  # `nixos-rebuild switch` -- and drops the non-declarative members. The
+  # login-time re-add comes too late for the session: systemd resolves
+  # user@.service's supplementary groups BEFORE its PAM stack runs, so the
+  # user manager and everything it spawns (tmux-server, xdg portals, the
+  # first zsh) ran without `hive` and could not traverse the 0750
+  # /srv/the-hive (2026-09-16 on elster, right after a reboot: "permission
+  # denied: ~/.config/zsh/config.zsh", tmux/nvim configs unreadable, Entra
+  # session looked like a fresh home). Apps spawned directly by dwl happened
+  # to work because dwl itself came from the greetd session, whose PAM ran
+  # after the boot-time reconcile. Membership must be in /etc/group before
+  # the first login; the gpasswd path stays as a no-op for the same names.
+  # cn (not the upn): cn_name_mapping=true is what NSS returns as the login.
+  entraLocalGroups = lib.optionalAttrs (globals.entra.user.upn != null) (
+    lib.genAttrs config.services.himmelblau.settings.local_groups (_: {
+      members = [(lib.head (lib.splitString "@" globals.entra.user.upn))];
+    })
+  );
 in {
   imports = [inputs.himmelblau.nixosModules.himmelblau];
 
@@ -183,7 +203,7 @@ in {
     group = "himmelblaud";
     description = "Himmelblau authentication daemon";
   };
-  users.groups.himmelblaud = {};
+  users.groups = {himmelblaud = {};} // entraLocalGroups;
 
   # nsncd runs libnss_himmelblau.so as the nscd user, not himmelblaud —
   # needs group read on the daemon's cache files or every NSS lookup EACCESs.
