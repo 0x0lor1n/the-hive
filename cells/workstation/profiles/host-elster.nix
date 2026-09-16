@@ -1,5 +1,5 @@
 # elster-only hardware/workload bits: what the ZBook needs that penrose must
-# not carry (state: port-jarvis-home, phase 5). Kept out of intelLaptop on
+# not carry. Kept out of intelLaptop on
 # purpose -- one host, one file; split into profiles when a second host wants
 # any of it.
 #

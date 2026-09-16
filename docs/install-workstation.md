@@ -101,7 +101,6 @@ nixos-install → reboot.
   right key. Put it in `~/.ssh/config` as `Host penrose`.
 - Sanity check: `bootctl status | grep 'Secure Boot'` → `enabled (user)`,
   `zfs get keystatus rpool` → `available`, `systemctl --failed` → empty.
-- Check `hermes/state/post-dellvis-tooling.md` for what's still not ported.
 
 ## 6. Secure Boot (Lanzaboote, bare metal)
 

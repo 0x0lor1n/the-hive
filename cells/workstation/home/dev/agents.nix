@@ -1,7 +1,7 @@
 # Agent CLIs shared by both accounts: claude-code and opencode (+
 # oh-my-openagent) as packages, per-home state under $HOME. Ported from
-# jarvis's users/shared/tui/coding-agents with the decisions from
-# port-jarvis-home applied:
+# the old Ubuntu home-manager users/shared/tui/coding-agents with these
+# decisions applied:
 #   - oh-my-claudecode marketplace wiring dropped (hermes + opencode now);
 #     the two jarvis-local directory marketplaces are gone with it.
 #   - opencode: anthropic is no longer used. omo.jsonc keeps only what was the
@@ -10,7 +10,7 @@
 #     aliases go away.
 #   - claude reaches pxpipe (profiles/agent-proxy.nix) via ANTHROPIC_BASE_URL
 #     in settings.json env, as on jarvis.
-#   - rtk (post-dellvis-tooling §3): the claude PreToolUse hook and RTK.md
+#   - rtk: the claude PreToolUse hook and RTK.md
 #     that `rtk init -g` would write, plus ~/.config/rtk/config.toml.
 #
 # Packages come from cells/repo (the llm-agents pin lives there), passed in
@@ -169,7 +169,7 @@ in {
       # route; ignore that line.
       "opencode/plugins/oh-my-openagent.ts".source = omoShim;
 
-      # post-dellvis-tooling §3. Telemetry is already off via
+      # rtk config. Telemetry is already off via
       # RTK_TELEMETRY_DISABLED (agent-proxy.nix); nix stays with nixq.
       "rtk/config.toml".source = (pkgs.formats.toml {}).generate "rtk-config.toml" {
         hooks.exclude_commands = ["nix" "nixos-rebuild" "colmena" "nom" "just"];

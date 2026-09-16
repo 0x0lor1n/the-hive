@@ -4,7 +4,7 @@
 #
 # ESP + one partition for `rpool` on the whole disk. The old Ubuntu install
 # (ESP + ext4 /boot + LUKS/LVM) is wiped: nothing to preserve, the data goes
-# to the HDD before install (state: port-jarvis-home, phase 5). The pool root
+# to the HDD before install. The pool root
 # carries the encryption, the datasets are the impermanence layout: local/root
 # is rolled back to @blank on every boot (storage-zfs-rollback.nix); local/nix,
 # local/state, safe/persist, safe/srv/* and safe/docker survive.

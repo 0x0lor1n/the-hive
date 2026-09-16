@@ -26,7 +26,7 @@
 
   # OUTBOUND ssh identities, transplanted verbatim from jarvis (the pubkeys
   # are registered on GitHub/Azure/client hosts, so no generator). Split per
-  # account (state: port-jarvis-home, key table): the local user gets the
+  # account: the local user gets the
   # personal + freelance keys, the Entra user the employer ones. Each key
   # ships with its .pub: the private halves are passphrase-protected, and
   # without the .pub next to it ssh must decrypt the key just to learn which
