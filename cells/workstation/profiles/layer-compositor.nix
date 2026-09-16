@@ -87,8 +87,13 @@
   # dwl-status: the somebar replacement's back half. Lines are
   # "<output> <field> <value...>" (title/appid/fullscreen/floating/selmon/
   # tags/layout, plus "mode" from the modes patch). Keep tags/layout/title/
-  # mode of the selected monitor in $XDG_RUNTIME_DIR/dwl/<field> and poke
-  # waybar's custom/dwl-* modules (home/desktop/bar.nix, signal = 1 ->
+  # mode per output in $XDG_RUNTIME_DIR/dwl/<output>/<field> (waybar runs one
+  # bar per output and exports WAYBAR_OUTPUT_NAME to every custom exec, so
+  # each bar shows its own monitor -- before this every bar showed the
+  # selected monitor's tags and only redrew on focus change, seen 2026-09-16
+  # on the two-monitor work profile) plus the selected monitor's copy in
+  # $XDG_RUNTIME_DIR/dwl/<field> as fallback, and poke waybar's
+  # custom/dwl-* modules (home/desktop/bar.nix, signal = 1 ->
   # SIGRTMIN+1). tags is rendered here as pango markup: "tags <occ> <tagset>
   # <sel> <urg>" are bitmasks; the number is bold on the focus colour when
   # viewed, plain when it has a window, dimmed when empty, urgent in red.
@@ -124,16 +129,27 @@
         mode) mode["$out"]="$rest" ;;
         *) continue ;;
       esac
-      [ -n "$sel" ] || continue
       # printstatus emits ~8 lines per monitor per event; write and signal
       # once per actual change, not once per line.
-      cur="''${tags[$sel]-}"$'\n'"''${layout[$sel]-}"$'\n'"''${title[$sel]-}"$'\n'"''${mode[$sel]-}"
+      cur="$sel"
+      for o in "''${!tags[@]}"; do
+        cur+=$'\n'"$o"$'\n'"''${tags[$o]-}"$'\n'"''${layout[$o]-}"$'\n'"''${title[$o]-}"$'\n'"''${mode[$o]-}"
+      done
       [ "$cur" != "$last" ] || continue
       last="$cur"
-      printf '%s\n' "''${tags[$sel]-}" > "$d/tags"
-      printf '%s\n' "''${layout[$sel]-}" > "$d/layout"
-      printf '%s\n' "''${title[$sel]-}" > "$d/title"
-      printf '%s\n' "''${mode[$sel]-}" > "$d/mode"
+      for o in "''${!tags[@]}"; do
+        mkdir -p "$d/$o"
+        printf '%s\n' "''${tags[$o]-}" > "$d/$o/tags"
+        printf '%s\n' "''${layout[$o]-}" > "$d/$o/layout"
+        printf '%s\n' "''${title[$o]-}" > "$d/$o/title"
+        printf '%s\n' "''${mode[$o]-}" > "$d/$o/mode"
+      done
+      if [ -n "$sel" ]; then
+        printf '%s\n' "''${tags[$sel]-}" > "$d/tags"
+        printf '%s\n' "''${layout[$sel]-}" > "$d/layout"
+        printf '%s\n' "''${title[$sel]-}" > "$d/title"
+        printf '%s\n' "''${mode[$sel]-}" > "$d/mode"
+      fi
       # nixpkgs wraps the binary: the process is named `.waybar-wrapped`,
       # so `pkill -x waybar` never matched and the bar stayed on tag 1
       # (seen 2026-09-15). Match the comm without -x.
