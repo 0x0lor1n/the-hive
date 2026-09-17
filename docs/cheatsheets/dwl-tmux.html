@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>dwl + tmux — key reference (elster)</title>
+<style>
+  @page { size: A4; margin: 12mm 13mm 14mm;
+    @bottom-center { content: "dwl + tmux · elster · page " counter(page) " / " counter(pages); font: 8pt "DejaVu Sans", sans-serif; color: #777; } }
+  * { box-sizing: border-box; }
+  body { font: 10pt/1.3 "DejaVu Sans", "Noto Sans", sans-serif; color: #111; margin: 0; }
+  h1 { font-size: 18pt; margin: 0 0 1mm; }
+  .sub { color: #555; font-size: 9pt; margin: 0 0 5mm; }
+  .legend { font-size: 9.5pt; color: #333; margin: 0 0 6mm; padding: 2mm 3mm; background: #f4f4f4; border-left: 3px solid #999; }
+  .legend kbd { margin-right: 1mm; }
+  h2 { font-size: 13pt; margin: 6mm 0 2mm; padding: 1.2mm 3mm; background: #222; color: #fff; border-radius: 2px; break-after: avoid; }
+  h2.tmux { background: #2a5d3a; }
+  h3 { font-size: 10.5pt; margin: 3.5mm 0 1mm; color: #333; border-bottom: 1px solid #bbb; break-after: avoid; }
+  table { width: 100%; border-collapse: collapse; }
+  tr { break-inside: avoid; }
+  td { padding: 0.8mm 2mm; vertical-align: top; border-bottom: 1px dotted #ccc; }
+  td:first-child { white-space: nowrap; width: 42%; }
+  kbd { font: 9.5pt "DejaVu Sans Mono", monospace; background: #f0f0f0; border: 1px solid #bbb; border-bottom-width: 2px; border-radius: 3px; padding: 0 1.6mm; white-space: nowrap; }
+  .note { font-size: 9.5pt; color: #444; margin: 1.5mm 0 0; }
+  .pb { break-before: page; }
+</style>
+</head>
+<body>
+<h1>dwl + tmux — key reference</h1>
+<p class="sub">elster · source of truth: <code>packages/dwl/config.h</code>, <code>dotfiles/tmux/config.conf</code></p>
+
+<div class="legend">
+  <kbd>Super</kbd> = Win/Logo key — everything with Super goes to <b>dwl</b> (the compositor).<br>
+  <kbd>Ctrl</kbd> / <kbd>Ctrl+Shift</kbd> / <kbd>Alt</kbd> chords without Super go to <b>tmux</b> (no prefix needed).
+  The tmux prefix is <kbd>Ctrl+Shift+B</kbd>; it is only needed for the few <kbd>prefix …</kbd> bindings.<br>
+  Every foot window is a tmux client, so "terminal" below means foot + tmux.
+</div>
+
+<h2>dwl · launching</h2>
+<table>
+<tr><td><kbd>Super+Alt+T</kbd></td><td>new terminal window (foot + tmux)</td></tr>
+<tr><td><kbd>Super+D</kbd> / <kbd>Super+P</kbd></td><td>app launcher (fuzzel)</td></tr>
+<tr><td><kbd>Super+Alt+F</kbd></td><td>file manager (thunar)</td></tr>
+<tr><td><kbd>Super+C</kbd></td><td>calculator (fuzzel; result goes to the clipboard)</td></tr>
+<tr><td><kbd>Super+V</kbd></td><td>clipboard history (cliphist)</td></tr>
+<tr><td><kbd>Super+Alt+W</kbd></td><td>wifi menu (nmcli via fuzzel)</td></tr>
+<tr><td><kbd>Super+Esc</kbd></td><td>power menu</td></tr>
+<tr><td><kbd>Super+L</kbd></td><td>lock screen (swaylock)</td></tr>
+<tr><td><kbd>Super+Shift+Q</kbd></td><td>quit dwl</td></tr>
+<tr><td><kbd>Ctrl+Alt+F7..F12</kbd></td><td>switch virtual terminal</td></tr>
+</table>
+
+<h2>dwl · windows and focus</h2>
+<table>
+<tr><td><kbd>Super+J</kbd> / <kbd>Super+K</kbd></td><td>focus next / previous window in the stack</td></tr>
+<tr><td><kbd>Super+Shift+J</kbd> / <kbd>Super+Shift+K</kbd></td><td>move window down / up the stack</td></tr>
+<tr><td><kbd>Super+Enter</kbd></td><td>zoom — make the focused window the master (swap with master)</td></tr>
+<tr><td><kbd>Super+Shift+C</kbd></td><td>close window</td></tr>
+<tr><td><kbd>Super+E</kbd></td><td>toggle fullscreen</td></tr>
+<tr><td><kbd>Super+Shift+Space</kbd></td><td>toggle floating</td></tr>
+<tr><td><kbd>Super+Tab</kbd></td><td>back to the previously viewed tags (toggle back and forth)</td></tr>
+<tr><td><kbd>Super+Left mouse</kbd></td><td>drag window</td></tr>
+<tr><td><kbd>Super+Middle mouse</kbd></td><td>toggle floating</td></tr>
+<tr><td><kbd>Super+Right mouse</kbd></td><td>resize window</td></tr>
+</table>
+<p class="note">Focus does not follow the mouse (<code>sloppyfocus = 0</code>): it changes on click or <kbd>Super+J</kbd>/<kbd>K</kbd> only. Touchpad taps click but never drag.</p>
+
+<h2>dwl · two monitors</h2>
+<table>
+<tr><td><kbd>Super+,</kbd> / <kbd>Super+.</kbd></td><td>focus the left / right monitor</td></tr>
+<tr><td><kbd>Super+Shift+&lt;</kbd> / <kbd>Super+Shift+&gt;</kbd></td><td>send window to the left / right monitor</td></tr>
+</table>
+<p class="note">Each monitor has its own set of tags. <kbd>Super+1..9</kbd> switches tags on the monitor that has focus; the bar on each monitor shows that monitor's tags.</p>
+
+<h2>dwl · tags 1..9 (workspaces)</h2>
+<table>
+<tr><td><kbd>Super+1..9</kbd></td><td>view tag N</td></tr>
+<tr><td><kbd>Super+Ctrl+1..9</kbd></td><td>also view tag N (several tags at once)</td></tr>
+<tr><td><kbd>Super+Shift+1..9</kbd></td><td>move window to tag N</td></tr>
+<tr><td><kbd>Super+Ctrl+Shift+1..9</kbd></td><td>window also visible on tag N (toggle)</td></tr>
+<tr><td><kbd>Super+0</kbd></td><td>view all tags</td></tr>
+<tr><td><kbd>Super+Shift+0</kbd></td><td>window on all tags</td></tr>
+</table>
+<p class="note">A tag is not a workspace in the strict sense: a window can live on several tags and a monitor can show several tags at once. In the bar: the viewed tag is highlighted, occupied tags are bright, empty ones are dimmed, urgent ones red.</p>
+
+<h2>dwl · layouts</h2>
+<table>
+<tr><td><kbd>Super+T</kbd></td><td>tile <b>[]=</b> — auto: landscape monitor → master left, stack right; portrait monitor → master on top, stack below</td></tr>
+<tr><td><kbd>Super+F</kbd></td><td>floating <b>&gt;&lt;&gt;</b></td></tr>
+<tr><td><kbd>Super+M</kbd></td><td>monocle <b>[M]</b> (one window at a time)</td></tr>
+<tr><td><kbd>Super+Space</kbd></td><td>switch between the two most recent layouts</td></tr>
+<tr><td><kbd>Super+I</kbd></td><td>+1 window in the master area</td></tr>
+<tr><td><kbd>Super+Shift+D</kbd></td><td>−1 window in the master area</td></tr>
+<tr><td><kbd>Super+H</kbd> / <kbd>Super+Shift+L</kbd></td><td>master area smaller / larger (±5%)</td></tr>
+</table>
+
+<h3>Layout mode: <kbd>Super+R</kbd>, then keys <em>without</em> Super, <kbd>Esc</kbd> to leave</h3>
+<p class="note">A <code>layout</code> badge appears at the left of the bar while the mode is active. Keys not listed here do nothing until you leave the mode.</p>
+<table>
+<tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>+1 / −1 window in the master area (stays in the mode — press repeatedly)</td></tr>
+<tr><td><kbd>Shift+←</kbd> / <kbd>Shift+→</kbd></td><td>master area smaller / larger (stays in the mode)</td></tr>
+<tr><td><kbd>t</kbd> / <kbd>f</kbd> / <kbd>m</kbd></td><td>tile (auto by monitor shape) / floating / monocle — leaves the mode</td></tr>
+<tr><td><kbd>b</kbd></td><td>bstack <b>TTT</b> — force master on top, stack below — leaves the mode</td></tr>
+<tr><td><kbd>Shift+F</kbd></td><td>toggle floating on the focused window — leaves the mode</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>leave the mode</td></tr>
+</table>
+<p class="note">Typical: <kbd>Super+R</kbd>, <kbd>Shift+→</kbd> ×3, <kbd>Esc</kbd>.</p>
+
+<h2>dwl · screenshots and recording</h2>
+<table>
+<tr><td><kbd>Print</kbd></td><td>whole screen → clipboard</td></tr>
+<tr><td><kbd>Super+Print</kbd></td><td>takeshot: whole screen → file + clipboard + notification</td></tr>
+<tr><td><kbd>Super+Alt+S</kbd></td><td>takeshot: select area (slurp) → file + clipboard + notification</td></tr>
+<tr><td><kbd>Super+Shift+S</kbd></td><td>select area → clipboard only (no file)</td></tr>
+<tr><td><kbd>Super+Alt+R</kbd></td><td>recorder: select area → mp4. <b>Press again, or click <code>REC</code> in the bar, to stop</b></td></tr>
+</table>
+<p class="note">From the takeshot notification: Edit (satty — arrows, lines, text, pixelate, blur) / Open / Copy PNG. Files land in <code>~/Pictures/Screenshots</code> and <code>~/Videos/Recordings</code>.</p>
+
+<h2>dwl · notifications (mako)</h2>
+<h3>Notification mode: <kbd>Super+Alt+N</kbd>, then one key</h3>
+<table>
+<tr><td><kbd>h</kbd></td><td>show the last dismissed notification</td></tr>
+<tr><td><kbd>a</kbd></td><td>invoke the notification's default action</td></tr>
+<tr><td><kbd>c</kbd></td><td>dismiss one</td></tr>
+<tr><td><kbd>Shift+C</kbd></td><td>dismiss all</td></tr>
+</table>
+<p class="note">All of these are one-shot: they return to normal mode immediately.</p>
+
+<h2>dwl · bar (waybar) and media keys</h2>
+<table>
+<tr><td><kbd>Super+B</kbd></td><td>show / hide the bar</td></tr>
+<tr><td>click <code>REC</code></td><td>stop recording</td></tr>
+<tr><td>click bell / right-click bell</td><td>toggle do-not-disturb / dismiss all notifications</td></tr>
+<tr><td>click wifi / bluetooth</td><td>wifi menu / bluetui</td></tr>
+<tr><td>volume: click / right-click / scroll</td><td>mute / pwvucontrol / volume</td></tr>
+<tr><td>brightness: scroll</td><td>brightness</td></tr>
+<tr><td><kbd>XF86 Vol±</kbd> / <kbd>Mute</kbd></td><td>volume (avizo on-screen display)</td></tr>
+<tr><td><kbd>XF86 Brightness±</kbd></td><td>brightness</td></tr>
+</table>
+
+<h2 class="tmux">tmux · panes</h2>
+<table>
+<tr><td><kbd>Ctrl+Shift+Enter</kbd></td><td>new pane (split). <kbd>Super+Shift+Enter</kbd> does the same — dwl passes it through</td></tr>
+<tr><td><kbd>Ctrl+Shift+W</kbd></td><td>close pane (layout re-applied)</td></tr>
+<tr><td><kbd>Ctrl+←</kbd> <kbd>Ctrl+↑</kbd> <kbd>Ctrl+↓</kbd> <kbd>Ctrl+→</kbd></td><td>focus the pane in that direction</td></tr>
+<tr><td><kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd></td><td>next / previous pane (passed to vim / fzf when they are running)</td></tr>
+<tr><td><kbd>Ctrl+Shift+N</kbd> / <kbd>Ctrl+Shift+P</kbd></td><td>swap pane with the next / previous one</td></tr>
+<tr><td><kbd>Ctrl+Enter</kbd></td><td>swap pane into the master slot (top-left)</td></tr>
+<tr><td><kbd>Ctrl+Shift+←↑↓→</kbd></td><td>resize pane by 4 cells</td></tr>
+<tr><td><kbd>Ctrl+Shift+F</kbd></td><td>zoom pane to the whole window / back</td></tr>
+<tr><td><kbd>Ctrl+Alt+Enter</kbd></td><td>break pane out into its own window</td></tr>
+<tr><td><kbd>Ctrl+Alt+G</kbd></td><td>split with a shell behind proxychains (<code>ghost@</code> prompt)</td></tr>
+<tr><td><kbd>Ctrl+F4</kbd></td><td>show pane numbers</td></tr>
+<tr><td><kbd>Ctrl+Shift+F4</kbd></td><td>show pane numbers, then press one to swap with it</td></tr>
+<tr><td><kbd>prefix</kbd> <kbd>p</kbd></td><td>fuzzy pane picker with preview (sk)</td></tr>
+<tr><td><kbd>prefix</kbd> <kbd>y</kbd> / <kbd>Y</kbd></td><td>synchronised input to all panes on / off</td></tr>
+</table>
+
+<h3>Layout mode: <kbd>Ctrl+Shift+L</kbd>, then one key</h3>
+<table>
+<tr><td><kbd>v</kbd></td><td>main-vertical — master left, stack right</td></tr>
+<tr><td><kbd>h</kbd></td><td>main-horizontal — master on top, stack below</td></tr>
+<tr><td><kbd>t</kbd></td><td>tiled — equal grid</td></tr>
+<tr><td><kbd>f</kbd></td><td>zoom pane</td></tr>
+</table>
+<p class="note">After every split tmux picks the layout from the window shape, same rule as dwl's tile: wide window → main-vertical, tall (portrait monitor) window → main-horizontal. The keys above override it for the current window.</p>
+
+<h2 class="tmux">tmux · windows and sessions</h2>
+<table>
+<tr><td><kbd>Ctrl+Shift+T</kbd></td><td>new window (inserted after the current one, same directory)</td></tr>
+<tr><td><kbd>Ctrl+Shift+Q</kbd></td><td>close window (asks for confirmation if it has more than one pane)</td></tr>
+<tr><td><kbd>Alt+1..9</kbd></td><td>go to window N</td></tr>
+<tr><td><kbd>Ctrl+,</kbd> / <kbd>Ctrl+.</kbd></td><td>previous / next window</td></tr>
+<tr><td><kbd>Ctrl+Shift+&lt;</kbd> / <kbd>Ctrl+Shift+&gt;</kbd></td><td>move window left / right</td></tr>
+<tr><td><kbd>prefix</kbd> <kbd>s</kbd></td><td>session picker (sesh). Inside: <kbd>Tab</kbd>/<kbd>Shift+Tab</kbd> move, <kbd>Ctrl+A</kbd> all, <kbd>Ctrl+T</kbd> tmux only, <kbd>Ctrl+G</kbd> configs, <kbd>Ctrl+X</kbd> zoxide dirs, <kbd>Ctrl+F</kbd> find dir, <kbd>Ctrl+D</kbd> kill session</td></tr>
+<tr><td><kbd>prefix</kbd> <kbd>L</kbd></td><td>last session</td></tr>
+</table>
+
+<h2 class="tmux">tmux · scrollback and copy</h2>
+<table>
+<tr><td><kbd>Ctrl+Shift+PgUp</kbd> / <kbd>PgDn</kbd></td><td>scroll history one page (passed to vim / less when running)</td></tr>
+<tr><td><kbd>Ctrl+Shift+Home</kbd> / <kbd>End</kbd></td><td>jump to top / bottom of history</td></tr>
+<tr><td><kbd>Ctrl+Shift+K</kbd></td><td>clear screen and history</td></tr>
+<tr><td><kbd>v</kbd></td><td>copy-mode: start selection</td></tr>
+<tr><td><kbd>Ctrl+V</kbd></td><td>copy-mode: toggle rectangle selection</td></tr>
+<tr><td><kbd>y</kbd></td><td>copy-mode: copy and leave</td></tr>
+<tr><td><kbd>Ctrl+Shift+F5</kbd></td><td>reload tmux.conf</td></tr>
+</table>
+<p class="note">Copy mode uses vi keys (<code>mode-keys vi</code>). Mouse is off in tmux — select text with the keyboard.</p>
+
+</body>
+</html>
