@@ -24,4 +24,5 @@ in {
   git = mk ./homeModules/git.nix;
   tmux = mk ./homeModules/tmux.nix;
   neovim = mk ./homeModules/neovim.nix;
+  btop = mk ./homeModules/btop.nix;
 }
