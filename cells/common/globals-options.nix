@@ -52,6 +52,14 @@
           default = null;
         };
 
+        # Encrypted half. Office network printer's static IP; kept out of the
+        # public repo like hosts.<h>.ipv4. Read eval-time by the workstation
+        # laptop profile (hardware.printers). null = not on the office LAN.
+        office.printer.address = lib.mkOption {
+          type = lib.types.nullOr lib.types.str;
+          default = null;
+        };
+
         hosts = lib.mkOption {
           default = {};
           type = lib.types.attrsOf (
