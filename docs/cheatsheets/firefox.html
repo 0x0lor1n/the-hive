@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Firefox + Surfingkeys — key reference (elster)</title>
+<style>
+  @page { size: A4; margin: 12mm 13mm 14mm;
+    @bottom-center { content: "firefox · elster · page " counter(page) " / " counter(pages); font: 8pt "DejaVu Sans", sans-serif; color: #777; } }
+  * { box-sizing: border-box; }
+  body { font: 10pt/1.3 "DejaVu Sans", "Noto Sans", sans-serif; color: #111; margin: 0; }
+  h1 { font-size: 18pt; margin: 0 0 1mm; }
+  .sub { color: #555; font-size: 9pt; margin: 0 0 5mm; }
+  .legend { font-size: 9.5pt; color: #333; margin: 0 0 6mm; padding: 2mm 3mm; background: #f4f4f4; border-left: 3px solid #999; }
+  .legend kbd { margin-right: 1mm; }
+  h2 { font-size: 13pt; margin: 6mm 0 2mm; padding: 1.2mm 3mm; background: #222; color: #fff; border-radius: 2px; break-after: avoid; }
+  h2.sk { background: #7a3a3a; }
+  h2.ext { background: #3a4a7a; }
+  h3 { font-size: 10.5pt; margin: 3.5mm 0 1mm; color: #333; border-bottom: 1px solid #bbb; break-after: avoid; }
+  table { width: 100%; border-collapse: collapse; }
+  tr { break-inside: avoid; }
+  td { padding: 0.8mm 2mm; vertical-align: top; border-bottom: 1px dotted #ccc; }
+  td:first-child { white-space: nowrap; width: 42%; }
+  kbd { font: 9.5pt "DejaVu Sans Mono", monospace; background: #f0f0f0; border: 1px solid #bbb; border-bottom-width: 2px; border-radius: 3px; padding: 0 1.6mm; white-space: nowrap; }
+  code { font: 9.5pt "DejaVu Sans Mono", monospace; }
+  .note { font-size: 9.5pt; color: #444; margin: 1.5mm 0 0; }
+  .pb { break-before: page; }
+  .m { color: #777; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+<h1>Firefox + Surfingkeys — key reference</h1>
+<p class="sub">elster · Firefox 154 (Phoenix policies) · source of truth: <code>cells/workstation/profiles/browser-firefox.nix</code> · Surfingkeys uses its <b>default</b> keymap (no custom settings in the repo)</p>
+
+<div class="legend">
+  Surfingkeys turns the page into a vim-like modal surface: single letters act while <b>no text field is focused</b>. Focused input → normal typing; <kbd>Esc</kbd> leaves it.<br>
+  <kbd>?</kbd> shows the live, per-site list of Surfingkeys bindings — always authoritative. <kbd>Alt+S</kbd> disables Surfingkeys on the current site (toggle), <kbd>Alt+I</kbd> enters pass-through (keys go to the page until <kbd>Esc</kbd>), <kbd>p</kbd> passes through a single key.<br>
+  <kbd>Super</kbd> chords belong to dwl. Inside Firefox <kbd>Alt+1..9</kbd> and <kbd>Ctrl+Shift+…</kbd> are <b>not</b> stolen by tmux — they only go to tmux in a terminal.
+</div>
+
+<h2>Firefox · tabs · windows · navigation</h2>
+<table>
+<tr><td><kbd>Ctrl+T</kbd> · <kbd>Ctrl+W</kbd> · <kbd>Ctrl+Shift+T</kbd></td><td>new tab · close tab · reopen last closed tab</td></tr>
+<tr><td><kbd>Ctrl+Tab</kbd> / <kbd>Ctrl+Shift+Tab</kbd> · <kbd>Ctrl+PgDn</kbd> / <kbd>Ctrl+PgUp</kbd></td><td>next / previous tab</td></tr>
+<tr><td><kbd>Alt+1</kbd> … <kbd>Alt+8</kbd> · <kbd>Alt+9</kbd></td><td>tab N · last tab</td></tr>
+<tr><td><kbd>Ctrl+Shift+PgUp</kbd> / <kbd>Ctrl+Shift+PgDn</kbd></td><td>move tab left / right</td></tr>
+<tr><td><kbd>Ctrl+N</kbd> · <kbd>Ctrl+Shift+P</kbd> · <kbd>Ctrl+Shift+N</kbd> · <kbd>Ctrl+Shift+W</kbd> · <kbd>Ctrl+Q</kbd></td><td>new window · private window · reopen closed window · close window · quit</td></tr>
+<tr><td><kbd>Alt+←</kbd> / <kbd>Alt+→</kbd> · <kbd>Alt+Home</kbd></td><td>back / forward · home</td></tr>
+<tr><td><kbd>F5</kbd> (<kbd>Ctrl+R</kbd>) · <kbd>Ctrl+F5</kbd> (<kbd>Ctrl+Shift+R</kbd>) · <kbd>Esc</kbd></td><td>reload · reload bypassing cache · stop</td></tr>
+<tr><td><kbd>Ctrl+L</kbd> (<kbd>F6</kbd>, <kbd>Alt+D</kbd>) · <kbd>Ctrl+K</kbd></td><td>focus URL bar · focus URL bar in search mode</td></tr>
+<tr><td><kbd>Alt+↵</kbd> <span class="m">in URL bar</span> · <kbd>Ctrl+↵</kbd></td><td>open in new tab · complete <code>.com</code></td></tr>
+<tr><td><kbd>Ctrl+F</kbd> · <kbd>F3</kbd> / <kbd>Shift+F3</kbd> (<kbd>Ctrl+G</kbd> / <kbd>Ctrl+Shift+G</kbd>)</td><td>find in page · next / previous match</td></tr>
+<tr><td><kbd>/</kbd> · <kbd>'</kbd> <span class="m">Firefox quick-find — shadowed by Surfingkeys on most pages</span></td><td>quick find · quick find links only</td></tr>
+<tr><td><kbd>Ctrl++</kbd> / <kbd>Ctrl+-</kbd> / <kbd>Ctrl+0</kbd> · <kbd>F11</kbd></td><td>zoom in / out / reset · fullscreen</td></tr>
+<tr><td><kbd>Ctrl+D</kbd> · <kbd>Ctrl+Shift+D</kbd> · <kbd>Ctrl+Shift+O</kbd></td><td>bookmark page · bookmark all tabs · library (bookmarks + history manager)</td></tr>
+<tr><td><kbd>Ctrl+B</kbd> · <kbd>Ctrl+H</kbd> · <kbd>Ctrl+Shift+H</kbd></td><td>bookmarks sidebar · history sidebar · history window</td></tr>
+<tr><td><kbd>Ctrl+Shift+Y</kbd> · <kbd>Ctrl+Shift+A</kbd> · <kbd>Ctrl+Shift+Delete</kbd></td><td>downloads · add-ons manager · clear recent data</td></tr>
+<tr><td><kbd>Ctrl+P</kbd> · <kbd>Ctrl+S</kbd> · <kbd>Ctrl+U</kbd> · <kbd>Ctrl+I</kbd></td><td>print (→ save as PDF) · save page · view source · page info</td></tr>
+<tr><td><kbd>Ctrl+Shift+S</kbd> · <kbd>F9</kbd> (<kbd>Ctrl+Alt+R</kbd>) · <kbd>F7</kbd></td><td>screenshot · reader view · caret browsing</td></tr>
+<tr><td><kbd>Ctrl+.</kbd></td><td>Multi-Account Containers panel (open the page in a container)</td></tr>
+</table>
+
+<h3>developer tools</h3>
+<table>
+<tr><td><kbd>F12</kbd> (<kbd>Ctrl+Shift+I</kbd>) · <kbd>Ctrl+Shift+C</kbd></td><td>toggle devtools · inspector with element picker</td></tr>
+<tr><td><kbd>Ctrl+Shift+K</kbd> · <kbd>Ctrl+Shift+Z</kbd> · <kbd>Ctrl+Shift+E</kbd> · <kbd>Ctrl+Shift+M</kbd></td><td>web console · debugger · network · responsive design mode</td></tr>
+<tr><td><kbd>Shift+F7</kbd> · <kbd>Shift+F5</kbd> · <kbd>Ctrl+Shift+J</kbd></td><td>style editor · performance · browser console</td></tr>
+</table>
+
+<h3>search engines (URL bar keywords) — default is <b>4get</b> (jarvis)</h3>
+<table>
+<tr><td><kbd>gh</kbd> <i>query</i></td><td>GitHub repositories</td></tr>
+<tr><td><kbd>np</kbd> <i>query</i> · <kbd>no</kbd> <i>query</i> · <kbd>nl</kbd> <i>query</i></td><td>Nix packages (unstable) · Nix &amp; Home-Manager options (mynixos) · Nix library (noogle)</td></tr>
+<tr><td><kbd>wen</kbd> <i>query</i> · <kbd>wru</kbd> <i>query</i></td><td>Wikipedia en · Wikipedia ru</td></tr>
+</table>
+<p class="note">Google / Bing / DDG builtins are removed by Phoenix; DDG, Mojeek, Startpage and SearXNG remain selectable in the search-mode bar (<kbd>Ctrl+K</kbd>). Surfingkeys' own <kbd>s</kbd>-prefix searches (below) use <i>its</i> aliases, not these.</p>
+
+<h2 class="sk">Surfingkeys · page &amp; links</h2>
+<table>
+<tr><td><kbd>f</kbd> · <kbd>af</kbd> · <kbd>gf</kbd> (<kbd>C</kbd>) · <kbd>cf</kbd> · <kbd>L</kbd></td><td>hint links: open here · in a new active tab · in a new background tab · open several at once · regional hints (pick an area first)</td></tr>
+<tr><td><kbd>q</kbd> · <kbd>i</kbd> / <kbd>gi</kbd> · <kbd>I</kbd></td><td>hint-click an image/button · hint-focus a text field / focus the first one · same, but edit it in the built-in vim editor</td></tr>
+<tr><td><kbd>O</kbd> · <kbd>[[</kbd> / <kbd>]]</kbd> · <kbd>.</kbd> · <kbd>:</kbd></td><td>open URLs detected in plain text · click "previous" / "next" page link · repeat last action · command line</td></tr>
+<tr><td><kbd>Ctrl+H</kbd> / <kbd>Ctrl+J</kbd> · <kbd>;m</kbd></td><td>hint: mouse-over / mouse-out · mouse-out last hovered element</td></tr>
+<tr><td><kbd>j</kbd> <kbd>k</kbd> <kbd>h</kbd> <kbd>l</kbd> · <kbd>d</kbd> / <kbd>e</kbd> (<kbd>u</kbd>) · <kbd>P</kbd> / <kbd>U</kbd></td><td>scroll · half page down / up · full page down / up</td></tr>
+<tr><td><kbd>gg</kbd> / <kbd>G</kbd> · <kbd>0</kbd> / <kbd>$</kbd> · <kbd>%</kbd></td><td>top / bottom · far left / far right · scroll to N% (with count)</td></tr>
+<tr><td><kbd>cs</kbd> · <kbd>cS</kbd> · <kbd>;fs</kbd></td><td>pick another scroll target (e.g. an inner pane) · reset · hint scrollable elements</td></tr>
+<tr><td><kbd>w</kbd></td><td>switch frames</td></tr>
+<tr><td><kbd>/</kbd> · <kbd>n</kbd> / <kbd>N</kbd></td><td>find in page (Surfingkeys' own) · next / previous match</td></tr>
+<tr><td><kbd>v</kbd> · <kbd>zv</kbd> · <kbd>V</kbd></td><td>visual mode (caret; <kbd>v</kbd> again = select) · select a whole element by hint · restore last selection</td></tr>
+<tr><td><kbd>y</kbd> · <kbd>*</kbd> · <kbd>Esc</kbd> <span class="m">in visual</span></td><td>yank selection · search for selection · leave visual mode</td></tr>
+<tr><td><kbd>zi</kbd> / <kbd>zo</kbd> / <kbd>zr</kbd></td><td>zoom in / out / reset</td></tr>
+<tr><td><kbd>gs</kbd> · <kbd>gr</kbd> · <kbd>;s</kbd> · <kbd>;pm</kbd></td><td>view source · read selection aloud · toggle PDF viewer · preview markdown</td></tr>
+<tr><td><kbd>gu</kbd> · <kbd>gU</kbd> · <kbd>r</kbd></td><td>go up one path level · go to site root · reload</td></tr>
+<tr><td><kbd>S</kbd> / <kbd>D</kbd> · <kbd>B</kbd> / <kbd>F</kbd></td><td>history back / forward · back / forward in <i>tab</i> history (opens in the tab's own stack)</td></tr>
+</table>
+
+<h3>tabs · windows</h3>
+<table>
+<tr><td><kbd>E</kbd> / <kbd>R</kbd> · <kbd>T</kbd> · <kbd>g0</kbd> / <kbd>g$</kbd></td><td>previous / next tab · fuzzy-choose a tab · first / last tab</td></tr>
+<tr><td><kbd>gt</kbd> / <kbd>gT</kbd> · <kbd>Ctrl+6</kbd> · <kbd>gp</kbd></td><td>last / first activated tab · toggle with last used tab · go to the tab that is playing audio</td></tr>
+<tr><td><kbd>x</kbd> · <kbd>X</kbd> · <kbd>gxx</kbd></td><td>close tab · restore closed tab · close all other tabs</td></tr>
+<tr><td><kbd>gx0</kbd> / <kbd>gx$</kbd> · <kbd>gxt</kbd> / <kbd>gxT</kbd></td><td>close all tabs to the left / right · close the one tab to the left / right</td></tr>
+<tr><td><kbd>&lt;&lt;</kbd> / <kbd>&gt;&gt;</kbd> · <kbd>yt</kbd> / <kbd>yT</kbd> · <kbd>W</kbd></td><td>move tab left / right · duplicate tab (active / background) · move tab to a new window</td></tr>
+<tr><td><kbd>Alt+P</kbd> · <kbd>Alt+M</kbd></td><td>pin / unpin tab · mute / unmute tab</td></tr>
+<tr><td><kbd>on</kbd> · <kbd>oi</kbd> · <kbd>;gt</kbd> / <kbd>;gw</kbd></td><td>new tab · new private window · gather filtered tabs / all windows into this window</td></tr>
+<tr><td><kbd>ZZ</kbd> · <kbd>ZR</kbd> · <kbd>ZQ</kbd></td><td>save session &amp; quit · restore last session · quit without saving</td></tr>
+</table>
+
+<h3>omnibar · opening things</h3>
+<table>
+<tr><td><kbd>t</kbd> · <kbd>go</kbd></td><td>omnibar → open URL / history / bookmark in a new tab · in the current tab</td></tr>
+<tr><td><kbd>b</kbd> · <kbd>ab</kbd> · <kbd>;db</kbd></td><td>open a bookmark · bookmark this page (pick folder) · remove bookmark</td></tr>
+<tr><td><kbd>oh</kbd> · <kbd>ox</kbd> · <kbd>om</kbd></td><td>open from history · from recently closed · from vim marks</td></tr>
+<tr><td><kbd>m</kbd> <i>a-z</i> · <kbd>'</kbd> <i>a-z</i></td><td>set a URL mark · jump to it (uppercase marks are global)</td></tr>
+<tr><td><kbd>s</kbd><i>alias</i> <span class="m">g d b w s h y e</span> · <kbd>sg</kbd> …</td><td>search selected text (or type it) with: Google, DDG, Baidu, Bing, StackOverflow, GitHub, YouTube, Wikipedia</td></tr>
+<tr><td><kbd>cc</kbd> · <kbd>;U</kbd> / <kbd>;u</kbd></td><td>open link from selection or clipboard · edit current URL in vim editor and reload / open in new tab</td></tr>
+<tr><td><kbd>Q</kbd> · <kbd>cq</kbd> · <kbd>A</kbd></td><td>translate a word (omnibar) · translate word under a hint · LLM chat (needs an API key in settings)</td></tr>
+<tr><td><kbd>⇥</kbd> / <kbd>Shift+⇥</kbd> (<kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd>) · <kbd>Ctrl+D</kbd> <span class="m">in omnibar</span></td><td>move through candidates · delete the highlighted history/bookmark item</td></tr>
+<tr><td><kbd>Ctrl+,</kbd> · <kbd>Ctrl+'</kbd> <span class="m">in omnibar</span></td><td>toggle candidate details · toggle exact ("quoted") match</td></tr>
+</table>
+
+<h3>yank · clipboard · capture</h3>
+<table>
+<tr><td><kbd>yy</kbd> · <kbd>yh</kbd> · <kbd>yl</kbd> · <kbd>yY</kbd></td><td>copy page URL · host · title · URLs of all tabs</td></tr>
+<tr><td><kbd>ya</kbd> / <kbd>yma</kbd> · <kbd>yv</kbd> / <kbd>ymv</kbd></td><td>copy a link URL (hint) / several · copy an element's text / several</td></tr>
+<tr><td><kbd>yi</kbd> · <kbd>yf</kbd> · <kbd>;pf</kbd></td><td>copy text of an input · copy form data as JSON · fill form from copied JSON</td></tr>
+<tr><td><kbd>yc</kbd> / <kbd>ymc</kbd></td><td>copy a table column / several columns</td></tr>
+<tr><td><kbd>yg</kbd> · <kbd>yG</kbd> · <kbd>yS</kbd> · <kbd>;di</kbd></td><td>screenshot viewport · full page · scrolling element · download an image (hint)</td></tr>
+<tr><td><kbd>yj</kbd> · <kbd>;e</kbd> · <kbd>;pj</kbd></td><td>copy Surfingkeys settings · open settings editor · restore settings from clipboard JSON</td></tr>
+</table>
+
+<h3>text fields · vim editor</h3>
+<table>
+<tr><td><kbd>Ctrl+I</kbd> · <kbd>Ctrl+Alt+I</kbd> <span class="m">in a text field</span></td><td>open the field in the ACE vim editor (<kbd>:w</kbd> writes back, <kbd>Esc</kbd><kbd>Esc</kbd> cancels) · open it in a real neovim (needs the native host)</td></tr>
+<tr><td><kbd>Ctrl+F</kbd> / <kbd>Ctrl+E</kbd> · <kbd>Alt+B</kbd> / <kbd>Alt+F</kbd></td><td>insert mode: line start / end · word back / forward</td></tr>
+<tr><td><kbd>Alt+W</kbd> / <kbd>Alt+D</kbd> · <kbd>Ctrl+U</kbd> · <kbd>Ctrl+G</kbd></td><td>delete word back / forward · delete to line start · fix grammar with LLM</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>blur the field → back to normal mode</td></tr>
+</table>
+<p class="note">Everything in the Surfingkeys sections is the upstream default map. If a binding here disagrees with <kbd>?</kbd>, trust <kbd>?</kbd> — some keys are disabled per site or renamed across releases.</p>
+
+<h2 class="ext">extensions (force-installed by policy)</h2>
+<table>
+<tr><td>Surfingkeys · Dark Reader <kbd>Alt+Shift+D</kbd></td><td>vim keys (this sheet) · dark mode toggle</td></tr>
+<tr><td>uBlock Origin · LocalCDN · NoScript</td><td>blocking (uBO has no default hotkeys; element picker via toolbar icon) · local CDN replacement · script permissions per site</td></tr>
+<tr><td>Multi-Account Containers <kbd>Ctrl+.</kbd> · Google Container</td><td>containers panel · Google auto-isolated</td></tr>
+<tr><td>Octotree <kbd>Ctrl+Shift+S</kbd> <span class="m">(its default; collides with Firefox screenshot — check about:addons → ⚙ → Manage shortcuts)</span> · Wappalyzer</td><td>GitHub file tree sidebar · tech stack detector</td></tr>
+<tr><td>Linux Entra SSO</td><td>silent Microsoft PRT login via himmelblau — if a login loop appears: about:addons → Linux Entra SSO → Permissions → allow <code>login.microsoftonline.com</code></td></tr>
+</table>
+<p class="note">Profile survives restarts (cookies, cache, session restore = 3) — autoconfig in <code>browser-firefox.nix</code> overrides Phoenix's sanitize-on-shutdown. <code>claude.ai</code> is exempt from resistFingerprinting.</p>
+</body>
+</html>

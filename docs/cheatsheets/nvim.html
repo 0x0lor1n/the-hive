@@ -1,0 +1,191 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>nvim — key reference (elster)</title>
+<style>
+  @page { size: A4; margin: 12mm 13mm 14mm;
+    @bottom-center { content: "nvim · elster · page " counter(page) " / " counter(pages); font: 8pt "DejaVu Sans", sans-serif; color: #777; } }
+  * { box-sizing: border-box; }
+  body { font: 10pt/1.3 "DejaVu Sans", "Noto Sans", sans-serif; color: #111; margin: 0; }
+  h1 { font-size: 18pt; margin: 0 0 1mm; }
+  .sub { color: #555; font-size: 9pt; margin: 0 0 5mm; }
+  .legend { font-size: 9.5pt; color: #333; margin: 0 0 6mm; padding: 2mm 3mm; background: #f4f4f4; border-left: 3px solid #999; }
+  .legend kbd { margin-right: 1mm; }
+  h2 { font-size: 13pt; margin: 6mm 0 2mm; padding: 1.2mm 3mm; background: #222; color: #fff; border-radius: 2px; break-after: avoid; }
+  h2.edit { background: #3a4a7a; }
+  h2.lsp { background: #5a7aa8; }
+  h2.git { background: #6a4a3a; }
+  h3 { font-size: 10.5pt; margin: 3.5mm 0 1mm; color: #333; border-bottom: 1px solid #bbb; break-after: avoid; }
+  table { width: 100%; border-collapse: collapse; }
+  tr { break-inside: avoid; }
+  td { padding: 0.8mm 2mm; vertical-align: top; border-bottom: 1px dotted #ccc; }
+  td:first-child { white-space: nowrap; width: 42%; }
+  kbd { font: 9.5pt "DejaVu Sans Mono", monospace; background: #f0f0f0; border: 1px solid #bbb; border-bottom-width: 2px; border-radius: 3px; padding: 0 1.6mm; white-space: nowrap; }
+  code { font: 9.5pt "DejaVu Sans Mono", monospace; }
+  .note { font-size: 9.5pt; color: #444; margin: 1.5mm 0 0; }
+  .pb { break-before: page; }
+  .m { color: #777; font-size: 8.5pt; }
+</style>
+</head>
+<body>
+<h1>nvim — key reference</h1>
+<p class="sub">elster · LazyVim base + <code>dotfiles/nvim/lua/custom/</code> (<code>keymaps.lua</code>, <code>plugins/*.lua</code>) · nvim 0.12</p>
+
+<div class="legend">
+  <kbd>Space</kbd> is <b>leader</b> (<code>mapleader = " "</code>). <kbd>Space</kbd> then wait 300 ms → which-key shows the menu; all <kbd>␣x</kbd> below mean <kbd>Space</kbd> then <kbd>x</kbd>.<br>
+  <span class="m">[n] normal · [i] insert · [v] visual · [x] visual/select · [o] operator-pending · [t] terminal · [c] command-line — bindings without a tag are normal mode.</span><br>
+  Clipboard is <code>unnamedplus</code> (system clipboard) unless over SSH. Arrows move by <i>display</i> line (<code>gj</code>/<code>gk</code>) when there is no count.
+</div>
+
+<h2>files · buffers · windows · tabs</h2>
+<table>
+<tr><td><kbd>Ctrl+S</kbd> <span class="m">[n i v]</span> · <kbd>Ctrl+Shift+S</kbd></td><td>save (<code>:w</code>; in <code>vv</code>-from-zsh mode it is <code>:wq!</code>) · force save (<code>:w!</code>)</td></tr>
+<tr><td><kbd>␣qq</kbd> · <kbd>␣q!</kbd></td><td>quit all · quit all discarding changes</td></tr>
+<tr><td><kbd>␣ql</kbd> · <kbd>␣qs</kbd></td><td>restore last session · save session (persistence.nvim)</td></tr>
+<tr><td><kbd>F5</kbd></td><td>reload buffer from disk, clear hlsearch, redraw</td></tr>
+<tr><td><kbd>Ctrl+Y</kbd></td><td>yank whole buffer to clipboard</td></tr>
+<tr><td><kbd>␣o</kbd> / <kbd>␣O</kbd></td><td>Oil file manager in cwd / in project root (edit the directory like a buffer, <code>:w</code> applies)</td></tr>
+<tr><td><kbd>␣e</kbd> / <kbd>␣E</kbd> · <kbd>␣ge</kbd></td><td>NeoTree cwd / root (focus, again = close) · NeoTree git-status view</td></tr>
+<tr><td><kbd>Shift+←</kbd> / <kbd>Shift+→</kbd></td><td>previous / next buffer (bufferline)</td></tr>
+<tr><td><kbd>␣w</kbd> / <kbd>␣W</kbd> (also <kbd>␣bd</kbd> / <kbd>␣bD</kbd>, <kbd>␣C</kbd>)</td><td>close buffer / close buffer discarding changes</td></tr>
+<tr><td><kbd>␣bo</kbd> / <kbd>␣bO</kbd> · <kbd>␣bn</kbd></td><td>close all other (hidden) buffers / force · new empty buffer</td></tr>
+<tr><td><kbd>Ctrl+←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>focus window in that direction (smart-splits, crosses into tmux panes)</td></tr>
+<tr><td><kbd>Ctrl+Shift+←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>swap buffer with the window in that direction</td></tr>
+<tr><td><kbd>Ctrl+Shift+Alt+←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>resize window</td></tr>
+<tr><td><kbd>Ctrl+W</kbd><kbd>x</kbd> / <kbd>Ctrl+W</kbd><kbd>v</kbd> · <kbd>Ctrl+`</kbd></td><td>split below / split right · previous window</td></tr>
+<tr><td><kbd>␣um</kbd> · <kbd>␣uz</kbd></td><td>maximize current window (toggle) · zen mode</td></tr>
+<tr><td><kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd> · <kbd>␣⇥n</kbd> / <kbd>␣⇥o</kbd></td><td>previous / next tab page · new tab / close other tabs</td></tr>
+<tr><td><kbd>␣ha</kbd> · <kbd>␣hs</kbd></td><td>harpoon: add file · quick menu</td></tr>
+<tr><td><kbd>␣hp</kbd> <kbd>␣hf</kbd> <kbd>␣hw</kbd> <kbd>␣hq</kbd> (= <kbd>␣h1..4</kbd>) · <kbd>[H</kbd> / <kbd>]H</kbd></td><td>jump to harpoon slot 1–4 · previous / next harpoon file</td></tr>
+<tr><td><kbd>␣.</kbd> · <kbd>␣P</kbd></td><td>scratch buffer · paste image from clipboard (img-clip)</td></tr>
+</table>
+
+<h2>find · pick (snacks.picker)</h2>
+<table>
+<tr><td><kbd>␣ff</kbd> / <kbd>␣fF</kbd> · <kbd>␣fa</kbd> / <kbd>␣fA</kbd></td><td>files in cwd / root · same but including ignored + hidden</td></tr>
+<tr><td><kbd>␣fw</kbd> / <kbd>␣fW</kbd> <span class="m">[n v]</span> · <kbd>␣fd</kbd></td><td>live grep cwd / root (visual: grep selection) · grep current buffer</td></tr>
+<tr><td><kbd>␣fr</kbd> <span class="m">[n v]</span></td><td>search &amp; replace across project (grug-far, pre-filtered to current file extension)</td></tr>
+<tr><td><kbd>␣fb</kbd> · <kbd>␣fo</kbd> · <kbd>␣fg</kbd></td><td>open buffers · recent files · git changed files</td></tr>
+<tr><td><kbd>␣fy</kbd> / <kbd>␣fY</kbd></td><td>document symbols (top-level) / workspace symbols</td></tr>
+<tr><td><kbd>␣fx</kbd> · <kbd>␣fp</kbd> · <kbd>␣ft</kbd></td><td>marks · projects · terminals</td></tr>
+<tr><td><kbd>␣mf</kbd> · <kbd>wo</kbd></td><td>set filetype · undo tree</td></tr>
+<tr><td><kbd>␣xw</kbd> / <kbd>␣xf</kbd> · <kbd>␣xl</kbd> / <kbd>␣xq</kbd></td><td>Trouble: diagnostics project / buffer · loclist / quickfix</td></tr>
+<tr><td><kbd>[x</kbd> / <kbd>]x</kbd></td><td>previous / next Trouble or quickfix item</td></tr>
+<tr><td><kbd>␣xt</kbd> / <kbd>␣xT</kbd> · <kbd>[t</kbd> / <kbd>]t</kbd></td><td>TODO comments project / only TODO+FIX+FIXME · previous / next todo comment</td></tr>
+<tr><td><kbd>Esc</kbd></td><td>also clears search highlight and unlinks the active snippet</td></tr>
+<tr><td><kbd>n</kbd> / <kbd>N</kbd></td><td>always forward / backward regardless of <kbd>/</kbd> vs <kbd>?</kbd></td></tr>
+</table>
+
+<h2 class="edit">motion · flash · treesitter</h2>
+<table>
+<tr><td><kbd>s</kbd> <span class="m">[n x o]</span> · <kbd>Alt+S</kbd></td><td>flash jump: type chars, then the label (<kbd>Alt+S</kbd> same, for when <kbd>s</kbd> is taken)</td></tr>
+<tr><td><kbd>S</kbd> <span class="m">[n x o]</span></td><td>flash treesitter: pick a syntax node to select</td></tr>
+<tr><td><kbd>r</kbd> <span class="m">[o]</span> · <kbd>R</kbd> <span class="m">[o x]</span></td><td>remote flash (operate on text elsewhere, e.g. <kbd>yr</kbd>) · treesitter search</td></tr>
+<tr><td><kbd>Ctrl+S</kbd> <span class="m">[c]</span></td><td>toggle flash while typing a <kbd>/</kbd> search</td></tr>
+<tr><td><kbd>Alt+H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> <span class="m">[n v]</span></td><td>treewalker: move to parent / next / previous / child node</td></tr>
+<tr><td><kbd>gC</kbd> · <kbd>]]</kbd> / <kbd>[[</kbd></td><td>go to enclosing context (function/class header) · next / previous reference of word</td></tr>
+<tr><td><kbd>Ctrl+K</kbd> / <kbd>Ctrl+J</kbd> · <kbd>Ctrl+Shift+U</kbd> / <kbd>Ctrl+Shift+D</kbd></td><td>scroll 4 lines up / down · scroll half screen left / right</td></tr>
+<tr><td><kbd>gg</kbd> / <kbd>G</kbd></td><td>first / last line; on wrapped buffers when already there → start / end of line</td></tr>
+<tr><td><kbd>gV</kbd> · <kbd>K</kbd></td><td>reselect last yanked/changed text · join with previous line</td></tr>
+<tr><td><kbd>Ctrl+E</kbd> <span class="m">[n i v s]</span></td><td>close all floating windows</td></tr>
+</table>
+
+<h3>text objects (mini.ai) — use after <kbd>d</kbd> <kbd>c</kbd> <kbd>y</kbd> <kbd>v</kbd> as <kbd>a</kbd>/<kbd>i</kbd> + …</h3>
+<table>
+<tr><td><kbd>f</kbd> · <kbd>c</kbd> · <kbd>o</kbd></td><td>function · class · block/conditional/loop (treesitter)</td></tr>
+<tr><td><kbd>t</kbd> · <kbd>d</kbd> · <kbd>e</kbd></td><td>HTML tag · run of digits · word incl. case (camelCase segment)</td></tr>
+<tr><td><kbd>u</kbd> · <kbd>g</kbd></td><td>function call ("usage") · whole buffer</td></tr>
+<tr><td><kbd>q</kbd> · <kbd>b</kbd></td><td>any quote · any bracket (mini.ai builtins, plus <kbd>(</kbd> <kbd>[</kbd> <kbd>{</kbd> <kbd>"</kbd> …)</td></tr>
+</table>
+
+<h2 class="edit">editing</h2>
+<table>
+<tr><td><kbd>␣/</kbd> <span class="m">[n v]</span></td><td>toggle comment</td></tr>
+<tr><td><kbd>gsa</kbd> <i>obj</i> <i>char</i> · <kbd>gsd</kbd> · <kbd>gsr</kbd> <i>old</i> <i>new</i></td><td>surround: add · delete · replace (<kbd>gsf</kbd>/<kbd>gsF</kbd> find, <kbd>gsh</kbd> highlight, <kbd>gsn</kbd> lines)</td></tr>
+<tr><td><kbd>gx</kbd> <i>obj</i> … <kbd>gx</kbd> <i>obj</i> · <kbd>gS</kbd> <i>obj</i></td><td>exchange two regions (mini.operators) · sort</td></tr>
+<tr><td><kbd>gt.</kbd> <span class="m">[n v]</span> · <kbd>gt</kbd><i>k</i> / <kbd>gt</kbd><i>t</i></td><td>text-case picker (camel/snake/kebab/…) · quick: k = kebab, t = title</td></tr>
+<tr><td><kbd>Alt+←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <span class="m">[n v]</span></td><td>move line / selection (mini.move)</td></tr>
+<tr><td><kbd>Alt+←</kbd> / <kbd>Alt+→</kbd> <span class="m">[i]</span> · <kbd>Alt+Shift+←</kbd> / <kbd>→</kbd></td><td>insert: word back / forward (<code>b</code>/<code>w</code>) · WORD back / forward</td></tr>
+<tr><td><kbd>Alt+⌫</kbd> · <kbd>Alt+Shift+⌫</kbd> <span class="m">[i]</span></td><td>delete word back · delete WORD back</td></tr>
+<tr><td><kbd>Shift+Alt+↓</kbd> / <kbd>Shift+Alt+↑</kbd> <span class="m">[n i x]</span></td><td>clone line below / above</td></tr>
+<tr><td><kbd>]␣</kbd> / <kbd>[␣</kbd> · <kbd>]⌦</kbd> / <kbd>[⌦</kbd></td><td>add empty line below / above · remove empty lines below / above</td></tr>
+<tr><td><kbd>Shift+↵</kbd> <span class="m">[i]</span></td><td>open a new line below without breaking the current one</td></tr>
+<tr><td><kbd>p</kbd> / <kbd>P</kbd> · <kbd>=p</kbd> / <kbd>=P</kbd></td><td>paste (yanky, with history) · paste linewise below / above</td></tr>
+<tr><td><kbd>[y</kbd> / <kbd>]y</kbd></td><td>right after pasting: cycle through yank history</td></tr>
+<tr><td><kbd>Ctrl+Shift+V</kbd> · <kbd>Insert</kbd> <span class="m">[n v i c t]</span></td><td>paste from system clipboard in any mode</td></tr>
+<tr><td><kbd>g</kbd><kbd>Alt+A</kbd> <span class="m">[v]</span> · <kbd>␣mj</kbd> <span class="m">[n v]</span></td><td>collapse repeated spaces (unalign) · strip all spaces</td></tr>
+<tr><td><kbd>␣mt</kbd> · <kbd>␣mc</kbd> <span class="m">[n]</span> / <span class="m">[v]</span></td><td><code>:retab!</code> · diff buffer against clipboard / toggle colour format (hex ↔ rgb ↔ hsl)</td></tr>
+<tr><td><kbd>␣mlw</kbd> / <kbd>␣mlp</kbd></td><td>lorem ipsum words / paragraphs</td></tr>
+<tr><td><kbd>␣us</kbd> <kbd>␣uw</kbd> <kbd>␣ul</kbd> <kbd>␣uL</kbd> <kbd>␣uc</kbd></td><td>toggle spelling · wrap · line numbers · relative numbers · conceal</td></tr>
+</table>
+
+<h3>multicursor — <kbd>␣c</kbd> prefix <span class="m">[n v]</span></h3>
+<table>
+<tr><td><kbd>␣c↑</kbd> / <kbd>␣c↓</kbd> · <kbd>Ctrl+click</kbd> / <kbd>Ctrl+drag</kbd></td><td>add cursor above / below · add / drag cursors with the mouse</td></tr>
+<tr><td><kbd>␣cn</kbd> / <kbd>␣cN</kbd> · <kbd>␣cs</kbd> / <kbd>␣cS</kbd></td><td>add cursor at next / previous match of word · skip to next / previous match</td></tr>
+<tr><td><kbd>␣c*</kbd> · <kbd>␣ce</kbd></td><td>cursor on every match of word · cursor on every search match</td></tr>
+<tr><td><kbd>␣c→</kbd> / <kbd>␣c←</kbd> · <kbd>␣cd</kbd></td><td>make next / previous cursor the main one · delete main cursor</td></tr>
+<tr><td><kbd>␣cq</kbd> · <kbd>␣c</kbd><kbd>Esc</kbd> · <kbd>␣cr</kbd> · <kbd>␣ct</kbd></td><td>disable others (or add) · clear / re-enable · restore last cursors · toggle</td></tr>
+<tr><td><kbd>␣ca</kbd> · <kbd>␣cS</kbd> <span class="m">[v]</span> / <kbd>␣cm</kbd> <span class="m">[v]</span></td><td>align cursors into a column · split selection by regex / cursor at each regex match</td></tr>
+<tr><td><kbd>I</kbd> / <kbd>A</kbd> <span class="m">[v, cursors active]</span> · <kbd>␣ct</kbd> / <kbd>␣cT</kbd> <span class="m">[v]</span></td><td>insert / append at every cursor · rotate selections forward / back</td></tr>
+</table>
+
+<h3>completion (blink.cmp) · snippets (LuaSnip)</h3>
+<table>
+<tr><td><kbd>Ctrl+Space</kbd> · <kbd>Ctrl+U</kbd> / <kbd>Ctrl+D</kbd> · <kbd>Ctrl+B</kbd> / <kbd>Ctrl+F</kbd></td><td>open menu · scroll docs up / down · scroll docs (in signature help)</td></tr>
+<tr><td><kbd>⇥</kbd> / <kbd>Shift+⇥</kbd> <span class="m">[i s]</span></td><td>next / previous snippet placeholder</td></tr>
+<tr><td><kbd>Ctrl+K</kbd> / <kbd>Ctrl+Shift+K</kbd> <span class="m">[i]</span></td><td>expand snippet or next choice / previous choice</td></tr>
+<tr><td><kbd>Ctrl+H</kbd> <span class="m">[i]</span> · <kbd>gh</kbd> · <kbd>gH</kbd></td><td>signature help · signature help · hover docs</td></tr>
+</table>
+
+<h2 class="lsp">LSP · diagnostics · format · refactor</h2>
+<table>
+<tr><td><kbd>gd</kbd> <kbd>gD</kbd> <kbd>gr</kbd> <kbd>gI</kbd> <kbd>gy</kbd></td><td>definition · declaration · references · implementation · type definition (snacks pickers)</td></tr>
+<tr><td><kbd>␣la</kbd> <span class="m">[n v]</span> · <kbd>␣lA</kbd></td><td>code action (with preview) · source action</td></tr>
+<tr><td><kbd>␣lr</kbd> · <kbd>␣lR</kbd></td><td>rename symbol · rename file (updates imports)</td></tr>
+<tr><td><kbd>␣ld</kbd> · <kbd>[d</kbd> / <kbd>]d</kbd> · <kbd>[e</kbd> / <kbd>]e</kbd></td><td>show diagnostic · previous / next diagnostic · previous / next error only</td></tr>
+<tr><td><kbd>␣lf</kbd> / <kbd>␣lF</kbd> <span class="m">[n v]</span></td><td>format buffer or selection (conform) / also injected languages</td></tr>
+<tr><td><kbd>␣li</kbd> · <kbd>␣ll</kbd> · <kbd>␣lm</kbd> (<kbd>␣M</kbd>)</td><td>LSP info · LSP log · Mason</td></tr>
+<tr><td><kbd>␣lo</kbd> · <kbd>␣lm</kbd> · <kbd>␣lu</kbd> · <kbd>␣lD</kbd> · <kbd>␣lT</kbd> <span class="m">TS/JS</span></td><td>organize imports · add missing imports · remove unused · fix all · pick TS version</td></tr>
+<tr><td><kbd>␣lh</kbd> <span class="m">C/C++</span> · <kbd>␣lo</kbd> <span class="m">Python</span> · <kbd>␣lc</kbd> <span class="m">Rust</span></td><td>switch source/header · organize imports · rustaceanvim code action</td></tr>
+<tr><td><kbd>␣lh</kbd> <kbd>␣le</kbd> <kbd>␣lr</kbd> / <kbd>␣lR</kbd> <kbd>␣lq</kbd> <span class="m">Haskell</span></td><td>hoogle signature · evaluate all · REPL package / buffer · quit REPL</td></tr>
+<tr><td><kbd>␣rs</kbd> <span class="m">[n x]</span> · <kbd>␣ri</kbd> · <kbd>␣rx</kbd></td><td>refactoring: pick · inline variable · extract variable</td></tr>
+<tr><td><kbd>␣rf</kbd> · <kbd>␣rp</kbd> / <kbd>␣rP</kbd> · <kbd>␣rc</kbd></td><td>extract function · debug-print variable / location · clean up debug prints</td></tr>
+<tr><td><kbd>␣Sr</kbd> <span class="m">[n v]</span> · <kbd>␣SR</kbd> · <kbd>␣SC</kbd></td><td>sniprun: run line/selection · run as operator · clear output</td></tr>
+</table>
+
+<h3>testing (neotest) · debugging (nvim-dap)</h3>
+<table>
+<tr><td><kbd>␣tr</kbd> · <kbd>␣tt</kbd> · <kbd>␣tT</kbd> · <kbd>␣tl</kbd></td><td>run nearest · run file · run all · run last</td></tr>
+<tr><td><kbd>␣ts</kbd> · <kbd>␣to</kbd> / <kbd>␣tO</kbd> · <kbd>␣tS</kbd> · <kbd>␣tw</kbd> · <kbd>␣td</kbd></td><td>summary · output / output panel · stop · watch · debug nearest</td></tr>
+<tr><td><kbd>␣dh</kbd> / <kbd>␣dH</kbd> · <kbd>␣de</kbd> · <kbd>[h</kbd> / <kbd>]h</kbd></td><td>toggle breakpoint / conditional · break on exceptions · previous / next breakpoint</td></tr>
+<tr><td><kbd>␣d←</kbd> · <kbd>␣d↓</kbd> · <kbd>␣d→</kbd> · <kbd>␣d↑</kbd></td><td>continue · step over · step into · step out</td></tr>
+<tr><td><kbd>␣dn</kbd> · <kbd>␣dc</kbd> · <kbd>␣di</kbd> <span class="m">[n v]</span> · <kbd>␣dr</kbd></td><td>run to cursor · terminate · hover value · toggle REPL</td></tr>
+<tr><td><kbd>␣dut</kbd> <kbd>␣duo</kbd> <kbd>␣due</kbd> <kbd>␣dul</kbd> <kbd>␣dur</kbd> · <kbd>␣dC</kbd></td><td>dap-view: toggle · open · expression · console · repl · clear virtual text</td></tr>
+<tr><td><kbd>␣dt</kbd> <span class="m">Go</span> · <kbd>␣dR</kbd> <span class="m">Rust</span></td><td>debug nearest test · debuggables picker</td></tr>
+</table>
+
+<h2 class="git">git</h2>
+<table>
+<tr><td><kbd>␣gl</kbd> / <kbd>␣gL</kbd> · <kbd>␣go</kbd> <span class="m">[n v]</span></td><td>lazygit cwd / root · open file (or selected lines) on the forge</td></tr>
+<tr><td><kbd>␣gf</kbd> · <kbd>␣gB</kbd> · <kbd>␣gm</kbd></td><td>file history (diffview) · blame sidebar · merge tool (diffview)</td></tr>
+<tr><td><kbd>␣xg</kbd> · <kbd>[c</kbd> / <kbd>]c</kbd> <span class="m">in merge tool</span></td><td>list conflicts in project · previous / next conflict</td></tr>
+<tr><td><kbd>␣gco</kbd> <kbd>␣gct</kbd> <kbd>␣gcb</kbd> <kbd>␣gca</kbd> · <kbd>␣gcO</kbd> <kbd>␣gcT</kbd> <kbd>␣gcB</kbd> <kbd>␣gcA</kbd></td><td>choose ours / theirs / base / all for this hunk · same for the whole file (in diffview merge tool; <kbd>dx</kbd> / <kbd>dX</kbd> delete hunk / all)</td></tr>
+<tr><td><kbd>␣fg</kbd> · <kbd>␣ge</kbd></td><td>picker of changed files · NeoTree git status</td></tr>
+</table>
+
+<h2>terminal · ui · misc</h2>
+<table>
+<tr><td><kbd>Alt+I</kbd> <span class="m">[n t]</span> · <kbd>Alt+T</kbd> <span class="m">[n t]</span></td><td>toggle snacks terminal · toggle betterTerm 0</td></tr>
+<tr><td><kbd>Ctrl+X</kbd> / <kbd>Ctrl+Shift+X</kbd> <span class="m">[t]</span></td><td>leave terminal-insert mode / hide terminal window</td></tr>
+<tr><td><kbd>␣nl</kbd> <kbd>␣nh</kbd> <kbd>␣na</kbd> <kbd>␣nd</kbd> · <kbd>Shift+↵</kbd> <span class="m">[c]</span></td><td>noice: last message · history · all · dismiss · redirect command output to a split</td></tr>
+<tr><td><kbd>Ctrl+U</kbd> / <kbd>Ctrl+D</kbd> <span class="m">[i n s], in popups</span></td><td>scroll hover / signature / noice window</td></tr>
+<tr><td><kbd>F2</kbd> · <kbd>F3</kbd></td><td>inspect highlight group under cursor · inspect buffer info</td></tr>
+<tr><td><kbd>␣ps</kbd> / <kbd>␣pS</kbd> · <kbd>␣md</kbd> / <kbd>␣mD</kbd></td><td>syntax profiling start / report · start / stop osv debug server (port 8086)</td></tr>
+<tr><td><kbd>␣Oa</kbd> <kbd>␣OA</kbd> <kbd>␣Os</kbd> <kbd>␣Ot</kbd> <kbd>␣Or</kbd> <kbd>␣Oe</kbd> <kbd>␣Of</kbd> <span class="m">[n v]</span></td><td>opencode: ask · ask &amp; submit · action · toggle · review · explain · fix diagnostics</td></tr>
+<tr><td><kbd>␣aC</kbd> · <kbd>␣L…</kbd></td><td>avante clear · leetcode (<kbd>␣Ld</kbd> today, <kbd>␣Lr</kbd> run, <kbd>␣Ls</kbd> submit)</td></tr>
+</table>
+<p class="note">Generated from <code>dotfiles/nvim</code>; LazyVim defaults not overridden here still apply (<kbd>␣</kbd> then browse which-key).</p>
+</body>
+</html>
