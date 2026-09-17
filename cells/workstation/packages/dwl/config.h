@@ -13,7 +13,7 @@
                         ((hex >> 8) & 0xFF) / 255.0f, \
                         (hex & 0xFF) / 255.0f }
 /* appearance */
-static const int sloppyfocus               = 1;  /* focus follows mouse */
+static const int sloppyfocus               = 0;  /* focus only via keyboard (Super+J/K) or click; a palm on the touchpad must not steal focus */
 static const int bypass_surface_visibility = 0;  /* 1 means idle inhibitors will disable idle tracking even if it's surface isn't visible  */
 static const unsigned int borderpx         = 2;  /* border pixel of windows */
 /* @theme_*@ are filled from cells/theme at build time (packages.nix). */
@@ -82,7 +82,7 @@ static const int repeat_delay = 300;
 
 /* Trackpad */
 static const int tap_to_click = 1;
-static const int tap_and_drag = 1;
+static const int tap_and_drag = 0; /* no accidental window drags from a resting palm; drag_lock is moot without it */
 static const int drag_lock = 1;
 static const int natural_scrolling = 0;
 static const int disable_while_typing = 1;
