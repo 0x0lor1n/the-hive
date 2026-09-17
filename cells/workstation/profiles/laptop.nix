@@ -11,6 +11,7 @@
   lib,
   pkgs,
   host,
+  globals,
   ...
 }: {
   # The machine lives in Geneva; base.nix's UTC is a mkDefault for servers.
@@ -35,16 +36,17 @@
     enable = true;
     drivers = [pkgs.cups-filters];
   };
-  # The office HP ("Tatooine", static IP set on the device; mDNS is filtered
-  # on the office Wi-Fi) so declare it by IP. Driverless via IPP Everywhere.
-  hardware.printers = {
+  # The office HP (static IP set on the device; mDNS is filtered on the office
+  # Wi-Fi) so declare it by IP. Address lives in the encrypted globals half,
+  # not this public file. Driverless via IPP Everywhere.
+  hardware.printers = lib.mkIf (globals.office.printer.address != null) {
     ensureDefaultPrinter = "work-hp";
     ensurePrinters = [
       {
         name = "work-hp";
-        description = "HP LaserJet 500 colorMFP M570dn (Tatooine)";
+        description = "Office HP LaserJet MFP";
         location = "Office";
-        deviceUri = "ipp://192.168.1.22/ipp/print";
+        deviceUri = "ipp://${globals.office.printer.address}/ipp/print";
         model = "everywhere";
         ppdOptions = {
           PageSize = "A4";
