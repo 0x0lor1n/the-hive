@@ -61,16 +61,16 @@ in {
   # Default browser for the OpenURI portal: sandboxed apps (Slack SSO
   # redirect) hand links to xdg-desktop-portal, which resolves the
   # x-scheme-handler default via GAppInfo and, with one set, launches it
-  # without an app-chooser dialog. Edge is a systemPackage, so its .desktop
-  # is on XDG_DATA_DIRS for both users.
+  # without an app-chooser dialog. Firefox is a systemPackage
+  # (browser-firefox.nix), so its .desktop is on XDG_DATA_DIRS for both users.
   xdg.mimeApps = {
     enable = true;
     defaultApplications = {
-      "x-scheme-handler/http" = "microsoft-edge.desktop";
-      "x-scheme-handler/https" = "microsoft-edge.desktop";
-      "text/html" = "microsoft-edge.desktop";
-      # The way back: slack.com hands the SSO token to the app through a
-      # slack:// link Edge must route to the (sandboxed) Slack entry.
+      "x-scheme-handler/http" = "firefox.desktop";
+      "x-scheme-handler/https" = "firefox.desktop";
+      "text/html" = "firefox.desktop";
+      # slack.com hands the SSO token to the app through a slack:// link that
+      # must route to the (sandboxed) Slack entry, not the browser.
       "x-scheme-handler/slack" = "slack.desktop";
     };
   };
