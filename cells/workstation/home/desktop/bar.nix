@@ -72,6 +72,28 @@
     [ -f "''${XDG_RUNTIME_DIR:-/tmp}/recorder.pid" ] || exit 0
     printf '{"text":"󰑊 REC","class":"recording","tooltip":"click to stop"}\n'
   '';
+
+  # CPU frequency governor. intel_pstate active mode offers exactly
+  # performance and powersave; the switch itself is cpu-governor@.service
+  # (profiles/cpu-governor.nix), reachable from both accounts over polkit.
+  # Polled rarely and refreshed by signal: the two things that change it
+  # (this module's click, the powermenu) both poke SIGRTMIN+4.
+  cpuGovernor = pkgs.writeShellScript "bar-cpu-governor" ''
+    g=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null) || exit 0
+    [ -n "$g" ] || exit 0
+    if [ "$g" = performance ]; then
+      printf '{"text":"󰓅","class":"performance","tooltip":"CPU: performance (click for powersave)"}\n'
+    else
+      printf '{"text":"󰓃","class":"powersave","tooltip":"CPU: %s (click for performance)"}\n' "$g"
+    fi
+  '';
+  cpuGovernorToggle = pkgs.writeShellScript "bar-cpu-governor-toggle" ''
+    g=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null) || exit 0
+    if [ "$g" = performance ]; then next=powersave; else next=performance; fi
+    ${pkgs.systemd}/bin/systemctl start --wait "cpu-governor@$next.service" \
+      || ${pkgs.libnotify}/bin/notify-send -u critical -a waybar "CPU governor" "failed to set $next"
+    ${pkgs.procps}/bin/pkill -RTMIN+4 waybar || true
+  '';
 in {
   programs.waybar = {
     enable = true;
@@ -88,6 +110,7 @@ in {
         "custom/vpn"
         "custom/notifications"
         "idle_inhibitor"
+        "custom/cpu-governor"
         "temperature"
         "backlight"
         "pulseaudio"
@@ -159,6 +182,15 @@ in {
         };
         tooltip-format-activated = "idle inhibited";
         tooltip-format-deactivated = "idle: swayidle may lock";
+      };
+      "custom/cpu-governor" = {
+        exec = cpuGovernor;
+        return-type = "json";
+        # Nothing else on this host changes the governor, but a long interval
+        # keeps the bar honest if something ever does.
+        interval = 30;
+        signal = 4;
+        on-click = cpuGovernorToggle;
       };
       temperature = {
         hwmon-path-abs = "/sys/devices/platform/coretemp.0/hwmon";
@@ -236,8 +268,8 @@ in {
       }
       .modules-left, .modules-center, .modules-right { margin: 0 6px; }
       #custom-dwl-tags, #custom-dwl-layout, #custom-dwl-mode, #custom-dwl-title, #custom-recorder,
-      #tray, #custom-vpn, #custom-notifications, #idle_inhibitor, #temperature,
-      #backlight, #pulseaudio, #bluetooth, #network, #battery, #clock {
+      #tray, #custom-vpn, #custom-notifications, #idle_inhibitor, #custom-cpu-governor,
+      #temperature, #backlight, #pulseaudio, #bluetooth, #network, #battery, #clock {
         padding: 0 6px;
       }
       #custom-dwl-tags { padding: 0; }
@@ -250,6 +282,8 @@ in {
       #custom-notifications.dnd { color: #${r.muted}; }
       #custom-notifications.pending { color: #${r.highlight}; }
       #idle_inhibitor.activated { color: #${r.highlight}; }
+      #custom-cpu-governor.performance { color: #${r.highlight}; }
+      #custom-cpu-governor.powersave { color: #${r.muted}; }
       #temperature.critical { color: #${r.urgent}; }
       #pulseaudio.muted { color: #${r.muted}; }
       #bluetooth.connected { color: #${r.focus}; }
