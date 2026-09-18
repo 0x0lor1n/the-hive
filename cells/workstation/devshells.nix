@@ -99,7 +99,7 @@
 
   # Lanzaboote enrollment is a 3-boot dance: boot 1 generates keys and writes
   # PK/KEK/db .auth files to the ESP, boot 2's systemd-boot enrolls them (only
-  # in Setup Mode -> fresh OVMFFull.fd.variables, NOT .variablesMs), boot 3 is
+  # in Setup Mode -> fresh OVMFFull.fd.variables, not .variablesMs), boot 3 is
   # Secure Boot on with signed UKIs. Then, as root inside the VM:
   #   mkzfscreds --devices rpool --print-pcr15         # sanity check
   #   mkdir -p /boot/zfs-unlock
@@ -107,8 +107,7 @@
   #   reboot                                            # unlocks silently
   #
   # WS_DISPLAY=1 adds a GTK window with virgl (virtio-vga-gl + venus) for the
-  # desktop, keyboard and tablet; the serial console stays on stdio. The host is
-  # Ubuntu, so QEMU's GL goes through nixGL.
+  # desktop, keyboard and tablet; the serial console stays on stdio.
   ws-vm-run = pkgs.writeShellApplication {
     name = "ws-vm-run";
     runtimeInputs = with pkgs; [git coreutils procps qemu swtpm];

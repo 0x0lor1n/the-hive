@@ -1,27 +1,22 @@
 # Agent CLIs shared by both accounts: claude-code and opencode (+
-# oh-my-openagent) as packages, per-home state under $HOME. Ported from
-# the old Ubuntu home-manager users/shared/tui/coding-agents with these
-# decisions applied:
-#   - oh-my-claudecode marketplace wiring dropped (hermes + opencode now);
-#     the two jarvis-local directory marketplaces are gone with it.
-#   - opencode: anthropic is no longer used. omo.jsonc keeps only what was the
-#     `go` profile (opencode-go/* models), flattened to top level so it is
-#     THE config; the opencode-anthropic-oauth plugin and the OMO_PROFILE
-#     aliases go away.
+# oh-my-openagent) as packages, per-home state under $HOME.
+#
+#   - opencode: omo.jsonc carries the opencode-go/* models flattened to top
+#     level; anthropic is not used.
 #   - claude reaches pxpipe (profiles/agent-proxy.nix) via ANTHROPIC_BASE_URL
-#     in settings.json env, as on jarvis.
-#   - rtk: the claude PreToolUse hook and RTK.md
-#     that `rtk init -g` would write, plus ~/.config/rtk/config.toml.
+#     in settings.json env.
+#   - rtk: the claude PreToolUse hook and RTK.md that `rtk init -g` would
+#     write, plus ~/.config/rtk/config.toml.
 #
 # Packages come from cells/repo (the llm-agents pin lives there), passed in
 # as `agentPkgs` from ../default.nix because home/ has no `inputs`.
 #
-# Store-backed on purpose, except omo.jsonc: oh-my-openagent rewrites its
-# config in place on load (self-migration between versions) and a read-only
-# store file made it fail on jarvis, so that one file is live-edited from
+# Store-backed, except omo.jsonc: oh-my-openagent rewrites its config in place
+# on load (self-migration between versions) and a read-only store file makes
+# that fail, so that one file is live-edited from
 # /srv/the-hive/dotfiles/opencode like nvim/tmux/zsh.
 #
-# Credentials are NOT declared: `opencode auth login` (OpenCode Go key) and
+# Credentials are not declared: `opencode auth login` (OpenCode Go key) and
 # `claude` login once per account; both persist under the account's
 # ~/.local/share/opencode / ~/.claude (layer-users-local, auth-entra).
 {
@@ -37,9 +32,9 @@
   # Local-plugin shim (~/.config/opencode/plugins/*.ts is auto-discovered):
   # re-exports the Nix-built bundle so the loaded plugin and the
   # `oh-my-opencode` CLI are the same derivation. Two exports: `export *`
-  # does not re-export `default`. The entrypoint path is checked at BUILD
-  # time (jarvis used builtins.pathExists, which forces oh-my-opencode to be
-  # realised during eval -- every `nix eval` of the host built npm deps).
+  # does not re-export `default`. The entrypoint path is checked at build
+  # time; builtins.pathExists would force oh-my-opencode to be realised
+  # during eval, building npm deps on every `nix eval` of the host.
   omoPluginEntry = "${oh-my-opencode}/lib/oh-my-opencode/dist/index.js";
   omoShim = pkgs.runCommand "oh-my-openagent.ts" {} ''
     test -f ${omoPluginEntry} || {
@@ -86,7 +81,7 @@
           ];
         }
       ];
-      # jarvis's auto-commit-per-edit hooks, verbatim.
+      # Auto-commit per edit.
       PostToolUse = [
         {
           matcher = "Edit";
@@ -169,8 +164,8 @@ in {
       # route; ignore that line.
       "opencode/plugins/oh-my-openagent.ts".source = omoShim;
 
-      # rtk config. Telemetry is already off via
-      # RTK_TELEMETRY_DISABLED (agent-proxy.nix); nix stays with nixq.
+      # rtk config. Telemetry is already off via RTK_TELEMETRY_DISABLED
+      # (agent-proxy.nix); nix stays with nixq.
       "rtk/config.toml".source = (pkgs.formats.toml {}).generate "rtk-config.toml" {
         hooks.exclude_commands = ["nix" "nixos-rebuild" "colmena" "nom" "just"];
         tee = {
