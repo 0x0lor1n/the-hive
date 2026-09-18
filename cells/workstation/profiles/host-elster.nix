@@ -1,13 +1,11 @@
 # elster-only hardware/workload bits: what the ZBook needs that penrose must
-# not carry. Kept out of intelLaptop on
-# purpose -- one host, one file; split into profiles when a second host wants
+# not carry. One host, one file; split into profiles when a second host wants
 # any of it.
 #
 # - docker: some work projects need it. Both accounts in the `docker` group
 #   (Entra via himmelblau local_groups, not users.users -- it has no entry).
 #   /var/lib/docker is its own dataset (disks/elster.nix, rpool/safe/docker),
-#   so nothing to persist here. Old jarvis volumes are NOT migrated (user
-#   2026-09-15).
+#   so nothing to persist here.
 # - DisplayLink: Lenovo ThinkPad Hybrid USB-C dock (17e9:6015). On TB4 the
 #   first output is DP alt-mode; the extra heads are DisplayLink (evdi).
 #   Unfree with a manual download: the Synaptics zip must be in the store
@@ -29,8 +27,7 @@
   virtualisation.docker = {
     enable = true;
     # /var/lib/docker is a legacy-mounted ZFS dataset; overlay2 on top of it
-    # works and is what the Ubuntu install ran. The `zfs` storage driver would
-    # want to manage datasets itself -- not wanted.
+    # works. The `zfs` storage driver would want to manage datasets itself.
     storageDriver = "overlay2";
     # Nothing runs at boot on a laptop; the socket starts the daemon on demand.
     enableOnBoot = false;

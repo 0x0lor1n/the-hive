@@ -20,8 +20,7 @@
 }: let
   mkcreds = inputs.mkcreds.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
-  # Wraps the whole sealing dance (fingerprint -> predict PCR 15 -> seal) that
-  # `just seal-zfs-cred` used to print for the operator to retype.
+  # Wraps the whole sealing dance (fingerprint -> predict PCR 15 -> seal).
   mkzfscreds = import ./__mkzfscreds.nix {
     inherit pkgs credDir;
     zfsPackage = config.boot.zfs.package;
@@ -33,8 +32,8 @@
     zfsPackage = config.boot.zfs.package;
   };
 
-  # Where zfs-key-sync writes the credential in the BOOTED system. The initrd
-  # reads the same file, but through its own read-only mount of the ESP at
+  # Where zfs-key-sync writes the credential in the booted system. The initrd
+  # reads the same file through its own read-only mount of the ESP at
   # zfsUnlock.espMountPoint -- see hardware-zfs-unlock.nix.
   credDir = "${config.boot.loader.efi.efiSysMountPoint}/${config.zfsUnlock.credentialSubdir}";
 
@@ -100,10 +99,10 @@ in {
         MARKER=/var/lib/zfs-unlock/key-gen
         POOL=rpool
 
-        # Fail SAFE, not closed: with no secret the pool keeps whatever key it
-        # has and the boot still works via prompt or an existing credential. This
-        # is the normal state on a fresh image, where agenix cannot decrypt until
-        # the real SSH host key is captured (see secrets.nix header).
+        # Fail safe, not closed: with no secret the pool keeps whatever key it
+        # has and the boot still works via prompt or an existing credential.
+        # This is the normal state on a fresh image, where agenix cannot
+        # decrypt until the real SSH host key is captured (see secrets.nix).
         if [ ! -r "$SECRET" ]; then
           echo "zfs-key-sync: no readable secret at $SECRET; leaving the pool key alone"
           exit 0
@@ -163,11 +162,9 @@ in {
       '';
     };
 
-    # mkcreds seals a systemd credential against a PREDICTED future PCR
-    # value (systemd-creds encrypt cannot do this, see systemd#38763);
-    # tpm2-tools provides tpm2_pcrread for sanity-checking PCR state.
-    # Sealing must run INSIDE the VM -- TPM sealing is bound to that
-    # TPM's own SRK, so it cannot be done on the host.
+    # mkcreds seals a systemd credential against a predicted future PCR value
+    # (systemd-creds encrypt cannot do this, systemd#38763). Sealing must run
+    # inside the target machine: it binds to that TPM's own SRK.
     environment.systemPackages = [
       mkzfscreds
       mkcreds
