@@ -1,21 +1,17 @@
 # Vendored from codgician/serenitea-pot
-# (modules/nixos/system/zfs-unlock/zfs-fingerprint.nix), which
-# shinasada/nix-config also vendors as external-modules/zfs-fingerprint.nix.
+# (modules/nixos/system/zfs-unlock/zfs-fingerprint.nix).
 #
-# Derives a fingerprint from a LOCKED pool's on-disk crypto metadata:
+# Derives a fingerprint from a locked pool's on-disk crypto metadata:
 # MOS object 1 -> root_dataset -> com.datto:crypto_key_obj ->
-# DSL_CRYPTO_GUID + DSL_CRYPTO_MAC, hashed together. Readable via zdb
-# WITHOUT the encryption key, which is the whole point: it lets
-# hardware-zfs-unlock.nix extend PCR 15 BEFORE unsealing, so a swapped
-# pool makes the TPM refuse to release the key at all.
+# DSL_CRYPTO_GUID + DSL_CRYPTO_MAC, hashed together. Readable via zdb without
+# the encryption key, which is the point: hardware-zfs-unlock.nix extends
+# PCR 15 before unsealing, so a swapped pool makes the TPM refuse the key.
 #
-# Divergence from upstream: absolute coreutils paths for the hash/cut
-# binaries (upstream relies on them being on the initrd PATH), and no
-# `pkgs == null` guard (upstream needs it for their eval context, we
-# always pass pkgs).
+# Divergence from upstream: absolute coreutils paths for the hash/cut binaries
+# (upstream relies on the initrd PATH), and no `pkgs == null` guard.
 #
-# `__` prefix keeps the profiles/default.nix loader from picking this up as a profile — it's a
-# plain function, not a NixOS module. See profiles/default.nix.
+# `__` prefix keeps the profiles/default.nix loader from picking this up as a
+# profile — it's a plain function, not a NixOS module.
 {
   pkgs,
   zfsPackage,
@@ -79,10 +75,9 @@
 in {
   inherit script;
 
-  # The same script exposed as a normal package with bin/zfs-fingerprint so it
-  # can land on PATH in the booted system. The initrd calls `script` by its
-  # absolute store path and does not need this, but the Appendix D sealing
-  # dance runs `zfs-fingerprint` as a plain command inside the VM.
+  # The same script as a normal package with bin/zfs-fingerprint, so it can
+  # land on PATH in the booted system. The initrd calls `script` by absolute
+  # store path and does not need this.
   bin = pkgs.runCommand "zfs-fingerprint-bin" {} ''
     mkdir -p "$out/bin"
     ln -s ${script} "$out/bin/zfs-fingerprint"
