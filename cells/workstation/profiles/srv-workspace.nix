@@ -7,7 +7,7 @@
 #
 # Same mechanism as srv-the-hive.nix, but writable for the whole hive group
 # from the root down: setgid dir so new files land in the group, plus a
-# DEFAULT POSIX ACL so group write survives any umask git clones under.
+# default POSIX ACL so group write survives any umask git clones under.
 # ACLs live in the fs, not in git; tmpfiles re-applies them at every boot.
 #
 # The dataset (rpool/safe/srv/workspace, disks/<host>.nix) survives the
@@ -24,8 +24,8 @@
     "A+ /srv/workspace - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 
-  # Project .envrc files load without `direnv allow` (jarvis had the same
-  # prefix rule for ~/workspace). System-level for the same reason as in
-  # srv-the-hive.nix: DIRENV_CONFIG=/etc/direnv, HM toml is never read.
+  # Project .envrc files load without `direnv allow`. System-level for the
+  # same reason as in srv-the-hive.nix: DIRENV_CONFIG=/etc/direnv, the HM toml
+  # is never read.
   programs.direnv.settings.whitelist.prefix = ["/srv/workspace"];
 }

@@ -1,14 +1,11 @@
 # neovim: LazyVim-based config, live-edited from /srv/the-hive/dotfiles/nvim
 # (init.lua + lua/ + snippets/; lazy.nvim fetches plugins into
 # ~/.local/share/nvim at first start, lazy-lock.json in dotfiles pins them).
-# Ported from jarvis's users/shared/tui/neovim. Plain `neovim` package, not
-# programs.neovim: HM would generate its own init.lua and collide with the
-# symlinked directory.
+# Plain `neovim` package, not programs.neovim: HM would generate its own
+# init.lua and collide with the symlinked directory.
 #
-# theme-debt: the colorscheme is catppuccin (a lazy plugin, not a nix
-# thing) reading CATPPUCCIN_FLAVOR/ACCENT with mocha/mauve defaults; the env
-# vars are not exported here. Switching nvim to kanagawa is a lua change in
-# dotfiles/nvim/lua/custom/plugins/colorscheme/.
+# The colorscheme is a lazy plugin, not a nix thing: switching nvim to
+# kanagawa is a lua change in dotfiles/nvim/lua/custom/plugins/colorscheme/.
 {
   inputs,
   cell,

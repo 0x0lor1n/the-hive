@@ -5,60 +5,31 @@
 # Anti-replay: PCR 15 extended with zeros AFTER unseal.
 #   Credential cannot be unsealed again until next reboot.
 #
-# Measured, and worth knowing before changing any of this: `zfs change-key`
-# leaves DSL_CRYPTO_GUID alone but recomputes DSL_CRYPTO_MAC, so the
-# fingerprint moves on every rewrap. That makes the fingerprint a wrapping-key
-# generation counter as well as a pool identity -- restoring an older wrapped
-# key yields a different PCR 15 and refuses to unseal. Do not "simplify"
-# __zfs-fingerprint.nix to hash the GUID alone; it would look equivalent and
-# silently drop that property.
+# `zfs change-key` leaves DSL_CRYPTO_GUID alone but recomputes DSL_CRYPTO_MAC,
+# so the fingerprint moves on every rewrap: it is a wrapping-key generation
+# counter as well as a pool identity, and restoring an older wrapped key
+# refuses to unseal. Hashing the GUID alone would look equivalent in
+# __zfs-fingerprint.nix and silently drop that property.
 #
-# Why the credential lives on the ESP and not in the initrd
-# --------------------------------------------------------
-# It used to be a flake-source path fed to boot.initrd.secrets. That works, but
-# only because a content change there also changes the toplevel, hence the
-# generation, hence the UKI -- so the rebuild was guaranteed by accident.
-# Lanzaboote's install_generation() returns early when
-# register_installed_generation() succeeds, and that check only confirms the
-# stub and its .linux/.initrd targets exist; it never compares content. So a
-# re-seal that does not change the generation would leave the old credential
-# baked into the signed UKI, and rotation would silently not take effect.
+# The credential lives on the ESP, not in the initrd. Lanzaboote's
+# install_generation() returns early once register_installed_generation()
+# succeeds, and that check only confirms the stub and its .linux/.initrd
+# targets exist — it never compares content. An initrd-embedded credential is
+# therefore only refreshed by a new generation, so a re-seal that doesn't
+# change the toplevel would leave the old one in the signed UKI. Reading from
+# the ESP makes re-sealing a plain file write, and drops the eval-time
+# builtins.readFile that churned the ZFS toplevel hash on every repo edit.
+# Integrity is not critical: TPM-sealed ciphertext, useless elsewhere, and
+# tampering degrades to the passphrase prompt.
 #
-# Reading it from the ESP at runtime makes re-sealing a plain file write: no
-# UKI rebuild, no deleting signed boot artifacts from a service, and no
-# eval-time builtins.readFile (which is what forced the credential to be a
-# store path in the first place, and what made the ZFS toplevel hash churn on
-# every repo edit). The credential's integrity is not security-critical: it is
-# TPM-sealed ciphertext, useless on another machine, and tampering degrades to
-# the passphrase prompt.
-#
-# Why the ESP is mounted INSIDE the unlock script, not by a systemd mount unit
-# ---------------------------------------------------------------------------
-# It was a boot.initrd.systemd.mounts entry (efi.mount) and it never once
-# mounted successfully. Chasing it cost three wrong fixes, each of which was
-# verified dead by extracting the initrd rather than by reasoning:
-#
-#   - wrong device path      real, fixed; disko labels the partition
-#                            disk-main-ESP, not ESP
-#   - vfat missing           false; vfat.ko.xz was in the initrd all along
-#   - vfat loaded too late   false; the ordering chain systemd-modules-load ->
-#                            zfs-import-rpool -> zfs-import.target -> efi.mount
-#                            is real, and modules-load.d lists vfat
-#   - nofail device race     false; the journal says "Found device"
-#
-# What remained was `mount` exiting 32 one second after the device appeared,
-# with the mountpoint /efi absent from the initrd (as it is for EVERY initrd
-# mount unit, so that alone proves nothing).
-#
-# Rather than keep bisecting a mount unit, drop it. The requirement is tiny --
-# read one file, once, before the unseal -- and a mount unit is a poor fit for
-# it: it needs a mountpoint that already exists, it needs an ordering graph
-# with a DefaultDependencies=false hole hand-patched into it, and when it fails
-# it prints [FAILED] on every bootstrap boot where the credential legitimately
-# does not exist yet. Doing mkdir + mount + read + umount in the script deletes
-# all three problems at once, and the "no credential yet" path stops looking
-# like a fault. The mount is also open for the few milliseconds it is needed
-# instead of from zfs-import until switch-root.
+# The ESP is mounted inside the unlock script rather than by a
+# boot.initrd.systemd.mounts unit. That unit never mounted successfully and
+# failed as `mount` exiting 32 one second after the device appeared. A mount
+# unit also needs a mountpoint that already exists and a
+# DefaultDependencies=false hole in its ordering graph, and prints [FAILED] on
+# every bootstrap boot where the credential legitimately does not exist yet.
+# mkdir + mount + read + umount in the script keeps the mount open for
+# milliseconds instead of from zfs-import until switch-root.
 {
   config,
   lib,
@@ -73,11 +44,9 @@
     zfsPackage = zfs;
   };
 
-  # Device info: sorted list with derived values computed once.
-  #
-  # Nothing here reads the credential at eval time, and that is deliberate --
-  # see the ESP note in the header. pcrBank used to be sniffed out of the
-  # credential's base64 with builtins.readFile; it is now declared.
+  # Device info: sorted list with derived values computed once. Nothing here
+  # reads the credential at eval time — see the ESP note in the header.
+  # pcrBank is declared, not sniffed out of the credential's base64.
   devices = map (name: rec {
     inherit name;
     safeName = lib.replaceStrings ["/"] ["_"] name;
@@ -109,11 +78,9 @@
   umount = "${pkgs.util-linux}/bin/umount";
   mkdir = "${pkgs.coreutils}/bin/mkdir";
 
-  # The ESP is mounted for exactly as long as it takes to read the credentials,
-  # by this script rather than by a systemd mount unit -- see the header for why
-  # that unit was removed. Both halves are deliberately non-fatal: a missing or
-  # unmountable ESP means "no credential", which is the documented bootstrap
-  # state and falls through to the passphrase prompt.
+  # Both halves are non-fatal: a missing or unmountable ESP means "no
+  # credential", the bootstrap state, which falls through to the passphrase
+  # prompt.
   mountEsp = ''
     esp_mounted=0
     if ${mkdir} -p ${cfg.espMountPoint}; then
@@ -128,10 +95,10 @@
     fi
   '';
 
-  # Unmount as soon as the credentials are read, so the ESP is free well before
+  # Unmount as soon as the credentials are read, so the ESP is free before
   # switch-root hands it to stage 2 for /boot. A function, not an inline block:
-  # it is called both on the happy path and from the EXIT trap, and the flag
-  # makes the second call a no-op rather than an error.
+  # called both on the happy path and from the EXIT trap, and the flag makes
+  # the second call a no-op.
   umountEspFn = ''
     unmount_esp() {
       if [[ "$esp_mounted" -eq 1 ]]; then
@@ -141,10 +108,9 @@
     }
   '';
 
-  # No longer gated on an eval-time "does any device have a credential" flag:
-  # presence is now a RUNTIME test, because the credential lives on the ESP and
-  # may appear or change without a rebuild. `devices` is non-empty (the config
-  # guard below ensures it), so the `then` branch is never empty and
+  # Credential presence is a runtime test, not an eval-time flag: it lives on
+  # the ESP and may appear or change without a rebuild. `devices` is non-empty
+  # (the config guard below), so the `then` branch is never empty and
   # writeShellScript's shellDryRun checkPhase stays happy.
   tpmUnlockSection = ''
     if [[ "$pcr_ok" -eq 1 ]]; then
@@ -172,8 +138,8 @@
     set -uo pipefail
 
     # Declared before the trap is armed so the handler can never see it unset
-    # (this script runs under `set -u`). The trap is the safety net for the
-    # `exit 1` on a failed unlock; the happy path unmounts explicitly, earlier.
+    # under `set -u`. The trap is the safety net for the `exit 1` on a failed
+    # unlock; the happy path unmounts explicitly, earlier.
     esp_mounted=0
     ${umountEspFn}
     trap unmount_esp EXIT
@@ -195,8 +161,7 @@
       '')
       devices}
 
-    # TPM unlock. The ESP is mounted only across this section -- it is the only
-    # part that touches the credential files.
+    # TPM unlock. The ESP is mounted only across this section.
     ${mountEsp}
     ${tpmUnlockSection}
     unmount_esp
@@ -308,36 +273,28 @@ in {
       devices;
 
     # `just seal-zfs-cred` tells the operator to run `zfs-fingerprint` as a
-    # plain command inside the VM, so it has to be on PATH. The initrd only
-    # ever invokes it by absolute store path, which is why this was missed.
+    # plain command inside the VM, so it has to be on PATH; the initrd only
+    # invokes it by absolute store path.
     environment.systemPackages = [zfsFingerprint.bin];
 
     boot.zfs.requestEncryptionCredentials = lib.mkDefault false;
 
     # vfat + every NLS table it might ask for, force-loaded into the initrd.
+    # kernelModules, not availableKernelModules: the latter only makes a module
+    # available for udev to trigger on a hardware match, which a filesystem
+    # never produces.
     #
-    # kernelModules (force-load), NOT availableKernelModules: the latter only
-    # makes a module *available* for something to trigger, and udev triggers on
-    # hardware matches, which a filesystem never produces.
+    # Without the codepage the ESP mount fails as EINVAL from a vfat that HAD
+    # loaded — mount(8) says "wrong fs type, bad option, bad superblock ...
+    # missing codepage", not the "unknown filesystem type 'vfat'" a missing
+    # module gives. fs/fat always does load_nls() for the on-disk codepage to
+    # read 8.3 names, and load_nls() falls back to request_module() when the
+    # table isn't registered, which cannot resolve in the initrd. Stage 2
+    # mounts the same partition fine because autoload there has the full tree.
     #
-    # This is what the ESP mount actually died on, and the mount(8) message named
-    # it: "wrong fs type, bad option, bad superblock ... missing codepage". Note
-    # what it is NOT -- a missing vfat module gives the distinct "unknown
-    # filesystem type 'vfat'". This was EINVAL from a vfat that HAD loaded.
-    #
-    # fs/fat always does load_nls() for the on-disk codepage to read 8.3 short
-    # names, and load_nls() falls back to request_module() when the table is not
-    # already registered. That request cannot resolve in the initrd, so vfat
-    # returns EINVAL. Stage 2 mounts the same partition fine because autoload
-    # there has the full module tree -- which is exactly why this looked like a
-    # bad superblock when the filesystem was perfectly healthy.
-    #
-    # All four tables, not just this kernel's: which one fat asks for depends on
-    # CONFIG_FAT_DEFAULT_CODEPAGE / _IOCHARSET / _UTF8, compiled per kernel. This
-    # kernel (cachyos 7.0.9) is 437 + "ascii" + UTF8=y, so it needs nls_cp437 and
-    # nothing else -- but dellvis and jarvis may not run this kernel, and a
-    # different default silently reintroduces the same EINVAL. Four modules is a
-    # few KB of initrd; rediscovering this from "bad superblock" is an evening.
+    # All four tables, not just this kernel's: which one fat asks for depends
+    # on CONFIG_FAT_DEFAULT_CODEPAGE / _IOCHARSET / _UTF8, compiled per kernel,
+    # and a different default silently reintroduces the same EINVAL.
     boot.initrd.kernelModules = [
       "vfat"
       "nls_cp437"
@@ -350,26 +307,17 @@ in {
       enable = true;
       tpm2.enable = true;
 
-      # No mounts = [ ... ] entry: the ESP is mounted by the unlock script
-      # itself. See the header section on why the efi.mount unit was removed
-      # rather than debugged further.
-      #
-      # The credential is read from the ESP rather than injected into the initrd
-      # via boot.initrd.secrets. See the header: lzbt skips reinstall when the
-      # generation is already installed, so an initrd-embedded credential is
-      # only refreshed by a NEW generation -- which a self-service re-seal does
-      # not produce.
+      # No mounts = [ ... ] entry and no boot.initrd.secrets: the ESP is
+      # mounted by the unlock script, and the credential is read from it at
+      # runtime. See the header for both.
       storePaths =
         [
           tpm2_pcrextend
           unlockScript
           systemd-creds
           systemd-ask-password
-          # mount/umount/mkdir are invoked by absolute store path from the unlock
-          # script, so they must be pulled in explicitly -- the initrd's own
-          # /bin/mount exists for systemd's mount units, and relying on it would
-          # be relying on an implementation detail of a mechanism we just stopped
-          # using.
+          # Invoked by absolute store path from the unlock script; the initrd's
+          # own /bin/mount exists for systemd's mount units.
           mount
           umount
           mkdir

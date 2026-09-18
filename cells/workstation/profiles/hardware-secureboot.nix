@@ -11,8 +11,8 @@
 # the matching QEMU SMM flags. On bare metal this is the physical UEFI
 # Setup Mode menu instead; this is Lanzaboote's own canonical workflow.
 #
-# `lib` isn't injected by the profiles/default.nix loader (only inputs+cell), hence
-# inputs.nixpkgs.lib below. Reference: patrick/nix-config's secureboot.nix.
+# `lib` isn't injected by the profiles/default.nix loader (only inputs+cell),
+# hence inputs.nixpkgs.lib below.
 {
   inputs,
   cell,
@@ -48,25 +48,20 @@ in {
     };
   };
 
-  # mkDefault, not a plain value: whether firmware can take NVRAM writes is
-  # a HARDWARE fact, so the hardware profile owns it (hardware-laptop.nix
-  # sets true). false is the safe default -- image builds must never touch
-  # the build host's NVRAM.
-  #
-  # This was a plain `false` and collided with hardware-laptop's `true`.
-  # The collision did not fail the build, because lanzaboote replaces
-  # systemd-boot and nothing in the closure reads the option -- it would
-  # have sat latent until something did.
+  # mkDefault, not a plain value: whether firmware can take NVRAM writes is a
+  # hardware fact, so the hardware profile owns it (hardware-laptop.nix sets
+  # true). false is the safe default -- image builds must never touch the
+  # build host's NVRAM. A plain `false` here collides with that, silently:
+  # lanzaboote replaces systemd-boot and nothing in the closure reads the
+  # option, so the collision would sit latent until something did.
   boot.loader.efi.canTouchEfiVariables = lib.mkDefault false;
 
   # The private signing keys must outlive the @blank rollback, or every
   # rebuild generates a new key that no longer matches the PK/KEK/db the
-  # firmware enrolled.
-  #
-  # Declared HERE rather than in storage-impermanence.nix (iter 11): the
-  # profile that owns the state owns its persistence. This module is applied
-  # via flake.nix's soil, and only to targets that also get
-  # storage-impermanence, so the option it merges into is always declared.
+  # firmware enrolled. Declared here rather than in storage-impermanence.nix:
+  # the profile that owns the state owns its persistence. This module is
+  # applied only to targets that also get storage-impermanence, so the option
+  # it merges into is always declared.
   environment.persistence."/persist".directories = [
     {
       directory = "/var/lib/sbctl";

@@ -1,7 +1,7 @@
 # takeshot: full/area/delayed screenshots -> ~/Pictures/Screenshots/*.webp,
 # file:// URI on the clipboard, mako notification with open/edit/png actions
-# (edit = satty). Ported from wochap/nix-config wayland-utils; bound in
-# packages/dwl/config.h to Super+Print (--now) and Super+Alt+S (--area).
+# (edit = satty). Bound in packages/dwl/config.h to Super+Print (--now) and
+# Super+Alt+S (--area).
 #
 # hyprpicker is only used as a screen freezer under slurp (-r -z); it works
 # on any wlroots compositor with layer-shell + screencopy, dwl included.

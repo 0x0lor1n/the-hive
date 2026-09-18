@@ -1,17 +1,15 @@
 # zsh: p10k prompt, vi mode, zsh-autocomplete menu, sqlite history (histdb)
-# with skim Ctrl-R, autosuggestions, fast-syntax-highlighting. Ported from
-# jarvis's users/shared/cli/zsh with the standalone-only parts dropped
-# (the non-NixOS guards, make-zsh-default-shell, catppuccin fsh theme).
+# with skim Ctrl-R, autosuggestions, fast-syntax-highlighting.
 #
 # The four hand-edited files (config.zsh, functions.zsh, key-bindings.zsh,
-# .p10k.zsh) are NOT store-backed: they are symlinked from
+# .p10k.zsh) are not store-backed: they are symlinked from
 # /srv/the-hive/dotfiles/zsh (profiles/srv-the-hive.nix) so either account
 # edits them in place. mkOutOfStoreSymlink never reads the target, so
 # dotfiles/ cannot influence a build.
 #
 # Both halves are needed for zsh to be the login shell: this module writes
-# ~/.config/zsh/.zshrc; the SYSTEM side (programs.zsh.enable, the login
-# shell per account) is layer-users-local.nix and auth-entra.nix.
+# ~/.config/zsh/.zshrc; the system side (programs.zsh.enable, the login shell
+# per account) is layer-users-local.nix and auth-entra.nix.
 #
 # Account-agnostic: the same module lands in the local and the Entra home.
 {
@@ -29,9 +27,8 @@
 
   # All plugins from the nixpkgs pin except zsh-histdb: nixpkgs ships
   # 90a6c10 (2024-04-18), which merged the HISTORY_IGNORE change (7b010a6 +
-  # f73d9c8) that broke this setup on jarvis. 30797f0 is the last commit
-  # before that series (checked against upstream master 2026-09-15; nothing
-  # else in between), so the derivation stays nixpkgs', only src moves.
+  # f73d9c8) that breaks this setup. 30797f0 is the last commit before that
+  # series, so the derivation stays nixpkgs', only src moves.
   zshHistdb = pkgs.zsh-histdb.overrideAttrs (_: {
     version = "0-unstable-2022-01-18";
     src = pkgs.fetchFromGitHub {
@@ -75,7 +72,7 @@ in {
     history = {
       save = 1000500;
       size = 1000000;
-      # ~/.local/share/zsh is the impermanence carve-out for BOTH accounts
+      # ~/.local/share/zsh is the impermanence carve-out for both accounts
       # (layer-users-local.nix, auth-entra.nix); the home root itself is
       # rolled back at boot. histdb's sqlite file sits next to it.
       path = "${config.xdg.dataHome}/zsh/history";

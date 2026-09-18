@@ -1,11 +1,11 @@
 {
-  # Workstation-only inputs. Deliberately NOT root or common inputs: a root
-  # input is fetched by every host, and cells/server must never gain lanzaboote
-  # or mkcreds in its closure.
+  # Workstation-only inputs, not root or common inputs: a root input is fetched
+  # by every host, and cells/server must never gain lanzaboote or mkcreds in
+  # its closure.
   inputs = {
     # Cell flakes cannot follow a root input, so lanzaboote's nixpkgs is pinned
-    # here to the SAME rev as the root flake.lock. Keep them equal when bumping,
-    # or lanzaboote's Rust toolchain is built from a second nixpkgs.
+    # here to the same rev as the root flake.lock. Keep them equal when
+    # bumping, or lanzaboote's Rust toolchain builds from a second nixpkgs.
     nixpkgs.url = "github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9";
 
     utils.url = "gitlab:rensa-nix/utils/v0.1.2?dir=lib";
@@ -16,7 +16,7 @@
     # here (pkiBundle, autoGenerateKeys, autoEnrollKeys) are unchanged.
     lanzaboote.url = "github:nix-community/lanzaboote/d2326588612480c96d5fefb885f57b4660a85584";
     lanzaboote.inputs.nixpkgs.follows = "nixpkgs";
-    # Seals a systemd credential against a PREDICTED PCR 15 (systemd#38763).
+    # Seals a systemd credential against a predicted PCR 15 (systemd#38763).
     mkcreds.url = "github:codgician/mkcreds/112d95f75913829b5ac54d7608b384a0f242e09e";
     mkcreds.inputs.nixpkgs.follows = "nixpkgs";
     # Workstation secrets only; server secrets stay on colmena deployment.keys.
@@ -28,14 +28,14 @@
     # (libhimmelblau bump, tpm feature), so bump deliberately.
     himmelblau.url = "github:himmelblau-idm/himmelblau/791372aad3c5bce2baddd5b794399f58fbd56c61";
     himmelblau.inputs.nixpkgs.follows = "nixpkgs";
-    # Used ONLY as a NixOS module (home-manager.users), never standalone
-    # (utils.mkHome is broken upstream). release-25.05 against
-    # an unstable nixpkgs is intentional, home.enableNixpkgsReleaseCheck = false.
+    # Used only as a NixOS module (home-manager.users), never standalone
+    # (utils.mkHome is broken upstream). release-25.05 against an unstable
+    # nixpkgs is intentional, home.enableNixpkgsReleaseCheck = false.
     home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     # CachyOS kernel + matching zfs_cachyos, pre-built on nyx-cache.chaotic.cx.
     # Pinned to the nyx rev whose own nixpkgs lock == our nixpkgs pin above
-    # (34ab9907); ANY drift between the two turns the kernel into a local
+    # (34ab9907); any drift between the two turns the kernel into a local
     # build. Bump both together. Only the overlay is consumed (layer-kernel);
     # nyx's NixOS modules are not imported (mkSystem passes a ready `pkgs`, so
     # `nixpkgs.overlays` from a module would be silently ignored anyway).
@@ -59,11 +59,11 @@
     # track Spotify's own releases; pin to the current HEAD, bump on demand.
     spicetify.url = "github:Gerg-L/spicetify-nix/09eed5c95105aada9ffabd4c7eb6b345dc4ba66f";
     spicetify.inputs.nixpkgs.follows = "nixpkgs";
-    # zsh-defer / zsh-vi-mode / llm-agents are NOT inputs: the first two ship
+    # zsh-defer / zsh-vi-mode / llm-agents are not inputs: the first two ship
     # in the nixpkgs pin, llm-agents is re-exported by cells/repo/packages.nix.
-    # tuigreet is NOT an input: the nixpkgs pin already ships the maintained
-    # fork (tuigreet/tuigreet 0.11.1, ex NotAShelf).
-    # colmena deliberately not declared: this cell is never deployed by colmena.
+    # tuigreet is not an input either: the nixpkgs pin already ships the
+    # maintained fork (tuigreet/tuigreet 0.11.1).
+    # colmena is absent: this cell is never deployed by colmena.
   };
 
   outputs = i:

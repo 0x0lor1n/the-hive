@@ -1,13 +1,9 @@
 # skim: the fuzzy finder behind Ctrl-T / Alt-C (and, via zsh-histdb-skim,
-# Ctrl-R). Ported from jarvis's users/shared/cli/skim.nix.
+# Ctrl-R).
 #
-# enableZshIntegration stays off on purpose: zsh.nix sources skim's
-# completion.zsh / key-bindings.zsh itself inside zvm_after_init, because
-# they must load AFTER zsh-vi-mode or vi mode eats the bindings.
-#
-# theme-debt: jarvis wrapped `sk` in a script that appended a catppuccin
-# --color string and exported HISTDB_COLOR for the histdb widget. Both are
-# dropped here (stock skim colours).
+# enableZshIntegration stays off: zsh.nix sources skim's completion.zsh /
+# key-bindings.zsh itself inside zvm_after_init, because they must load after
+# zsh-vi-mode or vi mode eats the bindings.
 {
   inputs,
   cell,

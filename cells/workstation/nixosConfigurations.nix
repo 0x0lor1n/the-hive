@@ -14,10 +14,9 @@
   # instantiation. Applied here, not in a module: mkSystem sets nixpkgs.pkgs,
   # so nixpkgs.overlays inside the module system is ignored. Purely additive
   # attrs at this rev; the hashes match nyx's own CI (== cache hits) because
-  # our nixpkgs pin equals nyx's lock.
-  # phoenix's overlay is additive too (pkgs.phoenix, pkgs.withPhoenix); the
-  # browser profile applies withPhoenix itself. Phoenix's own module would do
-  # it via nixpkgs.overlays, which is the ignored path described above.
+  # our nixpkgs pin equals nyx's lock. phoenix's overlay is additive too
+  # (pkgs.phoenix, pkgs.withPhoenix); the browser profile applies withPhoenix
+  # itself, since Phoenix's own module would go through the ignored path.
   pkgs =
     ((inputs.pkgs.extend inputs.chaotic.overlays.default).extend inputs.phoenix.overlays.default).extend evdiOverlay;
 
@@ -159,8 +158,8 @@
       system.stateVersion = "24.11";
     };
 in {
-  # QEMU rehearsal for dellvis: native ZFS encryption behind a pre-unseal
-  # PCR 15 gate with anti-replay, Secure Boot, impermanence.
+  # QEMU rehearsal: native ZFS encryption behind a pre-unseal PCR 15 gate with
+  # anti-replay, Secure Boot, impermanence.
   sevastopol = mkHost {
     hostKey = "sevastopol";
     base = workstation;
@@ -168,8 +167,8 @@ in {
     encryption = zfsNative;
   };
 
-  # Dell Latitude 5580 (ex-dellvis): what sevastopol rehearsed, on the real
-  # disk. Same base and encryption stack, only the hardware list differs.
+  # Dell Latitude 5580: what sevastopol rehearsed, on the real disk. Same base
+  # and encryption stack, only the hardware list differs.
   penrose = mkHost {
     hostKey = "penrose";
     base = workstation;
@@ -177,9 +176,8 @@ in {
     encryption = zfsNative;
   };
 
-  # HP ZBook Firefly 16 G10 (ex-jarvis): the daily driver and the Entra
-  # machine. Whole penrose config, unchanged, plus host-elster; after the soak
-  # penrose drops Entra (phase 6).
+  # HP ZBook Firefly 16 G10: the daily driver and the Entra machine. The whole
+  # penrose config plus host-elster.
   elster = mkHost {
     hostKey = "elster";
     base = workstation;

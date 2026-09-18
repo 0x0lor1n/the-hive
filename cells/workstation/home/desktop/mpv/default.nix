@@ -1,20 +1,16 @@
-# mpv, ported from jarvis users/shared/gui/mpv (2026-09-15).
+# mpv.
 #
-# Changes against jarvis:
-# - hwdec nvdec-copy -> vaapi: penrose runs the iGPU only (gpu-intel.nix
-#   ships intel-media-driver for exactly this). The dGPU is powered down.
-# - K (motion interpolation) actually works: jarvis had the .vpy but stock
-#   mpv (vapoursynthSupport = false) and no mvtools/ffms2 plugins, so the
-#   filter failed to load. Here mpv-unwrapped is built with vapoursynth
-#   support against `vapoursynth.withPlugins [mvtools ffms]`, whose patched
-#   libvapoursynth autoloads $out/lib/vapoursynth -- the script's
-#   `core.mv.*` / `core.ffms2.Source` resolve without LoadPlugin.
-# - ao openal -> pipewire (layer-session.nix runs pipewire; openal was a
-#   non-NixOS workaround).
-# - dropped `vf = format=rgba`: an unconditional software RGBA convert on
-#   every frame, undocumented since the first commit (edd27d3), and it defeats
-#   hwdec (forces a readback). Nothing here needs RGB input.
-# - mpv-hq alias stays (home.shellAliases -> zsh via deck).
+# hwdec vaapi: these hosts run the iGPU only (gpu-intel.nix ships
+# intel-media-driver for exactly this).
+#
+# K (motion interpolation) needs a vapoursynth-enabled mpv: mpv-unwrapped is
+# built against `vapoursynth.withPlugins [mvtools ffms]`, whose patched
+# libvapoursynth autoloads $out/lib/vapoursynth, so the script's `core.mv.*` /
+# `core.ffms2.Source` resolve without LoadPlugin. Stock mpv has
+# vapoursynthSupport = false and the filter fails to load.
+#
+# No `vf = format=rgba`: an unconditional software RGBA convert on every frame
+# that also defeats hwdec by forcing a readback.
 {pkgs, ...}: let
   a4k = pkgs.anime4k;
   # Anime4K "Fast" presets, GLSL_Mac_Linux_Low-end/input.conf upstream.

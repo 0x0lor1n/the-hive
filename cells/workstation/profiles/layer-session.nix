@@ -12,8 +12,8 @@
 }: let
   theme = inputs.cells.theme.palettes.kanagawa;
 in {
-  # wlroots takes the seat from logind. Do NOT also enable seatd, it would
-  # contend for seat0.
+  # wlroots takes the seat from logind. Enabling seatd as well would contend
+  # for seat0.
   security.polkit.enable = true;
 
   # pipewire arrives implicitly (greetd -> displayManager -> graphical-desktop),
@@ -62,25 +62,22 @@ in {
   programs.dconf.enable = true;
   services.dbus.enable = true;
 
-  # NO autologin: the password is the last auth boundary once the TPM unlocks
+  # No autologin: the password is the last auth boundary once the TPM unlocks
   # the pool silently.
   #
   # XDG_SESSION_TYPE=wayland matters: pam_systemd reads it when opening the
   # session. Without it logind opens a Type=tty session and may revoke the
   # keyboard FDs before wlroots upgrades the type -> dead keyboard in the
-  # compositor. tuigreet 0.11 has --env, but greetd's own environment is
-  # inherited by PAM either way and covers the greeter too.
-  # Only the session type belongs here: XDG_CURRENT_DESKTOP set this way does
-  # NOT survive into the user session (verified on sevastopol) —
-  # layer-compositor's dwl-session exports it right before exec dwl.
+  # compositor. Only the session type belongs here: XDG_CURRENT_DESKTOP set
+  # this way does not survive into the user session — layer-compositor's
+  # dwl-session exports it right before exec dwl.
   systemd.services.greetd.environment = {
     XDG_SESSION_TYPE = "wayland";
   };
 
-  # Kanagawa Wave on the kernel VT: tuigreet is a TUI and only names ANSI
-  # colours (--theme below), so the actual hexes come from the console
-  # palette, which is theme.ansi from cells/theme -- the 16 ANSI
-  # slots: black red green yellow blue magenta cyan white, then bright.
+  # Kanagawa Wave on the kernel VT: tuigreet only names ANSI colours (--theme
+  # below), so the actual hexes come from the console palette — theme.ansi's
+  # 16 slots: black red green yellow blue magenta cyan white, then bright.
   console.colors = theme.ansi;
   console.earlySetup = true;
 
@@ -106,9 +103,10 @@ in {
         "${pkgs.tuigreet}/bin/tuigreet"
         "--time --remember --asterisks"
         # ratatui slot names -> console.colors above. Roles mirror hisilome
-        # style.css: white=fujiWhite fg, darkgray=fujiGray muted, blue=crystalBlue
-        # link, lightyellow=carpYellow highlight, lightgreen=springGreen accent,
-        # magenta=oniViolet hover. (gray is slot 7 = oldWhite, NOT fujiGray.)
+        # style.css: white=fujiWhite fg, darkgray=fujiGray muted,
+        # blue=crystalBlue link, lightyellow=carpYellow highlight,
+        # lightgreen=springGreen accent, magenta=oniViolet hover.
+        # (gray is slot 7 = oldWhite, not fujiGray.)
         "--theme 'border=blue;text=white;prompt=lightyellow;time=darkgray;action=lightgreen;button=magenta;container=black;input=white'"
         "--cmd /etc/dwl/session"
       ];
@@ -141,9 +139,9 @@ in {
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
   # Claude Code keeps ~/.claude.json (onboarding, oauth account, per-project
-  # state) OUTSIDE ~/.claude unless told otherwise. Pointing it inside makes
-  # one persisted directory cover both users (layer-users-local, auth-entra)
-  # and avoids persisting a single file. $HOME is rewritten to @{HOME} for
-  # pam_env, so this reaches the greetd session too.
+  # state) outside ~/.claude unless told otherwise. Pointing it inside makes
+  # one persisted directory cover both users (layer-users-local, auth-entra).
+  # $HOME is rewritten to @{HOME} for pam_env, so this reaches the greetd
+  # session too.
   environment.sessionVariables.CLAUDE_CONFIG_DIR = "$HOME/.claude";
 }

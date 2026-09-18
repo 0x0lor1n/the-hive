@@ -5,8 +5,7 @@
 # (bee.home).
 #
 # Takes the username/home explicitly: both live in the encrypted half of
-# globals and cannot be attribute names in a public file. Desktop only for
-# now; editor/agent tooling is a separate later step.
+# globals and cannot be attribute names in a public file.
 {
   userName,
   homeDir,
@@ -89,8 +88,7 @@ in {
     fi
   '');
 
-  # Declared, not `git config --global`: ~/.gitconfig is not persisted and
-  # the repo-local user.* that got set by hand is what this replaces.
+  # Declared, not `git config --global`: ~/.gitconfig is not persisted.
   # userName/userEmail/extraConfig: the release-25.05 API (settings is 25.11+).
   programs.git = {
     enable = true;
@@ -132,10 +130,10 @@ in {
       # 10 fits more on 1920x1080 than the default 12 and stays readable.
       main.font = "monospace:size=10";
       main.pad = "8x8";
-      # Every foot window lands in tmux (jarvis parity): sesh attaches to the
-      # "the-hive" session or creates it. Ctrl+Shift+<key> is translated to
-      # CSI-u so the tmux prefix (C-S-b) and the C-S-* binds actually arrive;
-      # foot's own bindings for those chords are disabled so they don't eat them.
+      # Every foot window lands in tmux: sesh attaches to the "the-hive"
+      # session or creates it. Ctrl+Shift+<key> is translated to CSI-u so the
+      # tmux prefix (C-S-b) and the C-S-* binds actually arrive; foot's own
+      # bindings for those chords are disabled so they don't eat them.
       main.shell = "${pkgs.sesh}/bin/sesh connect the-hive";
       key-bindings = {
         scrollback-up-page = "none";
@@ -163,7 +161,7 @@ in {
         # reaches it through tmux — so emit CSI-u unconditionally.
         # Super+Shift+Return is the muscle-memory split chord; tmux has no
         # Super modifier, so it is sent as the same C-S-Enter sequence (dwl
-        # deliberately does not bind it -- new window is Super+Alt+T).
+        # does not bind it -- new window is Super+Alt+T).
         "\\x1b[13;2u" = "Shift+Return";
         "\\x1b[13;5u" = "Control+Return";
         "\\x1b[13;6u" = "Control+Shift+Return Super+Shift+Return";

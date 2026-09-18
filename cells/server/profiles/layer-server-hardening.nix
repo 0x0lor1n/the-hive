@@ -28,7 +28,7 @@
     }
   ];
 
-  # BIOS boot. `device` deliberately unset: disko already populates
+  # BIOS boot. `device` stays unset: disko already populates
   # boot.loader.grub.devices from the EF02 partition, and nixpkgs folds
   # `device` into the same list -> "duplicated devices in mirroredBoots".
   boot.loader.grub = {

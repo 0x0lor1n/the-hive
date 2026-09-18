@@ -1,4 +1,4 @@
-# zoxide: `z` / `zi` smarter cd. Ported 1:1 from jarvis.
+# zoxide: `z` / `zi` smarter cd.
 {
   inputs,
   cell,

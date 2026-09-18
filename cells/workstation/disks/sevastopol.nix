@@ -62,8 +62,8 @@ in
 
         # Throwaway key in the nix store so disko can create the pool without a
         # TTY; the operator re-seals/rotates after the first boot (see
-        # hardware-zfs-tpm.nix). Never used on real hardware: dellvis will get
-        # its own disk file with a real passphrase flow.
+        # hardware-zfs-tpm.nix). Never used on real hardware, which gets its
+        # own disk file with a real passphrase flow.
         encryption = "on";
         keyformat = "passphrase";
         keylocation = "file://${pkgs.writeText "zfs-initial-key" "qwerty123"}";

@@ -40,12 +40,10 @@
     '';
 
   # d2 -> svg next to each post's index.md before zola build; Zola copies
-  # colocated assets into the page directory and the d2 shortcode inlines
-  # the svg from there, so everything a post owns lives in one folder.
-  # --scale 1 writes width/height on the <svg>, so the browser draws diagrams at
-  # native size instead of stretching a 360px chain to the column width.
-  # classes.d2 is import-only, so compile the numbered diagrams only. One
-  # definition for the derivation and the dev loop so the two cannot drift.
+  # colocated assets into the page directory and the d2 shortcode inlines the
+  # svg from there. --scale 1 writes width/height on the <svg>, so the browser
+  # draws diagrams at native size instead of stretching a 360px chain to the
+  # column width. classes.d2 is import-only, hence the numbered-file glob.
   # No italic subset is shipped, so italic falls back to regular.
   build-site = pkgs.writeShellApplication {
     name = "build-site";
@@ -104,8 +102,6 @@
     }
   ];
 
-  # What the shell includes when the station is down: hide the player and the
-  # link row, stop the loader; live.html carries its own "offline" line.
   # What the shell includes when the station is down. SSI cannot add a class
   # to <body>, so the fragment is a <style> that flips a custom property;
   # style.css keys the loader and the hidden player off it.

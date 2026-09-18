@@ -5,8 +5,8 @@
     description = "Repo-wide parameters, merged from public and encrypted halves.";
     type = lib.types.submodule {
       options = {
-        # Encrypted half (name/homeDir/hashedPassword). Read by cells/workstation:
-        # disks pre-create the home inside the @blank snapshot.
+        # Encrypted half (name/homeDir/hashedPassword). Read by
+        # cells/workstation: disks pre-create the home inside @blank.
         user = {
           name = lib.mkOption {type = lib.types.str;};
           homeDir = lib.mkOption {type = lib.types.str;};
@@ -15,8 +15,7 @@
             type = lib.types.int;
             default = 1000;
           };
-          # Public half: the commit identity is already the author of every
-          # commit in this repo. Read by cells/workstation/home (programs.git).
+          # Public half. Read by cells/workstation/home (programs.git).
           git = {
             name = lib.mkOption {type = lib.types.str;};
             email = lib.mkOption {type = lib.types.str;};

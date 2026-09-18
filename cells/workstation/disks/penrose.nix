@@ -1,11 +1,10 @@
-# penrose (Dell Latitude 5580): the sevastopol layout on the real disk.
-# Native ZFS encryption behind a pre-unseal PCR 15 gate (no LUKS layer).
+# penrose (Dell Latitude 5580). Native ZFS encryption behind a pre-unseal
+# PCR 15 gate (no LUKS layer).
 #
-# ESP + one partition for `rpool` on the whole NVMe (phase 0: one plain GPT,
-# no Windows, no recovery partition, nothing to preserve). The pool root carries the encryption, the
-# datasets are the impermanence layout: local/root is rolled back to @blank on
-# every boot (storage-zfs-rollback.nix), local/nix, local/state and
-# safe/persist survive.
+# ESP + one partition for `rpool` on the whole NVMe: one plain GPT, nothing to
+# preserve. The pool root carries the encryption, the datasets are the
+# impermanence layout: local/root is rolled back to @blank on every boot
+# (storage-zfs-rollback.nix), local/nix, local/state and safe/persist survive.
 {
   inputs,
   cell,

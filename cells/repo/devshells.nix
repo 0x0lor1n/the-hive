@@ -31,9 +31,8 @@
     ];
   };
 
-  # go test for every go.mod in tree. Nix-free on purpose: pre-push should not
-  # wait on an evaluation. Binaries are still built by buildGoModule in
-  # packages.nix; this is the fast path for the human/agent loop.
+  # go test for every go.mod in tree. Nix-free: pre-push should not wait on an
+  # evaluation. Binaries are still built by buildGoModule in packages.nix.
   go-test-all = pkgs.writeShellApplication {
     name = "go-test-all";
     runtimeInputs = [pkgs.go pkgs.git];
@@ -58,8 +57,8 @@
   # nix.package, so the plugin dlopens under nixos-rebuild too.
   nixPlugins = pkgs.nix-plugins;
 
-  # One deploy key for the fleet. Encrypted to the PIN-protected identity, so
-  # no unattended process can deploy. Do not "fix" the prompt.
+  # One deploy key for the fleet, encrypted to the PIN-protected identity so
+  # no unattended process can deploy. The prompt is the point.
   deploy-key = pkgs.writeShellApplication {
     name = "deploy-key";
     runtimeInputs = with pkgs; [git rage age-plugin-tpm openssh];
@@ -82,15 +81,12 @@
 
   # Prime the eval-time secrets cache with this host's PIN-protected TPM
   # identity. Not required: on a cache miss eval itself prompts for the PIN
-  # (age-plugin-tpm talks to /dev/tty). This exists for the cases without a
-  # tty - agents, CI, sudo without a terminal - and to decrypt on purpose.
-  # Cache lives in /var/tmp/nix-import-encrypted/$UID, keyed by ciphertext
-  # hash, and is persisted (layer-users-local): a PIN is needed once per change
-  # of an .age file, not once per boot.
-  #
-  # Covers every eval-time file: globals.nix.age and the per-role
-  # secrets/user-*.nix.age (cells/workstation/home/secrets.nix). One PIN
-  # session, all misses; files already cached are skipped.
+  # (age-plugin-tpm talks to /dev/tty). This is for the cases without a tty --
+  # agents, CI, sudo without a terminal. Cache lives in
+  # /var/tmp/nix-import-encrypted/$UID, keyed by ciphertext hash, and is
+  # persisted (layer-users-local): one PIN per change of an .age file, not per
+  # boot. Covers globals.nix.age and the per-role secrets/user-*.nix.age
+  # (cells/workstation/home/secrets.nix) in one session.
   unlock-secrets = pkgs.writeShellApplication {
     name = "unlock-secrets";
     runtimeInputs = with pkgs; [git rage age-plugin-tpm coreutils];
@@ -136,7 +132,7 @@ in {
     name = "nix-rensa";
 
     packages = [
-      # Agent-facing `nix`. The real client is NOT in packages: buildEnv
+      # Agent-facing `nix`. The real client is not in packages: buildEnv
       # rejects two bin/nix. NIXQ_REAL_NIX below pins it by store path.
       cell.packages.nixq
 

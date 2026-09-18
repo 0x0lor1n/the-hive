@@ -1,30 +1,24 @@
-# The three VPN profiles from jarvis (users/shared/security/vpn.nix), as
-# system units with agenix runtime secrets instead of home-manager files.
-#
-# Why not the home module 1:1: jarvis rendered the wireguard PrivateKey and
-# the openvpn auth-user-pass files through xdg.configFile.text, i.e. into
-# the world-readable nix store (flagged in the port plan). Here every
-# credential is an age.secret in /run/agenix (root, 0400), and the tunnels
-# are ordinary systemd units the accounts start and stop over polkit:
+# The three VPN profiles as system units with agenix runtime secrets. Every
+# credential is an age.secret in /run/agenix (root, 0400) rather than a
+# home-manager file in the world-readable store, and the tunnels are ordinary
+# systemd units the accounts start and stop over polkit:
 #
 #   owt   wireguard  wg-quick-owt.service    Entra (employer)
 #   t  openvpn    openvpn-t.service    Entra (employer)
 #   w   openvpn    openvpn-w.service     local (freelance client)
 #
-# The account split is enforced by polkit, not by which home carries an
-# alias: the networkmanager group (himmelblau local_groups, auth-entra.nix)
-# may manage the two employer units; the local user is wheel and may manage
-# anything. Routing is host-global by design (plan: "SETTLED"): a tunnel
-# raised by one account carries the other's traffic too.
+# The account split is enforced by polkit, not by which home carries an alias:
+# the networkmanager group (himmelblau local_groups, auth-entra.nix) may manage
+# the two employer units; the local user is wheel and may manage anything.
+# Routing is host-global: a tunnel raised by one account carries the other's
+# traffic too.
 #
 # `vpn up|down|status <name>` wraps systemctl for both accounts.
 #
-# Secret sources: secrets/vpn/<name>.age (master identities + recovery),
-# rekeyed per host into secrets/rekeyed/<host>/ like the ssh identities;
-# the plaintexts came out of jarvis's vpn-{owt,t,w}.nix.age +
-# user.nix.age (decrypted once on penrose with the PIN identity). wg-quick
-# takes the whole [Interface]/[Peer] file; openvpn takes the .ovpn verbatim
-# (inline ca/cert/key, so the file itself is the secret) plus a two-line
+# Secret sources: secrets/vpn/<name>.age, rekeyed per host into
+# secrets/rekeyed/<host>/ like the ssh identities. wg-quick takes the whole
+# [Interface]/[Peer] file; openvpn takes the .ovpn verbatim (inline
+# ca/cert/key, so the file itself is the secret) plus a two-line
 # auth-user-pass file. Real hosts only: the VM has no rekeyed bundle.
 {
   inputs,
@@ -83,8 +77,8 @@ in
       vpn-w-auth = secret "w-auth";
     };
 
-    # wg-quick reads DNS= itself (resolvconf), so the whole jarvis
-    # [Interface]/[Peer] file is the secret; nothing to template.
+    # wg-quick reads DNS= itself (resolvconf), so the whole [Interface]/[Peer]
+    # file is the secret; nothing to template.
     networking.wg-quick.interfaces.owt = {
       configFile = config.age.secrets.vpn-owt-conf.path;
       autostart = false;
@@ -97,8 +91,7 @@ in
           auth-user-pass ${config.age.secrets."vpn-${name}-auth".path}
         '';
         autoStart = false;
-        # jarvis ran plain `sudo openvpn --config`, no resolvconf hook; keep
-        # that until a profile is seen to need pushed DNS.
+        # No resolvconf hook until a profile is seen to need pushed DNS.
         updateResolvConf = false;
       };
     in {
@@ -108,9 +101,8 @@ in
 
     # The Entra account (no wheel) may raise and drop the two employer
     # tunnels; nothing else in systemd. w stays with the local user (wheel).
-    # wheel alone is auth_admin_keep on manage-units (password prompt every
-    # `vpn up w`, seen 2026-09-15), so grant that one unit explicitly too —
-    # symmetric with owt/t on the Entra side, checklist says "no password".
+    # wheel alone is auth_admin_keep on manage-units — a password prompt on
+    # every `vpn up w` (2026-09-15) — so that one unit is granted explicitly.
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {
         if (action.id == "org.freedesktop.systemd1.manage-units" &&

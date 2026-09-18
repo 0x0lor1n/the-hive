@@ -24,20 +24,17 @@
 }: let
   flakeRoot = inputs.self.outPath;
 
-  # OUTBOUND ssh identities, transplanted verbatim from jarvis (the pubkeys
-  # are registered on GitHub/Azure/client hosts, so no generator). Split per
-  # account: the local user gets the
-  # personal + freelance keys, the Entra user the employer ones. Each key
-  # ships with its .pub: the private halves are passphrase-protected, and
-  # without the .pub next to it ssh must decrypt the key just to learn which
-  # agent identity to offer, i.e. it prompts even when the agent has it.
-  # IdentityFile in the per-role user secrets points at these paths.
-  # Source: secrets/ssh/<name>.age (master identities + recovery), rekeyed
-  # per host like everything else.
+  # Outbound ssh identities; the pubkeys are registered on GitHub/Azure/client
+  # hosts, so there is no generator. Split per account: the local user gets the
+  # personal + freelance keys, the Entra user the employer ones. Each key ships
+  # with its .pub: the private halves are passphrase-protected, and without the
+  # .pub next to it ssh must decrypt the key just to learn which agent identity
+  # to offer, i.e. it prompts even when the agent has it. IdentityFile in the
+  # per-role user secrets points at these paths.
   #
-  # Entra owner: users.users has no entry, so `owner` is the numeric uid
-  # (chown accepts it, nothing resolves the name at activation) and group
-  # falls back to root; mode keeps it to the owner.
+  # Entra owner: users.users has no entry, so `owner` is the numeric uid (chown
+  # accepts it, nothing resolves the name at activation) and group falls back
+  # to root; mode keeps it to the owner.
   entraUid = globals.entra.user.uid;
   mkIdentity = owner: name: {
     "${name}" = {
@@ -84,7 +81,7 @@ in {
   # The persisted path, not /etc/ssh: agenixInstall runs at activation before
   # impermanence bind-mounts /etc/ssh, so at boot the default identity is
   # absent ("no readable identities found") and zfs-key-sync sees no secret.
-  # /persist is mounted in the initrd. Measured on boot 4 of sevastopol.
+  # /persist is mounted in the initrd.
   age.identityPaths = ["/persist/etc/ssh/ssh_host_ed25519_key"];
 
   age.rekey = {

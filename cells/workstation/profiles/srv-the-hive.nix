@@ -1,23 +1,22 @@
-# /srv/the-hive: the ONE checkout of this repo on the workstation, read by
-# both accounts (decision 2026-09-14).
+# /srv/the-hive: the one checkout of this repo on the workstation, read by
+# both accounts.
 #
 #   /srv/the-hive           <local>:hive 0750 -- group reads, only the owner
 #                           (who rebuilds) writes. cells/ inherits that.
-#   /srv/the-hive/dotfiles  group-writable through a DEFAULT POSIX ACL --
+#   /srv/the-hive/dotfiles  group-writable through a default POSIX ACL --
 #                           nvim/tmux/zsh live here and home-manager points
 #                           at them with mkOutOfStoreSymlink, so either
 #                           account edits in place without a rebuild.
 #
-# Why an ACL and not the obvious things (all measured on penrose 2026-09-14):
-# core.sharedRepository only touches .git/, setgid fixes the group but not
-# the mode, umask is per shell and a checkout under 022 silently drops the
-# group bit. A default ACL is inherited by every file git creates later,
-# under any umask. ACLs are not in git and are lost on a fresh clone, so the
-# rule is re-applied by tmpfiles at every boot (A+ is recursive).
+# An ACL rather than the obvious alternatives (measured 2026-09-14):
+# core.sharedRepository only touches .git/, setgid fixes the group but not the
+# mode, umask is per shell and a checkout under 022 silently drops the group
+# bit. A default ACL is inherited by every file git creates later, under any
+# umask. ACLs are not in git and are lost on a fresh clone, so the rule is
+# re-applied by tmpfiles at every boot (A+ is recursive).
 #
-# Safety: the symlink target is a runtime path string, never an eval-time
-# input -- nothing in dotfiles/ can influence a build, so group write there
-# does not leak into what root builds.
+# The symlink target is a runtime path string, never an eval-time input, so
+# group write in dotfiles/ cannot influence what root builds.
 #
 # The dataset (rpool/safe/srv/the-hive, disks/<host>.nix) is not subject to
 # the @blank rollback. The clone itself is a one-off user step:
@@ -36,8 +35,8 @@
   users.groups.hive = {};
   users.users.${host.userName}.extraGroups = ["hive"];
 
-  # The mount itself comes from disko (disks/<host>.nix declares the
-  # dataset with mountpoint = "/srv/the-hive"); nothing to repeat here.
+  # The mount comes from disko (disks/<host>.nix declares the dataset with
+  # mountpoint = "/srv/the-hive").
 
   # .envrc is trusted for both accounts without `direnv allow`: the checkout
   # is 0750 owner-only writable and its .envrc is pinned by content hash.

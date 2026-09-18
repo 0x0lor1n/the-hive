@@ -1,7 +1,5 @@
 # swayidle — idle management daemon for Wayland.
-# HM module services.swayidle exists in release-25.05.
-# Vanilla DWL has no dwl-msg IPC binary (that's a wochap-fork addition).
-# DPMS toggle uses wlopm (pkgs.wlopm exists in nixpkgs).
+# Vanilla dwl has no dwl-msg IPC binary, so the DPMS toggle uses wlopm.
 {pkgs, ...}: {
   services.swayidle = {
     enable = true;

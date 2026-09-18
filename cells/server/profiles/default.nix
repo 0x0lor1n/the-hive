@@ -1,16 +1,15 @@
 # Composable NixOS modules. One file per profile; add a .nix file and it is
-# picked up. rensa's equivalent of hive's `findLoad`.
+# picked up.
 #
-# Two profile shapes exist in the ported code and BOTH must work:
+# Two profile shapes must both work:
 #
 #   { inputs, cell }: { config, ... }: { ... }   -- needs cell args
 #   { lib, pkgs, ... }: { ... }                  -- a plain NixOS module
 #
-# hive's loader accepted either. `utils.importModules` applies its `args`
-# unconditionally, which calls the second shape with `{inputs, cell}` and fails
-# with "called without required argument 'pkgs'". So the shape is detected via
-# builtins.functionArgs instead: apply cell args only if the outer function
-# actually asks for them.
+# `utils.importModules` applies its `args` unconditionally, which calls the
+# second shape with `{inputs, cell}` and fails with "called without required
+# argument 'pkgs'". Hence the builtins.functionArgs check: apply cell args only
+# if the outer function asks for them.
 {
   inputs,
   cell,

@@ -1,7 +1,6 @@
-# Firefox (stable) hardened by Phoenix, as a SYSTEM package: the browser is
+# Firefox (stable) hardened by Phoenix, as a system package: the browser is
 # the Entra account's daily driver, and Entra users never get a home.packages
-# profile (see layer-compositor.nix). Replaces the old programs.librewolf +
-# nur addons setup (decision 2026-09-14).
+# profile (see layer-compositor.nix).
 #
 # Phoenix has two halves:
 #   1. the wrapper: pkgs.withPhoenix = firefox.override { extraPoliciesFiles;
@@ -15,9 +14,9 @@
 #      environment and programs.firefox.policies read from its policies.json,
 #      which the NixOS firefox module writes to /etc/firefox/policies/ -- on
 #      Linux that path wins over the package's distribution/policies.json.
-#      Imported as-is for that. Its /etc/firefox/defaults/pref/phoenix.js is
-#      dead weight here (nixpkgs firefox reads prefs from its own libDir);
-#      the wrapper's mozilla.cfg carries phoenix.cfg instead.
+#      Its /etc/firefox/defaults/pref/phoenix.js is dead weight here (nixpkgs
+#      firefox reads prefs from its own libDir); the wrapper's mozilla.cfg
+#      carries phoenix.cfg instead.
 # Our own policies (search engines, addons) merge into the same
 # programs.firefox.policies attrset; Phoenix's SearchEngines defaults are
 # mkForce'd since the module system cannot merge two scalars.
@@ -27,7 +26,6 @@
   ...
 }: let
   amo = id: "https://addons.mozilla.org/firefox/downloads/latest/${id}/latest.xpi";
-  # Same 8 addons jarvis pinned through nur (rycee.firefox-addons), by AMO id.
   # normal_installed: installed, user may disable; Phoenix already forces
   # uBlock Origin and Multi-Account Containers the same way.
   addon = id: {
@@ -69,15 +67,13 @@ in {
         # uBlock Origin: Phoenix already normal_installed it.
 
         # Entra SSO (silent PRT cookie for login.microsoftonline.com through
-        # himmelblau-broker). The himmelblau module already wires the native
-        # messaging host (programs.firefox.nativeMessagingHosts) and pins
-        # the webextension via Extensions.Install at v1.7.1. That release has
-        # a Firefox-only advisory (GHSA-g9vc-5j77-f2cm, fixed in 1.10.2) and
-        # Extensions.Install never updates a GitHub-hosted xpi, so install it
-        # here instead, force_installed so the user cannot lose it. The
-        # native side (himmelblau's rust_sso) is protocol-compatible: the
-        # commands are getVersion/getAccounts/acquirePrtSsoCookie/
-        # acquireTokenSilently in both.
+        # himmelblau-broker). The himmelblau module wires the native messaging
+        # host and pins the webextension via Extensions.Install at v1.7.1, but
+        # that release has a Firefox-only advisory (GHSA-g9vc-5j77-f2cm, fixed
+        # in 1.10.2) and Extensions.Install never updates a GitHub-hosted xpi.
+        # force_installed so the user cannot lose it. The native side
+        # (himmelblau's rust_sso) is protocol-compatible: getVersion/
+        # getAccounts/acquirePrtSsoCookie/acquireTokenSilently in both.
         "linux-entra-sso@example.com" = {
           installation_mode = "force_installed";
           install_url = "https://github.com/siemens/linux-entra-sso/releases/download/v1.10.2/linux_entra_sso-1.10.2.xpi";
@@ -88,8 +84,7 @@ in {
       Extensions.Install = lib.mkForce [];
 
       # SearchEngines is a release-channel policy since Fx139 (this pin: 154).
-      # Phoenix removes Google/Bing/DDG builtins and adds its DDG/Mojeek/
-      # Startpage/SearXNG set; its Default is overridden to jarvis's 4get.
+      # Phoenix removes the Google/Bing/DDG builtins and adds its own set.
       SearchEngines = {
         Default = lib.mkForce "4get";
         DefaultPrivate = lib.mkForce "4get";
@@ -132,13 +127,13 @@ in {
       };
     };
 
-    # jarvis's librewolf `settings`, as defaultPref so they stay editable in
-    # about:config. Appended to mozilla.cfg AFTER phoenix.cfg (the NixOS module
-    # concatenates old.extraPrefsFiles ++ autoConfig), so they win over
-    # Phoenix's sanitize-on-shutdown defaults -- the whole point: keep
-    # cookies/cache/session across restarts, restore the previous session.
-    # The Preferences *policy* would not accept privacy.clearOnShutdown_v2.*
-    # (allow-listed prefixes only), hence autoconfig and not `preferences`.
+    # defaultPref so they stay editable in about:config. Appended to
+    # mozilla.cfg after phoenix.cfg (the NixOS module concatenates
+    # old.extraPrefsFiles ++ autoConfig), so they win over Phoenix's
+    # sanitize-on-shutdown defaults and keep cookies/cache/session across
+    # restarts. The Preferences *policy* would not accept
+    # privacy.clearOnShutdown_v2.* (allow-listed prefixes only), hence
+    # autoconfig and not `preferences`.
     autoConfig = ''
       defaultPref("privacy.clearOnShutdown_v2.cache", false);
       defaultPref("privacy.clearOnShutdown_v2.cookiesAndStorage", false);
@@ -149,12 +144,11 @@ in {
       defaultPref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
       defaultPref("privacy.resistFingerprinting.exemptedDomains", "claude.ai");
       // linux-entra-sso is MV3: since Fx 127 its host_permissions
-      // (login.microsoftonline.com) are NOT granted at install, the user has
-      // to click "(enable)" in the addon popup -- which is unreadable here
-      // (2026-09-16), so the PRT cookie header never got injected. Grant
-      // origin permissions at install time again, MV2-style. Only affects
-      // installs after this lands; for an existing profile toggle it once in
-      // about:addons -> Linux Entra SSO -> Permissions.
+      // (login.microsoftonline.com) are not granted at install, the user has
+      // to click "(enable)" in the addon popup — unreadable here
+      // (2026-09-16), so the PRT cookie header never got injected. Only
+      // affects installs after this lands; an existing profile needs one
+      // toggle in about:addons -> Linux Entra SSO -> Permissions.
       lockPref("extensions.originControls.grantByDefault", true);
     '';
   };
