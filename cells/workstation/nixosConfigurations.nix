@@ -88,6 +88,8 @@
       p.srv-the-hive
       # /srv/workspace: shared project clones (work/, projects/), both accounts write
       p.srv-workspace
+      # `cpu-governor@<name>.service` for the powermenu's performance toggle
+      p.cpu-governor
     ];
 
   # Hardware: exactly one per host. The playground VMs mount the host's flake
