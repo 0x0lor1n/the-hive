@@ -54,8 +54,12 @@ If the comment does not fall in one of those four, delete it.
 
 ## Length
 
-- One or two lines is the norm. Four is the ceiling. Past that, either the
-  code is wrong or the explanation belongs in the commit message.
+- One line is the target. Two is the ceiling. Past that the fact belongs in
+  the commit message, not the code.
+- Most lines need no comment at all. Deleting one is the default move; keep it
+  only if a senior reader would stop and ask "why".
+- A self-describing line takes nothing: `".local/share/Grayjay"` in a list of
+  persisted dirs explains itself.
 - A header comment on a file, if any: one sentence saying what the file is
   for, not how it got there.
 - No blank `#` lines inside a comment block unless separating two distinct
@@ -82,7 +86,7 @@ of how it was built; that is what `git log` is for.
 
 ## Behaviour, same discipline
 
-Fable 5.1 defaults the user has corrected, repeatedly:
+Assistant defaults the user has corrected, repeatedly:
 
 - Once the user has said "go", "давай", "yes" — do the work. Do not ask
   "Делать?" again at each sub-step. Ask only before destructive or
