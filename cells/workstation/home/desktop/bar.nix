@@ -1,14 +1,12 @@
-# waybar: the status bar, replacing somebar. Pieces of wochap's ags/quickshell
-# bar that make sense without his dwl fork. Tags are display only (switched
-# from the keyboard, never clicked) and there is no dwl-ipc patch: tags/
-# layout/mode/title come from dwl's own `-s` status pipe through dwl-status
-# (profiles/layer-compositor.nix),
-# which writes $XDG_RUNTIME_DIR/dwl/<field> and pokes waybar with
-# SIGRTMIN+1. Recorder (recorder.nix) pokes SIGRTMIN+2.
+# waybar: the status bar. Tags are display only (switched from the keyboard,
+# never clicked) and there is no dwl-ipc patch: tags/layout/mode/title come
+# from dwl's own `-s` status pipe through dwl-status
+# (profiles/layer-compositor.nix), which writes $XDG_RUNTIME_DIR/dwl/<field>
+# and pokes waybar with SIGRTMIN+1. Recorder (recorder.nix) pokes SIGRTMIN+2.
 #
 # Starts as an HM user unit on graphical-session.target, same as mako/
-# swayidle/avizo -- the dwl-session-bridge unit pulls it in, do NOT also
-# start it from the dwl startup script. Super+B sends SIGUSR1 (toggle).
+# swayidle/avizo -- the dwl-session-bridge unit pulls it in, so it must not
+# also start from the dwl startup script. Super+B sends SIGUSR1 (toggle).
 #
 # Modules that read hardware that is not there (coretemp, intel_backlight,
 # BAT0 in the VM) fail to construct and waybar logs and skips them.
@@ -76,8 +74,8 @@
   # CPU frequency governor. intel_pstate active mode offers exactly
   # performance and powersave; the switch itself is cpu-governor@.service
   # (profiles/cpu-governor.nix), reachable from both accounts over polkit.
-  # Polled rarely and refreshed by signal: the two things that change it
-  # (this module's click, the powermenu) both poke SIGRTMIN+4.
+  # Polled rarely and refreshed by signal: this module's click and the
+  # powermenu both poke SIGRTMIN+4.
   cpuGovernor = pkgs.writeShellScript "bar-cpu-governor" ''
     g=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null) || exit 0
     [ -n "$g" ] || exit 0

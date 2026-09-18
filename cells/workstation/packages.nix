@@ -54,8 +54,7 @@
                 # /StatusNotifierItem on its own unique bus name (Chromium/Qt
                 # both do; no well-known name to `own`). Without the watcher
                 # in the proxy policy the call never leaves the sandbox and
-                # the icon just doesn't appear -- same as flathub's
-                # com.slack.Slack / org.telegram.desktop --talk-name.
+                # the icon just doesn't appear.
                 "org.kde.StatusNotifierWatcher" = "talk";
               }
               // dbus;
@@ -78,15 +77,14 @@
                 # /tmp: bwrap starts from an empty root and nixpak adds none.
                 # Chromium/Electron keeps its SingletonSocket there (Qt its
                 # lock/IPC files); without it the main process hangs before
-                # mapping a window. It must also be the SAME directory for
-                # every instance of one app: a URL-handler launch (browser ->
+                # mapping a window. It must be the same directory for every
+                # instance of one app: a URL-handler launch (browser ->
                 # slack://) is a second instance that must reach the first
-                # over that socket. With a private tmpfs the symlink dangles,
-                # the lock's pid is invisible from the new pid namespace, so
-                # Chromium treats the lock as stale and opens a second, empty
-                # window. Same trick as Flatpak: a per-appId dir under
-                # XDG_RUNTIME_DIR (tmpfs, gone at logout, not shared between
-                # apps).
+                # over that socket. With a private tmpfs the symlink dangles
+                # and the lock's pid is invisible from the new pid namespace,
+                # so Chromium treats it as stale and opens a second, empty
+                # window. A per-appId dir under XDG_RUNTIME_DIR, as Flatpak
+                # does it.
                 [(sloth.mkdir (sloth.concat' sloth.runtimeDir "/app/${appId}/tmp")) "/tmp"]
               ];
               # Host fontconfig: its <dir> entries are store paths, already bound.
@@ -135,10 +133,8 @@ in {
   agenix = inputs.agenix-rekey.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
   # dwl with our config.h. dwl's Makefile copies config.def.h to config.h only
-  # when the latter is absent, so dropping the file in is the whole override --
-  # no sed patching of upstream. Keybinds and rationale live in packages/dwl/config.h.
-  # movestack from codeberg.org/dwl/dwl-patches, config.def.h hunks stripped
-  # (our config.h carries the keybinds). Re-fetch on a dwl version bump.
+  # when the latter is absent, so dropping the file in is the whole override.
+  # Keybinds and rationale live in packages/dwl/config.h.
   dwl = pkgs.dwl.overrideAttrs (old: {
     patches =
       (old.patches or [])
@@ -147,15 +143,13 @@ in {
         # Keybindings are latin; without this none of them fire while the
         # ru group is active (xkb_state_key_get_syms follows the group).
         ./packages/dwl/patches/latin-keybindings.patch
-        # Prefix-key modes (Super+R layout, Super+Alt+N notifications), from
-        # dwl-patches with the config.def.h hunks stripped. Adds a
+        # Prefix-key modes (Super+R layout, Super+Alt+N notifications). Adds a
         # "<output> mode <label>" status line that dwl-status
         # (profiles/layer-compositor.nix) turns into the bar's mode badge.
         ./packages/dwl/patches/modes-0.8.patch
         # tile() follows the output shape: master|stack on landscape, master
         # over stack on portrait (the work monitors). Also adds bstack as a
-        # standalone layout. Layout thus tracks the kanshi transform, no
-        # per-profile wiring needed.
+        # standalone layout, so layout tracks the kanshi transform.
         ./packages/dwl/patches/autotile-0.8.patch
       ];
     postPatch =
@@ -213,7 +207,6 @@ in {
   };
 
   # Separate tool, not a flag on transcribe: Parakeet is a transducer served by
-  # sherpa-onnx, and its options don't overlap whisper's. Measured WER and the
-  # pick-one-or-the-other rule are in packages/transcribe-parakeet.nix.
+  # sherpa-onnx and its options don't overlap whisper's.
   transcribe-parakeet = pkgs.callPackage ./packages/transcribe-parakeet.nix {};
 }
