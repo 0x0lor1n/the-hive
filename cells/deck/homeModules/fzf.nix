@@ -1,8 +1,6 @@
-# fzf: kept for the tools that shell out to it (skim covers the zsh widgets,
-# so both shell integrations are off — otherwise fzf and skim would fight
-# over Ctrl-T/Alt-C). Ported 1:1 from jarvis's users/shared/cli/fzf.nix.
-#
-# theme-debt: catppuccin.fzf (the --color line) dropped; stock fzf colours.
+# fzf: kept for the tools that shell out to it. Both shell integrations are
+# off — skim covers the zsh widgets, and otherwise the two would fight over
+# Ctrl-T/Alt-C.
 {
   inputs,
   cell,
