@@ -7,6 +7,9 @@
 # (layer-compositor.nix) then stops graphical-session.target and greetd
 # comes back. Lock goes through loginctl so swayidle's lock handler
 # (home/desktop/idle.nix) runs the same swaylock as everywhere else.
+# No Suspend entry: swayidle still suspends at 1800 s (idle.nix), and the
+# menu slot is worth more as the CPU governor flip (profiles/cpu-governor.nix
+# declares the units and the polkit rule that makes them password-free).
 #
 # calcmenu: qalc (libqalculate) instead of bc -- unit-aware, no `scale=`
 # dance, and "2^10" means what it says. The result goes to the clipboard
@@ -14,23 +17,42 @@
 {pkgs, ...}: let
   powermenu = pkgs.writeShellApplication {
     name = "powermenu";
-    runtimeInputs = with pkgs; [fuzzel systemd];
+    runtimeInputs = with pkgs; [fuzzel systemd coreutils libnotify procps];
     text = ''
+      # intel_pstate active mode offers exactly performance and powersave.
+      gov="$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo unknown)"
+      if [ "$gov" = "performance" ]; then
+        next="powersave"
+      else
+        next="performance"
+      fi
+
       shutdown="  Shutdown"
       reboot="  Reboot"
-      suspend="  Suspend"
+      cpu="  CPU: $gov → $next"
       logout="  Logout"
       lock="  Lock"
 
-      selected="$(printf '%s\n' "$lock" "$suspend" "$logout" "$reboot" "$shutdown" \
-        | fuzzel --dmenu --prompt 'power: ' --lines 5 --width 20)"
+      selected="$(printf '%s\n' "$lock" "$cpu" "$logout" "$reboot" "$shutdown" \
+        | fuzzel --dmenu --prompt 'power: ' --lines 5 --width 28)"
 
       case "$selected" in
         "$shutdown") systemctl poweroff ;;
         "$reboot")   systemctl reboot ;;
-        "$suspend")  systemctl suspend ;;
         "$logout")   pkill -x dwl ;;
         "$lock")     loginctl lock-session ;;
+        "$cpu")
+          # oneshot: the unit exits once the governor is written, so --wait
+          # to learn whether it actually did. SIGRTMIN+4 refreshes waybar's
+          # custom/cpu-governor (home/desktop/bar.nix) instead of leaving it
+          # stale until its next poll.
+          if systemctl start --wait "cpu-governor@$next.service"; then
+            notify-send -a powermenu "CPU governor" "$next"
+          else
+            notify-send -u critical -a powermenu "CPU governor" "failed to set $next"
+          fi
+          pkill -RTMIN+4 waybar || true
+          ;;
       esac
     '';
   };
