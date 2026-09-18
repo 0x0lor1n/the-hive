@@ -1,7 +1,6 @@
 # powermenu / calcmenu / wifimenu: fuzzel --dmenu menus (our launcher,
-# home/desktop/launcher.nix). The first two are wochap's tofi-powermenu and
-# tofi-calc rewritten; wifimenu has no wochap counterpart (he runs impala by
-# hand). Bound in packages/dwl/config.h to Super+Esc, Super+C, Super+Alt+W.
+# home/desktop/launcher.nix). Bound in packages/dwl/config.h to Super+Esc,
+# Super+C, Super+Alt+W.
 #
 # powermenu: no uwsm here, so Logout kills the compositor -- dwl-session
 # (layer-compositor.nix) then stops graphical-session.target and greetd

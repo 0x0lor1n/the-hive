@@ -1,5 +1,4 @@
-# Ctrl-R over zsh-histdb's sqlite history through skim. Not in nixpkgs;
-# carried over from jarvis's packages/zsh-histdb-skim.nix.
+# Ctrl-R over zsh-histdb's sqlite history through skim. Not in nixpkgs.
 {
   fetchFromGitHub,
   rustPlatform,
