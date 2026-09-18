@@ -33,8 +33,8 @@ in let
         encrypted
         {
           globals = {
-            # Commit identity for the local user's git (public: it is the
-            # author of the whole history). The Entra account does not commit.
+            # Commit identity for the local user's git. The Entra account does
+            # not commit.
             user.git = {
               name = "0x0lor1n";
               email = "0xolorin@users.noreply.github.com";
@@ -43,8 +43,8 @@ in let
             hosts.osgiliath.diskDevice = "/dev/vda";
 
             # Playground workstation VM (cells/workstation). Public throwaway
-            # identity: the hashes are for `vmuser`/root on a disposable image and
-            # exist so the VM boots without the encrypted half being needed.
+            # identity: the hashes are for `vmuser`/root on a disposable image
+            # and exist so the VM boots without the encrypted half.
             hosts.sevastopol = {
               diskDevice = "/dev/vda";
               isVm = true;
@@ -56,28 +56,25 @@ in let
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEkHLFGCFphGyc0GGyxCENyE/762o1ZPOVa1Ar15ee5 root@sevastopol";
             };
 
-            # Dell Latitude 5580 (ex-dellvis), the first real workstation host.
-            # Whole disk, nothing else on it. User + hashes come from the
-            # encrypted half (fleet user). Single NVMe, so the kernel name is
-            # stable enough; disko wipes it anyway.
+            # Dell Latitude 5580. Whole disk, nothing else on it. User + hashes
+            # come from the encrypted half (fleet user).
             hosts.penrose = {
               diskDevice = "/dev/nvme0n1";
-              hasTpm = true; # Nuvoton NPCT, TPM 2.0 (fw 2015; PCR7 sealing verified in phase 3)
-              # Generated on the ZBook, private half in secrets/hosts/penrose/
-              # (rage, master identities + KeePass), shipped to /persist/etc/ssh
-              # by nixos-anywhere --extra-files. Never keyscanned.
+              hasTpm = true; # Nuvoton NPCT, TPM 2.0 (fw 2015)
+              # Private half in secrets/hosts/penrose/ (rage, master identities
+              # + KeePass), shipped to /persist/etc/ssh by nixos-anywhere
+              # --extra-files. Never keyscanned.
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMbQt3EL0KhxSadOnWnBDKVySy843hxcCPNbUtU8pqgi root@penrose";
             };
 
-            # HP ZBook Firefly 16 G10 (ex-jarvis, Ubuntu): the daily driver and
-            # the Entra machine. Same shape
-            # as penrose; whole NVMe (SK hynix PC801 1T), user + hashes from the
-            # encrypted half. Host key generated on penrose into
-            # secrets/hosts/elster/ (rage: elster-nix + penrose-nix TPM identities +
-            # KeePass recovery), shipped via nixos-anywhere --extra-files.
+            # HP ZBook Firefly 16 G10: the daily driver and the Entra machine.
+            # Same shape as penrose; whole NVMe (SK hynix PC801 1T), user +
+            # hashes from the encrypted half. Host key in secrets/hosts/elster/
+            # (rage: elster-nix + penrose-nix TPM identities + KeePass
+            # recovery), shipped via nixos-anywhere --extra-files.
             hosts.elster = {
               diskDevice = "/dev/nvme0n1";
-              hasTpm = true; # /dev/tpmrm0, TPM 2.0 (facts 2026-09-15)
+              hasTpm = true; # /dev/tpmrm0, TPM 2.0
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN0MnzHtFzfGdAKGxda4bXNWCR9Kg+8ybwW8+6Lq/dvB root@elster";
             };
 
