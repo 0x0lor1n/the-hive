@@ -294,8 +294,8 @@ in {
       # on purpose: .config/git and .ssh/config are store symlinks HM
       # re-creates at every activation.
       (entraHome ".ssh")
-      # direnv allow-list, zsh histfile (phase 2 zsh points HISTFILE here),
-      # nix fetcher/eval caches (flake inputs would re-download every boot).
+      # direnv allow-list, zsh histfile, nix fetcher/eval caches (flake inputs
+      # would re-download every boot).
       (entraHome ".local/share/direnv")
       (entraHome ".local/share/zsh")
       # zoxide frecency db + tmux-resurrect snapshots.
