@@ -285,6 +285,10 @@ in {
 
     environment.systemPackages = [
       cell.packages.dwl
+      # `transcribe <file>`: whisper.cpp on the iGPU (Vulkan), CPU fallbacks.
+      # `transcribe-parakeet`: faster, CPU-only, clean speech only.
+      cell.packages.transcribe
+      cell.packages.transcribe-parakeet
       pkgs.foot
       pkgs.fuzzel
       pkgs.swaylock

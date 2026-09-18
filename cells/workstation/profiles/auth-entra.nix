@@ -276,6 +276,8 @@ in {
       # neovim: lazy.nvim plugins, mason, compiled treesitter parsers -- see
       # layer-users-local.nix.
       (entraHome ".local/share/nvim")
+      # whisper.cpp + Parakeet models (transcribe) -- see layer-users-local.nix.
+      (entraHome ".local/share/asr-models")
       # Whole ~/.cache (p10k dump/instant-prompt live at its root, no
       # override) -- see layer-users-local.nix. Also covers
       # .cache/microsoft-edge, which used to be its own entry: impermanence

@@ -15,6 +15,10 @@
 
   dwlConfig = pkgs.replaceVars ./packages/dwl/config.h (themeVars ["bg" "border" "focus" "urgent"]);
 
+  # Mesa's ANV keeps fp16 and DP4a on Gen12, which the q5_0 matmuls need: 11.8s
+  # against the CPU's 90.2s to encode 98s of audio.
+  whisperCppVulkan = pkgs.whisper-cpp.override {vulkanSupport = true;};
+
   mkNixPak = inputs.nixpak.lib.nixpak {inherit (pkgs) lib pkgs;};
   # Desktop apps behind bwrap + xdg-dbus-proxy. An app sees its own state
   # (~/.var/app/<appId>, mapped over the XDG dirs), ~/Downloads, the
@@ -185,4 +189,15 @@ in {
     env = chromiumEnv;
     camera = true;
   };
+
+  whisper-cpp-vulkan = whisperCppVulkan;
+
+  transcribe = pkgs.callPackage ./packages/transcribe.nix {
+    whisper-cpp-vulkan = whisperCppVulkan;
+  };
+
+  # Separate tool, not a flag on transcribe: Parakeet is a transducer served by
+  # sherpa-onnx, and its options don't overlap whisper's. Measured WER and the
+  # pick-one-or-the-other rule are in packages/transcribe-parakeet.nix.
+  transcribe-parakeet = pkgs.callPackage ./packages/transcribe-parakeet.nix {};
 }
