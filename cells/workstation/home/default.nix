@@ -31,6 +31,8 @@
   # cells/repo/packages: claude-code, opencode, oh-my-opencode, rtk -- the
   # agent CLIs dev/agents.nix installs. Same reason as deck: no `inputs` here.
   agentPkgs ? {},
+  # Where a plain login shell lands (tty, ssh, `su -`). null keeps $HOME.
+  startDir ? null,
   # .desktop that gets https:// links. Only the Entra account overrides it,
   # with himmelblau's o365-url-handler (profiles/auth-entra.nix).
   httpsHandler ? "firefox.desktop",
@@ -77,6 +79,15 @@ in {
       "x-scheme-handler/slack" = "slack.desktop";
     };
   };
+
+  # Where a login shell starts. foot already lands in tmux at /srv/the-hive
+  # (sesh.toml), so this only covers tty / ssh / `su -`. The $PWD guard keeps
+  # `ssh <host> 'cd /tmp && ...'` and any non-login subshell where they were.
+  programs.zsh.initContent = lib.mkIf (startDir != null) (lib.mkOrder 1500 ''
+    if [[ -o interactive && $PWD == $HOME ]]; then
+      cd ${lib.escapeShellArg startDir}
+    fi
+  '');
 
   # Declared, not `git config --global`: ~/.gitconfig is not persisted and
   # the repo-local user.* that got set by hand is what this replaces.

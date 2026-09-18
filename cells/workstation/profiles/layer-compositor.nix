@@ -31,10 +31,11 @@
     git ? null,
     secrets ? {},
     personal ? false,
+    startDir ? null,
     httpsHandler ? "firefox.desktop",
   }:
     import ../home {
-      inherit userName homeDir theme extraPackages git secrets personal httpsHandler;
+      inherit userName homeDir theme extraPackages git secrets personal startDir httpsHandler;
       deck = inputs.cells.deck.homeModules;
       agentPkgs = {inherit (inputs.cells.repo.packages) claude-code opencode oh-my-opencode rtk;};
     };
@@ -246,6 +247,10 @@ in {
       git = globals.user.git;
       secrets = userSecrets "local";
       personal = true;
+      # This account exists to rebuild the fleet; the checkout is where it
+      # works. Only reached by tty/ssh/`su -` -- foot lands in tmux, which
+      # sesh already opens at the same path.
+      startDir = "/srv/the-hive";
     };
 
     # HM for the Entra user (see entraHome above). Runs in the user manager
