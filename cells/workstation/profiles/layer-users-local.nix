@@ -91,6 +91,10 @@
       # (lazy-lock.json in dotfiles pins it), but without it every first
       # nvim after boot re-clones and re-compiles for minutes.
       ".local/share/nvim"
+      # whisper.cpp + Parakeet models (transcribe). Data, not cache: ~1 GB for
+      # both, fetched from HF and the only thing standing between the tool and
+      # being useless offline.
+      ".local/share/asr-models"
       # Whole ~/.cache. Started as nix + zsh compdump + direnv content store,
       # but powerlevel10k hardcodes its dump/instant-prompt files to
       # $XDG_CACHE_HOME root (typeset -gr, no override), and without them the
