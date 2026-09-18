@@ -1,6 +1,6 @@
-# elster (HP ZBook Firefly 16 G10, ex-jarvis): the penrose layout on the 1T
-# NVMe, plus a docker dataset. Native ZFS encryption behind a pre-unseal
-# PCR 15 gate (no LUKS layer).
+# elster (HP ZBook Firefly 16 G10): the penrose layout on the 1T NVMe, plus a
+# docker dataset. Native ZFS encryption behind a pre-unseal PCR 15 gate (no
+# LUKS layer).
 #
 # ESP + one partition for `rpool` on the whole disk. The old Ubuntu install
 # (ESP + ext4 /boot + LUKS/LVM) is wiped: nothing to preserve, the data goes

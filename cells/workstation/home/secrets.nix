@@ -11,8 +11,7 @@
 #
 # Named by ROLE, never by the account: both usernames live in the encrypted
 # half of globals and a public path must not carry them. A missing file yields
-# {} so a host or account without secrets still evaluates (same contract as
-# jarvis's importEncrypted).
+# {} so a host or account without secrets still evaluates.
 {
   # `/. + unsafeDiscardStringContext inputs.self.outPath`, as globals.nix does:
   # extra-builtins.nix asserts isPath, outPath carries store context.
