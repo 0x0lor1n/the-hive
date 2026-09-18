@@ -1,5 +1,5 @@
-# process-compose.yaml's graph as systemd units. Absent on purpose: build-site
-# (a derivation, built off-host) and tag-music (run on the workstation before
+# process-compose.yaml's graph as systemd units. Not here: build-site (a
+# derivation, built off-host) and tag-music (run on the workstation before
 # rsync; ReplayGain tags travel inside the files).
 {
   inputs,

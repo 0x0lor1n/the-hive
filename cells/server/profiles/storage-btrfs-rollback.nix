@@ -1,10 +1,9 @@
 # Reset @root to @root-blank in the initrd, before /sysroot mounts.
 #
 # btrfs has no atomic `zfs rollback -r`; this is delete-then-snapshot with a
-# window. The unit is idempotent against a crash inside it: conditional delete,
-# unconditional snapshot. Boot-time so the state is known regardless of how the
-# previous run ended. No dated archive of the outgoing root -- on a 15 GB disk
-# that is a slow out-of-space failure.
+# window. Idempotent against a crash inside it: conditional delete,
+# unconditional snapshot. No dated archive of the outgoing root -- on a 15 GB
+# disk that is a slow out-of-space failure.
 {
   inputs,
   cell,
