@@ -83,6 +83,63 @@
     };'
   '';
   patchedHimmelblau = import "${patchedHimmelblauSrc}/default.nix" {inherit pkgs;};
+
+  # o365-url-handler with the two changes this desktop needs. Applied to the
+  # built package, not to patchedHimmelblauSrc: the /usr/bin and /usr/share
+  # paths in the script are rewritten by the package's own postInstall, so
+  # the store copy is the only runnable one.
+  #
+  #   1. The script BECOMES the https handler (home/default.nix's
+  #      httpsHandler), so its own `exec xdg-open` fallbacks would route
+  #      straight back into it -- an infinite loop. A shim first on its PATH
+  #      sends them to the browser, which is what xdg-open resolved to
+  #      anyway. `firefox` by name, not by store path: that is the
+  #      Phoenix-wrapped system package (browser-firefox.nix).
+  #   2. A bare tenant SharePoint link carries no `?file=`, so upstream's
+  #      extension map finds nothing and hands the browser a page that is a
+  #      document library. Add a SharePoint branch before that fallback; the
+  #      host is already past upstream's allowlist at this point.
+  #
+  # That allowlist itself stays untouched: o365-multi is an Electron window
+  # with require() in page scope, so a wrong entry there is code execution as
+  # the desktop user.
+  xdgOpenShim = pkgs.writeShellScriptBin "xdg-open" ''
+    exec firefox "$@"
+  '';
+  o365UrlHandlerBin = pkgs.runCommand "o365-url-handler" {nativeBuildInputs = [pkgs.makeWrapper];} ''
+    mkdir -p $out/bin $out/libexec
+    cp ${patchedHimmelblau.packages.o365}/bin/o365-url-handler $out/libexec/
+    chmod +w $out/libexec/o365-url-handler
+
+    substituteInPlace $out/libexec/o365-url-handler \
+      --replace-fail \
+        '  # Unknown/extension-less (e.g., many OneNote links) -> let the browser handle it' \
+        '  case "$HOST" in
+        *.sharepoint.com|*.sharepoint.us|*.sharepoint-mil.us|*.sharepoint.cn|*.sharepoint.de)
+          exec "$O365_LAUNCHER" --url="$URL" --profile=SharePoint \
+            --appIcon=${patchedHimmelblau.packages.o365}/share/icons/hicolor/256x256/apps/o365-sharepoint.png \
+            --appTitle=SharePoint --closeAppOnCross=true --trayIconEnabled=false ;;
+      esac'
+
+    makeWrapper $out/libexec/o365-url-handler $out/bin/o365-url-handler \
+      --prefix PATH : ${lib.makeBinPath [xdgOpenShim pkgs.gawk]}
+  '';
+
+  # NoDisplay: a router, not something to launch from fuzzel.
+  o365UrlHandler = pkgs.symlinkJoin {
+    name = "o365-url-handler-with-desktop";
+    paths = [
+      o365UrlHandlerBin
+      (pkgs.makeDesktopItem {
+        name = "o365-url-handler";
+        desktopName = "Microsoft 365 link handler";
+        comment = "Open Microsoft 365 documents in their app, everything else in Firefox";
+        exec = "${o365UrlHandlerBin}/bin/o365-url-handler %U";
+        noDisplay = true;
+        mimeTypes = ["x-scheme-handler/https"];
+      })
+    ];
+  };
   # local_groups membership, declared. himmelblau adds the account with
   # gpasswd (on login + every reconcile interval), but mutableUsers = false
   # regenerates /etc/group from this spec at EVERY activation -- boot and
@@ -510,6 +567,10 @@ in {
   environment.systemPackages = [
     patchedHimmelblau.packages.aad-tool
     patchedHimmelblau.packages.o365
+    # The https default for the Entra home (layer-compositor.nix). System
+    # package, not home.packages: Entra users never get an HM profile, so
+    # its .desktop must be on XDG_DATA_DIRS for both accounts anyway.
+    o365UrlHandler
     #patchedHimmelblau.packages.sso
     pkgs.glib
     pkgs.gsettings-desktop-schemas
