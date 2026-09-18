@@ -4,3 +4,8 @@ startup_command = ""
 [[session]]
 name = "the-hive"
 path = "/srv/the-hive"
+# The Entra account owns the desktop, the local one owns the checkout and the
+# rebuild. su(1) is setuid root, so pam_fprintd verifies the *target* account's
+# prints (profiles/laptop.nix) -- the touchpad reader answers this prompt.
+# Only runs when the session is created; a continuum-restored one skips it.
+startup_command = "su - crookedmirror"
