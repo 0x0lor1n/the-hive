@@ -1,12 +1,9 @@
 # tmux: sesh sessions, resurrect + continuum persistence, a custom status
-# bar. Ported from jarvis's users/shared/tui/tmux. config.conf, the status
-# bar script and sesh.toml are live-edited from /srv/the-hive/dotfiles/tmux
-# (out-of-store symlinks, same treatment as zsh/nvim).
+# bar. config.conf, the status bar script and sesh.toml are live-edited from
+# /srv/the-hive/dotfiles/tmux (out-of-store symlinks, same as zsh/nvim).
 #
-# theme-debt: catppuccin.tmux (pane/popup border styles, @catppuccin_*
-# options) dropped; the status bar reads ~/.config/scripts/theme-colors.sh,
-# which is now generated from the kanagawa palette (roles.*), so the bar
-# keeps its look without the catppuccin plugin.
+# No catppuccin.tmux: the status bar reads ~/.config/scripts/theme-colors.sh,
+# generated from the kanagawa palette (roles.*) below.
 {
   inputs,
   cell,
@@ -66,9 +63,7 @@ in {
     "tmux/plugins/yank".source = "${pkgs.tmuxPlugins.yank}/share/tmux-plugins/yank";
     "tmux/plugins/sensible".source = "${pkgs.tmuxPlugins.sensible}/share/tmux-plugins/sensible";
 
-    # Sourced by status-bar.tmux. jarvis dumped the whole catppuccin palette
-    # (base, surface1, lavender, ...); the script uses exactly those three
-    # names, mapped onto kanagawa roles here.
+    # Sourced by status-bar.tmux, which uses exactly these three names.
     "scripts/theme-colors.sh" = {
       executable = true;
       text = ''
@@ -81,22 +76,18 @@ in {
 
   # The server outlives the login session so continuum can restore it.
   #
-  # `tmux start-server \; set -g exit-empty off`: the client forks the
-  # server and exits 0; Type=forking + GuessMainPID makes the daemonised
-  # server the unit's main process. (`tmux -D` is not usable here: tmux 3.7
-  # insists on a controlling tty under systemd and dies with
-  # "open terminal failed: not a terminal" — verified 2026-09-14.)
+  # `tmux start-server \; set -g exit-empty off`: the client forks the server
+  # and exits 0; Type=forking + GuessMainPID makes the daemonised server the
+  # unit's main process. `tmux -D` is not usable here: tmux 3.7 insists on a
+  # controlling tty under systemd and dies with "open terminal failed: not a
+  # terminal" (2026-09-14).
   #
-  # The previous Type=forking + `new-session -d` + ExecStop=kill-server
-  # design had no main PID: every `nixos-rebuild switch` rewrote the unit
-  # (store path of the ExecStart script changed), HM reloaded it, systemd
-  # ran ExecStop (kill-server → all sessions gone) and, since the stop was
-  # clean, Restart=on-failure never brought it back (found 2026-09-14).
-  #
-  # Now: no ExecStop, KillMode=process leaves panes' children alone, and
-  # the unit is restarted on failure. exit-empty is forced off on the
-  # command line so the server stays up with zero sessions until continuum
-  # restores them or a client attaches.
+  # No ExecStop: with one, every `nixos-rebuild switch` rewrote the unit, HM
+  # reloaded it, systemd ran kill-server (all sessions gone) and the clean
+  # stop meant Restart=on-failure never brought it back (2026-09-14).
+  # KillMode=process leaves panes' children alone, and exit-empty is forced
+  # off on the command line so the server stays up with zero sessions until
+  # continuum restores them or a client attaches.
   systemd.user.services.tmux-server = {
     Unit = {
       Description = "tmux server (session persistence)";

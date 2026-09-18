@@ -1,7 +1,5 @@
 # lazygit: git TUI, diffs rendered through delta (git.nix enables delta
-# globally). Ported from jarvis's users/shared/cli/lazygit.nix.
-#
-# theme-debt: catppuccin.lazygit (accent mauve) dropped; stock lazygit colours.
+# globally).
 {
   inputs,
   cell,
