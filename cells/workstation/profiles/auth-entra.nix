@@ -19,26 +19,15 @@
     # benign TOCTOU race where exec on a just-written temp file intermittently fails.
     patch -p1 -d $out < ${./patches/himmelblau/0001-custom-compliance-retry-enoent.patch}
 
-    # Bumps libhimmelblau 0.8.30 -> 0.8.39 (the pinned himmelblau commit
-    # wants 0.8.30; upstream main is on 0.8.37 via the 5.0.0 release, which
-    # is a bigger jump than this fix needs). History of why:
-    #   0.8.34: intune.rs gained http_status_error()/sanitize_http_error_body()
-    #     (real server error bodies instead of "General failure: 500") and
-    #     IntunePlatformInfo (reads /etc/os-release; portal stopped showing
-    #     OS "0.0.0.0").
-    #   0.8.39 (2026-09-04): the Intune check-in service started answering
-    #     LinuxDeviceCheckinService/status in camelCase (`policyId`,
-    #     `lastStatusDateTime`, `details`); 0.8.34's PolicyStatus only knew
-    #     PascalCase, so every ApplyPolicy failed with
-    #     `Invalid JSON: missing field PolicyId` and the device went
-    #     non-compliant. 0.8.39 adds serde aliases for both spellings.
-    #
-    # Verified safe as a two-line version+hash swap: Cargo.toml of 0.8.30,
-    # 0.8.34 and 0.8.39 differ only in the version line, so crate2nix's
-    # dependency graph in Cargo.nix needs no new crates. Both the old version
-    # string and old sha256 appear exactly once in Cargo.nix (grep -c), so
-    # the sed can't collide with another crate. Hash =
-    # `nix hash file --type sha256 --base32 libhimmelblau-<v>.crate`.
+    # Bumps libhimmelblau 0.8.30 -> 0.8.39; the pinned himmelblau commit wants
+    # 0.8.30, upstream main's 0.8.37 is a bigger jump than this needs.
+    # 0.8.39 (2026-09-04) is the fix: Intune check-in started answering
+    # LinuxDeviceCheckinService/status in camelCase, 0.8.30 only knew
+    # PascalCase, so every ApplyPolicy died on `Invalid JSON: missing field
+    # PolicyId` and the device went non-compliant.
+    # Safe as a version+hash swap: those Cargo.toml versions differ only in
+    # the version line, so Cargo.nix needs no new crates, and both old strings
+    # appear exactly once. Hash = `nix hash file --type sha256 --base32`.
     grep -q 'version = "0.8.30";' $out/Cargo.nix
     grep -q '1v4kwsiplpgws93pp6715w6ncc6dkc2rs0mxjzi3gwyf2855545i' $out/Cargo.nix
     sed -i 's/version = "0.8.30";/version = "0.8.39";/' $out/Cargo.nix
@@ -89,20 +78,17 @@
   # paths in the script are rewritten by the package's own postInstall, so
   # the store copy is the only runnable one.
   #
-  #   1. The script BECOMES the https handler (home/default.nix's
-  #      httpsHandler), so its own `exec xdg-open` fallbacks would route
-  #      straight back into it -- an infinite loop. A shim first on its PATH
-  #      sends them to the browser, which is what xdg-open resolved to
-  #      anyway. `firefox` by name, not by store path: that is the
-  #      Phoenix-wrapped system package (browser-firefox.nix).
+  #   1. The script becomes the https handler (home/default.nix), so its own
+  #      `exec xdg-open` fallbacks loop back into it. A shim first on its PATH
+  #      sends them to the browser. `firefox` by name, not store path: that is
+  #      the Phoenix-wrapped system package (browser-firefox.nix).
   #   2. A bare tenant SharePoint link carries no `?file=`, so upstream's
-  #      extension map finds nothing and hands the browser a page that is a
-  #      document library. Add a SharePoint branch before that fallback; the
-  #      host is already past upstream's allowlist at this point.
+  #      extension map hands the browser a document library. The SharePoint
+  #      branch goes before that fallback.
   #
-  # That allowlist itself stays untouched: o365-multi is an Electron window
-  # with require() in page scope, so a wrong entry there is code execution as
-  # the desktop user.
+  # The allowlist stays untouched: o365-multi is an Electron window with
+  # require() in page scope, so a wrong entry is code execution as the
+  # desktop user.
   xdgOpenShim = pkgs.writeShellScriptBin "xdg-open" ''
     exec firefox "$@"
   '';
@@ -141,20 +127,14 @@
     ];
   };
   # local_groups membership, declared. himmelblau adds the account with
-  # gpasswd (on login + every reconcile interval), but mutableUsers = false
-  # regenerates /etc/group from this spec at EVERY activation -- boot and
-  # `nixos-rebuild switch` -- and drops the non-declarative members. The
-  # login-time re-add comes too late for the session: systemd resolves
-  # user@.service's supplementary groups BEFORE its PAM stack runs, so the
-  # user manager and everything it spawns (tmux-server, xdg portals, the
-  # first zsh) ran without `hive` and could not traverse the 0750
-  # /srv/the-hive (2026-09-16 on elster, right after a reboot: "permission
-  # denied: ~/.config/zsh/config.zsh", tmux/nvim configs unreadable, Entra
-  # session looked like a fresh home). Apps spawned directly by dwl happened
-  # to work because dwl itself came from the greetd session, whose PAM ran
-  # after the boot-time reconcile. Membership must be in /etc/group before
-  # the first login; the gpasswd path stays as a no-op for the same names.
-  # cn (not the upn): cn_name_mapping=true is what NSS returns as the login.
+  # gpasswd on login, but mutableUsers = false regenerates /etc/group from
+  # this spec at every activation and drops the non-declarative members. The
+  # login-time re-add is too late for the session: systemd resolves
+  # user@.service's supplementary groups before its PAM stack runs, so the
+  # user manager and everything under it starts without `hive` and cannot
+  # traverse the 0750 /srv/the-hive (2026-09-16, elster: "permission denied:
+  # ~/.config/zsh/config.zsh", tmux and nvim configs unreadable).
+  # cn, not the upn: cn_name_mapping=true is what NSS returns as the login.
   entraLocalGroups = lib.optionalAttrs (globals.entra.user.upn != null) (
     lib.genAttrs config.services.himmelblau.settings.local_groups (_: {
       members = [(lib.head (lib.splitString "@" globals.entra.user.upn))];
@@ -170,9 +150,9 @@ in {
     # swaylock needs pam_himmelblau too (the module only wires the
     # passwd/login/systemd-user defaults); without it Entra users cannot unlock
     # their own session (no /etc/shadow entry for pam_unix to check). greetd is
-    # NOT listed: this nixpkgs' greetd PAM service is a
-    # substack/include of `login` with useDefaultRules = false, so it inherits
-    # himmelblau from there and has no `unix` rule for the module to order on.
+    # absent on purpose: this nixpkgs' greetd PAM service is a substack of
+    # `login` with useDefaultRules = false, so it inherits himmelblau from
+    # there and has no `unix` rule for the module to order on.
     pamServices = [
       "passwd"
       "login"
@@ -184,10 +164,8 @@ in {
     mfaSshWorkaroundFlag = true;
 
     settings = {
-      # From the ENCRYPTED half of globals (iter 11.6). The tenant domain
-      # identifies the employer, and globals-options.nix flagged it as the
-      # clearest candidate for the encrypted half back in iteration 10.
-      # Any user in these domains may log in (no group filter yet).
+      # From the encrypted half of globals: the tenant domain identifies the
+      # employer. Any user in these domains may log in (no group filter yet).
       domain = globals.entra.domains;
 
       # No wheel: the Entra account is the desktop plane only. sudo, polkit
@@ -207,7 +185,7 @@ in {
       ];
 
       # Software HSM with its AuthCode sealed to the TPM if present — pairs
-      # safely with iter 5's LUKS+PCR7 TPM unlock.
+      # safely with the LUKS+PCR7 TPM unlock.
       hsm_type = "tpm_bound_soft_if_possible";
 
       # Readable /home/<upn> plus a /home/<cn> alias (default
@@ -217,8 +195,7 @@ in {
       home_alias = "cn";
 
       # programs.zsh.enable (layer-users-local.nix) puts it there; the rc
-      # files come from deck/homeModules/zsh.nix. Was bash until phase 2 of the
-      # jarvis port.
+      # files come from deck/homeModules/zsh.nix.
       shell = "/run/current-system/sw/bin/zsh";
       # Lets the local console accept password-only; MFA still enforced
       # over SSH. Without this, console login can force the device-code flow.
@@ -242,13 +219,10 @@ in {
   };
 
   # himmelblau's workspace builds against WebKitGTK (aad-tool / Hello-PIN
-  # enrollment flows), which renders blank white on this VM's virtio-GPU
-  # without this — the same DMA-BUF bug the retired intune-portal/broker
-  # stack hit. sessionVariables covers anything launched interactively
-  # (aad-tool, a terminal); the unit override covers himmelblau-broker
-  # itself, since — unlike the real microsoft-identity-broker — it's a
-  # genuine systemd --user service and doesn't need the
-  # dbus-update-activation-environment dance to see the variable.
+  # enrollment), a DMA-BUF bug that renders blank white on virtio-GPU without
+  # this. sessionVariables covers anything launched interactively; the unit
+  # override covers himmelblau-broker, a real systemd --user service that
+  # needs no dbus-update-activation-environment dance to see the variable.
   environment.sessionVariables.WEBKIT_DISABLE_DMABUF_RENDERER = "1";
   systemd.user.services.himmelblau-broker.environment.WEBKIT_DISABLE_DMABUF_RENDERER = "1";
 
@@ -270,14 +244,11 @@ in {
   # here, not in storage-impermanence, because it names the himmelblaud
   # user created above.
   #
-  # Entra user's home: Edge profile (corp login), Slack, the o365 launchers'
-  # Electron state (teams-for-linux + per-app --profile dirs), agent state
-  # (hermes, claude -- see CLAUDE_CONFIG_DIR in layer-session.nix) and bash
-  # history. NSS-only account, so `persistence.users.<name>` (needs
-  # users.users) is out -- absolute paths + numeric uid from the encrypted
-  # globals. impermanence creates the *parents* of a bind mount with
-  # defaultPerms (root 0755), so the tmpfiles rules below re-own the home and
-  # its xdg dirs.
+  # The Entra home is an NSS-only account, so `persistence.users.<name>`
+  # (needs users.users) is out -- absolute paths + numeric uid from the
+  # encrypted globals. impermanence creates the *parents* of a bind mount
+  # with defaultPerms (root 0755), so the tmpfiles rules below re-own the
+  # home and its xdg dirs.
   environment.persistence."/persist".directories = let
     inherit (globals.entra.user) upn uid;
     entraHome = sub: {
@@ -453,18 +424,14 @@ in {
   systemd.tmpfiles.rules = let
     inherit (globals.entra.user) upn uid;
     cn = lib.head (lib.splitString "@" upn);
-    # Both sides of the impermanence bind-mounts. The persist side is what
-    # impermanence's create-directories.bash copies onto the volatile home
-    # (`chown/chmod --reference=/persist/...`) at every activation -- boot
-    # AND every `nixos-rebuild switch`. The parents of the carve-outs
-    # (.cache, .config, .local, .local/share, .var, .var/app) are not
-    # declared as persisted directories themselves, so impermanence had
-    # created them on /persist as root:root 0755 (its default for undeclared
-    # parents, 2026-09-04). Every switch then re-chowned the live dirs to
-    # root, home-manager-entra failed on `ln .cache/.keep: Permission
-    # denied`, and its half-applied tmux config kept the imperative
-    # @continuum-boot tmux.service alive (found 2026-09-14). Fixing the
-    # source of truth under /persist makes the copy correct too.
+    # Both sides of the impermanence bind-mounts. The persist side is the
+    # source of truth: create-directories.bash copies it onto the volatile
+    # home (`chown/chmod --reference=/persist/...`) at every activation. The
+    # parents of the carve-outs (.cache, .config, .local, .var) are not
+    # declared as persisted directories, so impermanence had created them on
+    # /persist as root:root 0755 (2026-09-04). Every switch then re-chowned
+    # the live dirs to root and home-manager-entra failed on
+    # `ln .cache/.keep: Permission denied`.
     own = sub: "d /home/${upn}${sub} 0700 ${toString uid} ${toString uid} -";
     ownBoth = sub: [
       (own sub)
@@ -512,14 +479,10 @@ in {
     );
 
   # TPM resource-manager access for the static himmelblaud user (no
-  # security.tpm2/tss group here).
-  #
-  # There used to be a `vda2 -> nvme0n1p3` symlink here for the tenant's
-  # disk-encryption compliance script. Gone: that script (user-authored) finds
-  # the root via `findmnt -no SOURCE /` and checks `zfs get encryptionroot/
-  # encryption/keystatus`; its `/dev/nvme0n1p3` probe is the Ubuntu/LUKS
-  # legacy branch and is meant to fall through on ZFS hosts. All it needs
-  # from us is zfs/zpool/findmnt on the unit's PATH (below).
+  # security.tpm2/tss group here). The disk-encryption compliance script needs
+  # no vda2 symlink: it finds the root via `findmnt -no SOURCE /`, and its
+  # /dev/nvme0n1p3 probe is the Ubuntu/LUKS branch, meant to fall through on
+  # ZFS. All it needs is zfs/zpool/findmnt on the unit's PATH (below).
   services.udev.extraRules = ''
     KERNEL=="tpmrm0", GROUP="himmelblaud", MODE="0660"
   '';
