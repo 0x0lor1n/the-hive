@@ -58,6 +58,8 @@
         extraPackages = [
           cell.packages.slack
           cell.packages.telegram-desktop
+          # One account only: fixed /tmp launch symlinks (nixpkgs#415842).
+          cell.packages.grayjay
         ];
         secrets = userSecrets "entra";
         # SharePoint/Word/Excel/PowerPoint links open in the o365 app, the
