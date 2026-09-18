@@ -192,6 +192,22 @@ in {
 
   whisper-cpp-vulkan = whisperCppVulkan;
 
+  # autoPatchelfHook rewrites DT_NEEDED only, so CEF's dlopen(libpulse) misses
+  # and audio drops to ALSA; without PULSE_PROP the stream says "Chromium".
+  grayjay = pkgs.grayjay.overrideAttrs (old: {
+    makeWrapperArgs =
+      (old.makeWrapperArgs or [])
+      ++ [
+        "--prefix"
+        "LD_LIBRARY_PATH"
+        ":"
+        (lib.makeLibraryPath [pkgs.libpulseaudio])
+        "--set-default"
+        "PULSE_PROP"
+        "application.name=Grayjay application.icon_name=grayjay"
+      ];
+  });
+
   transcribe = pkgs.callPackage ./packages/transcribe.nix {
     whisper-cpp-vulkan = whisperCppVulkan;
   };
