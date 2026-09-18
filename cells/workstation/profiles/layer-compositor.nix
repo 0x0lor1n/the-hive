@@ -1,7 +1,7 @@
 # Compositor layer: DWL + home-manager as a NixOS module. Session startup is
-# the `-s` target below; there is deliberately no separate /etc/dwl/startup.
+# the `-s` target below; there is no separate /etc/dwl/startup.
 #
-# dwl is a SYSTEM package, not home.packages: greetd execs /etc/dwl/session as
+# dwl is a system package, not home.packages: greetd execs /etc/dwl/session as
 # the authenticated user and system packages are on PATH regardless of whether
 # HM activation has run in this boot. Same for microsoft-edge: Entra users are
 # not local users and never get a home.packages profile.
@@ -70,12 +70,10 @@
     ];
   };
   # himmelblau creates /home/<upn> and the /home/<cn> alias from pam_himmelblau
-  # while the session is opening; the user manager starts home-manager-entra in
-  # parallel. On the FIRST login after a boot the home does not exist yet (the
-  # root is rolled back, so nothing survives outside /persist) and HM's
-  # `activate` dies on its opening `cd $HOME`. Later logins in the same boot
-  # find the home already there, which is why this only ever broke right after
-  # a reboot. Type=oneshot forbids Restart=, so wait in ExecStartPre instead.
+  # while the session is opening, in parallel with the user manager starting
+  # home-manager-entra. On the first login after a boot the home does not exist
+  # yet (rolled-back root) and HM's `activate` dies on its opening `cd $HOME`.
+  # Type=oneshot forbids Restart=, so wait in ExecStartPre instead.
   waitForEntraHome = pkgs.writeShellScript "wait-for-entra-home" ''
     for _ in $(seq 1 120); do
       [ -d "$1" ] && exit 0
@@ -86,25 +84,21 @@
   '';
 
   # `dwl -s <cmd>`: dwl makes the child's stdin the read end of its status
-  # pipe (SIGPIPE is ignored in dwl, so a dead reader is harmless, but the
-  # bar then shows stale text), so dwl-status must be exec'd (not
-  # backgrounded) to hold it open. swaybg and the cliphist watchers start
-  # here; mako/swayidle/avizo/waybar have HM user units and must NOT also be
-  # started here.
+  # pipe, so dwl-status must be exec'd (not backgrounded) to hold it open or
+  # the bar shows stale text. swaybg and the cliphist watchers start here;
+  # mako/swayidle/avizo/waybar have HM user units and must not also start here.
   #
   # dwl-status: the somebar replacement's back half. Lines are
   # "<output> <field> <value...>" (title/appid/fullscreen/floating/selmon/
-  # tags/layout, plus "mode" from the modes patch). Keep tags/layout/title/
-  # mode per output in $XDG_RUNTIME_DIR/dwl/<output>/<field> (waybar runs one
-  # bar per output and exports WAYBAR_OUTPUT_NAME to every custom exec, so
-  # each bar shows its own monitor -- before this every bar showed the
-  # selected monitor's tags and only redrew on focus change, seen 2026-09-16
-  # on the two-monitor work profile) plus the selected monitor's copy in
-  # $XDG_RUNTIME_DIR/dwl/<field> as fallback, and poke waybar's
-  # custom/dwl-* modules (home/desktop/bar.nix, signal = 1 ->
-  # SIGRTMIN+1). tags is rendered here as pango markup: "tags <occ> <tagset>
-  # <sel> <urg>" are bitmasks; the number is bold on the focus colour when
-  # viewed, plain when it has a window, dimmed when empty, urgent in red.
+  # tags/layout, plus "mode" from the modes patch). State is kept per output in
+  # $XDG_RUNTIME_DIR/dwl/<output>/<field>: waybar runs one bar per output and
+  # exports WAYBAR_OUTPUT_NAME to every custom exec, so each bar shows its own
+  # monitor — without this every bar showed the selected monitor's tags and
+  # only redrew on focus change (2026-09-16, two-monitor work profile). The
+  # selected monitor's copy stays in $XDG_RUNTIME_DIR/dwl/<field> as fallback.
+  # Waybar's custom/dwl-* modules are poked via signal 1 -> SIGRTMIN+1
+  # (home/desktop/bar.nix). tags is pango markup: "tags <occ> <tagset> <sel>
+  # <urg>" are bitmasks.
   dwl-status = pkgs.writeShellScript "dwl-status" ''
     d="''${XDG_RUNTIME_DIR:-/tmp}/dwl"
     mkdir -p "$d"
@@ -158,9 +152,9 @@
         printf '%s\n' "''${title[$sel]-}" > "$d/title"
         printf '%s\n' "''${mode[$sel]-}" > "$d/mode"
       fi
-      # nixpkgs wraps the binary: the process is named `.waybar-wrapped`,
-      # so `pkill -x waybar` never matched and the bar stayed on tag 1
-      # (seen 2026-09-15). Match the comm without -x.
+      # nixpkgs wraps the binary: the process is named `.waybar-wrapped`, so
+      # `pkill -x waybar` never matched and the bar stayed on tag 1
+      # (2026-09-15). Match the comm without -x.
       ${pkgs.procps}/bin/pkill -RTMIN+1 waybar 2>/dev/null || true
     done
   '';
@@ -177,12 +171,11 @@
     ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     # A previous dwl session (relogin via greeter) can leave the oneshot bridge
-    # active and graphical-session.target up, so a plain `start` is a no-op
-    # and avizo/swayidle stay dead from the moment the old compositor went
-    # away (measured 2026-09-15 twice: first as start-limit-hit, then as
-    # plain inactive after the exit hook stopped only the bridge). Take the
-    # target down first, then start the bridge: its Wants= re-pulls the
-    # target and every WantedBy= unit against the new WAYLAND_DISPLAY.
+    # active and graphical-session.target up, so a plain `start` is a no-op and
+    # avizo/swayidle stay dead from the moment the old compositor went away
+    # (measured 2026-09-15). Take the target down first, then start the bridge:
+    # its Wants= re-pulls the target and every WantedBy= unit against the new
+    # WAYLAND_DISPLAY.
     ${pkgs.systemd}/bin/systemctl --user stop graphical-session.target dwl-session-bridge.service 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user reset-failed 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user start dwl-session-bridge.service 2>/dev/null || true
@@ -202,16 +195,14 @@
     export XDG_CURRENT_DESKTOP=dwl
     export XDG_SESSION_TYPE=wayland
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") config.session.compositorEnvironment)}
-    # Last crash log survives in the (persisted) home. Never let the log be
-    # the reason the session dies: if $HOME is not there yet (first login
-    # after boot raced himmelblaud_tasks), fall back to the journal.
-    # Not exec: when dwl exits, stop graphical-session.target itself so
-    # PartOf= units (avizo, swayidle) stop cleanly instead of crash-looping
-    # into their start limit, and the bridge follows it down (BindsTo is
-    # one-way: stopping the bridge does NOT stop the target — verified
-    # 2026-09-15, MOD+Shift+Q left the target active and both units in
-    # start-limit-hit). On re-login dwl-startup restarts the bridge, whose
-    # Wants= pulls the target and its WantedBy= units back up.
+    # Last crash log survives in the (persisted) home; if $HOME is not there
+    # yet (first login after boot raced himmelblaud_tasks), fall back to the
+    # journal rather than letting the log kill the session.
+    # Not exec: when dwl exits, stop graphical-session.target itself so PartOf=
+    # units (avizo, swayidle) stop cleanly instead of crash-looping into their
+    # start limit. BindsTo is one-way — stopping the bridge does not stop the
+    # target (2026-09-15: MOD+Shift+Q left the target active and both units in
+    # start-limit-hit).
     if mkdir -p "$HOME/.cache/dwl" 2>/dev/null; then
       ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
     else
@@ -256,20 +247,17 @@ in {
     };
 
     # HM for the Entra user (see entraHome above). Runs in the user manager
-    # PAM starts at login, so dbus is up and dconfSettings works. Idempotent:
-    # re-activating the same generation is a no-op.
+    # PAM starts at login, so dbus is up and dconfSettings works. Idempotent.
     #
     # HM's own reloadSystemd step is a no-op here: it gates on
     # `systemctl --user is-system-running` == running|degraded, and a unit
-    # wanted by default.target always sees "starting" (measured 2026-09-15:
-    # "User systemd daemon not running. Skipping reload" -> tmux-server and
-    # ssh-agent linked into default.target.wants but never started, avizo/
-    # swayidle the same via graphical-session.target). ExecStartPost does what
-    # sd-switch would have: reload so the manager sees the freshly linked
-    # ~/.config/systemd/user, then start default.target's wants by hand (the
-    # target's job was queued before the links existed, so it will not pull
-    # them in itself). graphical-session.target.wants are picked up by the
-    # dwl bridge below, which is ordered After= this unit.
+    # wanted by default.target always sees "starting" (2026-09-15: tmux-server
+    # and ssh-agent linked into default.target.wants but never started).
+    # ExecStartPost does what sd-switch would have: reload so the manager sees
+    # the freshly linked ~/.config/systemd/user, then start default.target's
+    # wants by hand — the target's job was queued before the links existed.
+    # graphical-session.target.wants are picked up by the dwl bridge below,
+    # ordered After= this unit.
     systemd.user.services.home-manager-entra = lib.mkIf (entra.upn != null && entra.uid != null) {
       description = "Home Manager environment for the Entra user";
       unitConfig.ConditionUser = toString entra.uid;
@@ -315,10 +303,10 @@ in {
       pkgs.microsoft-edge
     ];
 
-    # File manager (Super+Alt+F in packages/dwl/config.h), wochap's choice.
-    # System-level rather than home.packages: the NixOS module also wires
-    # xfconf (settings persist) and the D-Bus bits; gvfs gives it trash://,
-    # mtp/smb and the removable-drive sidebar, udisks2 lets it mount them.
+    # File manager (Super+Alt+F in packages/dwl/config.h). System-level rather
+    # than home.packages: the NixOS module also wires xfconf (settings persist)
+    # and the D-Bus bits; gvfs gives it trash://, mtp/smb and the
+    # removable-drive sidebar, udisks2 lets it mount them.
     programs.thunar = {
       enable = true;
       plugins = [pkgs.thunar-archive-plugin];
@@ -328,11 +316,9 @@ in {
     # Thumbnails in Thunar (tumbler is what gvfs/thunar ask over D-Bus).
     services.tumbler.enable = true;
 
-    # Edge managed policy (ported from ~/nixos-config gui/microsoft-edge.nix,
-    # which wrote the same JSON under ~/.config/microsoft-edge/policies --
-    # a path Chromium-on-Linux never reads; the system dir is the documented
-    # one). Force-installs Dark Reader + Surfingkeys from the Edge Add-ons
-    # store for every account.
+    # Edge managed policy: Chromium-on-Linux never reads
+    # ~/.config/microsoft-edge/policies, only the system dir. Force-installs
+    # Dark Reader + Surfingkeys from the Edge Add-ons store for every account.
     environment.etc."opt/edge/policies/managed/extensions.json".text = builtins.toJSON {
       ExtensionInstallForcelist = map (id: "${id};https://edge.microsoft.com/extensionwebstorebase/v1/crx") [
         "eimadpbcbfnmbkopoojfekhnkhdbieeh" # Dark Reader
