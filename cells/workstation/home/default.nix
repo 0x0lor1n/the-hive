@@ -31,6 +31,9 @@
   # cells/repo/packages: claude-code, opencode, oh-my-opencode, rtk -- the
   # agent CLIs dev/agents.nix installs. Same reason as deck: no `inputs` here.
   agentPkgs ? {},
+  # .desktop that gets https:// links. Only the Entra account overrides it,
+  # with himmelblau's o365-url-handler (profiles/auth-entra.nix).
+  httpsHandler ? "firefox.desktop",
 }: {
   pkgs,
   lib,
@@ -67,7 +70,7 @@ in {
     enable = true;
     defaultApplications = {
       "x-scheme-handler/http" = "firefox.desktop";
-      "x-scheme-handler/https" = "firefox.desktop";
+      "x-scheme-handler/https" = httpsHandler;
       "text/html" = "firefox.desktop";
       # slack.com hands the SSO token to the app through a slack:// link that
       # must route to the (sandboxed) Slack entry, not the browser.
