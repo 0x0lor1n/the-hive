@@ -351,6 +351,7 @@ in {
       # (.local/share/keepassxc/*.kdbx). Recent-db list is under .cache.
       (entraHome ".config/keepassxc")
       (entraHome ".local/share/keepassxc")
+      (entraHome ".local/share/Grayjay")
     ];
 
   # HISTFILE into the persisted dir instead of persisting ~/.bash_history
