@@ -1,31 +1,27 @@
 # Seals a ZFS passphrase into a systemd credential bound to the PCR 15 value
-# that hardware-zfs-unlock.nix will produce on the NEXT boot. Replaces the
-# hand-typed `just seal-zfs-cred` runbook: one command instead of an operator
-# retyping a hex pipeline, with the fingerprint and PCR prediction computed
-# in-process.
+# that hardware-zfs-unlock.nix will produce on the next boot, with the
+# fingerprint and PCR prediction computed in-process.
 #
 # Derived from shinasada/nix-config (modules/apps/mkzfscreds/flake-parts.nix),
 # itself built on codgician/mkcreds. Upstream is a flake-parts `perSystem`
 # module; this repo must not retreat to flake-parts (AGENTS.md), so the shell
 # body is lifted into a plain function returning the package.
 #
-# Three deliberate divergences from upstream, each documented below at its own
-# call site: the default PCR set, how the PCR spec string is built, and passing
-# mkcreds --name (without which nothing this produces can ever be decrypted by
+# Three divergences from upstream, each documented at its own call site: the
+# default PCR set, how the PCR spec string is built, and passing mkcreds
+# --name (without which nothing this produces can be decrypted by
 # hardware-zfs-unlock.nix).
 #
-# `__` prefix keeps the profiles/default.nix loader from picking this up as a profile —
-# it's a plain function, not a NixOS module. See profiles/default.nix.
+# `__` prefix keeps the profiles/default.nix loader from picking this up as a
+# profile — it's a plain function, not a NixOS module.
 {
   pkgs,
   zfsPackage,
   mkcredsPackage,
   # Where the booted system must place the credential for the initrd to find
   # it (e.g. "/boot/zfs-unlock"). Passed in rather than hardcoded so the tool
-  # PRINTS the real destination: the previous closing message told the operator
-  # to set zfsUnlock.devices.<pool>.credentialFile and rebuild, which had
-  # already been deleted when the credential moved to the ESP. Instructions in
-  # a separate file go stale silently; a value derived from the config cannot.
+  # prints the real destination derived from the config, which cannot go
+  # stale the way a separate runbook does.
   credDir,
 }: let
   zfsFingerprint = import ./__zfs-fingerprint.nix {
@@ -34,14 +30,11 @@
 
   mkcredsBin = "${mkcredsPackage}/bin/mkcreds";
 
-  # Divergence 1: upstream defaults to "0,1,2,3,5,7,15". We default to PCR 15
-  # alone, which is what hardware-zfs-unlock.nix measures and what the manual
-  # runbook always sealed against. Broadening to include firmware and Secure
-  # Boot state (0-7) is strictly stronger but strictly more brittle — a
-  # firmware or kernel update moves those PCRs, the credential stops
-  # unsealing, and the operator is back at the passphrase prompt needing a
-  # re-seal. That is a threat-model change and gets its own decision, not a
-  # silent default. Pass --pcr-ids to opt in per invocation.
+  # Divergence 1: upstream defaults to "0,1,2,3,5,7,15". PCR 15 alone is what
+  # hardware-zfs-unlock.nix measures. Broadening to firmware and Secure Boot
+  # state (0-7) is strictly stronger but strictly more brittle — a firmware or
+  # kernel update moves those PCRs and the credential stops unsealing. That is
+  # a threat-model change; pass --pcr-ids to opt in per invocation.
   defaultPcrIds = "15";
 in
   pkgs.writeShellApplication {
@@ -134,12 +127,11 @@ in
       [[ ",$pcr_ids," =~ ,15, ]] || err "PCR 15 must be included in --pcr-ids"
       [[ -e /dev/tpm0 || -e /dev/tpmrm0 ]] || err "No TPM device found"
 
-      # Divergence 3: upstream omits mkcreds --name entirely. That would be a
+      # Divergence 3: upstream omits mkcreds --name entirely, which would be a
       # silent brick here -- hardware-zfs-unlock.nix decrypts with
       # `systemd-creds decrypt --name="<device>"`, and systemd-creds embeds the
-      # name at encrypt time and refuses to decrypt a credential whose embedded
-      # name differs. The old seal-zfs-cred runbook passed --name=rpool by hand;
-      # this keeps that, defaulting to the first dataset.
+      # name at encrypt time and refuses a credential whose embedded name
+      # differs. Defaults to the first dataset.
       [[ -n "$cred_name" ]] || cred_name="''${devices[0]}"
 
       log "Creating credential for: ''${devices[*]}"
@@ -154,12 +146,10 @@ in
 
       # Divergence 2: upstream builds this with
       #   sed "s/,/+/g; s/15/15:sha256=$expected"
-      # i.e. substring matching where field matching is meant. Tested against
-      # every valid PCR list shape (ids are 0-23) and the two agree everywhere --
-      # this is NOT fixing a reachable bug, and upstream is not broken. Splitting
-      # on commas is just locally obvious rather than obvious-after-a-proof, and
-      # it also behaves sanely on malformed input like "15,15", where the sed
-      # substitutes only the first field.
+      # i.e. substring matching where field matching is meant. The two agree on
+      # every valid PCR list (ids are 0-23), so this fixes no reachable bug;
+      # splitting on commas is just locally obvious, and behaves sanely on
+      # malformed input like "15,15" where the sed substitutes only the first.
       pcr_spec=""
       IFS=',' read -ra pcr_id_list <<< "$pcr_ids"
       for id in "''${pcr_id_list[@]}"; do
@@ -174,7 +164,7 @@ in
 
       if [[ -n "$pass_file" ]]; then
         [[ -r "$pass_file" ]] || err "Cannot read passphrase file: $pass_file"
-        # $(cat) strips ALL trailing newlines. zfs-key-sync.service reads the
+        # $(cat) strips all trailing newlines. zfs-key-sync.service reads the
         # same file the same way before piping to `zfs change-key`, so the two
         # cannot disagree; the generator also emits no trailing newline.
         secret=$(cat "$pass_file")

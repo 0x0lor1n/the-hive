@@ -1,9 +1,8 @@
 # Laptop shape: radios, lid, and the things a VM or a VPS never has.
-# Battery tuning is deliberately absent -- penrose has no battery installed
-# (dmidecode type 22 empty, no BAT0); add it when one shows up.
+# No battery tuning: penrose has no battery installed (dmidecode type 22
+# empty, no BAT0).
 #
-# NetworkManager rather than iwd: that is what the old install ran and what
-# the user knows. wpa_supplicant is NM's default backend.
+# NetworkManager rather than iwd; wpa_supplicant is NM's default backend.
 {
   inputs,
   cell,
@@ -65,14 +64,13 @@
 
   # Fingerprint (Synaptics 06cb:00f0, libfprint's open `synaptics` driver).
   # Wired into sudo and su only: pam_fprintd goes first and blocks the
-  # password prompt until the reader times out, which is fine at a
-  # `sudo`/`su - <admin>` line but painful on greetd/swaylock. su is setuid
-  # root, so fprintd lets it verify the *target* account's prints -- that is
-  # what makes `su - crookedmirror` from the Entra session work. NixOS
-  # defaults fprintAuth to fprintd.enable for every PAM service, so every
-  # other service defined on this host is opted back out explicitly (sshd
-  # included: keyboard-interactive would otherwise wait on the reader).
-  # Enrol once per finger: `fprintd-enroll` (persisted in /var/lib/fprint).
+  # password prompt until the reader times out, which is fine at a `sudo`/`su`
+  # line but painful on greetd/swaylock. su is setuid root, so fprintd lets it
+  # verify the *target* account's prints -- that is what makes `su - <admin>`
+  # from the Entra session work. NixOS defaults fprintAuth to fprintd.enable
+  # for every PAM service, so every other service on this host is opted back
+  # out explicitly (sshd included: keyboard-interactive would otherwise wait
+  # on the reader). Enrol once per finger: `fprintd-enroll`.
   services.fprintd.enable = true;
   security.pam.services =
     lib.genAttrs [
