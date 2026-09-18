@@ -1,9 +1,7 @@
-# Chat clients outside the nixpak set (packages.nix has slack + telegram
-# for the Entra home). Ported from jarvis users/shared/gui/
-# {simplex,mattermost}.nix (2026-09-15); the Ubuntu-host GL-wrapper branches are gone
-# with the platform.
+# Chat clients outside the nixpak set (packages.nix has slack + telegram for
+# the Entra home).
 #
-# Both stay unsandboxed on purpose:
+# Both stay unsandboxed:
 # - simplex-chat-desktop is an AppImage under appimageTools.wrapType2, i.e.
 #   already bwrap'd; nesting it in nixpak's bwrap means userns-in-userns and
 #   a second /etc, not worth debugging for a personal messenger.

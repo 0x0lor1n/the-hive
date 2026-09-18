@@ -1,11 +1,10 @@
-# tor with obfs4 bridges, ported from jarvis users/shared/security/
-# tor.nix (2026-09-15). Personal-account only (see ./default.nix).
+# tor with obfs4 bridges. Personal-account only (see ./default.nix).
 #
-# Kept as a user-level torrc + tor-start/stop/status helpers rather than
-# services.tor: the jarvis shape was "raise it when I want it", not a daemon
-# on every boot, and the bridge list is the user's own. The obfs4 binary is
-# `lyrebird` in nixpkgs' obfs4 package, same as before. Geoip files come from
-# tor-browser's bundle so the ExitNodes country filter has data to work with.
+# A user-level torrc + tor-start/stop/status helpers rather than services.tor:
+# raised on demand, not a daemon on every boot, and the bridge list is the
+# user's own. The obfs4 binary is `lyrebird` in nixpkgs' obfs4 package. Geoip
+# files come from tor-browser's bundle so the ExitNodes country filter has
+# data to work with.
 {
   config,
   pkgs,

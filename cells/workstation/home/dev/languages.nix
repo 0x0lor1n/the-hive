@@ -1,6 +1,5 @@
-# Language toolchains, ported 1:1 from jarvis users/shared/dev/lang-*.nix +
-# android.nix (plain package lists, nothing account-specific). Grouped in one
-# file: ten 5-line modules were more directory than content.
+# Language toolchains: plain package lists, nothing account-specific. Grouped
+# in one file because ten 5-line modules were more directory than content.
 {
   lib,
   pkgs,
@@ -39,7 +38,7 @@ in {
     pipenv
     poetry
     uv
-    # typst — tinymist/typstyle are NOT mason-managed (lang-typst.lua sets
+    # typst — tinymist/typstyle are not mason-managed (lang-typst.lua sets
     # `mason = false`; mason has no typstyle at all).
     typst
     tinymist
@@ -64,10 +63,10 @@ in {
     GLOBAL_PYTHON_SITE_PACKAGES = python-site-packages;
   };
 
-  # HACK (jarvis): a global venv so `pip install` outside a project has
-  # somewhere to go; created on first shell, activated lazily after that.
-  # Test bin/activate, not the dir, and create under flock: sesh restores
-  # several tmux panes at once and every zsh raced into `python -m venv`
+  # A global venv so `pip install` outside a project has somewhere to go;
+  # created on first shell, activated lazily after that. Test bin/activate, not
+  # the dir, and create under flock: sesh restores several tmux panes at once
+  # and every zsh raced into `python -m venv`
   # ("[Errno 17] File exists: ~/.venv/include/python3.11", 2026-09-15). On the
   # Entra side ~/.venv is not persisted (home is recreated by himmelblau each
   # boot), so this runs on every first login; losers of the lock skip quietly.

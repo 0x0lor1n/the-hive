@@ -1,9 +1,9 @@
 # Intel iGPU (i915) as the only display device. Counterpart to gpu-virtio.nix:
 # nothing here about cursors or output modes -- a real panel has a real EDID.
 #
-# penrose is a hybrid (HD 620 + GeForce 930MX on nouveau, phase 0 recon). The
-# dGPU is not worth its power budget for dwl: keep it off the bus. Revisit
-# only if an external display turns out to be wired to it.
+# On a hybrid host (HD 620 + GeForce 930MX) the dGPU is not worth its power
+# budget for dwl, so it stays off the bus. Revisit only if an external display
+# turns out to be wired to it.
 {
   inputs,
   cell,

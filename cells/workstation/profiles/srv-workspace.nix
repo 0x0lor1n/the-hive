@@ -7,7 +7,7 @@
 #
 # Same mechanism as srv-the-hive.nix, but writable for the whole hive group
 # from the root down: setgid dir so new files land in the group, plus a
-# DEFAULT POSIX ACL so group write survives any umask git clones under.
+# default POSIX ACL so group write survives any umask git clones under.
 # ACLs live in the fs, not in git; tmpfiles re-applies them at every boot.
 #
 # The dataset (rpool/safe/srv/workspace, disks/<host>.nix) survives the

@@ -1,10 +1,8 @@
-# QEMU/virtio guest platform — the VM counterpart to
-# platform-baremetal.nix. Was profiles/hardware-vm-guest.nix.
+# QEMU/virtio guest platform — the VM counterpart to platform-baremetal.nix.
 #
-# Generic virtio facts ONLY. The playground's 9p repo share moved to
-# dev-9p-share.nix in iter 11, because osgiliath is a virtio guest (a KVM
-# VPS) with no such share — a new machine is a new COMBINATION of device
-# files, per devices/default.nix.
+# Generic virtio facts only. The playground's 9p repo share is in
+# dev-9p-share.nix: osgiliath is a virtio guest (a KVM VPS) with no such
+# share.
 {
   inputs,
   cell,

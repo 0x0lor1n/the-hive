@@ -1,9 +1,9 @@
 # recorder: wl-screenrec screen capture -> ~/Videos/Recordings/*.mp4, file://
 # URI on the clipboard, mako notification with open / open-in-fm actions,
 # thumbnail from ffmpegthumbnailer. Second call while recording stops it.
-# Ported from wochap/nix-config wayland-utils; bound in packages/dwl/config.h
-# to Super+Alt+R (--area) like his. The bar (bar.nix) polls `recorder
-# --status` and shows a REC badge while one runs; clicking it stops.
+# Bound in packages/dwl/config.h to Super+Alt+R (--area). The bar (bar.nix)
+# polls `recorder --status` and shows a REC badge while one runs; clicking it
+# stops.
 #
 # wl-screenrec encodes through VA-API (intel-media-driver from
 # profiles/gpu-intel.nix); without a working va device it falls back to

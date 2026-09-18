@@ -1,10 +1,9 @@
 # Physical x86 machine -- the counterpart to platform-virtio.nix. Generic
 # "it is real hardware" facts only; the GPU and the laptop shape are their own
-# profiles (gpu-intel.nix, laptop.nix), per devices/default.nix.
+# profiles (gpu-intel.nix, laptop.nix).
 #
-# First host: penrose (Dell Latitude 5580, i7-7600U). The initrd module list
-# is what nixos-generate-config emitted there; it is the common set for any
-# NVMe laptop with a Realtek card reader, not penrose-specific.
+# The initrd module list is the common set for any NVMe laptop with a Realtek
+# card reader, not host-specific.
 {
   inputs,
   cell,
@@ -31,8 +30,8 @@
   # Replaced by lanzaboote when hardware-secureboot is in the host's list.
   boot.loader.systemd-boot.enable = lib.mkDefault true;
 
-  # Ported from ~/nixos-config/config/hardware/intel.nix: microcode rides on
-  # the redistributable-firmware switch, the wifi/bt blobs come with it.
+  # Microcode rides on the redistributable-firmware switch, the wifi/bt blobs
+  # come with it.
   hardware.enableRedistributableFirmware = true;
   hardware.cpu.intel.updateMicrocode = lib.mkDefault config.hardware.enableRedistributableFirmware;
 
