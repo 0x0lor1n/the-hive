@@ -87,6 +87,8 @@
       p.srv-the-hive
       # /srv/workspace: shared project clones (work/, projects/), both accounts write
       p.srv-workspace
+      # destyle: Qwen3-8B + LoRA на iGPU по требованию, 127.0.0.1:8080
+      p.llm-destyle
       # `cpu-governor@<name>.service` for the powermenu's performance toggle
       p.cpu-governor
     ];
