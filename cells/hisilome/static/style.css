@@ -327,8 +327,13 @@ main > h2:first-child {
   margin-bottom: 0.4rem;
 }
 
+/* wrap + min-width: the tag span holds a dozen links, and inline-flex defaults
+   to nowrap while flex items refuse to shrink past their content - together
+   that is one unbreakable line wider than a phone. */
 .meta span {
   display: inline-flex;
+  flex-wrap: wrap;
+  min-width: 0;
   align-items: center;
   gap: 0.35rem;
 }
