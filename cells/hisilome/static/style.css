@@ -1228,15 +1228,15 @@ body.framed {
   height: auto;
 }
 
-/* Below the SVG's own width a shrink-to-fit render makes 14px labels
-   unreadable. Keep native size and let the figure scroll sideways instead. */
+/* Below the SVG's own width the diagram is scaled down to the column and its
+   labels stop being readable -- recovery is the browser's own pinch-zoom,
+   which re-rasterises the inline SVG as vector (verified at 2.5x: crisp).
+   The rejected alternative was native size in a sideways-scrolling figure:
+   it keeps labels legible but shows a third of a 891px diagram, and a
+   horizontally scrolling box inside a vertically scrolling page eats the
+   swipe. Nothing here may set touch-action or user-scalable. */
 @media (max-width: 640px) {
-  .layout > main > figure {
-    overflow-x: auto;
-    -webkit-overflow-scrolling: touch;
-  }
   .layout > main > figure > svg {
-    max-width: none;
     max-height: none;
   }
 }
