@@ -17,9 +17,10 @@
   # author so a stray commit fails loudly instead of leaking a work UPN.
   git ? null,
   # Per-role attrset from home/secrets.nix (secrets/user-<role>.nix.age):
-  # git.includes (includeIf blocks) and ssh.matchBlocks, both pointing at
-  # the account's own age.secrets keys (profiles/secrets.nix). {} when the
-  # file is absent, so a host without secrets still evaluates.
+  # git.includes (includeIf blocks), ssh.includes and ssh.matchBlocks, the
+  # latter pointing at the account's own age.secrets keys
+  # (profiles/secrets.nix). {} when the file is absent, so a host without
+  # secrets still evaluates.
   secrets ? {},
   # The personal account: osint + tor (home/security). The Entra home gets
   # neither -- the employer's desktop plane carries no bridges or recon kit.
@@ -113,12 +114,16 @@ in {
   };
 
   # Host aliases + IdentityFile from the encrypted half; the keys themselves
-  # are age.secrets owned by this account (profiles/secrets.nix). The
-  # private halves carry a passphrase, so an agent per account: keys are
-  # added on first use and the passphrase is typed once per session.
+  # are age.secrets owned by this account (profiles/secrets.nix). Most private
+  # halves carry a passphrase, so an agent per account: keys are added on first
+  # use and the passphrase is typed once per session.
   programs.ssh = {
     enable = true;
     addKeysToAgent = "yes";
+    # Globs relative to ~/.ssh, read before the blocks below. The files they
+    # name are plaintext and not managed here: a per-pod HostName/Port can be
+    # rewritten between jobs without a TPM PIN. An unmatched glob is fine.
+    includes = sec.ssh.includes or [];
     matchBlocks = sec.ssh.matchBlocks or {};
   };
   services.ssh-agent.enable = true;

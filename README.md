@@ -128,6 +128,11 @@ trusted-users -- it is the only account that can `unlock-secrets` or rebuild.
 The Entra user is desktop-only (no `wheel`, no TPM); untrusted apps there run
 under nixpak (`cells/workstation/packages.nix`).
 
+The split models corporate role separation -- a restricted daily driver, admin
+out of band -- and not a boundary between two people: one operator holds both
+accounts. Development state is shared on purpose (the `hive` group,
+`/srv/workspace`); key material is granted per key, not by default.
+
 ## Traps, measured
 
 - A cell flake declaring inputs with no committed `flake.lock` resolves to an
