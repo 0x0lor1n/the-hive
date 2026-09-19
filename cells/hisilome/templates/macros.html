@@ -32,9 +32,9 @@
 {% endmacro shell_topbar %}
 
 {% macro shell_console(ext=false) %}
-<section class="console">
+<section class="console" aria-label="Radio player">
 <div class="console-head">
-<iframe class="console-live" src="/live.html" scrolling="no" title="Now playing"></iframe>
+<iframe class="console-live" src="/live.html" title="Now playing"></iframe>
 <div class="console-play">
 <audio controls class="console-audio" preload="none">
 <source src="/stream.opus" type="audio/ogg; codecs=opus">

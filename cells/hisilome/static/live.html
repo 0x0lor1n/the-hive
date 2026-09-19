@@ -43,6 +43,8 @@
         /* Transparent: the console's scanlines and vignette show through, so
            the frame is not a flat window cut into the textured panel. */
         background: transparent;
+        /* The only thing suppressing the frame's scrollbar: the embedding
+           iframe carries no scrolling="no" (obsolete attribute). */
         overflow: hidden;
         text-align: center;
         font-family: "Iosevka Web", ui-monospace, "SF Mono", Consolas, monospace;

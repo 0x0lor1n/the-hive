@@ -54,9 +54,16 @@
       export D2_FONT_BOLD=${d2-fonts}/bold.ttf
       export D2_FONT_SEMIBOLD=${d2-fonts}/bold.ttf
       # Engine is per file: a leading "# layout: dagre" line overrides elk.
+      # --no-xml-tag: the shortcode inlines the file into HTML, where d2's
+      # <?xml?> prolog is not a prolog but a bogus comment.
       find content -name '[0-9]*.d2' -print0 | while IFS= read -r -d "" f; do
         layout=$(sed -n '1,3s/^# layout: *//p' "$f" | head -1)
-        d2 --layout "''${layout:-elk}" --theme 200 --pad 20 --scale 1 "$f" "''${f%.d2}.svg"
+        d2 --layout "''${layout:-elk}" --theme 200 --pad 20 --scale 1 --no-xml-tag "$f" "''${f%.d2}.svg"
+        # d2 paints its shape palette onto <image> too, where SVG defines
+        # neither attribute. They render nothing (verified: stripping them is
+        # pixel-identical) but are invalid inline, so drop them on the
+        # <image> elements only.
+        sed -i -E 's/(<image[^>]*)\s(stroke|fill)="[^"]*"/\1/g; s/(<image[^>]*)\s(stroke|fill)="[^"]*"/\1/g' "''${f%.d2}.svg"
       done
       # Drafts are in unless SITE_DRAFTS=0: local builds are for reading what
       # is not published yet; the deploy derivation sets 0 explicitly.
