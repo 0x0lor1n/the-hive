@@ -27,10 +27,10 @@
   # Outbound ssh identities; the pubkeys are registered on GitHub/Azure/client
   # hosts, so there is no generator. Split per account: the local user gets the
   # personal + freelance keys, the Entra user the employer ones. Each key ships
-  # with its .pub: the private halves are passphrase-protected, and without the
-  # .pub next to it ssh must decrypt the key just to learn which agent identity
-  # to offer, i.e. it prompts even when the agent has it. IdentityFile in the
-  # per-role user secrets points at these paths.
+  # with its .pub: for a passphrase-protected key, without the .pub next to it
+  # ssh must decrypt the key just to learn which agent identity to offer, i.e.
+  # it prompts even when the agent has it. IdentityFile in the per-role user
+  # secrets points at these paths.
   #
   # Entra owner: users.users has no entry, so `owner` is the numeric uid (chown
   # accepts it, nothing resolves the name at activation) and group falls back
@@ -48,6 +48,15 @@
       mode = "0644";
     };
   };
+  # Same key for both accounts, read through the shared group instead of a
+  # second copy: one pubkey to register, one key to revoke.
+  mkSharedIdentity = owner: name:
+    lib.recursiveUpdate (mkIdentity owner name) {
+      "${name}" = {
+        group = "hive";
+        mode = "0640";
+      };
+    };
   # Real hosts only: the VM rehearsal has its own host key and no business
   # holding these, so no rekeyed bundle exists for it (eval would assert).
   sshIdentities = lib.optionals (!host.isVm) (
@@ -55,6 +64,13 @@
       "ssh-github"
       "ssh-w"
       "ssh-wgl"
+    ]
+    ++ [
+      # Rented GPU boxes for training runs. Passphrase-less, unlike the others:
+      # the pod is destroyed after the run and a prompt would block a job
+      # nobody is watching. Readable by the Entra account too (hive), which
+      # runs the same training jobs.
+      (mkSharedIdentity host.userName "ssh-runpod")
     ]
     ++ lib.optionals (entraUid != null) (map (mkIdentity (toString entraUid)) [
       "ssh-azure-owt"
