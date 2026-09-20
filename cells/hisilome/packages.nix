@@ -47,7 +47,7 @@
   # No italic subset is shipped, so italic falls back to regular.
   build-site = pkgs.writeShellApplication {
     name = "build-site";
-    runtimeInputs = [pkgs.d2 pkgs.zola pkgs.coreutils pkgs.findutils];
+    runtimeInputs = [pkgs.d2 pkgs.zola pkgs.coreutils pkgs.findutils pkgs.gnused pkgs.gnugrep pkgs.gawk];
     text = ''
       export D2_FONT_REGULAR=${d2-fonts}/regular.ttf
       export D2_FONT_ITALIC=${d2-fonts}/regular.ttf
@@ -69,6 +69,39 @@
       # is not published yet; the deploy derivation sets 0 explicitly.
       if [ "''${SITE_DRAFTS:-1}" != 0 ]; then set -- --drafts "$@"; fi
       zola build "$@"
+
+      # Where zola wrote; the site derivation passes --output-dir.
+      out=public prev=
+      for a in "$@"; do
+        case $prev in --output-dir | -o) out=$a ;; esac
+        case $a in --output-dir=*) out=''${a#*=} ;; esac
+        prev=$a
+      done
+
+      # live.html is not a Zola page (it has no <head> to inherit): the frame
+      # document from templates/, with the @font-face blocks and the colour
+      # tokens of style.css plus templates/_live.css inlined at the marker.
+      # One palette; the frame can no longer drift from the shell.
+      css=$(mktemp)
+      {
+        sed -n '/^@font-face {/,/^}/p' "$out/style.css"
+        printf ':root {\n'
+        sed -n '/^:root {/,/^}/p' "$out/style.css" \
+          | grep -E '^\s*(--[a-z0-9-]+: (#|var\()|color-scheme:)'
+        printf '}\n'
+        cat templates/_live.css
+      } > "$css"
+      awk -v f="$css" '
+        /<!--@css@-->/ { while ((getline l < f) > 0) print l; next }
+        { print }' templates/live.html > "$out/live.html"
+      rm -f "$css"
+
+      # Per-page meta.html: the head lines base.html brackets with <!--meta-->
+      # (title, description, og:*), SSI-included by the shell so a framed post
+      # carries its own <title>. Zola cannot emit a second file per page.
+      find "$out" -name index.html -print0 | while IFS= read -r -d "" f; do
+        sed -n '/<!--meta-->/,/<!--\/meta-->/{/<!--/d;/^$/d;p}' "$f" > "''${f%index.html}meta.html"
+      done
     '';
   };
 
@@ -119,8 +152,12 @@
   # own request carries Sec-Fetch-Dest: iframe and falls through to the page.
   # Zola pages end in "/", so assets and streams are untouched. Clients without
   # Sec-Fetch-Dest (curl, crawlers, old Safari) get the bare page.
+  # `volatile`: a subrequest shares its parent's variable cache, and the
+  # shell's SSI include of <page>/meta.html goes through `/`'s try_files —
+  # with the cached value that served the shell again, forever.
   nginxHttpConfig = ''
     map "$http_sec_fetch_dest$uri" $shell_page {
+      volatile;
       ~^document.*/$  /listen/index.html;
       default         /__none;
     }
@@ -156,6 +193,15 @@
         ${pageLimit}
         add_header Cache-Control "public, max-age=31536000, immutable";
         ${extraHeaders}
+      '';
+
+      # Per-page head fragment written by build-site, reached from the
+      # shell's SSI include; nothing in it needs SSI. A miss (404 path) is an
+      # error status, so the include falls to its stub.
+      "~ /meta\\.html$".extraConfig = ''
+        ${pageLimit}
+        ssi off;
+        log_not_found off;
       '';
 
       "~ ^/fonts/".extraConfig = ''

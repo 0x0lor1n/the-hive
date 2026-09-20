@@ -234,7 +234,6 @@ The lang tab on the left has similar approach - content: attr(data-lang) on ::be
 - Bar and clock are dead reckoning between refreshes. If the stream stutters they drift up to ten seconds until the next fragment.
 - The address bar never changes. Navigating inside the frame leaves the bar at whatever URL you entered on. Reload still gives you the right page (the shell reads `request_uri`), but copying the address after a few clicks hands out the wrong post.
 - `@property` and `:has()` need a 2023-ish browser. Older ones get a static clock (`.rc-static` fallback), the bar at its start, and a console that doesn't slide.
-- Shell and `live.html` share a stylesheet by copy. The comment says "keep in sync". It will drift.
 
 ## Then the part I do not have an answer for
 

@@ -1,0 +1,28 @@
+<!doctype html>
+<!-- Not rendered by Zola: build-site copies this to public/live.html, splicing
+     the @font-face and :root blocks of public/style.css and templates/_live.css
+     at the marker below. One palette, one set of frame rules, no hand sync. -->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="color-scheme" content="dark" />
+    <!-- Reload interval comes from liquidsoap: seconds left on the track
+         (+1), capped at 30. The frame reloads right after a switch instead
+         of up to 10 s late. The stub is the fallback when liquidsoap is not
+         up yet: without it nginx splices its 404 page into <head>. -->
+    <!--#block name="refresh_fallback" --><meta http-equiv="refresh" content="10" /><!--#endblock -->
+    <!--#include virtual="/refresh.html" stub="refresh_fallback" -->
+    <title>Now playing</title>
+    <!-- Inline, not <link>: this document reloads; a linked stylesheet painted
+         an unstyled frame on each reload (the flicker). -->
+    <style>
+<!--@css@-->
+    </style>
+  </head>
+  <!-- Reloads every 10s; the clock animates itself. Anything stateful
+       (<audio>, <details>) lives in the shell for that reason. -->
+  <body class="rc-body">
+    <!--#block name="console_stub" --><span class="rc-off">station offline</span><!--#endblock -->
+    <!--#include virtual="/console.html" stub="console_stub" -->
+  </body>
+</html>

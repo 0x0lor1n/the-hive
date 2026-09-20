@@ -5,8 +5,23 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="dark">
+{#- Between the markers: what build-site copies into each page's meta.html
+    for the shell to SSI-include (listen.html overrides the whole block).
+    One element per line; no other comments inside. -#}
+{% block head_meta -%}
+<!--meta-->
 <title>{% block title %}{{ config.title }}{% endblock title %}</title>
 {% block description %}<meta name="description" content="{{ config.description }}">{% endblock description %}
+{%- if page %}{% set og_title = page.title %}{% set og_desc = page.description | default(value="") %}
+{%- elif term %}{% set og_title = term.name %}{% set og_desc = "" %}
+{%- elif taxonomy %}{% set og_title = taxonomy.name | capitalize %}{% set og_desc = "" %}
+{%- else %}{% set og_title = config.title %}{% set og_desc = config.description %}{% endif %}
+<meta property="og:title" content="{{ og_title }}">
+{% if og_desc %}<meta property="og:description" content="{{ og_desc }}">{% endif %}
+{% if current_url %}<meta property="og:url" content="{{ current_url | safe }}">{% endif %}
+<meta property="og:type" content="{% if page %}article{% else %}website{% endif %}">
+<!--/meta-->
+{% endblock head_meta -%}
 <link rel="stylesheet" href="/style.css?v={{ get_hash(path="style.css") | truncate(length=12, end="") }}">
 <link rel="alternate" type="application/rss+xml" title="RSS" href="/rss.xml">
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
