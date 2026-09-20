@@ -6,19 +6,35 @@ description = "Progress bar, ticking clock, persistent player, a now-playing wid
 tags = ["nojs", "html", "css", "nginx", "icecast", "liquidsoap", "zola", "nix", "nixos", "lain", "radio", "web"]
 +++
 
-This site's radio page shows the current track, a progress bar that moves, a clock that counts up, the listener count, the schedule, and the player keeps playing while you read the blog. Normally that's a few hundred lines of JavaScript and a WebSocket.
+The dedicated radio page on this site is showing: what's playing now, progress bar that is moving while the music is playing, growing clock, current number of listeners, broadcasting calendar. And the player keeps playing in the background while the visitor is going to other pages (blog for example). Usually couple hundred lines of javascript + webSocket connection would be needed for this.
 
-Here the `Content-Security-Policy` is `default-src 'none'` plus fonts, styles, images and media. No `script-src`, because there is nothing to allow.
+Here the `Content-Security-Policy` is `default-src 'none'` plus fonts, styles,
+images and media. No `script-src`, because there is nothing to allow.
 
-I didn't set out to avoid JS on principle. I wanted to know how much of a live page the server and CSS can carry before the client has to run code. For a page this size the answer is all of it. Seven tricks. None of them new, I just had not seen them together.
+> **KRITON.** Nothing to allow.
+>
+> **0x0lor1n.** Nothing. Zero. The browser is not permitted to run a single line of
+> script on that page and it still ticks.
+>
+> **KRITON.** You sound like a man who has won something.
 
-Stack: [Zola](https://www.getzola.org/) renders the static pages, [liquidsoap](https://www.liquidsoap.info/) runs the station and feeds icecast, nginx serves everything. One NixOS module, one `process-compose.yaml` for the dev loop.
+To be fair nobody forced me. I did not start my car with a position "fuck javascript man". I wanted to know how much live page you can pack on the server and CSS, so client will not have to run any code at all. For this size - it's possible. It uses seven tricks, but none of them is new - just never seen them together in one example.
 
-## 1. liquidsoap writes HTML, nginx SSI includes it
+Zola - builds static pages of site, liquidsoap + icecast - runs radio station + provides the stream to Icecast, nginx - serves all that stuff to end-users all is configured with just one nixos module and one process-compose.yaml for development loop.
+
+
+> **KRITON.** Seven. You are going to walk me through seven.
+>
+> **0x0lor1n.** Yep. Nothing here is new, I want that on the record. I just had not
+> seen them in one place before.
+>
+> **KRITON.** Then go.
+
+## 1. The server renders HTML, because there is no client to render JSON
 
 {{ d2(name="01-pipeline", alt="liquidsoap writes three HTML fragments into radio/state/ with atomic renames; nginx with ssi on includes them into live.html on every request; the browser shell embeds live.html in an iframe that refreshes every ten seconds while the audio element in the shell never reloads.") }}
 
-Without a client to render JSON, the server renders HTML. liquidsoap has string functions and a file writer, so on every track change it writes a fragment: the `<p>`s that go inside the widget, with no `<html>` around them.
+Liquidsoap has functions to manipulate strings and write files. So you can make it on every track switch to write an HTML part containing only the paragraph inside nowplaying widget, without html/body tags around all atomically in a temporary directory so nobody reads a partially written file.
 
 ```liquidsoap
 write = file.write.stream(atomic=true,
@@ -26,45 +42,59 @@ write = file.write.stream(atomic=true,
   "radio/state/now-playing.txt")
 ```
 
-`atomic=true` renames the file into place, so nginx never serves a half-written fragment. One gotcha: liquidsoap hardcodes the temp filename to `atomic.write`, so each writer needs its own `temp_dir` or two threads clobber each other. There are three writers: now-playing per track, the console every second, the schedule every ten.
-
-nginx assembles them with [SSI](https://nginx.org/en/docs/http/ngx_http_ssi_module.html), a module from the 90s that most people have never turned on:
+It all comes down to nginx aggregating pieces of it with help of ssi, which is a module developed back in the 1990s and which nobody enables:
 
 ```html
 <!--# include virtual="/state/now-playing.txt" -->
 ```
 
-`ssi on;` in the server block, a location for `/state/` pointing at liquidsoap's directory. That's the whole plumbing.
+> **KRITON.** From the nineties.
+>
+> **0x0lor1n.** 1996 or so. It shipped, everyone moved on, it never left. It is sitting
+> in every nginx build on earth doing nothing.
+>
+> **KRITON.** And this pleases you more than if it were new.
+>
+> **0x0lor1n.** Man, obviously.
 
-## 2. A ten-second `<meta refresh>` inside an iframe
+## 2. The bar moves between refreshes
 
-The widget has to update. `<meta http-equiv="refresh" content="10">` is the oldest way and it works fine when the reloading document is small and isolated. So the now-playing block is its own document, `live.html`, in an `<iframe>` inside the console. It reloads itself. The page around it doesn't move.
+It's about one ~2KB request each ten seconds from each listener. For the abusive (~DoS) case just use limit_req and that's it.
 
-Two details cost me an evening:
+> **KRITON.** Two kilobytes. Every ten seconds. Per person.
+>
+> **0x0lor1n.** Per person.
+>
+> **KRITON.** How many persons.
+>
+> **0x0lor1n.** We will get to that.
 
-- Styles are inlined, not `<link>`ed. With a linked stylesheet each reload painted an unstyled frame for a moment. With `<style>` in `<head>` the reload is invisible.
-- `background: transparent` on the frame body, so the console's background shows through and the frame isn't a visible rectangle.
-
-Cost: one ~2 KB request per listener every ten seconds. `limit_req` for the abusive case, that's it.
-
-## 3. Progress bar and clock between refreshes: negative `animation-delay`
-
-Ten seconds is too coarse for a progress bar. CSS animations have an `animation-delay`, and a negative delay starts the animation partway through. liquidsoap writes, per track, the duration and how much had elapsed at write time:
+So 10sec interval is too big for a progress bar to look like it's moving However in css animations there is such thing animation-delay property and if you specify a -ve value, then the animation starts partway through its cycle instead of from the beginning. Liquidsoap writes both the overall duration of current track + the offset time into the fragment as CSS custom properties.
 
 ```html
 <span class="rc-fill" style="--dur:213s;--elapsed:-87s"></span>
 ```
 
-```css
-.rc-fill {
-  animation: rc-fill var(--dur, 0s) linear var(--elapsed, 0s) forwards;
-}
-@keyframes rc-fill { from { width: 0 } to { width: 100% } }
-```
+So basically the bar starts at 87 seconds out of 213 and ends at the same moment when the track ends. Then once the frame gets reloaded ten seconds later it has new values for duration/elapsed time, so the bar falls within ~one frame accuracy on the place where it arrived by himself, so there is no visible jump.
 
-The bar starts at 87/213 and reaches the end when the track does. When the frame reloads it gets fresh numbers and lands within a frame of where it already was.
+> **KRITON.** The bar does not know what the music is doing.
+>
+> **0x0lor1n.** No. It is dead reckoning. It gets told where it is every ten seconds
+> and guesses in between.
+>
+> **KRITON.** So it can be wrong.
+>
+> **0x0lor1n.** If the stream stutters it drifts, up to ten seconds, until the next
+> fragment straightens it out.
+>
+> **KRITON.** And the listener sees a bar that is confidently in the wrong place.
+>
+> **0x0lor1n.** The listener sees a bar that is mostly right and does not cost them a
+> WebSocket. Can you trash it a bit harder, I am taking notes.
 
-The clock is the same idea, except you cannot animate text. What you can animate is a registered custom property of type `<integer>` and feed it to a CSS counter:
+## 3. The clock is the same trick, one level uglier
+
+The clock is the same idea, except you cannot animate text. What you can animate is a registered custom property of type `<integer>`, and feed it to a CSS counter:
 
 ```css
 @property --m { syntax: "<integer>"; initial-value: 0; inherits: false; }
@@ -76,19 +106,42 @@ The clock is the same idea, except you cannot animate text. What you can animate
 @keyframes rc-min { from { --m: 0 } to { --m: var(--tm) } }
 ```
 
-Minutes run with `steps(N)` over `N*60` seconds, seconds with `steps(60)` over `60s` infinite, both offset by the elapsed time. liquidsoap writes the `animation:` shorthand into the `style` attribute per track. Because `@property` registers the type, the browser interpolates integers instead of flipping at 50 %.
+Minutes run with `steps(N)` over N*60 seconds, seconds with `steps(60)` over 60s infinite, both offset by the elapsed time. Liquidsoap writes the `animation:` shorthand into the style attribute per track. Because `@property` registers the type, the browser interpolates integers instead of flipping at 50%.
 
 `prefers-reduced-motion: reduce` sets `animation-play-state: paused` on all of it. The bar still shows the right position, because a paused animation stays at its delayed start point.
 
-## 4. The player survives navigation: `Sec-Fetch-Dest` picks the page
+> **KRITON.** You animate a number you cannot see, and then you show it.
+>
+> **0x0lor1n.** That is exactly it.
+>
+> **KRITON.** Is that clever or is that a workaround.
 
-An `<audio>` element dies with its page. That is why every radio site ends up an SPA. Without JS the only thing that survives navigation is a frame, so a frame it is.
+## 4. The widget reloads itself, and two details cost me an evening
 
-So there is a shell: topbar, console with the player, footer, and an `<iframe name="content">` in the middle. Every link in the shell has `target="content"`. Blog pages load into the frame; the audio element in the shell is never touched.
+It rly just reloads itself with a meta refresh in ten second interval. All the widget is residing within it own small html document, that's floating in an iframe, so the parent page does not get re-rendered or anything when the widget updates. It was setting up ~10min. The other part of the evening was for two more details:
 
-The hard part is the URL.
+- Styles are inlined, not `<link>`ed. With a linked stylesheet every reload
+  painted one unstyled frame. Ten seconds apart. A flash, then nothing, then a
+  flash.
+- `background: transparent` on the frame body, so the console shows through and
+  the frame is not a visible rectangle sitting on the page.
 
-Land on `/salt-fiber-bypass/` directly and you should get the shell with that post in the frame, and the frame should request the same URL and get the bare post. Same URL, two responses, decided by nginx from one header:
+> **KRITON.** An evening for two lines.
+>
+> **0x0lor1n.** An evening for finding out it was two lines. I was staring at a flicker
+> I could not reproduce on demand. You sit there refreshing and waiting to catch
+> it, and it happens when you look away.
+>
+> **KRITON.** What did you do while you waited.
+>
+> **0x0lor1n.** Put on Nas. Illmatic, the whole thing. Did you know NY State of Mind
+> was recorded on the first take? Goat level.
+
+## 5. The player survives navigation
+
+An HTML audio element gets destroyed with the page it resides in - thats why almost all of nearly every internet radio website is just a SPA. Without javascript there is nothing but a frame that remains after navigating between pages, so they have a frameset: an outer document with a player + iframe named content in center and all links on site are pointing to this frame.
+
+The challenging part is the url. If you come from a visitor — he comes with /salt-fiber-bypass/ URL to our server, then we must return him the shell document with his post in it; then the frame will make the same URL request and must get just the post without the shell. Same URL - two different responses, nginx is choosing which one to respond based on a unique header set by browser: Sec-Fetch-Dest (document for top level navigation, iframe for frame).
 
 {{ d2(name="02-sec-fetch-dest", alt="The same GET /salt-fiber-bypass/ arrives at nginx three ways: with Sec-Fetch-Dest document from a top-level navigation, with Sec-Fetch-Dest iframe from the shell's frame, or with no header from curl and crawlers. A map on the header routes the first to /listen/index.html, the shell, whose iframe then requests the same URL again; the other two get the bare post.") }}
 
@@ -99,15 +152,30 @@ map "$http_sec_fetch_dest$uri" $shell_page {
 }
 ```
 
-[`Sec-Fetch-Dest`](https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Sec-Fetch-Dest) is set by the browser: `document` for a top-level navigation, `iframe` for a frame load. A top-level navigation to any `/`-terminated page gets the shell. The shell's frame does `src="<!--# echo var="request_uri" -->"`, SSI again; `$request_uri` is never rewritten, so it is the URL the user typed. That request carries `Sec-Fetch-Dest: iframe` and falls through to the real page.
+When a request comes from a curl like client, robot or rss reader, old safari versions: they don't send the custom header indicating modern browser, so no love and attention for them — just serve them the raw html page which is what they want anyway. Also note that pages generated by Zola are served with a trailing slash (/), meaning requests to assets and /stream.* will never match the map.
 
-curl, crawlers, RSS readers, old Safari: no header, bare page. Which is what they wanted anyway. Zola pages end in `/`, so assets and `/stream.*` never match the map.
+Sec-Fetch-Dest works like a server-side media query: same URL, different skin of the page, depending on where you include it from.
 
-`Sec-Fetch-Dest` works like a server-side media query: the same URL renders differently depending on where it is embedded.
+> **KRITON.** And the address in the window?
+>
+> **0x0lor1n.** Ah.
+>
+> **KRITON.** Ah.
+>
+> **0x0lor1n.** The address bar never changes. You navigate inside the frame, the bar
+> stays where you came in. Reload gives you the right page, the shell reads the
+> real request URI. But copy the address after a few clicks and you hand someone
+> the wrong post.
+>
+> **KRITON.** You knew this and shipped it.
+>
+> **0x0lor1n.** I knew it and shipped it.
+>
+> **KRITON.** Why is that acceptable to you?
 
-## 5. `<details>` as state, `:has()` to react to it
+## 6. The files panel: the browser keeps the state, CSS reads it
 
-The console has a "files: list" toggle that opens a panel. That is a `<details>`; the browser owns the open/closed state. What used to need JS is making *other* elements react to it, and `:has()` now does that:
+The console has a "files: list" toggle that opens a panel. That is a `<details>`; the browser owns the open/closed state, no code of mine. What used to need JS is making *other* elements react to it, and `:has()` now does that:
 
 ```css
 .frame:has(.sc-toggle[open]) .shell-content { margin-top: var(--panel-h); }
@@ -116,27 +184,43 @@ The console has a "files: list" toggle that opens a panel. That is a `<details>`
 
 The content frame slides down, the console squares its corners to meet the panel, the glow stops at the seam. One attribute the browser flips. The rest is selectors.
 
-## 6. Diagrams inlined, so they're text
+## Not one of the seven: diagrams as text
 
-The d2 diagrams in the fiber post aren't `<img>`. A Zola shortcode does `load_data(path=…svg) | safe` and inlines the SVG into the page. Labels on the diagram are selectable, Ctrl+F finds them, the theme's fonts apply. The `.d2` sources live next to the post's `index.md` and `build-site` compiles them before `zola build`.
+The d2 diagrams in fiber post are not "embedded" as images. It's a Zola shortcode that does load_data with path to svg + safe filter + inline it in page. Like that the labels on diagram are clickable/selectable, browser find (Ctrl+F) finds them and the theme font is used for diagram text. The .d2 sources live in same directory as post's index.md file. Build-site script builds d2's into svgs before running zola build command.
 
-Not a no-JS trick as such. Same habit though: do the work at build time, ship a document, not a viewer.
+It's not exactly a no-JS trick, but it's the same spirit: do everything at build time, so what you ship is a document, not a viewer app.
 
-## 7. One-click copy without a button
+> **KRITON.** You said seven.
+>
+> **0x0lor1n.** This one is not a trick, it is a habit. Do the work at build time, ship
+> a document, not a viewer. Same church, different pew.
+>
+> **KRITON.** So eight.
+>
+> **0x0lor1n.** Seven and a habit.
 
-A copy button needs `navigator.clipboard`. What you can have instead is `user-select: all`: one click selects the whole element, Ctrl+C does the rest. `cursor: copy` tells the reader that's what will happen. The permalink under each post title works like that, and so does every code block on this site.
+## 7. Copy without a copy button
 
-The "Copy" tab in the corner of a block is a `::after` pseudo-element. It is part of the block, so clicking it selects the block like clicking anywhere else would; it only tells the reader where to click. While the mouse is down it says `Ctrl+C`, which is the one thing left to do:
+You need a copy button? Navigator.clipboard API! What you can have is: CSS property user-select: all; Which means one click — entire element gets selected; then Ctrl+C does the job. And CSS property cursor: copy; That basically means to the human: that's what this will do Look at the permalink under each post title on this site. Look at every code block on this site.
 
 ```css
 pre code { user-select: all; cursor: copy; }
-pre code[data-lang]::after { content: "Copy"; }
-pre code[data-lang]:active::after { content: "Ctrl+C"; }
+pre::after { content: "Copy"; }
+pre:active::after { content: "Ctrl+C"; }
 ```
 
-The cost: you can't drag one line out of a block. I tried two behaviours, normal selection on multi-line blocks and one-click on one-liners via `:has(> .giallo-l:only-of-type)` on the highlighter's line spans. It worked. It also confused me, on my own site, because two identical-looking blocks behaved differently. Snippets here are meant to be taken whole. One behaviour.
+The "Copy" tab on a corner of a code block is just a CSS ::after pseudo element. It belongs to the block, so you can click it and it will select the entire block like anywhere else on the block. Meaning: it does not have any different behaviour on click. It's only informative indication for the user where to click. On mouseDown event "Ctrl+C" text is displayed as a feedback that there is one more step in copypaste process.
 
-The language tab on the left is the same idea, `content: attr(data-lang)` on `::before`, from the attribute Zola already puts on `<code>`.
+The lang tab on the left has similar approach - content: attr(data-lang) on ::before pseudo element to get the language name from the attribute that is set by default by Zola on `<code>` element.
+
+> **KRITON.** So the button does not copy.
+>
+> **0x0lor1n.** The button selects. You copy. It says so on the button once you press
+> it.
+>
+> **KRITON.** A button that tells you it is not going to do the thing.
+>
+> **0x0lor1n.** A button that tells you the truth!
 
 ## What it cost
 
@@ -152,8 +236,27 @@ The language tab on the left is the same idea, `content: attr(data-lang)` on `::
 - `@property` and `:has()` need a 2023-ish browser. Older ones get a static clock (`.rc-static` fallback), the bar at its start, and a console that doesn't slide.
 - Shell and `live.html` share a stylesheet by copy. The comment says "keep in sync". It will drift.
 
-## Credits
+## Then the part I do not have an answer for
+
+The console has a listener count on it. It is a real number, icecast reports it, liquidsoap writes it into the fragment every ten seconds.
+
+> **KRITON.** You said we would get to how many persons.
+>
+> **0x0lor1n.** It varies.
+>
+> **KRITON.** What is it right now.
+>
+> **0x0lor1n.** One.
+>
+> **KRITON.** And that one is you.
+>
+> **0x0lor1n.** Yes.
+>
+> **KRITON.** So you built a page that tells you, every ten seconds, and precisely,
+> that nobody is listening.
 
 The station layout is a tribute to [lainonlife](https://github.com/barrucadu/lainonlife). The shell-prompt navigation (`$ cd ./archive ./series ./tags`) is lifted from [geanmar.com](https://geanmar.com/). The frame trick is nothing new, we did SPAs like that before the word existed.
+
+I know what the counter is for. It is for the version of this where the number is not one. That is not an answer to what he asked.
 
 Config, liquidsoap script and nginx module: [the-hive/cells/hisilome](https://github.com/0x0lor1n/the-hive/tree/main/cells/hisilome).
