@@ -1,6 +1,6 @@
 # hisilome-feedback — a11y / SEO / caching fixes for hisilo.me, zero-JS preserved
 
-Status: PLANNING (2026-09). Owner: user; Claude = executor.
+Status: PHASE 2 COMMITTED b6876d9 (2026-09-22), awaiting deploy; Phase 3 next. Owner: user; Claude = executor.
 Prereq: `cells/hisilome` builds (`nix build .#hisilome-site` or `dev hisilome && build-site`); zero-js-radio post committed (fd85e32). Do NOT touch the palette variable `--muted` before Phase 2 (25 call sites, decor vs text not yet split).
 
 Target: hisilo.me passes the external feedback (WCAG AA text contrast, focus rings, aria on decor, canonical/OG, font/CSS caching, 404 page, favicon) with `script-src 'none'` unchanged and `live.html` no longer hand-synced with `style.css`.
@@ -15,7 +15,7 @@ Invariants:
 - `git -C cells/hisilome diff --stat content/` is empty inside Phases 1–3 except the commit in 1.1 — post text is not edited by this task.
 - `vnu`/`validator.w3.org` errors on `/` and `/zero-js-radio/`: 0 (the h1 outline *warning* on index is accepted, see `templates/index.html` comment).
 
-## Phase 1 — Quick wins, no design decisions ⏳
+## Phase 1 — Quick wins, no design decisions ✅ (97ac3cc, deployed 2026-09-21)
 1.1 Commit the user's pending edits: `git -C cells/hisilome diff` = dash normalisation (— → -) in `content/zero-js-radio/index.md`, 6 lines. `git commit -m "hisilome: zero-js-radio — plain dashes"`.
 1.2 `static/style.css` line 386: `.summary { color: var(--carp-yellow); }` → `color: var(--fg);` — post summary on the index reads in the same colour as body text inside a post. Check `--carp-yellow` is not orphaned elsewhere before removing anything (it isn't: `.sc-toggle[open]` uses it).
 1.3 `templates/macros.html` `shell_topbar`: merge the two `<nav>` into one `<nav aria-label="Main">`; `$ cd`, `&& cd`, `.cursor` → `aria-hidden="true"`; social `<a title=...>` gets `aria-label` with the same string; every inline `<svg>` in topbar and `post_meta` gets `aria-hidden="true"`.
@@ -28,7 +28,7 @@ Invariants:
 1.10 Verify: `build-site`, `process-compose up`, `curl -sI localhost:8099/style.css | grep -i cache-control`, `curl -s -o /dev/null -w '%{http_code}' localhost:8099/nope/` == 404 with themed body, `curl -s localhost:8099/ | grep -c aria-hidden` ≥ 10. Screenshot index + a post via `browser_exec` for the summary colour.
 Exit criteria: 1.1 committed on its own; one further commit `hisilome: feedback phase 1 — aria, canonical, preload, favicon, cache headers, 404`; `curl -sI /fonts/iosevka-regular.woff2` shows `immutable`; `/nope/` returns themed 404; index summary colour == `--fg`; invariants hold; deployed with `colmena apply --on osgiliath --verbose`.
 
-## Phase 2 — Text contrast: split `--muted` into decor / `--meta` ⏳
+## Phase 2 — Text contrast: split `--muted` into decor / `--meta` ✅ (b6876d9)
 2.1 Inventory the 25 `var(--muted)` sites in `static/style.css` (`grep -n 'var(--muted)'`) and classify each as decor (brackets, separators, tribute footer, tagcloud bg, `.sc-a`, svg fills) or text (dates, reading time, `.rc-clock`, listener count, `del`, "files:" label, meta line under titles). Write the table into this file under Progress.
 2.2 Add `--meta: #9c9b93;` next to `--muted` (fujiGray lightened; 5.86:1 on `--bg`). Alternative if user prefers in-palette: `springViolet1 #938aa9` (4.3:1, fails AA by 0.2). Decision recorded in Progress before editing.
 2.3 Replace `var(--muted)` → `var(--meta)` on the text sites only. `live.html` has its own copies of `.rc-clock` colours — patch there too (until Phase 3 removes the duplication).
@@ -53,5 +53,41 @@ Phase 1 alone closes 9 of 17 feedback items with no visual change; ship it and s
 ## Progress
 - 2026-09: plan written. Pending in worktree: 6-line dash edit in `content/zero-js-radio/index.md` (goes in 1.1). Feedback source: external reviewer, 17 items; 8 accepted into Phases 1–3, rest in "Not doing".
 
-Next: Phase 1.1 — `git -C cells/hisilome commit content/zero-js-radio/index.md`, then 1.2 → 1.10 in the same session.
+- 2026-09-21: Phase 1 done. 1.1 committed separately (dash edit); 1.2–1.9 in `97ac3cc` (5 files + 2 new: `static/favicon.svg`, `templates/404.html`). Deviations from plan: `<link rel=canonical>` guarded with `{% if current_url %}` (404 template has no `current_url`); `.topbar nav` became `display:flex; gap:0.5rem` after the two-nav merge (replaces the margin-right/:last-child rules). Verified on dev-nginx :8099: vnu `--errors-only` = 0 on `/`, `/zero-js-radio/`, `/nope/`, shell; `Cache-Control: public, max-age=31536000, immutable` on `/style.css` and `/fonts/iosevka-regular.woff2`; `/nope/` → 404 themed in the frame, shell wraps it with 200; `.summary` == `--fg`; 18 `aria-hidden` on index; 0 `<script` in public/. Screenshots `.scratch/p1-{index,post,404}.png` (untracked; delete when done). Note: `mcp__browser_exec` harness is broken on this host (daemon won't start) — used headless chromium via `nix shell nixpkgs#chromium` instead.
+
+- 2026-09-21: Phase 1 deployed by user (colmena → osgiliath). Prod verified: `immutable` on `/style.css` and `/fonts/iosevka-regular.woff2`; `/favicon.svg` 200 `image/svg+xml`; `/nope/` → 404 themed (`<code>./nope/</code>`), shell 200; head has icon/canonical/preload/theme-color; `nav aria-label="Main"`; `.summary` = `--fg`; 0 `<script`; CSP unchanged (`default-src 'none'`). aria-hidden count is 15 on prod vs 18 on dev — dev index includes a draft post (3 post_meta svgs), not a diff in markup.
+
+- 2026-09-22: Phase 2.1 done — inventory of the 25 `var(--muted)` sites (24 in `static/style.css` + 1 in `static/live.html`). Base `--muted` = `--fuji-gray #727169`: 3.33:1 on `--bg #1f1f28`, 3.67 on `--bg-dim #16161d` — fails AA everywhere.
+
+| line | selector | prop | class | what |
+|---|---|---|---|---|
+| 172 | `.cmd` | color | text | `$ cd` / `$ link:` prompt words (topbar copy is aria-hidden, but page.html/404 copies are read) |
+| 205/210/215 | `h1/h2/h3:before` | color | decor | `# ` `## ` `### ` markers |
+| 336 | `.meta` | color | text | date, reading time under titles |
+| 355 | `.meta svg` | fill | decor | icons beside meta text |
+| 359 | `.meta a` | color | text | links in meta line |
+| 370 | `.permalink` | color | text | copyable URL line |
+| 382 | `.permalink a` | color | text | open-in-tab link in permalink |
+| 472 | `del` | color | text | struck prose |
+| 480 | `.footnotes` | color | text | footnote prose |
+| 530 | `pre code[data-lang]::before` | color | text | language label on code blocks |
+| 575 | `.ident` | color | text | `0x0lor1n@` in topbar |
+| 625 | `.socials svg` | fill | decor | social icons (hover → `--hover`) |
+| 633 | `footer` | color | text | footer prose |
+| 689 | `.lain-tribute-text` | color | decor | tribute line ("tribute footer" per plan; *judgement call*, see below) |
+| 704 | `.lain-tribute-quote` | color | decor | tribute quote (same) |
+| 869 | `.console-meta` | color | text | `channel:` / `link:` labels under player |
+| 911 | `.sc-toggle > summary` | color | text | `files: list` toggle |
+| 1013 | `.sc-body` | color | text | schedule list body |
+| 1037 | `.sc-w` | color | text | schedule time column |
+| 1047 | `.sc-a` | color | decor | schedule album column (per plan `.sc-a` = decor; *judgement call*) |
+| 1269 | `figure.pair figcaption` | color | text | captions |
+| 1476 | `.tag-n` | color | text | post count on tags ("the exact count … not readable" comment — meant to be read) |
+| live.html:95 | `.rc-clock` | color | text | clock in live frame (style.css `.rc-clock` at 1132 is already `--boat-yellow`) |
+
+Totals: 17 text → `--meta`, 8 decor stay `--muted`. Note: `.rc-listeners` from plan 2.4 does not exist in the repo — drop from the check list. Contrast candidates (WCAG, on `--bg` / `--bg-dim`): `#9c9b93` 5.86 / 6.45; `springViolet1 #938aa9` 5.02 / 5.53 (plan's "4.3" figure was measured on a lighter surface; on the real backgrounds it passes AA too).
+
+- 2026-09-22: Phase 2.2–2.5 done, commit `b6876d9` (2 files: `static/style.css`, `static/live.html`; `content/` untouched). Decision: `--meta: #9c9b93` (user). Tribute lines and `.sc-a` left decor (user did not answer the second question; plan default). Measured via CDP on dev-nginx :8099 inside the content iframe (`.scratch/cdp.mjs`, headless chromium from `nix shell nixpkgs#chromium`): every text site `rgb(156,155,147)` on `rgb(31,31,40)` = **5.86:1** (`.cmd .ident footer .console-meta .sc-toggle>summary .meta .meta a .permalink .permalink a pre code[data-lang]::before`; `del .footnotes figcaption .tag-n` have no instance on the two pages — same rule, same value); live-frame `.rc-clock` = `rgb(156,155,147)`. Decor unchanged at 3.33 (`h1/h2::before .meta svg .socials svg .lain-tribute-*`). `build-site` OK, 0 `<script` in public/, 16 `var(--meta)` + 8 `var(--muted)` in style.css. Screenshots `.scratch/p2-{index,post,live}-{1280,390}.png` (untracked); p1 screenshots deleted. Look: grey meta now reads clearly, no layout change.
+
+Next: user deploys (`nix build .#colmenaHive.toplevel.osgiliath` then `colmena apply --on osgiliath --verbose`), verify prod `curl -s https://hisilo.me/style.css | grep -c 'var(--meta)'` == 16; then Phase 3.
 Blocked on: nothing.
