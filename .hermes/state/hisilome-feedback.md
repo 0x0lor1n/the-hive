@@ -1,6 +1,6 @@
 # hisilome-feedback — a11y / SEO / caching fixes for hisilo.me, zero-JS preserved
 
-Status: PHASE 2 COMMITTED b6876d9 (2026-09-22), awaiting deploy; Phase 3 next. Owner: user; Claude = executor.
+Status: PHASE 2 DEPLOYED (b6876d9, 2026-09-22), Phase 3 next. Owner: user; Claude = executor.
 Prereq: `cells/hisilome` builds (`nix build .#hisilome-site` or `dev hisilome && build-site`); zero-js-radio post committed (fd85e32). Do NOT touch the palette variable `--muted` before Phase 2 (25 call sites, decor vs text not yet split).
 
 Target: hisilo.me passes the external feedback (WCAG AA text contrast, focus rings, aria on decor, canonical/OG, font/CSS caching, 404 page, favicon) with `script-src 'none'` unchanged and `live.html` no longer hand-synced with `style.css`.
@@ -28,7 +28,7 @@ Invariants:
 1.10 Verify: `build-site`, `process-compose up`, `curl -sI localhost:8099/style.css | grep -i cache-control`, `curl -s -o /dev/null -w '%{http_code}' localhost:8099/nope/` == 404 with themed body, `curl -s localhost:8099/ | grep -c aria-hidden` ≥ 10. Screenshot index + a post via `browser_exec` for the summary colour.
 Exit criteria: 1.1 committed on its own; one further commit `hisilome: feedback phase 1 — aria, canonical, preload, favicon, cache headers, 404`; `curl -sI /fonts/iosevka-regular.woff2` shows `immutable`; `/nope/` returns themed 404; index summary colour == `--fg`; invariants hold; deployed with `colmena apply --on osgiliath --verbose`.
 
-## Phase 2 — Text contrast: split `--muted` into decor / `--meta` ✅ (b6876d9)
+## Phase 2 — Text contrast: split `--muted` into decor / `--meta` ✅ (b6876d9, deployed 2026-09-22)
 2.1 Inventory the 25 `var(--muted)` sites in `static/style.css` (`grep -n 'var(--muted)'`) and classify each as decor (brackets, separators, tribute footer, tagcloud bg, `.sc-a`, svg fills) or text (dates, reading time, `.rc-clock`, listener count, `del`, "files:" label, meta line under titles). Write the table into this file under Progress.
 2.2 Add `--meta: #9c9b93;` next to `--muted` (fujiGray lightened; 5.86:1 on `--bg`). Alternative if user prefers in-palette: `springViolet1 #938aa9` (4.3:1, fails AA by 0.2). Decision recorded in Progress before editing.
 2.3 Replace `var(--muted)` → `var(--meta)` on the text sites only. `live.html` has its own copies of `.rc-clock` colours — patch there too (until Phase 3 removes the duplication).
@@ -89,5 +89,7 @@ Totals: 17 text → `--meta`, 8 decor stay `--muted`. Note: `.rc-listeners` from
 
 - 2026-09-22: Phase 2.2–2.5 done, commit `b6876d9` (2 files: `static/style.css`, `static/live.html`; `content/` untouched). Decision: `--meta: #9c9b93` (user). Tribute lines and `.sc-a` left decor (user did not answer the second question; plan default). Measured via CDP on dev-nginx :8099 inside the content iframe (`.scratch/cdp.mjs`, headless chromium from `nix shell nixpkgs#chromium`): every text site `rgb(156,155,147)` on `rgb(31,31,40)` = **5.86:1** (`.cmd .ident footer .console-meta .sc-toggle>summary .meta .meta a .permalink .permalink a pre code[data-lang]::before`; `del .footnotes figcaption .tag-n` have no instance on the two pages — same rule, same value); live-frame `.rc-clock` = `rgb(156,155,147)`. Decor unchanged at 3.33 (`h1/h2::before .meta svg .socials svg .lain-tribute-*`). `build-site` OK, 0 `<script` in public/, 16 `var(--meta)` + 8 `var(--muted)` in style.css. Screenshots `.scratch/p2-{index,post,live}-{1280,390}.png` (untracked); p1 screenshots deleted. Look: grey meta now reads clearly, no layout change.
 
-Next: user deploys (`nix build .#colmenaHive.toplevel.osgiliath` then `colmena apply --on osgiliath --verbose`), verify prod `curl -s https://hisilo.me/style.css | grep -c 'var(--meta)'` == 16; then Phase 3.
+- 2026-09-22: deployed; prod verified: style.css 16 `var(--meta)` / 8 `var(--muted)`, live.html has `#9c9b93`.
+
+Next: Phase 3 — live.css shared, shell title via SSI (needs the 3.x plan read first).
 Blocked on: nothing.
