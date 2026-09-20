@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+<!-- Kanagawa sumi-ink-0 square, carp-yellow "][": the console brackets. Iosevka
+     cannot be embedded, so the glyphs are paths, not text. -->
+<rect width="32" height="32" rx="4" fill="#16161d"/>
+<path fill="#e6c384" d="M6 6h6v3H9v14h3v3H6zM26 6h-6v3h3v14h-3v3h6z"/>
+</svg>

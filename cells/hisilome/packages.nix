@@ -150,6 +150,20 @@
         try_files $shell_page $uri $uri/ =404;
       '';
 
+      # Cache-busted by ?v=hash in base.html, so the file itself can be
+      # immutable. Fonts are versioned by name.
+      "= /style.css".extraConfig = ''
+        ${pageLimit}
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        ${extraHeaders}
+      '';
+
+      "~ ^/fonts/".extraConfig = ''
+        ${pageLimit}
+        add_header Cache-Control "public, max-age=31536000, immutable";
+        ${extraHeaders}
+      '';
+
       "~ ^/stream\\.(mp3|opus)$".extraConfig = ''
         # Two mounts plus a reconnect in flight per household.
         limit_conn stream 6;
@@ -216,6 +230,7 @@
           listen 8099;
           root public;
           ssi on;
+          error_page 404 /404.html;
           index index.html;
           ${render}
         }
