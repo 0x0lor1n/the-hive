@@ -1214,7 +1214,11 @@ body.framed {
 
 /* Diagrams are laid out top-to-bottom, so they fit the prose column at their
    natural size and need no zoom. Cap at the SVG's own width (d2 renders
-   labels at ~16px) so a narrow chain does not get inflated to fill the column. */
+   labels at ~16px) so a narrow chain does not get inflated to fill the column.
+   No max-height: the post renders inside the shell's content iframe, where
+   vh is the frame's height (screen minus console), not the screen's. An
+   80vh cap there shrank the 1006px-tall pipeline diagram to about half on a
+   1080p display, labels with it. Tall diagrams scroll with the prose. */
 .layout > main > figure {
   margin-left: 0;
   margin-right: 0;
@@ -1224,7 +1228,6 @@ body.framed {
 .layout > main > figure > svg {
   width: auto;
   max-width: 100%;
-  max-height: 80vh;
   height: auto;
 }
 
@@ -1235,11 +1238,6 @@ body.framed {
    it keeps labels legible but shows a third of a 891px diagram, and a
    horizontally scrolling box inside a vertically scrolling page eats the
    swipe. Nothing here may set touch-action or user-scalable. */
-@media (max-width: 640px) {
-  .layout > main > figure > svg {
-    max-height: none;
-  }
-}
 
 /* Two raster screenshots side by side (speedtest cards); stack on phones. */
 figure.pair {
