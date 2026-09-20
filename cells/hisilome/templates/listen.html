@@ -1,7 +1,19 @@
 {% extends "base.html" %}
 {% import "macros.html" as m %}
 
-{% block title %}{{ config.title }} — radio{% endblock title %}
+{#- The shell shows whatever page request_uri names, so its <title>,
+    description and og:* come from that page's meta.html (build-site writes
+    one next to every index.html). The capture stops before "?" so a query
+    string cannot turn the include into the page itself ("\$" — nginx reads
+    a bare "$" as a variable); a missing fragment (404 path) falls to the
+    stub, as does a URI outside the pattern. -#}
+{% block head_meta -%}
+<!--# block name="meta_stub" --><!--meta-->
+<title>{{ config.title }} — radio</title>
+<meta name="description" content="{{ config.description }}">
+<!--/meta--><!--# endblock -->
+<!--# if expr="$request_uri = /^(?<meta_page>\/([^?.]+\/)?)(\?|\$)/" --><!--# include virtual="${meta_page}meta.html" stub="meta_stub" --><!--# endif -->
+{% endblock head_meta -%}
 
 {#- The shell: topbar and console live here and only the middle frame
     navigates, so a link never destroys the <audio> element. -#}
