@@ -50,6 +50,7 @@
   --bg-dim: var(--sumi-ink-0);
   --fg: var(--old-white);
   --muted: var(--fuji-gray);
+  --meta: #9c9b93;             /* fuji-gray lightened: 5.86:1 on --bg; informational text, not decor */
   /* the shell's retro loader; lit by /status.html when the station is down */
   --ld-loader:
     /* the lit run: 5 segments, crawling left to right */
@@ -169,7 +170,7 @@ a:hover {
 }
 
 .cmd {
-  color: var(--muted);
+  color: var(--meta);
 }
 
 .topbar nav {
@@ -333,7 +334,7 @@ main > h2:first-child {
   display: flex;
   flex-wrap: wrap;
   gap: 1.1rem;
-  color: var(--muted);
+  color: var(--meta);
   font-size: 0.85rem;
   margin-bottom: 0.4rem;
 }
@@ -356,7 +357,7 @@ main > h2:first-child {
 }
 
 .meta a {
-  color: var(--muted);
+  color: var(--meta);
   text-decoration: underline;
 }
 
@@ -367,7 +368,7 @@ main > h2:first-child {
 /* Inside the shell the address bar always shows "/"; this is the copyable URL.
    One click selects it whole. */
 .permalink {
-  color: var(--muted);
+  color: var(--meta);
   font-size: 0.85rem;
   margin-bottom: 1.2rem;
 }
@@ -379,7 +380,7 @@ main > h2:first-child {
 }
 
 .permalink a {
-  color: var(--muted);
+  color: var(--meta);
   text-decoration: none;
 }
 
@@ -469,7 +470,7 @@ main img {
 }
 
 del {
-  color: var(--muted);
+  color: var(--meta);
 }
 
 .footnotes {
@@ -477,7 +478,7 @@ del {
   padding-top: 1rem;
   border-top: 1px solid var(--border);
   font-size: 0.85rem;
-  color: var(--muted);
+  color: var(--meta);
 }
 
 .footnotes hr {
@@ -527,7 +528,7 @@ pre code[data-lang]::after {
 pre code[data-lang]::before {
   content: attr(data-lang);
   left: 0;
-  color: var(--muted);
+  color: var(--meta);
   border-right: 1px solid var(--border);
   border-radius: 0 0 3px 0;
 }
@@ -572,7 +573,7 @@ main li > strong:first-child {
   display: inline-flex;
   align-items: center;
   gap: 0.15rem;
-  color: var(--muted);
+  color: var(--meta);
 }
 
 .cursor {
@@ -630,7 +631,7 @@ main li > strong:first-child {
 }
 
 footer {
-  color: var(--muted);
+  color: var(--meta);
   font-size: 0.85rem;
 }
 
@@ -866,7 +867,7 @@ body.framed {
   padding: 0.4rem 1rem 0.6rem;
   border-top: 1px solid rgba(149, 127, 184, 0.18);
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--meta);
   text-align: center;
 }
 
@@ -908,7 +909,7 @@ body.framed {
 .sc-toggle > summary {
   display: inline;
   cursor: pointer;
-  color: var(--muted);
+  color: var(--meta);
   list-style: none;
   white-space: nowrap;
 }
@@ -1010,7 +1011,7 @@ body.framed {
   margin: 0;
   padding: 0.5rem 1rem;
   background: transparent;
-  color: var(--muted);
+  color: var(--meta);
   font-size: 0.78rem;
 }
 
@@ -1034,7 +1035,7 @@ body.framed {
 
 .sc-w {
   flex: 0 0 auto;
-  color: var(--muted);
+  color: var(--meta);
   font-variant-numeric: tabular-nums;
 }
 
@@ -1266,7 +1267,7 @@ figure.pair img {
 }
 figure.pair figcaption {
   flex-basis: 100%;
-  color: var(--muted);
+  color: var(--meta);
   font-size: 0.85rem;
   margin-top: 0.25rem;
 }
@@ -1473,7 +1474,7 @@ body.framed::before {
   font-size: 0.6em;
   vertical-align: super;
   margin-left: 0.15em;
-  color: var(--muted);
+  color: var(--meta);
   text-shadow: none;
 }
 
