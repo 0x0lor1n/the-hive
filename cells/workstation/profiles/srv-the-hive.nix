@@ -1,12 +1,20 @@
 # /srv/the-hive: the one checkout of this repo on the workstation, read by
 # both accounts.
 #
-#   /srv/the-hive           <local>:hive 0750 -- group reads, only the owner
-#                           (who rebuilds) writes. cells/ inherits that.
-#   /srv/the-hive/dotfiles  group-writable through a default POSIX ACL --
-#                           nvim/tmux/zsh live here and home-manager points
-#                           at them with mkOutOfStoreSymlink, so either
-#                           account edits in place without a rebuild.
+#   /srv/the-hive           <local>:hive 0750 at the mountpoint (others: no
+#                           traversal), group-writable throughout via a
+#                           default POSIX ACL. Either account edits cells/,
+#                           dotfiles/ and the rest in place; the owner still
+#                           runs the rebuild and reviews the diff first.
+#
+# History: until 2026-09-20 only dotfiles/ (nvim/tmux/zsh, mkOutOfStoreSymlink
+# targets) and .ren/ carried the ACL, so that group write could not influence
+# what root builds. In practice the Entra account is the one doing the work
+# and kept hitting EACCES on profiles/ (e.g. llm-destyle.nix drifted from its
+# copy in the destyle repo because vkokurin could edit one and not the other).
+# The boundary was never a real one -- the owner rebuilds from the working
+# tree and reads the diff -- so it was dropped in favour of one ACL for the
+# whole checkout.
 #
 # An ACL rather than the obvious alternatives (measured 2026-09-14):
 # core.sharedRepository only touches .git/, setgid fixes the group but not the
@@ -14,9 +22,6 @@
 # bit. A default ACL is inherited by every file git creates later, under any
 # umask. ACLs are not in git and are lost on a fresh clone, so the rule is
 # re-applied by tmpfiles at every boot (A+ is recursive).
-#
-# The symlink target is a runtime path string, never an eval-time input, so
-# group write in dotfiles/ cannot influence what root builds.
 #
 # The dataset (rpool/safe/srv/the-hive, disks/<host>.nix) is not subject to
 # the @blank rollback. The clone itself is a one-off user step:
@@ -38,8 +43,8 @@
   # The mount comes from disko (disks/<host>.nix declares the dataset with
   # mountpoint = "/srv/the-hive").
 
-  # .envrc is trusted for both accounts without `direnv allow`: the checkout
-  # is 0750 owner-only writable and its .envrc is pinned by content hash.
+  # .envrc is trusted for both accounts without `direnv allow`: only the two
+  # hive members can write it and it is pinned by content hash anyway.
   # Here and not in home-manager: the NixOS direnv module (common/base.nix)
   # sets DIRENV_CONFIG=/etc/direnv, so only its settings are ever read.
   programs.direnv.settings.whitelist.prefix = ["/srv/the-hive"];
@@ -48,16 +53,12 @@
     # `z`, not `d`: adjust the mountpoint's owner/mode, never create a dir
     # that would then block `git clone` into it.
     "z /srv/the-hive 0750 ${host.userName} hive -"
-    # No `d` for dotfiles/ either (same clone reason); before the clone the
-    # line is a no-op with a warning. Named-group entries so the files' own
-    # group (users, from the cloning account) does not matter.
-    "A+ /srv/the-hive/dotfiles - - - - d:group:hive:rwx,group:hive:rwx"
-    # .ren/ is rensa's direnv layout (REN_STATE): the hook writes
-    # .ren/.gitignore and .ren/direnv/ on every load, for whichever account
-    # cd's in. Same ACL as dotfiles, or the Entra side dies with EACCES right
-    # after git's safe.directory lets it through (2026-09-15). `d` is fine
-    # here: the dir is gitignored and the clone never has to create it.
-    "d  /srv/the-hive/.ren 2770 ${host.userName} hive -"
-    "A+ /srv/the-hive/.ren - - - - d:group:hive:rwx,group:hive:rwx"
+    # One recursive ACL for the whole checkout (.git/ included, so either
+    # account can commit). Named-group entries so the files' own group
+    # (users, from the cloning account) does not matter. Before the clone the
+    # line is a no-op with a warning. This also covers .ren/ (rensa's direnv
+    # layout, written on every cd by whichever account) which used to need
+    # its own rule (2026-09-15).
+    "A+ /srv/the-hive - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 }
