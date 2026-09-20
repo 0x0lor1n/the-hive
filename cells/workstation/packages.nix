@@ -96,6 +96,12 @@
                   "/etc/fonts"
                   ["/etc/static/os-release" "/etc/os-release"]
                   ["/etc/static/lsb-release" "/etc/lsb-release"]
+                  # Things one attaches to a chat. Chromium reads the file
+                  # itself (drag-and-drop passes a plain path; the portal
+                  # dialog hands out /run/user/*/doc/, which isn't bound
+                  # either) -- unreadable => empty MIME => "not supported".
+                  (sloth.mkdir (sloth.concat' sloth.homeDir "/Recordings"))
+                  (sloth.mkdir (sloth.concat' sloth.homeDir "/Screenshots"))
                 ]
                 # Chromium enumerates cameras by scanning /dev/video* and
                 # reads the display name from /sys/class/video4linux/<dev>/
@@ -111,7 +117,15 @@
               # browser on the sandbox PATH and drops the URL (SSO redirect
               # never reaches Edge). NixOS' xdg-utils patch: force the portal
               # (OpenURI), which the dbus policy above already allows.
-              env = {NIXOS_XDG_OPEN_USE_PORTAL = "1";} // env;
+              # Chromium resolves file types via xdg-mime
+              # ($XDG_DATA_DIRS/mime/globs2). bwrap starts with an empty env
+              # and no /usr/share, so every upload is "not supported by Slack".
+              env =
+                {
+                  NIXOS_XDG_OPEN_USE_PORTAL = "1";
+                  XDG_DATA_DIRS = "${pkgs.shared-mime-info}/share";
+                }
+                // env;
               newSession = true;
               dieWithParent = true;
             };
