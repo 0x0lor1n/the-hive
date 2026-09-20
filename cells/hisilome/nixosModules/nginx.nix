@@ -45,6 +45,7 @@ in {
         # without ssi they render an empty hole and still return 200.
         extraConfig = ''
           ssi on;
+          error_page 404 /404.html;
           ${securityHeaders}
         '';
 
