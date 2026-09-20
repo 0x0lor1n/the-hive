@@ -14,6 +14,9 @@
   # Decrypted on the deploying workstation with its own TPM PIN identity
   # (same prompt as the deploy key). rage stops at the first TPM identity it
   # cannot open, so pick the one for this host instead of listing both.
+  # The PIN prompt is drawn on the tty and colmena's progress bar overwrites
+  # it, so "Uploading key" looks hung. Deploy with `colmena apply --verbose`
+  # (disables the bar) or type the PIN blind.
   icecastKey = file: {
     keyCommand = [
       "bash"
