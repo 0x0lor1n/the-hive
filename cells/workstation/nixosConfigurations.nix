@@ -87,6 +87,8 @@
       p.srv-the-hive
       # /srv/workspace: shared project clones (work/, projects/), both accounts write
       p.srv-workspace
+      # /srv/agents: hermes skills + memories shared by both accounts, sessions stay per-user
+      p.srv-agents
       # destyle: Qwen3-8B + LoRA на iGPU по требованию, 127.0.0.1:8080
       p.llm-destyle
       # `cpu-governor@<name>.service` for the powermenu's performance toggle

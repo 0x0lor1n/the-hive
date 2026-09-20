@@ -156,6 +156,11 @@ in
           mountpoint = "/srv/workspace";
           options.mountpoint = "legacy";
         };
+        "safe/srv/agents" = {
+          type = "zfs_fs";
+          mountpoint = "/srv/agents";
+          options.mountpoint = "legacy";
+        };
         # Docker's image/volume store (host-elster.nix): its own dataset, not
         # an impermanence bind under /persist -- tens of GB of layers are not
         # backup material. Legacy mount + overlay2 on top; the zfs storage

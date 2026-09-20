@@ -142,6 +142,7 @@ in
         #   zfs create -o canmount=off -o mountpoint=none rpool/safe/srv
         #   zfs create -o mountpoint=legacy rpool/safe/srv/the-hive
         #   zfs create -o mountpoint=legacy rpool/safe/srv/workspace
+        #   zfs create -o mountpoint=legacy rpool/safe/srv/agents
         "safe/srv" = {
           type = "zfs_fs";
           options = {
@@ -157,6 +158,11 @@ in
         "safe/srv/workspace" = {
           type = "zfs_fs";
           mountpoint = "/srv/workspace";
+          options.mountpoint = "legacy";
+        };
+        "safe/srv/agents" = {
+          type = "zfs_fs";
+          mountpoint = "/srv/agents";
           options.mountpoint = "legacy";
         };
       };
