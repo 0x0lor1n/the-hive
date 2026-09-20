@@ -7,7 +7,10 @@
 # Hermes itself is installed here too, system-wide: the Entra user is an
 # NSS-only account (no users.users, no home-manager), so systemPackages is
 # the only PATH both sessions share. State stays per-user in ~/.hermes
-# (persisted for both: layer-users-local.nix, auth-entra.nix).
+# (persisted for both: layer-users-local.nix, auth-entra.nix), except
+# skills/ and memories/, which are symlinks into /srv/agents/hermes
+# (srv-agents.nix) so both accounts run against one skill tree and one
+# MEMORY.md. Sessions stay per-user.
 #
 # Token diet for the agent's terminal, the same two shims the devshell runs:
 #   nixq  PATH shim named `nix`: collapses build/copy progress to one line.
@@ -74,6 +77,17 @@
       '')
       model)}
 
+    # skills/ and memories/ are shared by both accounts: /srv/agents/hermes
+    # (srv-agents.nix). A real directory here is pre-migration per-user state;
+    # leave it alone and let a human merge it, do not silently swap it out.
+    for d in skills memories; do
+      if [ -d "$HOME/.hermes/$d" ] && [ ! -L "$HOME/.hermes/$d" ]; then
+        echo "~/.hermes/$d is a real directory, not linking /srv/agents/hermes/$d over it" >&2
+      else
+        ln -sfn "/srv/agents/hermes/$d" "$HOME/.hermes/$d"
+      fi
+    done
+
     mkdir -p "$HOME/.hermes/plugins"
     # A real directory here is a hand-run `rtk init` of some other version;
     # ours is the pinned one.
@@ -127,7 +141,7 @@ in {
   # Per-user: every login (local user over ssh/greetd, Entra user on seat0)
   # gets model.* pointed at the proxy. Idempotent, so a no-op on later logins.
   systemd.user.services.hermes-seed-proxy = {
-    description = "Point ~/.hermes/config.yaml at the pxpipe proxy, enable the rtk plugin";
+    description = "Point ~/.hermes/config.yaml at the pxpipe proxy, enable the rtk plugin, link shared skills/memories";
     wantedBy = ["default.target"];
     path = [pkgs.coreutils pkgs.gnugrep pkgs.gnused];
     serviceConfig = {
