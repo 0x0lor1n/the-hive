@@ -61,11 +61,16 @@
   # holding these, so no rekeyed bundle exists for it (eval would assert).
   sshIdentities = lib.optionals (!host.isVm) (
     map (mkIdentity host.userName) [
-      "ssh-github"
       "ssh-w"
       "ssh-wgl"
     ]
     ++ [
+      # Personal GitHub key. The Entra account pushes to the same personal
+      # repos (this flake, the-hive tooling) and otherwise holds only the
+      # employer key; one key registered upstream, read through hive like
+      # runpod. Still passphrase-protected: typed once per session into that
+      # account's agent.
+      (mkSharedIdentity host.userName "ssh-github")
       # Rented GPU boxes for training runs. Passphrase-less, unlike the others:
       # the pod is destroyed after the run and a prompt would block a job
       # nobody is watching. Readable by the Entra account too (hive), which
