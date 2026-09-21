@@ -35,7 +35,7 @@ Invariants:
     1.8 is NOT affected — BASELINE_SITE is now a literal store path, so the agent can run that `diff -r` unaided.
 Exit criteria: `hisilome-split` exists with ≥ 40 commits ✅ (50); `$HISILOME` is a git repo on `main` with `ls` == the 57 tracked files' tree (no `music/`, no `public/`) ✅; gitleaks clean ✅; `BASELINE_SITE` recorded in Progress ✅. Nothing committed to the-hive except this file ✅.
 
-## Phase 1 — Standalone flake in $HISILOME ✅ (1.9 pending user)
+## Phase 1 — Standalone flake in $HISILOME ✅
 1.1 `git mv packages.nix nix/packages.nix; git mv nixosModules nix/modules; git mv devshells.nix nix/devshell.nix; git rm flake.nix` (the 178 B cell flake). Commit `layout: nix code under nix/`.
 1.2 `nix/packages.nix`: header `{ inputs, cell, ... }: let pkgs = inputs.pkgs;` → `pkgs: let`; `src = builtins.path { path = ./.; …}` → `path = ../.;` and `rel = lib.removePrefix (toString ../. + "/")`; `cell.packages.dev-nginx` (:318) → `dev-nginx` (already in scope after the `in {` block — hoist `dev-nginx` above `dev-site` or use `rec`). Add `inherit nginxHttpConfig nginxLocations devNginxConf;` to the returned set.
 1.3 `nix/modules/*.nix`: drop the outer `{ inputs, cell, ... }:` wrapper and `args`; each file becomes a plain NixOS module `{ config, lib, pkgs, ... }: let hisilome = import ../packages.nix pkgs; in …`; replace `cell.packages.X` → `hisilome.X` at default.nix:53–54 (defaultText `"hisilome.site"`), nginx.nix:35,52, station.nix:35,123,125,143. `default.nix` `imports = [ ./setup.nix ./station.nix ./nginx.nix ]`.
@@ -47,7 +47,7 @@ Exit criteria: `hisilome-split` exists with ≥ 40 commits ✅ (50); `$HISILOME`
 1.9 After the user confirms the name: create the GitHub repo (user, web UI or `gh repo create`), `git remote add origin git@github.com:0x0lor1n/hisilome.git`, `git push -u origin main`.
 Exit criteria: `nix flake check` clean; `diff -r` against BASELINE_SITE empty; `du -sh $HISILOME/music` == 1.1G and `cells/hisilome/music` absent; `git -C $HISILOME log --oneline | wc -l` ≥ Phase 0 count + 4; `origin/main` pushed.
 
-## Phase 2 — the-hive consumes the input ⏳ (next)
+## Phase 2 — the-hive consumes the input ✅
 2.1 `flake.nix` inputs: `hisilome.url = "github:0x0lor1n/hisilome"; hisilome.inputs.nixpkgs.follows = "nixpkgs";`. `nix flake lock` (or `--override-input hisilome path:$HISILOME` while iterating before 1.9 lands).
 2.2 `cells/server/profiles/site-hisilome.nix:11` → `imports = [inputs.hisilome.nixosModules.default];`; comment line 2 → points at the new repo.
 2.3 `flake.nix:73` delete the `// ren.get self [["hisilome" "devshells"]]` line; `cells/repo/devshells.nix:30` delete `"cells/hisilome/**"`; `git rm -r cells/hisilome`.
@@ -56,7 +56,7 @@ Exit criteria: `nix flake check` clean; `diff -r` against BASELINE_SITE empty; `
 2.6 One commit: `hisilome: consume github:0x0lor1n/hisilome, drop cells/hisilome`. `git diff --stat HEAD~1 | tail -1` shows ~57 deletions + 5 edits.
 Exit criteria: the-hive builds osgiliath toplevel with `cells/hisilome` absent; site diff vs BASELINE_SITE empty; `grep -rn hisilome --include=*.nix . | grep -v secrets` lists only `site-hisilome.nix`, `deploy-osgiliath.nix`, `nixosConfigurations.nix`, `flake.nix`, `layer-session.nix:105` (comment), `palettes.nix:45` (comment).
 
-## Phase 3 — Deploy ⏳
+## Phase 3 — Deploy ⏳ (next)
 3.1 `colmena apply --on osgiliath` from the-hive devshell (`dev`).
 3.2 Live checks: the two `curl` invariants; `curl -s https://hisilo.me/ | grep -c '<script'` == 0; `curl -s -o /dev/null -w '%{http_code}' https://hisilo.me/listen/` == 200; `ssh osgiliath systemctl is-active hisilome-setup icecast liquidsoap` all `active`; a listener-count fragment under stateDir updated within 60 s (`ssh osgiliath find <stateDir>/radio/state -newermt '-60 seconds' | head -1` non-empty).
 3.3 `git -C /srv/the-hive commit` state file `state: hisilome-extract — phase 3 deployed`.
@@ -85,5 +85,11 @@ If 0.3 finds a real secret in history: `git -C $HISILOME checkout --orphan main-
     Also: `devNginxConf` is a `writeText` derivation, so `lib.isDerivation` alone would have exported it as a package — `flake.nix` does `removeAttrs hisilome ["devNginxConf"]` first. `packages.x86_64-linux` = exactly the ten scripts + `site` + `default`. Stale `cells/hisilome` strings fixed in `nix/packages.nix:247` (comment), `process-compose.yaml:9`, `radio/icecast.xml:14`; `content/zero-js-radio/index.md:261` still links to `the-hive/tree/main/cells/hisilome` — content is frozen until Phase 3 ✅, fix in Phase 4.
     the-hive tree: nothing committed yet (this file only; `cells/workstation/packages.nix` was already modified before this work and is not mine).
 
-Next: 1.9 needs the user — confirm `github:0x0lor1n/hisilome` + visibility, create the repo, then `git -C $HISILOME remote add origin git@github.com:0x0lor1n/hisilome.git && git push -u origin main`. Phase 2 can start in parallel using a `path:` or `git+file:` input for the-hive locally, switching the URL to `github:` once pushed; 2.5's `NEW_TOPLEVEL` is the user's again (eval-time secrets).
-Blocked on: (a) confirm remote name `github:0x0lor1n/hisilome` and public/private — needed by 1.9 now; (b) LICENSE choice for the new repo — needed by 4.3 only.
+- 2026-09-21: 1.9 ✅ by user — `github:0x0lor1n/hisilome` public, `origin/main` = `6699255` (`repo: .envrc, .gitleaks.toml, README`).
+- 2026-09-21: Phase 2 ✅ — the-hive `8f97b06` `hisilome: consume github:0x0lor1n/hisilome, drop cells/hisilome` (64 files, +38/−4899). flake.lock pins `hisilome` → `6699255`, `hisilome/nixpkgs` follows.
+    NEW_TOPLEVEL: `/nix/store/wczymfwjw870mxdh4dxclk3kqgvymz1j-nixos-system-osgiliath-26.11pre-git` (user built; agent verified path + closure). Its hisilome-site = `45g4919q…` — **byte-identical to BASELINE_SITE** (`diff -r` empty). `hisilome-src` refs in closure: 0. Closure delta vs baseline `94hjbq…` = hash churn only (nginx.conf, setup script identical modulo store hashes) + 1 comment line in icecast.xml (`nixosModules/setup.nix` → `nix/modules/setup.nix`). `treefmt --ci` and pre-commit (treefmt, gitleaks) clean.
+    Deviations from 2.4: `.gitleaks.toml` **keeps** `0x0lor1n@` (plan said "keep if it trips on docs" — it trips on this file, line 31); README `dev hisilome` example replaced with `dev workstation` rather than deleted; `nix/dev.sh:6` comment same. Also removed the gitignored leftover `cells/hisilome/public/` (zola output).
+    Env gotcha: `/var/tmp/nix-import-encrypted/` was 700 crookedmirror, so eval under the Entra uid failed at `globals.nix` (`mkdir … Permission denied`); user `chmod 1777` it. `nix/rageImportEncrypted.sh:22` could create the root with 1777 itself — small follow-up, not part of this extract.
+
+Next: Phase 3 — deploy `8f97b06` to osgiliath (colmena apply from the devshell; needs TPM PIN → user runs it).
+Blocked on: LICENSE choice for the new repo — needed by 4.3 only.
