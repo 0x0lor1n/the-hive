@@ -3,7 +3,7 @@
 #
 # A PATH binary rather than a shellHook function: direnv marshals env vars
 # (incl. PATH) into the interactive shell, not functions. A child cannot cd its
-# parent, so the target dir is printed instead: cd "$(dev hisilome)".
+# parent, so the target dir is printed instead: cd "$(dev workstation)".
 set -euo pipefail
 
 root=$(git rev-parse --show-toplevel)

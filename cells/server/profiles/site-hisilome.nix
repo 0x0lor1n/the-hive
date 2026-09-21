@@ -1,5 +1,5 @@
 # Host-facing half of Hísilómë: domain, cert, secrets, firewall. The service
-# itself is cells/hisilome/nixosModules/.
+# itself is the `hisilome` flake input (github:0x0lor1n/hisilome).
 {
   inputs,
   cell,
@@ -8,7 +8,7 @@
   globals,
   ...
 }: {
-  imports = [inputs.cells.hisilome.nixosModules.default];
+  imports = [inputs.hisilome.nixosModules.default];
 
   services.hisilome = {
     enable = true;

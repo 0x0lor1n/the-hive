@@ -1,7 +1,0 @@
-{#- Inline the compiled d2 SVG so its text is selectable and searchable; an
-    <img> would ship it as an opaque box. The SVG is compiled by build-site
-    from the .d2 that sits next to the post's index.md (Zola asset
-    colocation), so a post carries its own diagrams. -#}
-<figure class="d2" role="img" aria-label="{{ alt }}">
-{{ load_data(path=page.colocated_path ~ name ~ ".svg") | safe }}
-</figure>

@@ -12,7 +12,7 @@ regexes = [
   '''noreply@''',
   '''@users\.noreply\.github\.com''', # GitHub noreply commit identity, author of this history
   '''example\.com''',
-  '''0x0lor1n@''',            # public contact on the hisilome site
+  '''0x0lor1n@''',            # public contact of the hisilome site (github:0x0lor1n/hisilome); still quoted in .hermes/state
   '''nikita\.vyach\.ivanov@''', # upstream dwl movestack patch author
   '''git@[A-Za-z0-9.*-]+:''', # ssh remote URL (git@host:path), not an address
   '''deathray-testing x@y\.com''', # p10k config template's example gcloud account
