@@ -27,7 +27,6 @@
       "*.patch"
       "*.pub"
       "*.lock"
-      "cells/hisilome/**"
     ];
   };
 

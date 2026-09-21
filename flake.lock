@@ -57,6 +57,26 @@
         "type": "github"
       }
     },
+    "hisilome": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1790008350,
+        "narHash": "sha256-GAQ5w9lJCShZnLa8xzFOHibNlbyNAEQljV9MlfYdWcY=",
+        "owner": "0x0lor1n",
+        "repo": "hisilome",
+        "rev": "6699255e957b22d8c17ccf53d7e0abaae5bff3b0",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0x0lor1n",
+        "repo": "hisilome",
+        "type": "github"
+      }
+    },
     "nix-github-actions": {
       "inputs": {
         "nixpkgs": [
@@ -149,6 +169,7 @@
     "root": {
       "inputs": {
         "colmena": "colmena",
+        "hisilome": "hisilome",
         "nixpkgs": "nixpkgs_2",
         "ren": "ren"
       }

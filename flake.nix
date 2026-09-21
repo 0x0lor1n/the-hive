@@ -8,6 +8,12 @@
     # __schema from this source and the CLI (same input, in the devshell)
     # asserts equality. Both halves must come from one revision.
     colmena.url = "github:zhaofengli/colmena/dc22786a43315b212eeafe13409a7203328e5a30";
+    # The site + radio station. Its module builds with the host's pkgs, so the
+    # follows only matters for `nix build github:0x0lor1n/hisilome`.
+    hisilome = {
+      url = "github:0x0lor1n/hisilome";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
   };
 
   outputs = {
@@ -69,8 +75,7 @@
       devShells.x86_64-linux =
         ren.get self [["repo" "devshells"]]
         // ren.get self [["workstation" "devshells"]]
-        // ren.get self [["wintermute" "devshells"]]
-        // ren.get self [["hisilome" "devshells"]];
+        // ren.get self [["wintermute" "devshells"]];
       # `agenix` (agenix-rekey CLI) runs `nix run .#agenix-rekey.<system>.<app>`.
       agenix-rekey = ren.get self [["workstation" "agenixRekey"]];
 
