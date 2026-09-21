@@ -1,5 +1,5 @@
 # Host-facing half of Hísilómë: domain, cert, secrets, firewall. The service
-# itself is the `hisilome` flake input (github:0x0lor1n/hisilome).
+# itself is the `hisilome` input of cells/server/flake.nix (github:0x0lor1n/hisilome).
 {
   inputs,
   cell,

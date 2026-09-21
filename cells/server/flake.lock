@@ -19,6 +19,25 @@
         "type": "github"
       }
     },
+    "hisilome": {
+      "inputs": {
+        "nixpkgs": "nixpkgs_2"
+      },
+      "locked": {
+        "lastModified": 1790031985,
+        "narHash": "sha256-hoEgFcy3h3roQg9Mkq58grm4jJBxU4c6sVyGxKiEw8o=",
+        "owner": "0x0lor1n",
+        "repo": "hisilome",
+        "rev": "32139547dc33be2204f03e9d670b5bd855fb6e1a",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0x0lor1n",
+        "repo": "hisilome",
+        "rev": "32139547dc33be2204f03e9d670b5bd855fb6e1a",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1778036283,
@@ -35,9 +54,26 @@
         "type": "github"
       }
     },
+    "nixpkgs_2": {
+      "locked": {
+        "lastModified": 1788179007,
+        "narHash": "sha256-hn1oU2rue2SYK8dAr8+WNZWtbsz1S2W5mnHlSEuh3bo=",
+        "owner": "NixOS",
+        "repo": "nixpkgs",
+        "rev": "34ab99075ac4f7e40cf037eef32cb1c360bb85e9",
+        "type": "github"
+      },
+      "original": {
+        "owner": "NixOS",
+        "ref": "nixos-unstable",
+        "repo": "nixpkgs",
+        "type": "github"
+      }
+    },
     "root": {
       "inputs": {
         "disko": "disko",
+        "hisilome": "hisilome",
         "utils": "utils"
       }
     },

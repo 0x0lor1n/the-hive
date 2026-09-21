@@ -8,12 +8,8 @@
     # __schema from this source and the CLI (same input, in the devshell)
     # asserts equality. Both halves must come from one revision.
     colmena.url = "github:zhaofengli/colmena/dc22786a43315b212eeafe13409a7203328e5a30";
-    # The site + radio station. Its module builds with the host's pkgs, so the
-    # follows only matters for `nix build github:0x0lor1n/hisilome`.
-    hisilome = {
-      url = "github:0x0lor1n/hisilome";
-      inputs.nixpkgs.follows = "nixpkgs";
-    };
+    # No other inputs here: a root input is fetched by every host. Per-cell
+    # dependencies (hisilome, lanzaboote, ...) live in cells/<cell>/flake.nix.
   };
 
   outputs = {
