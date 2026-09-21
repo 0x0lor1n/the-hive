@@ -56,10 +56,13 @@ Exit criteria: `nix flake check` clean; `diff -r` against BASELINE_SITE empty; `
 2.6 One commit: `hisilome: consume github:0x0lor1n/hisilome, drop cells/hisilome`. `git diff --stat HEAD~1 | tail -1` shows ~57 deletions + 5 edits.
 Exit criteria: the-hive builds osgiliath toplevel with `cells/hisilome` absent; site diff vs BASELINE_SITE empty; `grep -rn hisilome --include=*.nix . | grep -v secrets` lists only `site-hisilome.nix`, `deploy-osgiliath.nix`, `nixosConfigurations.nix`, `flake.nix`, `layer-session.nix:105` (comment), `palettes.nix:45` (comment).
 
-## Phase 3 — Deploy ⏳ (next)
-3.1 `colmena apply --on osgiliath` from the-hive devshell (`dev`).
+## Phase 3 — Deploy ✅
+3.1 `colmena apply --on osgiliath` from the-hive devshell (`dev`). — DONE 2026-09-21 by user (the-hive `1954dad`, lock `hisilome` → `6699255`).
 3.2 Live checks: the two `curl` invariants; `curl -s https://hisilo.me/ | grep -c '<script'` == 0; `curl -s -o /dev/null -w '%{http_code}' https://hisilo.me/listen/` == 200; `ssh osgiliath systemctl is-active hisilome-setup icecast liquidsoap` all `active`; a listener-count fragment under stateDir updated within 60 s (`ssh osgiliath find <stateDir>/radio/state -newermt '-60 seconds' | head -1` non-empty).
-3.3 `git -C /srv/the-hive commit` state file `state: hisilome-extract — phase 3 deployed`.
+    Network half DONE 2026-09-21 (agent): `/` 200, CSP `default-src 'none'`, `<script` count 0, `/listen/` 200.
+    Host half (user ran on osgiliath, 2026-09-21 17:26 host time; agent has no ssh key to the host): `systemctl is-active hisilome-setup icecast liquidsoap` → 3×`active`; `readlink /run/current-system` → `/nix/store/wczymfwjw870mxdh4dxclk3kqgvymz1j-nixos-system-osgiliath-26.11pre-git` == NEW_TOPLEVEL; `systemctl show liquidsoap -p NRestarts` → `NRestarts=0`; `journalctl -u liquidsoap --since -5min` → only `[lang.deprecated:2] "string_of"` warnings, one PID, no restart loop.
+    stateDir on osgiliath is `/persist/data/radio` (`site-hisilome.nix:17` → `globals.persistence.dataPath`), NOT `/var/lib/hisilome` (module default) — first attempt used the default path and got ENOENT. `find /persist/data/radio/radio/state -newermt "-60 seconds" | head -1` → `/persist/data/radio/radio/state` (non-empty). — DONE 2026-09-21.
+3.3 `git -C /srv/the-hive commit` state file `state: hisilome-extract — phase 3 deployed`. — DONE 2026-09-21.
 Exit criteria: all 3.2 checks green; `journalctl -u liquidsoap --since -5min` on osgiliath shows no restart loop.
 
 ## Phase 4 — Cleanup ⏳
@@ -91,5 +94,9 @@ If 0.3 finds a real secret in history: `git -C $HISILOME checkout --orphan main-
     Deviations from 2.4: `.gitleaks.toml` **keeps** `0x0lor1n@` (plan said "keep if it trips on docs" — it trips on this file, line 31); README `dev hisilome` example replaced with `dev workstation` rather than deleted; `nix/dev.sh:6` comment same. Also removed the gitignored leftover `cells/hisilome/public/` (zola output).
     Env gotcha: `/var/tmp/nix-import-encrypted/` was 700 crookedmirror, so eval under the Entra uid failed at `globals.nix` (`mkdir … Permission denied`); user `chmod 1777` it. `nix/rageImportEncrypted.sh:22` could create the root with 1777 itself — small follow-up, not part of this extract.
 
-Next: Phase 3 — deploy `8f97b06` to osgiliath (colmena apply from the devshell; needs TPM PIN → user runs it).
+- 2026-09-21: 3.1 ✅ (user deployed). 3.2 network checks ✅ from the agent; host checks not reachable agent-side — ssh-agent holds only jarvis/crookedmirror keys, `root@31.56.53.83: Permission denied (publickey)`; the host key is not in `~/.ssh/known_hosts` either (ssh-keyscan: `ssh-ed25519 …NKK3VXSY8JxgelHf+8U7XEOCYrjCAB81Xme7eoNkP6v`).
+
+- 2026-09-21: Phase 3 ✅ — all 3.2 checks green (user ran host side), no restart loop. Content freeze (Prereq) is lifted: `content/zero-js-radio/index.md:261` link fix may go into Phase 4.
+
+Next: 4.1 — `git -C /srv/the-hive branch -D hisilome-split` (fresh session; offer `plan-audit` first since Phase 4 was written before Phases 1–3 ran).
 Blocked on: LICENSE choice for the new repo — needed by 4.3 only.
