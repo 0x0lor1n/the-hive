@@ -65,7 +65,7 @@ Exit criteria: the-hive builds osgiliath toplevel with `cells/hisilome` absent; 
 3.3 `git -C /srv/the-hive commit` state file `state: hisilome-extract — phase 3 deployed`. — DONE 2026-09-21.
 Exit criteria: all 3.2 checks green; `journalctl -u liquidsoap --since -5min` on osgiliath shows no restart loop.
 
-## Phase 4 — Cleanup ⏳
+## Phase 4 — Cleanup ⏳ (4.1 ✅ 4.2 ✅; 4.3 LICENSE pending)
 4.1 `git -C /srv/the-hive branch -D hisilome-split`. `$HISILOME`: `nix flake update` is NOT done here (nixpkgs follows the-hive on the host; standalone lock can drift later, separately).
 4.2 `docs/install-workstation.md:16,96` still refer to `secrets/hisilome/*` — correct, leave. `.hermes/state/hisilome-feedback.md` paths point at `cells/hisilome/...` — historical, leave.
 4.3 New repo: add `LICENSE` (user's choice; content vs code may differ — Blocked on), badge-free README done in 1.7. Optionally `nix flake check` in a GitHub Actions workflow — out of scope unless asked.
@@ -98,5 +98,7 @@ If 0.3 finds a real secret in history: `git -C $HISILOME checkout --orphan main-
 
 - 2026-09-21: Phase 3 ✅ — all 3.2 checks green (user ran host side), no restart loop. Content freeze (Prereq) is lifted: `content/zero-js-radio/index.md:261` link fix may go into Phase 4.
 
-Next: 4.1 — `git -C /srv/the-hive branch -D hisilome-split` (fresh session; offer `plan-audit` first since Phase 4 was written before Phases 1–3 ran).
+- 2026-09-21: 4.1 ✅ `hisilome-split` deleted (was 9c3c286, unmerged into main by design — content lives in $HISILOME). 4.2 ✅ reviewed, nothing to change. Post-freeze fix: `content/zero-js-radio/index.md:261` now links `github.com/0x0lor1n/hisilome` — $HISILOME commit 665e6b0, NOT pushed (user pushes; next deploy will need a the-hive `flake.lock` bump for input `hisilome`). `git commit` in $HISILOME has no user.name/email configured — used `-c user.name=0x0lor1n -c user.email=0xolorin@users.noreply.github.com`.
+
+Next: 4.3 — add LICENSE to $HISILOME once chosen, then `Status: DONE`.
 Blocked on: LICENSE choice for the new repo — needed by 4.3 only.
