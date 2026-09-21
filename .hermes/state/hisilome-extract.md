@@ -18,12 +18,17 @@ Invariants:
 - Never push `hisilome-split` to origin; never `git push --force` anywhere.
 
 ## Phase 0 — Split + leak scan (kill-switch) ⏳
-0.1 In `/srv/the-hive`: `git subtree split -P cells/hisilome -b hisilome-split`. Record `git rev-list --count hisilome-split` and `git log --format=%h hisilome-split | tail -1` in Progress.
+0.1 In `/srv/the-hive`: `git subtree split -P cells/hisilome -b hisilome-split`. Record `git rev-list --count hisilome-split` and `git log --format=%h hisilome-split | tail -1` in Progress. — DONE 2026-09, `git subtree split -P cells/hisilome -b hisilome-split` → 50 commits, root `6cdcb05`, tip `9c3c286`, tree = the 14 top-level entries of the cell (no `music/`, no `public/`).
 0.2 `git clone -b hisilome-split /srv/the-hive /srv/hisilome && git -C /srv/hisilome branch -m main && git -C /srv/hisilome remote remove origin`.
     Checkout has no remote yet; `origin` is added in Phase 1.9 after the leak scan and the user's name confirmation.
-0.3 `gitleaks git /srv/hisilome` (whole history). Expected finding: `radio/icecast.xml:16–19` `hackme` ×3 — committed dev default, documented in `nixosModules/default.nix` sourcePasswordFile description; allowlist it in `/srv/hisilome/.gitleaks.toml`, not a leak. Anything else ⇒ kill-switch.
+    BLOCKED: the agent session is confined to `/srv/the-hive` by `~/.hermes/hooks/workdir-guard.py`; every `/srv/hisilome` path is refused. Unblock = relaunch hermes with `HERMES_WORKDIR_ALLOW=/srv/hisilome` (guard reads it from the env at hook time), or run 0.2 by hand. Everything from 1.1 on needs the same allowance.
+0.3 `gitleaks git /srv/hisilome` (whole history). Anything beyond the known public contact ⇒ kill-switch. — DONE 2026-09, run in-place against the same 50 commits (`gitleaks git . --log-opts=hisilome-split`, 8.30.1) since the clone is blocked; identical objects, so the result carries over to `/srv/hisilome`.
+    Result: **no leaks**. Default ruleset alone, repo ruleset, and repo PII rules with the allowlist stripped were all run; scanner proven live against a planted `ghp_`/`sk_live_` canary (2 findings), so the clean result is not a silent false pass.
+    Correction to the plan: the expected `radio/icecast.xml:16–19` `hackme` ×3 finding does NOT occur — gitleaks' default rules do not flag it. No icecast allowlist entry is needed in the new `.gitleaks.toml`.
+    Only PII hit, with the repo allowlist removed: `0x0lor1n@projectsegfau.lt` ×4 in `static/listen.html`, `templates/base.html`, `templates/macros.html` — the intentional public contact. Confirms 1.7: the new `.gitleaks.toml` needs exactly the `0x0lor1n@` allowlist line and nothing else.
 0.4 Baseline: `nix build /srv/the-hive#colmenaHive.toplevel.osgiliath --print-out-paths` → write the toplevel path and `nix-store -qR <toplevel> | grep -- '-hisilome-site$'` into Progress as `BASELINE_TOPLEVEL` / `BASELINE_SITE`. Every later diff compares against `BASELINE_SITE`.
-Exit criteria: `hisilome-split` exists with ≥ 40 commits; `/srv/hisilome` is a git repo on `main` with `ls` == the 57 tracked files' tree (no `music/`, no `public/`); gitleaks reports only the icecast `hackme` allowlisted; `BASELINE_SITE` recorded in Progress. Nothing committed to the-hive except this file.
+    BLOCKED: eval calls `extraBuiltins.rageImportEncrypted` on `secrets/globals.nix.age`; with no controlling tty the agent cannot answer the TPM PIN prompt, and the run also failed earlier at `mkdir /var/tmp/nix-import-encrypted` (Permission denied — check that dir's ownership/mode for UID 1737034432). Unblock = user runs `unlock-secrets` in an interactive devshell (same user, no sudo) to prime `/var/tmp/nix-import-encrypted/$UID/`, then the agent's `nix build` reuses the cached plaintext.
+Exit criteria: `hisilome-split` exists with ≥ 40 commits ✅ (50); `/srv/hisilome` is a git repo on `main` with `ls` == the 57 tracked files' tree (no `music/`, no `public/`) ⏳ (blocked on 0.2); gitleaks clean ✅; `BASELINE_SITE` recorded in Progress ⏳ (blocked on 0.4). Nothing committed to the-hive except this file.
 
 ## Phase 1 — Standalone flake in /srv/hisilome ⏳
 1.1 `git mv packages.nix nix/packages.nix; git mv nixosModules nix/modules; git mv devshells.nix nix/devshell.nix; git rm flake.nix` (the 178 B cell flake). Commit `layout: nix code under nix/`.
@@ -63,6 +68,9 @@ If 0.3 finds a real secret in history: `git -C /srv/hisilome checkout --orphan m
 
 ## Progress
 - 2026-09: plan written at the-hive 36c02c3. Read: flake.nix, cells/hisilome/{flake,devshells,packages}.nix, nixosModules/{default,setup}.nix, site-hisilome.nix, nix/dev.sh, .envrc, .gitignore, grep of every `hisilome` reference outside the cell (listed in Source refs). Not yet read line-by-line: nixosModules/station.nix and nginx.nix bodies (only their `cell.packages` refs), packages.nix :48–284. `gitleaks` 8.30.1 available in the repo devshell. Waiting: repo name/visibility confirmation.
+- 2026-09: Phase 0 half done. 0.1 ✅ `hisilome-split` = 50 commits, root `6cdcb05`, tip `9c3c286` (local branch, never pushed). 0.3 ✅ gitleaks clean over all 50 commits, canary-verified; icecast `hackme` is a non-finding (plan corrected). 0.2 and 0.4 blocked by the environment, not by the plan — see the two BLOCKED lines. `.scratch/` holds the throwaway gitleaks configs and JSON reports; untracked, delete whenever.
+- BASELINE_TOPLEVEL: not recorded (0.4 blocked)
+- BASELINE_SITE: not recorded (0.4 blocked)
 
-Next: Phase 0.1 — `git subtree split -P cells/hisilome -b hisilome-split` in /srv/the-hive (seconds). Then 0.2 → 0.3 → 0.4 in the same session.
-Blocked on: (a) confirm remote name `github:0x0lor1n/hisilome` and public/private — needed by 1.9, not by Phase 0; (b) LICENSE choice for the new repo — needed by 4.3 only.
+Next: 0.2 — `git clone -b hisilome-split /srv/the-hive /srv/hisilome && git -C /srv/hisilome branch -m main && git -C /srv/hisilome remote remove origin`, then 0.4. Trigger: hermes relaunched with `HERMES_WORKDIR_ALLOW=/srv/hisilome` and `/var/tmp/nix-import-encrypted/$UID/` primed by `unlock-secrets`.
+Blocked on: (a) **agent workdir guard** — hermes must be relaunched with `HERMES_WORKDIR_ALLOW=/srv/hisilome` or 0.2 run by hand; blocks 0.2 and all of Phase 1; (b) **TPM PIN / secrets cache** — user runs `unlock-secrets` interactively (and fixes `/var/tmp/nix-import-encrypted` perms if it is root-owned); blocks 0.4, 1.8, 2.5; (c) confirm remote name `github:0x0lor1n/hisilome` and public/private — needed by 1.9; (d) LICENSE choice for the new repo — needed by 4.3 only.
