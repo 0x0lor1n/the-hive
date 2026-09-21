@@ -20,6 +20,13 @@
   whisperCppVulkan = pkgs.whisper-cpp.override {vulkanSupport = true;};
 
   mkNixPak = inputs.nixpak.lib.nixpak {inherit (pkgs) lib pkgs;};
+  # $HOME is the /home/<cn> alias himmelblau creates (auth-entra.nix); the
+  # real directory is /home/<upn>. Anything that canonicalises before handing
+  # a path over (GIO: Thunar's cwd, hence drag-and-drop URIs) names
+  # /home/<upn>, which doesn't exist in the sandbox: bwrap mounts $HOME/...
+  # as a plain directory tree, the alias is no symlink inside. null when not
+  # an Entra box.
+  entraUpn = inputs.cells.common.globals.entra.user.upn;
   # Desktop apps behind bwrap + xdg-dbus-proxy. An app sees its own state
   # (~/.var/app/<appId>, mapped over the XDG dirs), ~/Downloads, the
   # Wayland/PipeWire sockets and a filtered session bus; nothing else of the
@@ -38,7 +45,12 @@
     (mkNixPak {
       config = {
         imports = [
-          ({sloth, ...}: {
+          ({sloth, ...}: let
+            # [src dst]: same host dir as the $HOME bind, at the canonical name.
+            alsoCanonical = sub:
+              lib.optional (entraUpn != null)
+              [(sloth.mkdir (sloth.concat' sloth.homeDir sub)) "/home/${entraUpn}${sub}"];
+          in {
             app.package = package;
             flatpak.appId = appId;
 
@@ -69,24 +81,35 @@
                 pipewire = true;
                 pulse = true;
               };
-              bind.rw = [
-                [(sloth.mkdir sloth.appConfigDir) sloth.xdgConfigHome]
-                [(sloth.mkdir sloth.appDataDir) sloth.xdgDataHome]
-                [(sloth.mkdir sloth.appCacheDir) sloth.xdgCacheHome]
-                (sloth.mkdir sloth.xdgDownloadDir)
-                # /tmp: bwrap starts from an empty root and nixpak adds none.
-                # Chromium/Electron keeps its SingletonSocket there (Qt its
-                # lock/IPC files); without it the main process hangs before
-                # mapping a window. It must be the same directory for every
-                # instance of one app: a URL-handler launch (browser ->
-                # slack://) is a second instance that must reach the first
-                # over that socket. With a private tmpfs the symlink dangles
-                # and the lock's pid is invisible from the new pid namespace,
-                # so Chromium treats it as stale and opens a second, empty
-                # window. A per-appId dir under XDG_RUNTIME_DIR, as Flatpak
-                # does it.
-                [(sloth.mkdir (sloth.concat' sloth.runtimeDir "/app/${appId}/tmp")) "/tmp"]
-              ];
+              bind.rw =
+                [
+                  [(sloth.mkdir sloth.appConfigDir) sloth.xdgConfigHome]
+                  [(sloth.mkdir sloth.appDataDir) sloth.xdgDataHome]
+                  [(sloth.mkdir sloth.appCacheDir) sloth.xdgCacheHome]
+                  (sloth.mkdir sloth.xdgDownloadDir)
+                  # Same dir under /home/<upn> (see entraUpn). Assumes the
+                  # default ~/Downloads: there is no user-dirs.dirs.
+                  # /tmp: bwrap starts from an empty root and nixpak adds none.
+                  # Chromium/Electron keeps its SingletonSocket there (Qt its
+                  # lock/IPC files); without it the main process hangs before
+                  # mapping a window. It must be the same directory for every
+                  # instance of one app: a URL-handler launch (browser ->
+                  # slack://) is a second instance that must reach the first
+                  # over that socket. With a private tmpfs the symlink dangles
+                  # and the lock's pid is invisible from the new pid namespace,
+                  # so Chromium treats it as stale and opens a second, empty
+                  # window. A per-appId dir under XDG_RUNTIME_DIR, as Flatpak
+                  # does it.
+                  [(sloth.mkdir (sloth.concat' sloth.runtimeDir "/app/${appId}/tmp")) "/tmp"]
+                  # Document portal: for a caller with an app id the FileChooser
+                  # portal doesn't return the real path but registers the pick
+                  # and hands back $XDG_RUNTIME_DIR/doc/<id>/<name>. Mount the
+                  # per-app FUSE view there, as Flatpak does; the portal
+                  # synthesizes by-app/<appId> for any id, so the source always
+                  # exists. rw: the same path is used for "save as".
+                  [(sloth.concat' sloth.runtimeDir "/doc/by-app/${appId}") (sloth.concat' sloth.runtimeDir "/doc")]
+                ]
+                ++ alsoCanonical "/Downloads";
               # Host fontconfig: its <dir> entries are store paths, already bound.
               # os-release: Electron apps (Slack) read it at startup to collect
               # distro info; without it Slack throws "No unique release file
@@ -98,11 +121,13 @@
                   ["/etc/static/lsb-release" "/etc/lsb-release"]
                   # Things one attaches to a chat. Chromium reads the file
                   # itself (drag-and-drop passes a plain path; the portal
-                  # dialog hands out /run/user/*/doc/, which isn't bound
-                  # either) -- unreadable => empty MIME => "not supported".
+                  # dialog goes through the doc mount above) -- unreadable
+                  # => empty MIME => "not supported".
                   (sloth.mkdir (sloth.concat' sloth.homeDir "/Recordings"))
                   (sloth.mkdir (sloth.concat' sloth.homeDir "/Screenshots"))
                 ]
+                ++ alsoCanonical "/Recordings"
+                ++ alsoCanonical "/Screenshots"
                 # Chromium enumerates cameras by scanning /dev/video* and
                 # reads the display name from /sys/class/video4linux/<dev>/
                 # (the symlink target under /sys/devices/pci0000:00 is
