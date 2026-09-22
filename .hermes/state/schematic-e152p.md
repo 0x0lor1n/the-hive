@@ -11,7 +11,7 @@ Target: `cells/wintermute/recon/xeon/sch/mods.md` answers three questions with p
 Side product: `recon/xeon/sch/*.md` facts (GPIO, SPI/EC, dGPU, TB3, power, display) so coreboot-5580 Phase 2/5 never open the PDF again.
 Source refs: `~/.hermes/cache/web/Dell-3520-LA-E152P-schematic.pdf` (Compal CDP80/CDP81 "Breckenridge 15 DSC (TBT), Kabylake H", REV 1.0 A00, 2016-11-10 — the board),
 `~/.hermes/cache/web/Dell-5580-LA-E151P-schematic.pdf` (UMA non-TBT sibling, 61 p. — already mined for backlog B1; diff only),
-`.hermes/state/coreboot-5580-backlog.md` (B1 WWAN, B3 OCuLink, B4 wifi/SSD — claims to re-verify), coreboot `src/mainboard/dell/optiplex_3050`, `src/ec/dell/mec5035`.
+`.hermes/state/coreboot-5580-backlog.md` (B1 WWAN, B3 OCuLink, B4 wifi/SSD — claims to re-verify), coreboot `src/mainboard/dell/sklkbl_desktops/variants/optiplex_3050` (moved upstream from `dell/optiplex_3050`), `src/ec/dell/mec5035`.
 DIY sources to check per phase (search, cite URL in note, never paste bodies): egpu.io forum + implementations table (Dell 5580/3520/7520, Alpine Ridge, M.2 OCuLink, ADT-Link R43SG/UT3G),
 r/eGPU, badcaps + vinafix (LA-E152P threads: TPM/ME/BIOS quirks), Dell community + notebookreview archive (5580/3520 WWAN whitelist, M.2 lane, 4 lanes vs 2),
 coreboot mailing list / gerrit (dell KBL ports, mec5035), r/thinkpad & r/Dell "m.2 wwan slot nvme/2.5GbE" threads, techinferno (WiGig slot reuse), openwrt/linux-wireless (MT7925/BE200 on KBL PCH).
@@ -65,7 +65,7 @@ Exit criteria: `OUT/pages.md` committed, 74 rows, no row with empty title; 0.4 a
 Exit criteria: `spi-ec.md` committed; every net `[visual]`; flash chip + EC part number with page; whitelist verdict present; `coreboot-5580.md` Progress
 gets "SPI/EC facts from E152P: see recon/xeon/sch/spi-ec.md" and any contradiction with its step 1.1 flagged.
 
-## Phase 2 — PCH GPIO map (feeds coreboot gpio.c / intelp2m cross-check) ⏳
+## Phase 2 — PCH GPIO map (feeds coreboot gpio.c / intelp2m cross-check) ✅
 2.1 Render p18, p20, p21 (and any page whose title contains `PCH`/`GPIO`) at 200 dpi; for each `GPP_x##` read: net name, direction, pull (`RHxxx`),
     `@` nopop, `<NN>` destination. Cross-check net name on destination page `[text]`.
 2.2 Cover note "GPIO MAP: Dell GPIO map EC16 062416 Compal Only" is a Dell doc we lack; GPIOs with no readable function stay `?`, never invented.
@@ -74,6 +74,7 @@ gets "SPI/EC facts from E152P: see recon/xeon/sch/spi-ec.md" and any contradicti
 2.4 Write `OUT/gpio.md`: table `GPP | net | dir | pull | page | function | coreboot pad-config guess` + What fits here. Mark `DGPU_PWR_EN` (GPP_D12,
     RH346 pop / RH349 nopop per p74) and `DGPU_PWROK`. Commit.
 Exit criteria: `gpio.md` committed with all GPP_A…GPP_H + GPD rows (unused say `NC`/`?`); spare clock/clkreq list present; note in `coreboot-5580.md` Progress.
+2.1–2.4 DONE 2026-09 → `OUT/gpio.md`: 204/204 pads (GPP_A..I + GPD; GPIO spans p.16–p.21, not only 18/20/21), 94 NC, every row `[visual]` 400 dpi; balls re-matched vs `pdftotext -bbox` = 0 mismatches.
 
 ## Phase 3 — dGPU / PEG (feeds coreboot devicetree, backlog B2 thermal, eGPU option "steal PEG") ⏳
 3.1 p6 (CPU PEG) + p49–55 (GM107, GDDR5) + p53 (`DGPU_PWR_EN`, `GPU_GC6_FB_EN`) + p69 (`+VGA_CORE`, `NVVDD_PSI`, `GPU_PWM_VID`): lane width `[visual]`
@@ -162,5 +163,11 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   Open: E152P draws RH37/RH177–185 as `@` while E151P pops them — DMM on board. EC ball numbers on p39 still [text].
   Invariant grep `schematic` hits this state file (name), not a PDF — false positive; pages.md uses `pN` cites (Phase 0 style).
 
-Next: Phase 2 — `gpio.md` (p18 GPP_A..H, p20/21 GPD; `[visual]` every row).
+- 2026-09: Phase 2 DONE → `cells/wintermute/recon/xeon/sch/gpio.md`. `DGPU_PWR_EN`=GPP_D12: RH346 100K PU `+3.3V_RUN` pop, @RH349 PD nopop
+  → dGPU on by default. SRCCLKREQ0..7# = B5..B10,H0,H1 (WWAN, WLAN, WiGig, KEYM, LAN, MMI, TBT, dGPU); device-side links `@RF@RH10..17` drawn nopop
+  (E151P: pop) → DMM, meanwhile `PcieRpClkReqSupport=false`. PCIE-13/14/16/19/20 + CLKOUT_PCIE_8..15 are ball-only NC → no spare slot without BGA work.
+  JUART1 (nopop 6-pin, PCH UART2 C20/C21) = coreboot console candidate. TBT_FORCE_PWR=D4, RTD3_CIO_PWR_EN=C13, CIO_PLUG_EVENT#=G2.
+  Invariants: `grep -L 'p\.[0-9]'` flags only pages.md (known), ls-files grep = this file only (known), gitleaks clean.
+
+Next: Phase 3 — `dgpu.md` (p6 PEG, p49–55 GM107, p53 power, p69 +GPU_CORE; PEG width `[visual]`).
 Blocked on: nothing.
