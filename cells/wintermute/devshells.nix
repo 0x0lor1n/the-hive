@@ -113,6 +113,52 @@
         flashrom -p ${programmer} -l "$recon/layout.txt" -i bios -w "$img"
       '';
   };
+
+  # Before/after numbers. Same kernel + same charger + lid open + on AC, or
+  # the comparison is noise. Run: stock (Phase 0.6 / A.7), coreboot (4.8 / 5.7),
+  # coreboot+undervolt (5.8). ~13 min. Output is one text file per run.
+  bench = pkgs.writeShellApplication {
+    name = "bench";
+    runtimeInputs = with pkgs; [git coreutils util-linux kmod sysbench stress-ng lm_sensors linuxPackages.turbostat];
+    text =
+      prologue
+      + ''
+        tag="''${1:?usage: bench <tag>   e.g. stock | coreboot | coreboot-uv}"
+        if [ "$(id -u)" -ne 0 ]; then
+          echo "bench: run as root (sudo --preserve-env=BOARD bench $tag)" >&2
+          exit 1
+        fi
+        if ! grep -qs 1 /sys/class/power_supply/AC*/online; then
+          echo "bench: plug in the 130 W charger first — battery numbers are not comparable" >&2
+          exit 1
+        fi
+        modprobe msr || true
+        n=$(nproc)
+        out="$recon/bench-$tag-$(date +%Y%m%d).txt"
+        ts="turbostat --quiet --Summary --show Busy%,Bzy_MHz,CoreTmp,PkgTmp,PkgWatt"
+        {
+          echo "== bench tag=$tag board=''${BOARD:-i7u} $(date -Is)"
+          echo "bios: $(cat /sys/class/dmi/id/bios_version) kernel: $(uname -r) nproc: $n"
+          echo "governor: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo n/a)"
+          echo "== boot"
+          command -v systemd-analyze >/dev/null && systemd-analyze || echo "n/a"
+          echo "== idle 60 s (Busy% / MHz / temp / W)"
+          # shellcheck disable=SC2086
+          $ts sleep 60
+          echo "== sysbench cpu 30 s"
+          sysbench cpu --threads="$n" --time=30 run | grep -E 'events per second|total time'
+          echo "== sysbench memory"
+          sysbench memory --threads="$n" --memory-block-size=1M --memory-total-size=32G run | grep -E 'MiB/sec|total time'
+          echo "== sustained 10 min: stress-ng all cores (bogo ops) + turbostat average over the run"
+          # shellcheck disable=SC2086
+          $ts stress-ng --cpu "$n" --timeout 600 --metrics-brief
+          echo "== sensors after"
+          sensors
+        } 2>&1 | tee "$out"
+        chown "''${SUDO_UID:-0}:''${SUDO_GID:-0}" "$out"
+        echo "bench: written to $out — commit it (text, small)."
+      '';
+  };
 in {
   wintermute = pkgs.mkShellNoCC {
     name = "wintermute";
@@ -152,6 +198,7 @@ in {
       dump
       inspect
       flash-bios
+      bench
       alejandra
     ];
     shellHook = ''

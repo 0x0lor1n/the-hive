@@ -39,7 +39,9 @@ Invariants:
 0.4 Panel + ports: `edid-decode /sys/class/drm/card*-eDP-1/edid` → recon/i7u/edid.txt; `lspci -nn | grep -i thunder`
     (JHL6540 present = TB3 on this board) → note in Progress.
 0.5 Commit text reports: `git add cells/wintermute/recon/i7u && git commit -m "wintermute: i7u live recon"`.
-Exit criteria: `recon/i7u/` committed; Progress has BG/ME/TB lines for i7u; BG ≠ verified.
+0.6 Baseline numbers on stock: `sudo --preserve-env=BOARD bench stock` (~13 min, on AC) → recon/i7u/bench-stock-<date>.txt.
+    Boot time, idle W/°C, sysbench cpu+mem, 10 min stress-ng bogo ops + avg MHz/W/°C. Commit.
+Exit criteria: `recon/i7u/` committed; Progress has BG/ME/TB lines for i7u; BG ≠ verified; bench-stock exists.
 
 ## Phase A — New board acceptance on stock BIOS (before old board goes back in) ⏳
 Purpose: prove the new board is not DOA and get its recon while it is convenient. No flashing.
@@ -50,7 +52,8 @@ A.3 Boot NixOS live USB (penrose ISO or any). `BOARD=xeon sudo --preserve-env=BO
 A.4 Boot Guard verdict for xeon: `BG xeon: <...>` in Progress. This is the real kill-switch for the end goal.
 A.5 ECC check: `dmesg | grep -i edac`, `dmidecode -t memory | grep -i 'error correction'` → recon/xeon/ecc.txt.
 A.6 TB3 check: `boltctl list` with dock attached; `lspci -nn` shows JHL6540 → recon/xeon/tb3.txt.
-A.7 15 min stress: `stress-ng --cpu 8 --timeout 900` + `sensors` — no throttling below base clock, fan spins. Note temps.
+A.7 `BOARD=xeon sudo --preserve-env=BOARD bench stock` → recon/xeon/bench-stock-<date>.txt. This is both the burn-in
+    (10 min all-core: no throttle below base 3.0 GHz, fan spins, temps) and the baseline for 5.7/5.8.
 A.8 Commit recon/xeon text. Remove new board, back in antistatic bag. Old board back in. Confirm old board boots stock.
 Exit criteria: `recon/xeon/` committed with acceptance.md; new board boxed; laptop runs old board on stock again.
 
@@ -105,7 +108,9 @@ Each step ends with a line in `recon/i7u/checklist.md` (works / partial / no).
 4.6 SD reader, WWAN M.2 power, audio (HDA verbs from stock `hda-verb` dump), webcam, Wi-Fi.
 4.7 Daily-drive old board on coreboot for ≥ 1 week. Then me_cleaner -S on ME region (first descriptor/ME write) + own SB
     keys via edk2 → lanzaboote. Requires fresh dump + backup before.
-Exit criteria: checklist.md all green or explicitly "deferred"; 1 week daily use; ME neutered and booting.
+4.8 `sudo --preserve-env=BOARD bench coreboot` → compare with bench-stock line by line. Regression > 5 % on sustained
+    MHz/W or idle W = a bug in devicetree/FSP UPD (power limits, C-states, thermal), fix before Phase 5. Table in Progress.
+Exit criteria: checklist.md all green or explicitly "deferred"; 1 week daily use; ME neutered and booting; bench ≥ stock.
 
 ## Phase 5 — Transfer to new board (Xeon + M620 + TB3) ⏳
 Precondition: Phase 4 exit met. New board recon already in recon/xeon/ (Phase A).
@@ -115,7 +120,10 @@ Precondition: Phase 4 exit met. New board recon already in recon/xeon/ (Phase A)
 5.4 Enable PEG/M620; verify `lspci` sees it, NixOS nvidia/nouveau loads. Power via GPIO from stock DSDT.
 5.5 Thunderbolt JHL6540: PCIe hotplug reservation in devicetree, TBT ACPI from stock DSDT. TB firmware on its own SPI — never touch.
 5.6 me_cleaner -S + SB keys as in 4.7. Daily-drive.
-Exit criteria: new board daily-driven on coreboot; TB dock + ECC confirmed (`edac`) or documented as not-yet.
+5.7 `BOARD=xeon sudo --preserve-env=BOARD bench coreboot` vs recon/xeon/bench-stock. Same rule as 4.8.
+5.8 Undervolt in devicetree (FSP UPD / MSR 0x150 offsets, start −50 mV core+cache, PL1 45 W, PL2 60 W). Stress 1 h.
+    `bench coreboot-uv`. Three-column table in Progress: stock / coreboot / coreboot-uv. Step −10 mV until unstable, back off 20.
+Exit criteria: new board daily-driven on coreboot; TB dock + ECC confirmed (`edac`) or documented as not-yet; bench table filled.
 
 ## Phase 6 — Upstream ⏳
 6.1 Clean code, `checkpatch`, `Documentation/mainboard/dell/latitude_5580.md`.
