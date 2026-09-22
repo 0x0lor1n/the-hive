@@ -121,9 +121,8 @@ Precondition: Phase 4 exit met. New board recon already in recon/xeon/ (Phase A)
 5.5 Thunderbolt JHL6540: PCIe hotplug reservation in devicetree, TBT ACPI from stock DSDT. TB firmware on its own SPI — never touch.
 5.6 me_cleaner -S + SB keys as in 4.7. Daily-drive.
 5.7 `BOARD=xeon sudo --preserve-env=BOARD bench coreboot` vs recon/xeon/bench-stock. Same rule as 4.8.
-5.8 Undervolt in devicetree (FSP UPD / MSR 0x150 offsets, start −50 mV core+cache, PL1 45 W, PL2 60 W). Stress 1 h.
-    `bench coreboot-uv`. Three-column table in Progress: stock / coreboot / coreboot-uv. Step −10 mV until unstable, back off 20.
-Exit criteria: new board daily-driven on coreboot; TB dock + ECC confirmed (`edac`) or documented as not-yet; bench table filled.
+5.8 Undervolt / PL / cooling → backlog B2 (`coreboot-5580-backlog.md`). Not part of the port.
+Exit criteria: new board daily-driven on coreboot; TB dock + ECC confirmed (`edac`) or documented as not-yet; bench coreboot ≥ stock.
 
 ## Phase 6 — Upstream ⏳
 6.1 Clean code, `checkpatch`, `Documentation/mainboard/dell/latitude_5580.md`.

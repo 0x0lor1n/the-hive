@@ -1,0 +1,85 @@
+# LA-E152P Xeon (Precision 3520) — backlog (after coreboot-5580.md is green)
+
+Nothing here blocks the coreboot port. Each item is a self-contained mini-plan; pick one when Phase 5 exit is met.
+Old i7-U board is out of scope (basement). Schematic on file: `~/.hermes/cache/web/Dell-5580-LA-E151P-schematic.pdf`
+(Compal LA-E151P = same CDP80 board as LA-E152P, only CPU/ECC stuffing differs; page refs below are from it).
+
+Order (cheapest / least risk first): B1 WWAN → B2 CPU tuning → B3 eGPU → B4 small stuff. B5 = never.
+
+---
+
+## B1 — WWAN modem (M.2 3042 B-key, JNGFF2, sch p.35)
+Verified from schematic, not from forums:
+- USB 2.0 (pin 7/9 → PCH USB2 port 8) and **USB 3.0 (pin 21/23/27/29 → PCH USB3 port 2)** are populated. Modem works by USB3 out of the box.
+- PCIe is routed but **not stuffed**: PCH PCIe port 17 (SATAXPCIE4) → CZ10/CZ11 0.1u 0402 marked `@`; CLK_PCIE_P0/N0 + CLKREQ_PCIE#0 wired.
+  Note on sheet: "9/24: Reserve for embedded location, refer Intel PDG 0.9". Not needed for a modem.
+- Power: +3.3V_ALW (SY8288B, TDC 5.9 A) → UZ2 EM5209VF load switch (6 A cont., 20 mΩ) → +3.3V_WWAN, enabled by EC `3.3V_WWAN_EN`
+  + `WWAN_PWR_EN` pin 6 (RZ43 47k pull-up). Bulk 2×47u + 22u on the rail. RM520N-GL peak ~2.5 A → fine.
+- Sideband: WWAN_RADIO_DIS# (pin 8, DZ4 → EC), WWAN_WAKE# (pin 15), HW_GPS_DISABLE# (pin 20), SIM via push-push JSIM1 (pins 22–30),
+  COEX1..3 no-stuff, SLOT2_CONFIG_0..3 → EC (STATE 8 = WWAN).
+- Antennas: lid has 2 WWAN pigtails (main + aux) besides the 2 Wi-Fi ones → 2×2 MIMO. No dedicated GNSS antenna; RM520N-GL / EM9191
+  share GNSS on an ANT port — GPS will be weak-to-none indoors, acceptable.
+
+Plan:
+B1.1 Pick module. Quectel RM520N-GL (5G, 3052, USB3 + PCIe) vs Sierra EM9191 (5G, 3042). 3052 needs the standoff moved 10 mm →
+     check clearance under the palmrest before ordering; EM9191 is drop-in. Either way B-key, USB3 mode.
+B1.2 Stock BIOS first: fit module, `lsusb` shows it, `mmcli -L`, `nmcli` connection with the SIM. Record in `recon/xeon/wwan.txt`.
+     If the module is not powered: stock BIOS has no WWAN whitelist on 5x80, but `WWAN_PWR_EN` is EC-driven — check EC exposes it.
+B1.3 coreboot: nothing beyond 4.6 (USB port map + EC GPIO for `3.3V_WWAN_EN`). Verify same `lsusb` on coreboot, add to checklist.
+B1.4 NixOS: ModemManager + `networkmanager` WWAN profile, `qmi`/`mbim` mode per module. Optional: `ntp` from GNSS.
+B1.5 (optional, only if a PCIe device is ever wanted in that slot) stuff CZ10/CZ11 0.1u 0402, set port 17 = PCIe in devicetree,
+     SRCCLKREQ0 on. ~10 min soldering. Not for the modem.
+Done when: modem works on coreboot after suspend/resume, W_DISABLE via rfkill.
+
+## B2 — CPU tuning (E3-1505M v6, 45 W) — cooling first, then voltage
+Bench tool already exists (`bench <tag>`, cells/wintermute/devshells.nix). Rule: every step = bench before / bench after, same charger,
+same room; table in Progress of coreboot-5580.md. Baselines `bench-stock` (A.7) and `bench-coreboot` (5.7) come from the main plan.
+
+B2.1 Cooling audit (stock coreboot, no UV): 10 min stress-ng → PkgTmp, throttle hits (`turbostat` Bzy_MHz drop), fan RPM via
+     `dell-smm-hwmon`. If sustained all-core < 3.0 GHz base or PkgTmp > 90 °C → cooling is the bottleneck, do B2.2 before any UV.
+B2.2 Cooling fixes, cheapest first, one at a time with a bench between:
+     a) repaste (already at board swap — confirm), pads on VRM/M620 not dried;
+     b) clean fan + fin stack, check the dual-heatpipe M620 heatsink is the one fitted (UMA single-pipe unit is the wrong part);
+     c) fan curve: `i8kmon`/`dell-smm-hwmon` manual curve, louder but 5–10 °C;
+     d) liquid metal on the bare die (Conductonaut) — foam dam, Kapton around, nickel heatsink only. Reported −10…−15 °C on 7820HQ.
+        Point of no return for the heatsink, do last and only if a)–c) still throttle.
+B2.3 Power limits in devicetree: PL1 45 W / PL2 60 W / Tau 28 s (Dell stock is 45/45ish). Only raise if B2.1 shows headroom.
+B2.4 Undervolt in devicetree (FSP UPD / MSR 0x150 offsets): start −50 mV core+cache, `bench coreboot-uv`, 1 h stress + 1 h
+     normal use. Step −10 mV until any WHEA/MCE/hang, back off 20 mV. Typical stable: −80…−125 mV on this die. GPU/SA offsets last.
+B2.5 Runtime toggle: keep UV in firmware but add `intel-undervolt` as a NixOS service for A/B without reflash.
+Done when: three-column table stock / coreboot / coreboot-uv filled, no throttling at 45 W sustained, 1 week daily use clean.
+
+## B3 — eGPU via M.2 → OCuLink (no TB3)
+Decision stands: PCIe 3.0 x4 from the M.2 2280 slot (~3.2 GB/s), not TB3 (shares 40 Gbps with 4K60 DP + USB + LAN behind WD19TB,
+PCIe tunnel ≤22 Gbps, and TB3 under coreboot is the riskiest bit of 5.5).
+
+B3.1 Parts: M.2 M-key → OCuLink SFF-8612 adapter board (ADT-Link / generic, ~15 CHF) + OCuLink cable 0.5 m + OCuLink eGPU dock
+     with ATX/DA-2 input (Minisforum DEG1 class, ~100 CHF) + PSU (Dell DA-2 220 W is enough for a ≤200 W card; ATX for a 3090).
+     Alternative if the OCuLink board doesn't fit under the palmrest: ADT-Link R43SG ribbon (wider, uglier).
+B3.2 Routing: OCuLink cable out through the VGA opening — cut the D-SUB shell, no desoldering. Slot ~15×2 mm. Keep the VGA
+     connector body as strain relief.
+B3.3 Storage moves: NVMe leaves the M.2 slot → 2.5" SATA SSD with the 68 Wh 4-cell (chosen). Not the 92 Wh + WWAN-slot NVMe path
+     (WWAN slot has no PCIe stuffed, see B1.5 — possible, but x1 and needs soldering).
+B3.4 Devicetree on that root port: CLKREQ off, ASPM off, hotplug off (cold-plug only). Verify `lspci -vv` link width x4 speed 8 GT/s.
+B3.5 NixOS: nvidia (or nouveau) on the eGPU as primary for the 4K monitor (DP on the card), iGPU keeps the dock DP for a 2nd screen.
+     PRIME offload config. Note the internal M620 stays disabled or as a 3rd GPU — decide when it's there.
+B3.6 Bench: `bench coreboot` unchanged (CPU), plus a GPU line (glmark2 / a game) at 1080p and 4K; compare with the same card in a
+     desktop x16 if possible to see the x4 tax.
+Done when: cold-plug eGPU drives the 4K monitor, laptop still suspends/resumes with the cable unplugged.
+
+## B4 — small, reversible
+- Wi-Fi: M.2 2230, no whitelist → Intel AX210 (Wi-Fi 6E + BT 5.3), same 2 IPEX antennas. ~20 CHF.
+- RAM: 2×32 GB DDR4-2400 ECC SO-DIMM (Micron MTA18ASF4G72HZ-2G6B1ZI). Verify `edac` (A.5).
+- Screen: 30-pin eDP 2-lane, FHD only (no 4K SKU on 3520 — that's the 7520). Upgrade = brighter FHD IPS: LP156WF6-SPK1/SPP1 or
+  NV156FHM-N4x (300 nit, ~95 % sRGB). Drop-in, VBT unchanged.
+- Battery: 68 Wh 4-cell (GJKNX) keeps the 2.5" bay → this is the one, given B3.3. 92 Wh (VG93N/NY5PG) only if eGPU plan is dropped.
+- Keyboard: backlit unit drop-in; coreboot only needs the brightness key (4.3).
+- Dock: WD19TB gives 130 W (180 W brick) — power + LAN + USB + kb/mouse. Barrel 130 W for travel.
+- me_cleaner -S + HAP, own SB keys → lanzaboote: already in the main plan (4.7/5.6).
+- TB3 NVM firmware: own SPI, Dell ships updates in the BIOS package. Under coreboot only `fwupd` if it lags; otherwise leave it.
+
+## B5 — not worth it
+- HDMI 2.0 rework: LSPCON pads exist on some revisions, no BOM. No.
+- 4K internal panel: see B4. No.
+- eGPU over TB3: see B3. No.
+- EC firmware (battery whitelist, fan curve, PD): closed. Don't chase.
