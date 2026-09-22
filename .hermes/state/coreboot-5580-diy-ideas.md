@@ -26,8 +26,18 @@ Old i7-U board is out of scope (basement). Nothing here blocks coreboot-5580.md.
 - Fan: EC-controlled, curve is Dell's regardless of coreboot. Manual override via `dell-smm-hwmon` (`i8k`), 5580 is in the supported list.
 
 ## Ports / dock
-- TB3 (JHL6540): eGPU works (Razer Core / ADT-Link R43SG) at PCIe 3.0 x4. Under coreboot needs 5.5 done.
-- USB-C PD charging: not supported by EC on this generation, port is TB3 data + DP only. 130 W barrel stays; no mod path.
+- USB-C PD input: supported. Dell WD19 compat table lists Latitude 5580 / Precision 3520 with 130 W from WD19TB (180 W brick).
+  Dock = power + LAN + USB + keyboard/mouse. Barrel adapter only for travel.
+- eGPU — decision: **M.2 2280 → ADT-Link R43SG**, PCIe 3.0 x4 direct (~3.2 GB/s), not TB3.
+  TB3 behind WD19TB shares 40 Gbps with 4K60 DP tunnel + USB + LAN, PCIe tunnel is ≤22 Gbps anyway; and TB3 under coreboot is
+  the riskiest part of 5.5. M.2 path is just a root port that's already enabled. Cold-plug only.
+  Devicetree: CLKREQ off + ASPM off on that root port (ribbon adapters break both).
+  Routing: ribbon out through the VGA opening — cut the DSUB shell, no need to desolder. Slot needed ~15×2 mm.
+  4K monitor → eGPU DP, not the dock. Dock DP stays free for a second screen on iGPU.
+  Power: ATX PSU or Dell DA-2 220 W.
+- Storage after M.2 goes to eGPU: option A (chosen) 68 Wh 4-cell + 2.5" SATA SSD, zero risk.
+  Option B 92 Wh + 2242 NVMe in WWAN slot (x1, ~900 MB/s) — needs proof the WWAN connector carries PCIe on LA-E152P first.
+- TB3 (JHL6540) stays for the dock only. eGPU over TB3 not planned.
 - Displays: DP over TB3 + HDMI 1.4 + VGA = 3 external. HDMI 2.0 absent (no LSPCON populated).
 
 ## Firmware-adjacent (after coreboot works)
