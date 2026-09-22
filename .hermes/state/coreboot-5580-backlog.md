@@ -68,10 +68,25 @@ B3.6 Bench: `bench coreboot` unchanged (CPU), plus a GPU line (glmark2 / a game)
 Done when: cold-plug eGPU drives the 4K monitor, laptop still suspends/resumes with the cable unplugged.
 
 ## B4 — small, reversible
-- Wi-Fi: M.2 2230, no whitelist → Intel AX210 (Wi-Fi 6E + BT 5.3), same 2 IPEX antennas. ~20 CHF.
-- RAM: 2×32 GB DDR4-2400 ECC SO-DIMM (Micron MTA18ASF4G72HZ-2G6B1ZI). Verify `edac` (A.5).
-- Screen: 30-pin eDP 2-lane, FHD only (no 4K SKU on 3520 — that's the 7520). Upgrade = brighter FHD IPS: LP156WF6-SPK1/SPP1 or
-  NV156FHM-N4x (300 nit, ~95 % sRGB). Drop-in, VBT unchanged.
+- Wi-Fi: M.2 2230 A+E, no whitelist → **Fenvi WF-M925-MPA1 (MediaTek MT7925B22M)**: Wi-Fi 7 2×2, 2.4/5/6 GHz, 320 MHz, BT 5.4,
+  PCIe (not CNVio), `mt7925e` (kernel ≥ 6.10 stable), MHF4. ~30 CHF. Chosen over BE200 (Kaby Lake acceptance unverified) and
+  QCNCM865 (`ath12k` immature). MT7927 = same on 2 antennas. Stock card has no WPA3 → do this early, no coreboot dependency.
+  Regdom CH: 6 GHz lower band only (5945–6425) → `options cfg80211 ieee80211_regdom=CH`. Needs a 6E/7 router to matter.
+- Antennas (lid, 4 pigtail slots total — 2 WLAN corners + 2 WWAN centre; that is all the routing room there is, 4×4 WWAN is not
+  a thing in laptops): 2× FPC 2.4/5/6 GHz MHF4 (~8 CHF pair) on the WLAN slots — stock ones radiate at 6 GHz but with loss;
+  2× FPC 600–6000 MHz MHF4 on the WWAN slots when the modem lands (stock LTE ones ok for n78, weak on n77/n79). Same order and
+  same lid teardown as the panel swap + double-sided tape.
+- RAM: 2×32 GB DDR4-2400 ECC SO-DIMM (Micron MTA18ASF4G72HZ-2G6B1ZI). Verify `edac` (A.5). Check 2×32 on CM238 before ordering.
+- Screen: 30-pin eDP 2-lane, FHD only (no 4K SKU on 3520 — that's the 7520). Upgrade = brighter FHD IPS: **BOE NV156FHM-N61**
+  (300 nit, 72 % NTSC, matte, 3.2 mm) — first pick; AUO B156HAN06.1 second. Drop-in, VBT unchanged. Glued with double-sided tape.
+- Hinges: L/R differ, buy as a pair.
+- Thermal: PTM7950 on CPU + GPU dies; Thermalright Odyssey 85×45 in 1.0 mm (M620 GDDR5) and 1.5 mm (VRM tab) — measure the
+  old pads with calipers first, thicker-than-stock lifts the heatsink off the die. 2.0 mm only for the 3090 backside.
+- Storage: NVMe→SATA adapters do not exist (PCIe ≠ AHCI; "M.2 to SATA" = M.2 SATA only). PC801 1 TB stays in the M.2 slot until
+  OCuLink (B3) needs it. 2.5" bay: **Fanxiang S101 2 TB** (~182 CHF, YMTC TLC, DRAM-less, 7 mm; 870 EVO is 240/TB now) — official
+  Fanxiang seller only, `smartctl -a` + `f3probe --destructive` on arrival. Needs the bay cable + caddy (non-SATA SKU ships without).
+  ZFS: same layout as elster (ashift=12, autotrim=on, zstd, atime=off, weekly zpool-trim + scrub) plus `zfs.zfs_arc_max=8G`
+  (elster runs c_max=61 GiB unlimited — set 12G there too). Second NVMe: WWAN slot takes 2242 B+M (x1, ~800 MB/s) but conflicts with B1.
 - Battery: 68 Wh 4-cell (GJKNX) keeps the 2.5" bay → this is the one, given B3.3. 92 Wh (VG93N/NY5PG) only if eGPU plan is dropped.
 - Keyboard: backlit unit drop-in; coreboot only needs the brightness key (4.3).
 - Dock: WD19TB gives 130 W (180 W brick) — power + LAN + USB + kb/mouse. Barrel 130 W for travel.
