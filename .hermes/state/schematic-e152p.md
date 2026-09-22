@@ -51,7 +51,7 @@ Invariants:
     (`NA`, nopop, slot). This is the raw material for every FIT verdict later; goes at the bottom of `pages.md` as `## Lane budget (unverified)`.
 Exit criteria: `OUT/pages.md` committed, 74 rows, no row with empty title; 0.4 all three present; lane budget has 20 PCH rows + PEG; Progress line in `coreboot-5580.md` pointing to `pages.md`.
 
-## Phase 1 — SPI flash, EC and boot path (feeds coreboot-5580 Phase 1/2) ⏳
+## Phase 1 — SPI flash, EC and boot path (feeds coreboot-5580 Phase 1/2) ✅
 1.1 Find the SPI ROM sheet (grep `W25Q|SPI_CS|SPI_CLK|BIOS_REC` across `p*.txt`): part number(s), size, voltage rail, whether EC shares the flash
     (EC `SPI_CS#` on same bus?) and whether there is a second flash for EC. Render page `[visual]`.
 1.2 EC sheet (p39 per grep, verify): EC part number (expect MEC5035-class — confirm, do not assume), EC↔PCH buses (LPC/eSPI? SMBus? which GPIOs),
@@ -155,5 +155,12 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   p49 `GM107-ES-A1_BGA908`). Lane budget: PCIE-1..20 + PEG + DMI + eDP from p3/p2 `[text]`; free on paper: PCIE-13,14,16,19,20.
   Findings for later phases: two flashes on p2 (W25Q128FVSIQ + W25Q64FVSSIQ) → P1; PD controller p31 has its own SPI → exclude in P1; EC = MEC5105 (p39/40/74).
 
-Next: Phase 1 — `spi-ec.md` (p20 PCH SPI, p41 TPM CS, p40 EC SPI_IO0..3, p2 which flash is which; `[visual]` every net).
+- 2026-09: Phase 1 DONE → `cells/wintermute/recon/xeon/sch/spi-ec.md`. SPI sheet is p19, not p20. One flash `UC5` W25Q128FVSIQ on CS#0;
+  `@UC6` W25Q64 nopop (Phase 0 "two flashes" corrected). EC MEC5105 on eSPI (`ESPI@ RH78`), `UE9`/SHD path is `LPC@` → EC fw in `UC5`.
+  TPM NPCT650 on SPI0 CS#2. Straps: BIOS_REC=GPP_F10 (RH76 PU), top swap @RH86 off, ME_FWP←EC `ME_FW_EC` via QH4 → HDA_SDO.
+  Whitelist verdict: only M.2 CONFIG_0..3 module-type detect → EC, no ID strap; coreboot not a prereq for network mods.
+  Open: E152P draws RH37/RH177–185 as `@` while E151P pops them — DMM on board. EC ball numbers on p39 still [text].
+  Invariant grep `schematic` hits this state file (name), not a PDF — false positive; pages.md uses `pN` cites (Phase 0 style).
+
+Next: Phase 2 — `gpio.md` (p18 GPP_A..H, p20/21 GPD; `[visual]` every row).
 Blocked on: nothing.
