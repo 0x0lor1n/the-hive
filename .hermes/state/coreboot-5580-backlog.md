@@ -73,9 +73,9 @@ Done when: cold-plug eGPU drives the 4K monitor, laptop still suspends/resumes w
   QCNCM865 (`ath12k` immature). MT7927 = same on 2 antennas. Stock card has no WPA3 → do this early, no coreboot dependency.
   Regdom CH: 6 GHz lower band only (5945–6425) → `options cfg80211 ieee80211_regdom=CH`. Needs a 6E/7 router to matter.
 - Antennas (lid, 4 pigtail slots total — 2 WLAN corners + 2 WWAN centre; that is all the routing room there is, 4×4 WWAN is not
-  a thing in laptops): 2× FPC 2.4/5/6 GHz MHF4 (~8 CHF pair) on the WLAN slots — stock ones radiate at 6 GHz but with loss;
-  2× FPC 600–6000 MHz MHF4 on the WWAN slots when the modem lands (stock LTE ones ok for n78, weak on n77/n79). Same order and
-  same lid teardown as the panel swap + double-sided tape.
+  a thing in laptops): WLAN pair — **deferred until the router goes 6E/7**; stock pigtails are fine on 2.4/5 GHz, MT7925 goes in on
+  them now. Then 2× FPC 2.4/5/6 GHz MHF4 (~8 CHF pair). WWAN pair — 2× FPC 600–6000 MHz MHF4 with the modem (B1), stock LTE ones
+  ok for n78, weak on n77/n79. Either swap = same lid teardown as the panel; batch them with the panel if timing allows.
 - RAM: 2×32 GB DDR4-2400 ECC SO-DIMM (Micron MTA18ASF4G72HZ-2G6B1ZI). Verify `edac` (A.5). Check 2×32 on CM238 before ordering.
 - Screen: 30-pin eDP 2-lane, FHD only (no 4K SKU on 3520 — that's the 7520). Upgrade = brighter FHD IPS: **BOE NV156FHM-N61**
   (300 nit, 72 % NTSC, matte, 3.2 mm) — first pick; AUO B156HAN06.1 second. Drop-in, VBT unchanged. Glued with double-sided tape.
