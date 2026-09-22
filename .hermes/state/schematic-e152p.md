@@ -40,7 +40,7 @@ Invariants:
 - No edits to `coreboot-5580.md` / `-backlog.md` except appending a dated line to their Progress pointing at the new `OUT` file.
 - One `OUT` file per session; each session ends with a commit of that file only.
 
-## Phase 0 — Page index (kill-switch) ⏳
+## Phase 0 — Page index (kill-switch) ✅
 0.1 `mkdir -p $SCRATCH && cd $SCRATCH && for i in $(seq 1 74); do pdftotext -layout -f $i -l $i $SCH p$i.txt; done`. Confirm `sha256sum $SCH` invariant.
 0.2 For each page pull the title block: `grep -A2 -E '^\s*Title' p$i.txt` + first 3 distinctive net/part names. Where the title is empty (Compal
     puts it in a drawing box that pdftotext drops), render `pdftoppm -r 100 -f $i -l $i -png $SCH pg` and read the bottom-right box with vision.
@@ -150,5 +150,10 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   chinafix.tech copy is a 5-page teaser — discarded. Backlog header updated with both schematics + preliminary page map. Nothing extracted yet.
   Plan revised same day: every phase carries a "What fits here" DIY-checked verdict; Phase 8 = mods.md (eGPU / networks / storage).
 
-Next: Phase 0.1 — `pdftotext` all 74 pages into `$SCRATCH`, then 0.2 → 0.5 (one session, ~40 min of page reading).
+- 2026-09: Phase 0 DONE → `cells/wintermute/recon/xeon/sch/pages.md`. sha256 invariant. 74/74 titles (13 via tesseract OCR of the title block,
+  pdftotext drops them on image-titled sheets: p7,39,40,54-56,61,62,64,65,67-69,71,72). Kill-switch 0.4 PASSED (p1 `LA-E152P`+`DSC (TBT)`, p29 `ALPINE-RIDGE_BGA337`,
+  p49 `GM107-ES-A1_BGA908`). Lane budget: PCIE-1..20 + PEG + DMI + eDP from p3/p2 `[text]`; free on paper: PCIE-13,14,16,19,20.
+  Findings for later phases: two flashes on p2 (W25Q128FVSIQ + W25Q64FVSSIQ) → P1; PD controller p31 has its own SPI → exclude in P1; EC = MEC5105 (p39/40/74).
+
+Next: Phase 1 — `spi-ec.md` (p20 PCH SPI, p41 TPM CS, p40 EC SPI_IO0..3, p2 which flash is which; `[visual]` every net).
 Blocked on: nothing.
