@@ -140,6 +140,7 @@ If Boot Guard verified on xeon but not on i7u: coreboot stays on old board as a 
 - 2026-09: SPI chip on old board identified: W25Q128FVSQ (SOIC-8, 3.3 V, 16 MiB). WSON risk closed; LDO not needed.
 - 2026-09: plan rewritten granular. Sequence fixed: Phase 0 (live recon, old) → A (new board acceptance on stock, then boxed)
   → 1–4 full coreboot cycle on old board → 5 new board → 6 upstream. Old board = polygon for every first-time step.
+- 2026-09: E152P schematic Phase 0 → `cells/wintermute/recon/xeon/sch/pages.md` (74-page index, kill-switch passed, PCH lane budget: 13,14,16,19,20 unused on paper).
 
 Next: 0.1 — `dev wintermute && sudo --preserve-env=BOARD recon` on the live laptop, now, before any teardown.
 Then A.1 (new board acceptance) whenever you open the chassis; then 1.1 on clip arrival.
