@@ -1,8 +1,14 @@
 # LA-E152P Xeon (Precision 3520) — backlog (after coreboot-5580.md is green)
 
 Nothing here blocks the coreboot port. Each item is a self-contained mini-plan; pick one when Phase 5 exit is met.
-Old i7-U board is out of scope (basement). Schematic on file: `~/.hermes/cache/web/Dell-5580-LA-E151P-schematic.pdf`
-(Compal LA-E151P = same CDP80 board as LA-E152P, only CPU/ECC stuffing differs; page refs below are from it).
+Old i7-U board is out of scope (basement).
+Schematics on file (`~/.hermes/cache/web/`):
+- `Dell-3520-LA-E152P-schematic.pdf` — **the Xeon board**, "Breckenridge 15 DSC (TBT), Kabylake H", REV 1.0 (A00), 74 p., Compal 2016-11-10.
+  sha256 551d1fe5…1a9cb. Source: indiafix.in → Google Drive RAR (same 2.8 MB file as t.me/schematicslaptop). chinafix.tech "pdf" is a 5-page teaser — ignore.
+- `Dell-5580-LA-E151P-schematic.pdf` — old i7-U UMA board, 61 p. Page refs below still come from E151P; E152P page map: p2 block diagram,
+  p3 PM/lane table, p6 CPU PEG, p16 PCH lanes, p20–21 PCH GPIO (DGPU_PWR_EN RH346/RH349), p29–33 Alpine Ridge + TPS65982, p35 WWAN,
+  p37 M.2 Key M, p42–43 SATA/SSD, p47 KB/TP, p49–55 GM107 (N17M-Q3 / N16S-GT1-KA) + GDDR5, p56 ISL95857 VCC_CORE, p57 battery, p69 +VGA_CORE, p74 rev history.
+  Differs from E151P: Alpine Ridge TBT (PCIe 5..8 from PCH) + PD, dGPU on CPU PEG x16, HDMI via DP-demux; M.2 Key M is PCH PCIe 9..12 (x4) or SATA-0A.
 
 Order (cheapest / least risk first): B1 WWAN → B2 CPU tuning → B3 eGPU → B4 small stuff. B5 = never.
 
