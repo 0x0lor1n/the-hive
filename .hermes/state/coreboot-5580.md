@@ -11,7 +11,7 @@ Source refs: `mainboard/dell/optiplex_3050` (same gen, Dell, Kaby Lake, ME/BootG
 Hardware on hand: ESP-Prog (FT2232H, MPSSE → flashrom `ft2232_spi:type=2232H,port=A,divisor=8`),
 old i7-U board (in the laptop now), new Precision 3520 board (E3-1505M v6 + M620), dGPU heatsink,
 130 W DA130PE1-00 charger. SOIC-8 clip: ordered — confirm arrival in Progress.
-Optional: 3.3 V LDO module, 1 kΩ pull-up.
+Optional: 3.3 V LDO module, 1 kΩ pull-up. (LDO likely unneeded: chip is 3.3 V native, see 1.1.)
 Repo: rensa cell `cells/wintermute`. Own `flake.nix`+`flake.lock` pin upstream coreboot as non-flake input.
 `dev wintermute` → devshell with flashrom/flashprog, coreboot-utils, intelp2m, me_cleaner, uefitool, msr-tools,
 acpica, coreboot-toolchain.i386+x64, scripts `recon` / `dump` / `inspect` / `flash-bios`.
@@ -56,7 +56,7 @@ Exit criteria: `recon/xeon/` committed with acceptance.md; new board boxed; lapt
 
 ## Phase 1 — Physical access: chip, clip, first dump (old board) ⏳
 Waits on: SOIC-8 clip arrival.
-1.1 Teardown to bare board. Locate SPI flash: count (1 or 2), package (SOIC-8 vs WSON-8), marking. Photo → recon/i7u/spi-chip.jpg.
+1.1 ✅ Old board (LA-E151P): single Winbond W25Q128FVSQ, date 1710 — 16 MiB, 3.3 V, SOIC-8 208 mil. flashrom name `W25Q128.V`, JEDEC 0xef4018. Clip fits. Photo → recon/i7u/spi-chip.jpg (todo).
     WSON-8 ⇒ clip useless; STOP, order WSON probe / plan hot-air to SOIC socket. Note in Blocked on.
 1.2 Wire ESP-Prog → clip: TCK→CLK, TDI→MOSI, TDO→MISO, TMS→CS#, GND→GND, 3.3V→VCC+WP#+HOLD#.
     Board: no AC, no battery, no CMOS cell. Multimeter: 3.3 V on VCC pin with programmer plugged in, 0 V without.
@@ -130,6 +130,7 @@ If Boot Guard verified on xeon but not on i7u: coreboot stays on old board as a 
 - 2026-09: ORDERED — SOIC-8 clip (clone), Precision 3520 board (LA-E152P, E3-1505M v6 + M620), dGPU heatsink+pipes, 130 W DA130PE1-00 charger.
 - Side note: CWWK S8 (i3-N305, ADL-N) firewall — coreboot NOT feasible (no public ADL-N FSP, no port, no Dasharo). Not pursued.
 - 2026-09: ARRIVED — new board, cooler, charger. Clip: unconfirmed.
+- 2026-09: SPI chip on old board identified: W25Q128FVSQ (SOIC-8, 3.3 V, 16 MiB). WSON risk closed; LDO not needed.
 - 2026-09: plan rewritten granular. Sequence fixed: Phase 0 (live recon, old) → A (new board acceptance on stock, then boxed)
   → 1–4 full coreboot cycle on old board → 5 new board → 6 upstream. Old board = polygon for every first-time step.
 
