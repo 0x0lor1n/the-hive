@@ -126,13 +126,14 @@ Exit criteria: `m2-storage.md` committed; 5.2 answered `[visual]`; ≥8 FIT line
 Exit criteria: `power.md` committed; rail table with TDC per rail; charger ILIM + adapter-ID `[visual]`; every Phase 4–5 FIT has a power verdict.
 6.1–6.5 DONE 2026-09 → `OUT/power.md`: 13 rails with TDC (no loads page on E152P, p.56 stale BOM); charger ISL88738 (ISL9237 colay), no ILIM strap, `PL901` 6.6 A caps input ≈129 W; PSID 1-wire → EC [visual]; 12 FIT power verdicts; 5 FIT lines.
 
-## Phase 7 — Display / eDP / HDMI demux / panel (coreboot Phase 4; eGPU output path) ⏳
+## Phase 7 — Display / eDP / HDMI demux / panel (coreboot Phase 4; eGPU output path) ✅
 7.1 p25–28 + p2: eDP lanes (block diagram says eDP x2), `EDP CONN` pinout, backlight (`LCD_BKLT_PWM`, `EN`), panel VDD switch, touch/camera on eDP cable
     (p3 USB dest 9/11), PS8338 DP demux `SW1/SW2`, HDMI level shifter, VGA DAC part and what board area frees up if it goes (ties to 3.3).
 7.2 What fits here: with an eGPU, how does the image get back — internal panel over eDP from iGPU (Optimus-style, PCIe copy) vs external monitor on the eGPU;
     does the M620 own any display output (the demux says whether HDMI/DP-alt is iGPU or dGPU driven). FIT lines for "eGPU → internal panel" with DIY (egpu.io "internal display" loss numbers on x4).
 7.3 Write `OUT/display.md`; note GPIOs coreboot must drive for backlight/panel power. Commit.
 Exit criteria: `display.md` committed; backlight/panel-power nets `[visual]`; eDP lane count stated; display-path verdict for eGPU present.
+7.1–7.3 DONE 2026-09 → `OUT/display.md`: eDP x2 (lanes 2/3 NC at CPU and on JEDP1) [visual]; DDI1 HDMI/PS8407, DDI2 AR P0, DDI3 → 2×PS8338 auto-HPD demux (AR > WiGig > VGA); panel/BL power [visual]; 8 FIT lines.
 
 ## Phase 8 — Mod map: the three answers ⏳
 8.1 Collect every `FIT:` line from `OUT/*.md` (`grep -h '^FIT:' $OUT/*.md`), dedupe, keep page cites. No new FITs here (invariant).
@@ -205,5 +206,12 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   Correction: WLAN pad is `PJP36`, not `PJP38` (fixed in m2-storage.md). DMM: charger SMBus `@PR920/@PR922`, `@PR936`, `@PR926`, `@RZ64/@RZ65`.
   Not done: battery 68/92 Wh (no sheet data beyond the connector; mechanics in m2-storage.md).
 
-Next: Phase 7 — `display.md` (p.25–28 + p.34: eDP lane count, backlight/panel-power nets `[visual]`, PS8338 demux, eGPU → internal panel path).
+- 2026-09: Phase 7 DONE → `cells/wintermute/recon/xeon/sch/display.md`. Panel sheet is p.34 (JEDP1 ACES 50398-04041 40p), not p.25–28. eDP x2: CPU lanes 2/3
+  `X` NC (p.9) → no UHD panel. DDI1 → PS8407 HDMI 1.4 (EQ H, passive DDC); DDI2 → AR DPSNK0; DDI3 → PS8338 SW1 (OUT1 AR DPSNK1 / OUT2 → SW2 → WLAN Key A DP x4
+  or RTD2166 VGA x2). Both PS8338 CFG0=H auto-HPD, SW low, no GPIO control → priority AR > WiGig > VGA. All outputs iGPU; no mux → eGPU reaches panel only by PCIe copy.
+  Panel VDD `UV24` G524B1T11U on `+3.3V_ALW`, EN = diode-OR(ENVDD_PCH F19, EC LCD_VCC_TEST_EN); BKEN/PWM diode-OR PCH F20/F21 + EC PWM7/PWM4;
+  backlight supply `QV1` AO6405 from `+PWR_SRC` gated by EC `EN_INVPWR` ONLY → coreboot first-boot test item. p.56 block diagram says AP2821K (stale again).
+  `FIT: nothing` lines got a `DIY:` field too (invariant 38 vs Phase-plan wording).
+
+Next: Phase 8 — `mods.md` (collect `grep -h '^FIT:' $OUT/*.md`, three sections + order of operations; backlog Progress line).
 Blocked on: nothing.
