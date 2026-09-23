@@ -145,6 +145,7 @@ If Boot Guard verified on xeon but not on i7u: coreboot stays on old board as a 
 - 2026-09: PCH GPIO map from E152P: see recon/xeon/sch/gpio.md (204 pads, pad-config guesses for gpio.c; DGPU_PWR_EN=GPP_D12 default-on via RH346; CLKREQ links drawn nopop → start with PcieRpClkReqSupport=false; JUART1 = PCH UART2 console footprint).
 - 2026-09: dGPU/PEG facts from E152P: see recon/xeon/sch/dgpu.md (PEG x16 on SRC7 clock; M620 has no VBIOS ROM → ACPI `_ROM` from Dell image; GPIO duties D12/D10/D18/G1/G3; DMM list RH195, RV269, RV204/206).
 - 2026-09: TB3/PD facts from E152P: see recon/xeon/sch/tb3.md (Alpine Ridge 2C on PCH RP5 x4, SRC6/GPP_H0; GPP_D4 FORCE_PWR, GPP_G2 plug event; RTD3 unwired; own NVM + PD flash, coreboot ships no TBT fw).
+- 2026-09: M.2/SATA/WWAN/WLAN slots from E152P: see recon/xeon/sch/m2-storage.md (KEYM RP9 x4 SRC3; bay SATA2 independent; WWAN RP17(+18 via UZ29 mux = x2) SRC0, SATAXPCIE4 driven by EC; WLAN RP2 SRC1, WiGig RP1 SRC2; DMM @RZ1/2, @RZ70/71, RZ326).
 
 Next: 0.1 — `dev wintermute && sudo --preserve-env=BOARD recon` on the live laptop, now, before any teardown.
 Then A.1 (new board acceptance) whenever you open the chassis; then 1.1 on clip arrival.

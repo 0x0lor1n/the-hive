@@ -15,13 +15,13 @@ Sheets: p.29 Alpine Ridge signals, p.30 Alpine Ridge power, p.31 TPS65982 PD, p.
 |---|---|---|---|
 | PCIe x4 Gen3 | PCH `PCIE5..8` (`PCIE_PTX_DRX_*5..8` / `PCIE_PRX_DTX_*5..8`, label "TBT") | `PCIE_RX0..3` / `PCIE_TX0..3`; device-TX caps `CT6..CT9`, `CT127..CT130` 0.22 µF on p.29 | [visual] p.17, p.29 |
 | Refclk | PCH `CLKOUT_PCIE_P6/N6` → `CLK_PCIE_P6/N6` | `PCIE_REFCLK_100_IN_P/N` | [visual] p.18, p.29 |
-| CLKREQ | PCH `GPP_H0`/`SRCCLKREQ6#` = `CLKREQ_PCIE#6_R`, `RH132` 10 K PU `+3.3V_RUN`, `@RF@RH13` 0 Ω link to `CLKREQ_PCIE#6` (drawn nopop) | `PCIE_CLKREQ_N` AC5 | [visual] p.18, p.29 |
+| CLKREQ | PCH `GPP_H0`/`SRCCLKREQ6#` = `CLKREQ_PCIE#6_R`, `RH132` 10 K PU `+3.3V_RUN`, `@RF@RH16` 0 Ω link to `CLKREQ_PCIE#6` (drawn nopop) | `PCIE_CLKREQ_N` AC5 | [visual] p.18, p.29 |
 | PERST | `PCH_PLTRST#_AND` `<19,36,37,41,42>` (shared with card reader, M.2, TPM) | `PERST_N` L4 | [visual] p.29; source [text] p.19 |
 | DP in 0 | CPU `DDI2` `CPU_DP2_P/N0..3`, `AUX` via `CT10..CT19` 0.1 µF; HPD `PCH_DP2_HPD` `<21>` (`RT24` 100 K PD) | `DPSNK0` | [visual] p.29 |
 | DP in 1 | `SW1_DP1_*` from PS8338 `<25>` (DDI3 demux) via `CT178..CT187`; HPD `SW1_DP1_HPD` (`@RT29` PD nopop) | `DPSNK1` | [visual] p.29 |
 | USB2 | `TBTA_USB20_P/N` → PD `C_USB_T/B` | port A USB2 | [text] p.29, p.31 |
 
-- Correction to `gpio.md`: the CLKREQ#6 pull-up is `RH132`. `RH133` is on the `#7` (dGPU) row (p.18). The `@RF@RH13` link is drawn nopop, the same stale-BOM pattern as `RH10..RH17` in Phase 2 (p.18). Linux enumerates the port, so it is fitted on real boards.
+- Correction to `gpio.md`: the CLKREQ#6 pull-up is `RH132`. `RH133` is on the `#7` (dGPU) row (p.18). The `@RF@RH16` link is drawn nopop, the same stale-BOM pattern as `RH10..RH17` in Phase 2 (p.18). Linux enumerates the port, so it is fitted on real boards.
 - `PCH_PLTRST#_AND` also drives the card reader and M.2 slots. The Alpine Ridge has no separate PERST GPIO (p.29).
 
 ## Sideband / GPIO

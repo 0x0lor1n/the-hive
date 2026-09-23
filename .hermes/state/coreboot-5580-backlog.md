@@ -15,11 +15,12 @@ Order (cheapest / least risk first): B1 WWAN → B2 CPU tuning → B3 eGPU → B
 ---
 
 ## B1 — WWAN modem (M.2 3042 B-key, JNGFF2, sch p.35)
-Verified from schematic, not from forums:
-- USB 2.0 (pin 7/9 → PCH USB2 port 8) and **USB 3.0 (pin 21/23/27/29 → PCH USB3 port 2)** are populated. Modem works by USB3 out of the box.
-- PCIe is routed but **not stuffed**: PCH PCIe port 17 (SATAXPCIE4) → CZ10/CZ11 0.1u 0402 marked `@`; CLK_PCIE_P0/N0 + CLKREQ_PCIE#0 wired.
-  Note on sheet: "9/24: Reserve for embedded location, refer Intel PDG 0.9". Not needed for a modem.
-- Power: +3.3V_ALW (SY8288B, TDC 5.9 A) → UZ2 EM5209VF load switch (6 A cont., 20 mΩ) → +3.3V_WWAN, enabled by EC `3.3V_WWAN_EN`
+Verified from schematic, not from forums — re-verified on E152P (p.37, p.48, p.39), see `recon/xeon/sch/m2-storage.md`:
+- USB 2.0 (pin 7/9 → PCH USB2 port 8) populated. **USB 3.0 port 2 reaches the slot through `UZ29` PI3PCIE3212 mux** (SEL = `SLOT2_CONFIG_1`,
+  low = USB3 for a modem, high = PCIE18 for an x2 SSD) and then through `@RZ1/@RZ2` 0 Ω drawn nopop on lane-1 TX → DMM; if open, modem = USB2 only (E152P p.37).
+- PCIe lane 0 = PCIE17/SATA4: on E152P `CZ10/CZ11` are drawn **fitted** (no `@`, E151P had `@`); CLK_PCIE_P0/N0 + CLKREQ_PCIE#0 wired.
+  Lane 1 = PCIE18 via `UZ29` → slot can do x2 PCIe (CONFIG state 1). Stock BIOS very likely keeps ports 17/18 off. Not needed for a modem (E152P p.37).
+- Power: +3.3V_ALW (SY8288B, TDC 5.9 A) → UZ2 EM5209VF load switch (6 A cont., 20 mΩ) → `PJP41` pad "2.5A" (E152P p.48) → +3.3V_WWAN, enabled by EC `3.3V_WWAN_EN` (EC ball C6, E152P p.39)
   + `WWAN_PWR_EN` pin 6 (RZ43 47k pull-up). Bulk 2×47u + 22u on the rail. RM520N-GL peak ~2.5 A → fine.
 - Sideband: WWAN_RADIO_DIS# (pin 8, DZ4 → EC), WWAN_WAKE# (pin 15), HW_GPS_DISABLE# (pin 20), SIM via push-push JSIM1 (pins 22–30),
   COEX1..3 no-stuff, SLOT2_CONFIG_0..3 → EC (STATE 8 = WWAN).
@@ -33,8 +34,8 @@ B1.2 Stock BIOS first: fit module, `lsusb` shows it, `mmcli -L`, `nmcli` connect
      If the module is not powered: stock BIOS has no WWAN whitelist on 5x80, but `WWAN_PWR_EN` is EC-driven — check EC exposes it.
 B1.3 coreboot: nothing beyond 4.6 (USB port map + EC GPIO for `3.3V_WWAN_EN`). Verify same `lsusb` on coreboot, add to checklist.
 B1.4 NixOS: ModemManager + `networkmanager` WWAN profile, `qmi`/`mbim` mode per module. Optional: `ntp` from GNSS.
-B1.5 (optional, only if a PCIe device is ever wanted in that slot) stuff CZ10/CZ11 0.1u 0402, set port 17 = PCIe in devicetree,
-     SRCCLKREQ0 on. ~10 min soldering. Not for the modem.
+B1.5 (optional, only if a PCIe device is ever wanted in that slot) DMM `CZ10/CZ11` (drawn fitted on E152P) and `@RZ1/@RZ2`; solder only
+     what is missing. Devicetree: ports 17 (+18 for x2) on, SRC0/CLKREQ#0. Not for the modem (E152P p.37).
 Done when: modem works on coreboot after suspend/resume, W_DISABLE via rfkill.
 
 ## B2 — CPU tuning (E3-1505M v6, 45 W) — cooling first, then voltage
@@ -64,8 +65,9 @@ B3.1 Parts: M.2 M-key → OCuLink SFF-8612 adapter board (ADT-Link / generic, ~1
      Alternative if the OCuLink board doesn't fit under the palmrest: ADT-Link R43SG ribbon (wider, uglier).
 B3.2 Routing: OCuLink cable out through the VGA opening — cut the D-SUB shell, no desoldering. Slot ~15×2 mm. Keep the VGA
      connector body as strain relief.
-B3.3 Storage moves: NVMe leaves the M.2 slot → 2.5" SATA SSD with the 68 Wh 4-cell (chosen). Not the 92 Wh + WWAN-slot NVMe path
-     (WWAN slot has no PCIe stuffed, see B1.5 — possible, but x1 and needs soldering).
+B3.3 Storage moves: NVMe leaves the M.2 slot → 2.5" SATA SSD with the 68 Wh 4-cell (chosen). Re-verified on E152P: KEYM = PCIE9..12 x4,
+     bay = SATA2 (separate PCH port), no lane sharing (p.16, p.42, p.43). Not the 92 Wh + WWAN-slot NVMe path (needs coreboot for PCIE17/18,
+     x1/x2, DMM `@RZ1/@RZ2`; no 5580/3520 precedent) — see `recon/xeon/sch/m2-storage.md`.
 B3.4 Devicetree on that root port: CLKREQ off, ASPM off, hotplug off (cold-plug only). Verify `lspci -vv` link width x4 speed 8 GT/s.
 B3.5 NixOS: nvidia (or nouveau) on the eGPU as primary for the 4K monitor (DP on the card), iGPU keeps the dock DP for a 2nd screen.
      PRIME offload config. Note the internal M620 stays disabled or as a 3rd GPU — decide when it's there.
