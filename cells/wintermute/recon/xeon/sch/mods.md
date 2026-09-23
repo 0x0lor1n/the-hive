@@ -131,6 +131,7 @@ Recommendation: 68 Wh battery + 2.5" SATA SSD in the bay in every variant (F18):
 | 10 | M620 under coreboot (`_ROM`) | coreboot | VBIOS from the Dell image | F3 | coreboot-5580 |
 | 11 | `JUART1` header | before first coreboot flash | solder 3 wires | F13 | coreboot-5580 |
 | 12 | WWAN-slot NVMe / 2.5 GbE | coreboot, only if the modem is dropped | RP17(+18), DMM `@RZ1/@RZ2` | F22, F24 | B4 (storage) |
+| 13 | `JUSH1` radio bay: hub + LoRa 433 + RTL-SDR (+MMDVM), antennas outside | now, Dell BIOS (USB2 port 10 is plain USB) | bay + slot measurement, USH board out | F39–F41 | B6 |
 | - | never: PEG tap, new PCIe slot, 4K panel, DP→eDP rewire | - | BGA work / NC lanes | F1, F12, F11, F6 | B5 |
 
 Cites: (p.37, p.42, p.43, p.21, p.6, p.16).
@@ -143,5 +144,43 @@ Recommendation: networks and storage first on the Dell BIOS (1–4), eGPU on OCu
 - B5 "eGPU over TB3: No" → kept as the L fallback here (F35) (p.29).
 - B4 names the fitted NVMe "PC801 1 TB"; this plan's header says "Samsung 970-class" — inventory question, not a schematic one (p.42).
 
+## USH / Smart Card bay → radio (addendum 2026-09, read after Phase 8)
+Phase 8 closed with `JUSH1` unanswered. This section reads p.41 at 400 dpi and p.3, and adds FIT lines F39..F42. They are new, not collected from phases 1–7.
+
+### `JUSH1` [visual] (p.41)
+CVILU CF5026FD0RK-05-NH, 26 pins + 2 GND tabs, `CONN@`. The Dell USH board (Broadcom BCM5882 ControlVault: smart card, fingerprint, NFC) plugs in here. p.3 USB2 table: port 10 → "JUSH1-->USH" [text] (p.3).
+| pin | net | note |
+|---|---|---|
+| 1 | `+PWR_SRC_R` ← `@RZ85` 0 Ω ← `+PWR_SRC` | drawn nopop: no 19 V on the connector unless fitted |
+| 3 / 4 / 5 | `CV2_ON`, `POA_WAKE#`, `EC_FPM_EN` | EC `<39>` |
+| 8 / 9 | `USB20_N10` / `USB20_P10` | PCH USB2 port 10 `<17>` |
+| 11 / 12 / 13 | `USH_SMBCLK` / `USH_SMBDAT` / `BCM5882_ALERT#` | EC SMBus, 4.7 K PU `RZ8`/`RZ9` to `+3.3V_ALW` |
+| 14–16 | `+3.3V_ALW` | always on while the laptop has power |
+| 18 / 19 / 20 | `+5V_ALW` / `+3.3V_RUN` / `+5V_RUN` | one pin each |
+| 21 | `USH_RST#_R` ← `@RZ114` ← `PCH_PLTRST#_AND` | drawn nopop |
+| 22 / 23 | `USH_PWR_STATE#` `<40>` / `CONTACTLESS_DET#` → `GPP_G4` | |
+| 26 | `USH_DET#_R` → `@RZ87` / `@DZ7` RB751 → EC `USH_DET#` | drawn nopop |
+| 6, 7, 10, 24, 25, 27, 28 | GND | 2, 17 NC |
+- No fuse and no load switch on the sheet. The rails come straight off the system buses: `+5V_RUN` via `UZ4` ch1 "3.076A" pad, `+5V_ALW` 5.4 A TDC buck (p.41, p.48, p.58).
+- A module that draws a few hundred mA hangs on one connector pin per rail. The pin rating is not on the sheet: check the CVILU datasheet, or wire the 5 V straight from the pad instead of through the mating connector (p.41).
+- USB2 at 480 Mb/s is enough for everything below. An RTL-SDR at 2.4 MS/s needs about 38 Mb/s (p.41).
+- The Dell 3D guide shows the reader as a separate board screwed to the palmrest (https://www.dell.com/support/resources/en-au/3dviewer/cb070003520001207a/how-to-replace-the-smart-card-reader-board-on-a-precicision-3520). Bay height and width are not measured yet (p.41).
+
+### Build: USB2 hub + LoRa + RTL-SDR, antennas outside
+- Inside: `FE1.1s` 4-port USB2 hub on `USB20_*10` + `+5V_RUN`. Behind it:
+  - LoRa: SX1262 on 433 MHz. Either CH341 → SPI (MeshStick) for `meshtasticd` on the host, or ESP32-C3 + Ebyte E22-400M22S running a USB KISS TNC for LoRa APRS 433.775 MHz. In the TNC case Linux `kissattach` gives an `ax0` interface and Direwolf/aprx/Xastir do the igate on the laptop.
+  - RTL-SDR (R828D or R820T2, bare board) for RX.
+  - MMDVM_HS (ADF7021) optional, as the 4th port.
+- TX power inside the case: 22 dBm max (E22-400M22S). The 1 W E22-400M30S draws ~0.65 A at 5 V and adds heat; if 1 W is wanted, put the amplifier outside at the antenna (p.41, p.58).
+- Antennas: one SMA per radio, outside. The smart-card slot is only a few mm high, so an SMA bulkhead (8 mm hex) does not fit in it. Options: a 3D-printed insert with MMCX/U.FL pigtails that end in SMA on a short external lead, or an SMA bulkhead drilled through the plastic next to the slot. Measure first.
+- The RTL-SDR shares no antenna with the LoRa TX. 22 dBm into a nearby R820T2 front end desenses it or kills it (limit ~+10 dBm).
+- EMC: ferrite on the hub's USB and 5 V lines, copper tape on the bay walls bonded to `JUSH1` GND (pins 6/7/10) (p.41).
+
+FIT: LoRa 433 MHz (SX1262) on `JUSH1` USB2 port 10: Meshtastic native on Linux (CH341 → SPI) or LoRa APRS KISS TNC (ESP32-C3 + E22-400M22S) | needs: amateur licence for 433 (user has one), USH board removed, `FE1.1s` hub or direct wiring to pins 8/9 + `+5V_RUN` pin 20, external antenna via printed insert or drilled bulkhead, bay measurement | lanes/bus: USB2 port 10, CDC-ACM/CH341 | power: `+5V_RUN` (`UZ4` ch1 "3.076A"), ~120 mA at 22 dBm TX; single connector pin | displaces: Dell smart card / fingerprint / NFC board | DIY: https://github.com/markbirss/MESHSTICK (CH341 + SX1262 USB stick for meshtasticd), https://meshtastic.org/docs/hardware/devices/linux-native-hardware (Linux native, CH341 USB), https://github.com/KJ7NYE/LoRa_FieldOps_APRS_Tracker (433 MHz LoRa APRS, USB KISS TNC, E22-400 support), https://github.com/richonguzman/LoRa_APRS_iGate (ESP32 + E22-400M30S iGate); no laptop-internal install found | risk: M — electrically trivial, bay size and antenna exit unmeasured (p.41, p.3)
+FIT: RTL-SDR RX (R828D/R820T2, 25–1750 MHz) on the same hub | needs: bare-board RTL-SDR (the Nano 3 in its case is 25×17×8 mm), separate external antenna, shielding | lanes/bus: USB2 port 10 via hub, ~38 Mb/s at 2.4 MS/s | power: ~0.3 A at 5 V on `+5V_RUN` | displaces: smart card board | DIY: https://nooelec.com/store/sdr/nesdr-nano-three.html (size), no laptop-internal install found | risk: M (p.41)
+FIT: MMDVM_HS hotspot (ADF7021, DMR/D-Star/YSF, mW) as 4th hub port | needs: licence, UHF antenna (VHF needs the 18 nH L1–L2 mod) | lanes/bus: USB CDC (STM32F103) | power: <0.1 A | displaces: - | DIY: https://github.com/juribeparada/mmdvm_hs | risk: M — bay space for three boards unknown (p.41)
+FIT: nothing — HF or >100 mW TX inside the case: no RF shielding on the bay, one 5 V pin per rail, heat; put the PA outside | DIY: none found — schematic alone (p.41, p.48)
+
 ## Open
-- `USH`/Smart Card (`JUSH1`, p.41) and SD reader (RTS5242, p.36): no phase produced a FIT line, so they have no verdict. Needs one more read (p.41 + p.3 USB destination table) if the nRF54L15/dongle idea matters (p.3, p.36, p.41).
+- SD reader (RTS5242, PCIE-3, p.36): no FIT line (p.36).
+- `JUSH1` bay: height/width, slot height for the antenna exit, CVILU pin current rating (p.41).
