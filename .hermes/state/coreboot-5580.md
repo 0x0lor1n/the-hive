@@ -148,6 +148,7 @@ If Boot Guard verified on xeon but not on i7u: coreboot stays on old board as a 
 - 2026-09: M.2/SATA/WWAN/WLAN slots from E152P: see recon/xeon/sch/m2-storage.md (KEYM RP9 x4 SRC3; bay SATA2 independent; WWAN RP17(+18 via UZ29 mux = x2) SRC0, SATAXPCIE4 driven by EC; WLAN RP2 SRC1, WiGig RP1 SRC2; DMM @RZ1/2, @RZ70/71, RZ326).
 - 2026-09: power/charger facts from E152P: see recon/xeon/sch/power.md (VCORE 2-ph 50 A TDC/68 A peak, GT 55 A, SA 11.1 A peak → IccMax ceilings; charger ISL88738, limit via EC SMBus from PSID, `PL901` caps input ≈129 W; DMM @PR920/922 charger SMBus).
 - 2026-09: display facts from E152P: see recon/xeon/sch/display.md (eDP x2 only; F19/F20/F21 NF1 eDP VDD/BKLTEN/PWM, diode-OR'd with EC; backlight supply gated by EC `EN_INVPWR` only → first-boot test item; DDPB HDMI via PS8407, DDPC/DDPD DP; GPD7 low = camera on).
+- 2026-09: mod map from E152P: see recon/xeon/sch/mods.md (eGPU = OCuLink in KEYM, fallback TB3 direct; networks = EM9191 + MT7925; system disk in the SATA bay for OCuLink, KEYM otherwise; order of operations vs coreboot).
 
 Next: 0.1 — `dev wintermute && sudo --preserve-env=BOARD recon` on the live laptop, now, before any teardown.
 Then A.1 (new board acceptance) whenever you open the chassis; then 1.1 on clip arrival.
