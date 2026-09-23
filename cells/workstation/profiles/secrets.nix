@@ -26,11 +26,11 @@
 
   # Outbound ssh identities; the pubkeys are registered on GitHub/Azure/client
   # hosts, so there is no generator. Split per account: the local user gets the
-  # personal + freelance keys, the Entra user the employer ones. Each key ships
-  # with its .pub: for a passphrase-protected key, without the .pub next to it
-  # ssh must decrypt the key just to learn which agent identity to offer, i.e.
-  # it prompts even when the agent has it. IdentityFile in the per-role user
-  # secrets points at these paths.
+  # personal keys, the Entra user every work key (employer, its client,
+  # freelance). Each key ships with its .pub: for a passphrase-protected key,
+  # without the .pub next to it ssh must decrypt the key just to learn which
+  # agent identity to offer, i.e. it prompts even when the agent has it.
+  # IdentityFile in the per-role user secrets points at these paths.
   #
   # Entra owner: users.users has no entry, so `owner` is the numeric uid (chown
   # accepts it, nothing resolves the name at activation) and group falls back
@@ -60,11 +60,7 @@
   # Real hosts only: the VM rehearsal has its own host key and no business
   # holding these, so no rekeyed bundle exists for it (eval would assert).
   sshIdentities = lib.optionals (!host.isVm) (
-    map (mkIdentity host.userName) [
-      "ssh-w"
-      "ssh-wgl"
-    ]
-    ++ [
+    [
       # Personal GitHub key. The Entra account pushes to the same personal
       # repos (this flake, the-hive tooling) and otherwise holds only the
       # employer key; one key registered upstream, read through hive like
@@ -77,11 +73,15 @@
       # runs the same training jobs.
       (mkSharedIdentity host.userName "ssh-runpod")
     ]
+    # Letter = organisation (o employer, t its client, w freelance); which one
+    # is behind a letter lives only in secrets/user-entra.nix.age.
     ++ lib.optionals (entraUid != null) (map (mkIdentity (toString entraUid)) [
-      "ssh-azure-owt"
-      "ssh-github-owt"
+      "ssh-ogh"
+      "ssh-oaz"
       "ssh-tgl"
       "ssh-tprod"
+      "ssh-wgl"
+      "ssh-w"
     ])
   );
 in {

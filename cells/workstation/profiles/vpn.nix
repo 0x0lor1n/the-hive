@@ -3,15 +3,18 @@
 # home-manager file in the world-readable store, and the tunnels are ordinary
 # systemd units the accounts start and stop over polkit:
 #
-#   owt   wireguard  wg-quick-owt.service    Entra (employer)
-#   t  openvpn    openvpn-t.service    Entra (employer)
-#   w   openvpn    openvpn-w.service     local (freelance client)
+#   o   wireguard  wg-quick-o.service    employer
+#   t   openvpn    openvpn-t.service     employer's client
+#   w   openvpn    openvpn-w.service     freelance client
 #
-# The account split is enforced by polkit, not by which home carries an alias:
-# the networkmanager group (himmelblau local_groups, auth-entra.nix) may manage
-# the two employer units; the local user is wheel and may manage anything.
-# Routing is host-global: a tunnel raised by one account carries the other's
-# traffic too.
+# Letters, not names: which organisation sits behind each lives only in the
+# encrypted halves (secrets/*.age, secrets/user-*.nix.age).
+#
+# All three belong to the Entra account (networkmanager group via himmelblau
+# local_groups, auth-entra.nix); wheel keeps them for the local account.
+# wheel alone is auth_admin_keep on manage-units, i.e. a password prompt on
+# every `vpn up`, hence the explicit grant. Routing is host-global: a tunnel
+# raised by one account carries the other's traffic too.
 #
 # `vpn up|down|status <name>` wraps systemctl for both accounts.
 #
@@ -36,7 +39,7 @@
     mode = "0400";
   };
   units = {
-    owt = "wg-quick-owt.service";
+    o = "wg-quick-o.service";
     t = "openvpn-t.service";
     w = "openvpn-w.service";
   };
@@ -45,7 +48,7 @@
     runtimeInputs = [pkgs.systemd pkgs.coreutils];
     text = ''
       usage() {
-        echo "usage: vpn up|down <owt|t|w>   |   vpn status" >&2
+        echo "usage: vpn up|down <${lib.concatStringsSep "|" (lib.attrNames units)}>   |   vpn status" >&2
         exit 2
       }
       unit() {
@@ -59,7 +62,7 @@
         down) [ $# = 2 ] || usage; systemctl stop "$(unit "$2")" ;;
         status)
           for n in ${lib.concatStringsSep " " (lib.attrNames units)}; do
-            printf '%-5s %s\n' "$n" "$(systemctl is-active "$(unit "$n")")"
+            printf '%-3s %s\n' "$n" "$(systemctl is-active "$(unit "$n")")"
           done ;;
         *) usage ;;
       esac
@@ -70,7 +73,7 @@ in
     environment.systemPackages = [vpn pkgs.wireguard-tools];
 
     age.secrets = {
-      vpn-owt-conf = secret "owt.conf";
+      vpn-o-conf = secret "o.conf";
       vpn-t-ovpn = secret "t.ovpn";
       vpn-t-auth = secret "t-auth";
       vpn-w-ovpn = secret "w.ovpn";
@@ -79,41 +82,37 @@ in
 
     # wg-quick reads DNS= itself (resolvconf), so the whole [Interface]/[Peer]
     # file is the secret; nothing to template.
-    networking.wg-quick.interfaces.owt = {
-      configFile = config.age.secrets.vpn-owt-conf.path;
+    networking.wg-quick.interfaces.o = {
+      configFile = config.age.secrets.vpn-o-conf.path;
       autostart = false;
     };
 
     services.openvpn.servers = let
-      ovpn = name: {
+      ovpn = name: pushedDns: {
         config = ''
           config ${config.age.secrets."vpn-${name}-ovpn".path}
           auth-user-pass ${config.age.secrets."vpn-${name}-auth".path}
         '';
         autoStart = false;
-        # No resolvconf hook until a profile is seen to need pushed DNS.
-        updateResolvConf = false;
+        updateResolvConf = pushedDns;
       };
     in {
-      t = ovpn "t";
-      w = ovpn "w";
+      t = ovpn "t" false;
+      # Split-horizon: the pushed resolver answers internal 10.x for hosts
+      # whose public addresses are dead from inside the tunnel.
+      w = ovpn "w" true;
     };
 
-    # The Entra account (no wheel) may raise and drop the two employer
-    # tunnels; nothing else in systemd. w stays with the local user (wheel).
-    # wheel alone is auth_admin_keep on manage-units — a password prompt on
-    # every `vpn up w` (2026-09-15) — so that one unit is granted explicitly.
+    # AUTH_FAILED (MFA push not yet approved) exits 0; Restart=always turned
+    # that into a push storm. Link drops are handled in-process by ping-restart.
+    systemd.services.openvpn-w.serviceConfig.Restart = lib.mkForce "on-failure";
+
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {
+        var units = ${builtins.toJSON (lib.attrValues units)};
         if (action.id == "org.freedesktop.systemd1.manage-units" &&
-            subject.isInGroup("networkmanager") &&
-            (action.lookup("unit") == "${units.owt}" ||
-             action.lookup("unit") == "${units.t}")) {
-          return polkit.Result.YES;
-        }
-        if (action.id == "org.freedesktop.systemd1.manage-units" &&
-            subject.isInGroup("wheel") &&
-            action.lookup("unit") == "${units.w}") {
+            (subject.isInGroup("networkmanager") || subject.isInGroup("wheel")) &&
+            units.indexOf(action.lookup("unit")) >= 0) {
           return polkit.Result.YES;
         }
       });

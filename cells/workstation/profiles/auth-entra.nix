@@ -178,9 +178,9 @@ in {
         # read /srv/the-hive, write /srv/the-hive/dotfiles (srv-the-hive.nix)
         "hive"
         # Wi-Fi/VPN control without a polkit prompt: NetworkManager's own
-        # policy admits the group, and vpn.nix keys the employer tunnels'
-        # manage-units rule on it (2026-09-15: it was missing here, so `vpn up
-        # owt` under Entra asked for an admin password).
+        # policy admits the group, and vpn.nix keys the tunnels' manage-units
+        # rule on it (2026-09-15: it was missing here, so `vpn up` under Entra
+        # asked for an admin password).
         "networkmanager"
       ];
 
