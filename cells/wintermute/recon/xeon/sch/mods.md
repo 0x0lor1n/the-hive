@@ -136,7 +136,7 @@ Recommendation: 68 Wh battery + 2.5" SATA SSD in the bay in every variant (F18):
 Cites: (p.37, p.42, p.43, p.21, p.6, p.16).
 Recommendation: networks and storage first on the Dell BIOS (1–4), eGPU on OCuLink once the disk has moved (6), everything that touches PEG/RP17/TB3 power management waits for coreboot (7–12) (p.37, p.42, p.43).
 
-## Backlog text that the FIT lines contradict (not edited here, invariant 40)
+## Backlog text that the FIT lines contradicted (fixed in the backlog 2026-09 on user request, overriding invariant 40)
 - B1: "RM520N-GL peak ~2.5 A → fine", "+3.3V_ALW SY8288B TDC 5.9 A" → power.md: 3.0 A required, TDC 6.8 A, risk H (F29) (p.48, p.58).
 - B4 screen: "30-pin eDP" → board side `JEDP1` is 40-pin ACES 50398-04041; the panel side of the lid cable is not on the sheet, so check the cable before buying a panel (F10) (p.34).
 - B4 storage: "WWAN slot takes 2242 B+M (x1)" → x2-capable via `UZ29`, but needs coreboot and DMM, risk H (F22) (p.37).

@@ -219,6 +219,8 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   Gap: no phase wrote a FIT for `USH`/`JUSH1` (p.41) or the RTS5242 SD reader (p.36), so 8.3 extras leave them open (invariant: no new FITs in 8).
   Backlog lines contradicted by FITs listed in mods.md, not edited (invariant 40): B1 RM520N 2.5 A, B4 "30-pin eDP", B5 TB3 eGPU "No".
   Backlog had no Progress section; appended one. Task complete.
+- 2026-09: user OK'd editing the backlog despite invariant 40: B1 power (6.8 A TDC, modems H, EM9191 pick), B3 TB3 fallback, B4 screen 40-pin `JEDP1`,
+  B4 WWAN-NVMe x1/x2 + H, B5 TB3 line removed (moved to B3 fallback).
 
 Next: nothing. Optional follow-up: short read of p.41 + p.3 for a `USH` FIT line (only if the nRF54L15 dongle idea matters).
 Blocked on: nothing.

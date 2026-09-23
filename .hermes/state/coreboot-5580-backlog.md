@@ -20,16 +20,17 @@ Verified from schematic, not from forums — re-verified on E152P (p.37, p.48, p
   low = USB3 for a modem, high = PCIE18 for an x2 SSD) and then through `@RZ1/@RZ2` 0 Ω drawn nopop on lane-1 TX → DMM; if open, modem = USB2 only (E152P p.37).
 - PCIe lane 0 = PCIE17/SATA4: on E152P `CZ10/CZ11` are drawn **fitted** (no `@`, E151P had `@`); CLK_PCIE_P0/N0 + CLKREQ_PCIE#0 wired.
   Lane 1 = PCIE18 via `UZ29` → slot can do x2 PCIe (CONFIG state 1). Stock BIOS very likely keeps ports 17/18 off. Not needed for a modem (E152P p.37).
-- Power: +3.3V_ALW (SY8288B, TDC 5.9 A) → UZ2 EM5209VF load switch (6 A cont., 20 mΩ) → `PJP41` pad "2.5A" (E152P p.48) → +3.3V_WWAN, enabled by EC `3.3V_WWAN_EN` (EC ball C6, E152P p.39)
-  + `WWAN_PWR_EN` pin 6 (RZ43 47k pull-up). Bulk 2×47u + 22u on the rail. RM520N-GL peak ~2.5 A → fine.
+- Power: +3.3V_ALW (SY8288B, TDC 6.8 A, E152P p.58) → UZ2 EM5209VF load switch (6 A cont., 20 mΩ) → `PJP41` pad "2.5A" (E152P p.48) → +3.3V_WWAN, enabled by EC `3.3V_WWAN_EN` (EC ball C6, E152P p.39)
+  + `WWAN_PWR_EN` pin 6 (RZ43 47k pull-up). Bulk 2×47u + 22u on the rail. RM520N-GL needs 3.0 A continuous (VCC ≥ 3.135 V, ~3.17 V at the slot),
+  EM9191 up to 2.7 A → both over the 2.5 A pad label, risk H; EM9191 preferred. Bench `+3.3V_WWAN` under upload (`recon/xeon/sch/power.md`, `mods.md` F29/F30).
 - Sideband: WWAN_RADIO_DIS# (pin 8, DZ4 → EC), WWAN_WAKE# (pin 15), HW_GPS_DISABLE# (pin 20), SIM via push-push JSIM1 (pins 22–30),
   COEX1..3 no-stuff, SLOT2_CONFIG_0..3 → EC (STATE 8 = WWAN).
 - Antennas: lid has 2 WWAN pigtails (main + aux) besides the 2 Wi-Fi ones → 2×2 MIMO. No dedicated GNSS antenna; RM520N-GL / EM9191
   share GNSS on an ANT port — GPS will be weak-to-none indoors, acceptable.
 
 Plan:
-B1.1 Pick module. Quectel RM520N-GL (5G, 3052, USB3 + PCIe) vs Sierra EM9191 (5G, 3042). 3052 needs the standoff moved 10 mm →
-     check clearance under the palmrest before ordering; EM9191 is drop-in. Either way B-key, USB3 mode.
+B1.1 Pick module: Sierra EM9191 (5G, 3042, drop-in, 2.7 A) over Quectel RM520N-GL (5G, 3052, 3.0 A, standoff moved 10 mm → palmrest
+     clearance unchecked). Either way B-key, USB3 mode (see `mods.md` networks).
 B1.2 Stock BIOS first: fit module, `lsusb` shows it, `mmcli -L`, `nmcli` connection with the SIM. Record in `recon/xeon/wwan.txt`.
      If the module is not powered: stock BIOS has no WWAN whitelist on 5x80, but `WWAN_PWR_EN` is EC-driven — check EC exposes it.
 B1.3 coreboot: nothing beyond 4.6 (USB port map + EC GPIO for `3.3V_WWAN_EN`). Verify same `lsusb` on coreboot, add to checklist.
@@ -59,6 +60,8 @@ Done when: three-column table stock / coreboot / coreboot-uv filled, no throttli
 ## B3 — eGPU via M.2 → OCuLink (no TB3)
 Decision stands: PCIe 3.0 x4 from the M.2 2280 slot (~3.2 GB/s), not TB3 (shares 40 Gbps with 4K60 DP + USB + LAN behind WD19TB,
 PCIe tunnel ≤22 Gbps, and TB3 under coreboot is the riskiest bit of 5.5).
+Fallback: eGPU on the laptop USB-C directly (TB3, risk L): works on the Dell BIOS today, hot-plug, ≈22 Gb/s; also the way to test the card
+before the OCuLink parts arrive (`recon/xeon/sch/mods.md` F35).
 
 B3.1 Parts: M.2 M-key → OCuLink SFF-8612 adapter board (ADT-Link / generic, ~15 CHF) + OCuLink cable 0.5 m + OCuLink eGPU dock
      with ATX/DA-2 input (Minisforum DEG1 class, ~100 CHF) + PSU (Dell DA-2 220 W is enough for a ≤200 W card; ATX for a 3090).
@@ -85,7 +88,7 @@ Done when: cold-plug eGPU drives the 4K monitor, laptop still suspends/resumes w
   them now. Then 2× FPC 2.4/5/6 GHz MHF4 (~8 CHF pair). WWAN pair — 2× FPC 600–6000 MHz MHF4 with the modem (B1), stock LTE ones
   ok for n78, weak on n77/n79. Either swap = same lid teardown as the panel; batch them with the panel if timing allows.
 - RAM: 2×32 GB DDR4-2400 ECC SO-DIMM (Micron MTA18ASF4G72HZ-2G6B1ZI). Verify `edac` (A.5). Check 2×32 on CM238 before ordering.
-- Screen: 30-pin eDP 2-lane, FHD only (no 4K SKU on 3520 — that's the 7520). Upgrade = brighter FHD IPS: **BOE NV156FHM-N61**
+- Screen: eDP 2-lane (board `JEDP1` is 40-pin ACES 50398-04041, E152P p.34; panel-side pin count of the lid cable not on the sheet → check the cable before buying), FHD only (no 4K SKU on 3520 — that's the 7520). Upgrade = brighter FHD IPS: **BOE NV156FHM-N61**
   (300 nit, 72 % NTSC, matte, 3.2 mm) — first pick; AUO B156HAN06.1 second. Drop-in, VBT unchanged. Glued with double-sided tape.
 - Hinges: L/R differ, buy as a pair.
 - Thermal: PTM7950 on CPU + GPU dies; Thermalright Odyssey 85×45 in 1.0 mm (M620 GDDR5) and 1.5 mm (VRM tab) — measure the
@@ -94,7 +97,8 @@ Done when: cold-plug eGPU drives the 4K monitor, laptop still suspends/resumes w
   OCuLink (B3) needs it. 2.5" bay: **Fanxiang S101 2 TB** (~182 CHF, YMTC TLC, DRAM-less, 7 mm; 870 EVO is 240/TB now) — official
   Fanxiang seller only, `smartctl -a` + `f3probe --destructive` on arrival. Needs the bay cable + caddy (non-SATA SKU ships without).
   ZFS: same layout as elster (ashift=12, autotrim=on, zstd, atime=off, weekly zpool-trim + scrub) plus `zfs.zfs_arc_max=8G`
-  (elster runs c_max=61 GiB unlimited — set 12G there too). Second NVMe: WWAN slot takes 2242 B+M (x1, ~800 MB/s) but conflicts with B1.
+  (elster runs c_max=61 GiB unlimited — set 12G there too). Second NVMe: WWAN slot takes 2242 B+M, x1 or x2 via `UZ29` (E152P p.37), but needs coreboot (RP17/18) + DMM `@RZ1/@RZ2`, no 3520/5580
+  precedent (risk H), and conflicts with B1.
 - Battery: 68 Wh 4-cell (GJKNX) keeps the 2.5" bay → this is the one, given B3.3. 92 Wh (VG93N/NY5PG) only if eGPU plan is dropped.
 - Keyboard: backlit unit drop-in; coreboot only needs the brightness key (4.3).
 - Dock: WD19TB gives 130 W (180 W brick) — power + LAN + USB + kb/mouse. Barrel 130 W for travel.
@@ -104,7 +108,6 @@ Done when: cold-plug eGPU drives the 4K monitor, laptop still suspends/resumes w
 ## B5 — not worth it
 - HDMI 2.0 rework: LSPCON pads exist on some revisions, no BOM. No.
 - 4K internal panel: see B4. No.
-- eGPU over TB3: see B3. No.
 - EC firmware (battery whitelist, fan curve, PD): closed. Don't chase.
 
 ## Progress
