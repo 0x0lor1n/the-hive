@@ -76,7 +76,7 @@ gets "SPI/EC facts from E152P: see recon/xeon/sch/spi-ec.md" and any contradicti
 Exit criteria: `gpio.md` committed with all GPP_A…GPP_H + GPD rows (unused say `NC`/`?`); spare clock/clkreq list present; note in `coreboot-5580.md` Progress.
 2.1–2.4 DONE 2026-09 → `OUT/gpio.md`: 204/204 pads (GPP_A..I + GPD; GPIO spans p.16–p.21, not only 18/20/21), 94 NC, every row `[visual]` 400 dpi; balls re-matched vs `pdftotext -bbox` = 0 mismatches.
 
-## Phase 3 — dGPU / PEG (feeds coreboot devicetree, backlog B2 thermal, eGPU option "steal PEG") ⏳
+## Phase 3 — dGPU / PEG (feeds coreboot devicetree, backlog B2 thermal, eGPU option "steal PEG") ✅
 3.1 p6 (CPU PEG) + p49–55 (GM107, GDDR5) + p53 (`DGPU_PWR_EN`, `GPU_GC6_FB_EN`) + p69 (`+VGA_CORE`, `NVVDD_PSI`, `GPU_PWM_VID`): lane width `[visual]`
     (x16? x8? — count `PEG_CRX_GTX_P[0..n]` pairs actually AC-coupled on p49), reset, `GPU_HOT#`, `GC6_EVENT#`, `DGPU_PWROK <20,40,53>` chain, power sequence (p74 rev entries 21/34/45).
 3.2 Rails: `+VGA_CORE` regulator part, current design (p69 `Ivalley=27A…`), `FBVDD`, `1.8V`, which EC/PCH nets gate them.
@@ -85,6 +85,7 @@ Exit criteria: `gpio.md` committed with all GPP_A…GPP_H + GPD rows (unused say
     "dGPU removal PEG breakout" threads, any Compal-board PEG-tap precedent. Expected verdict `risk: H`; write it anyway with the reason.
 3.4 Write `OUT/dgpu.md` (lanes, sequence, rails, coreboot-vs-EC duties, What fits here). Commit.
 Exit criteria: `dgpu.md` committed; ordered power-on sequence with cites; PEG width `[visual]`; PEG-tap verdict present with DIY field.
+3.1–3.4 DONE 2026-09 → `OUT/dgpu.md`: PEG x16 `[visual]`, 64 AC caps (CC34..65 CPU side, CV427..458 GPU side), board lane-reversed; 7-step power-on; 3 FIT lines.
 
 ## Phase 4 — Thunderbolt 3 / USB-C PD (eGPU option A: dock or direct) ⏳
 4.1 p29–33: Alpine Ridge part (`JHL6540`/`DSL6340`? `[visual]`), PCH root port used (block diagram says PCIe[5..8]), `TBT_FORCE_PWR`, `TBT_RST#`,
@@ -169,5 +170,12 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   JUART1 (nopop 6-pin, PCH UART2 C20/C21) = coreboot console candidate. TBT_FORCE_PWR=D4, RTD3_CIO_PWR_EN=C13, CIO_PLUG_EVENT#=G2.
   Invariants: `grep -L 'p\.[0-9]'` flags only pages.md (known), ls-files grep = this file only (known), gitleaks clean.
 
-Next: Phase 3 — `dgpu.md` (p6 PEG, p49–55 GM107, p53 power, p69 +GPU_CORE; PEG width `[visual]`).
+- 2026-09: Phase 3 DONE → `cells/wintermute/recon/xeon/sch/dgpu.md`. PEG x16, all pairs capped at TX (CPU side CC34..65 p6, GPU side CV427..458 p49),
+  CPU lane k = GPU lane 15-k. Refclk = PCH SRC7, CLKREQ via QV10 gated by VRAM_EN. M620 has NO display outputs (IFPA..F NC) and NO VBIOS ROM
+  (p50) → muxless, coreboot needs ACPI `_ROM`. Rails: +3.3V_GFX_AON (QV14, DGPU_PWR_EN) → GPU GPIO5 3V3_MAIN_EN → RT8813A +GPU_CORE
+  (TDC 26.5 A) + UV15 EM5209 (+3.3V_RUN_GFX, +1.05V_PEX_VDD) → PGOOD=DGPU_PWROK → VRAM_EN (OR GC6_FB_EN) → SYX198D +1.35V_MEM_GFX (TDC 9 A).
+  PERST = PLTRST# AND GPP_D10 AND GPU GPIO21. EC sees DGPU_PWROK on UE2 MCP23008 (0x40) GP2. p50 class strap self-contradicts (table→302h, cell→300h).
+  Stale-BOM `@` in path: RH195, RV269, RV204/RV206, PR1302/PR1305 → DMM list. PEG-tap verdict risk H; D12-off risk L.
+
+Next: Phase 4 — `tb3.md` (p29–33 Alpine Ridge part + root port `[visual]`, TPS65982, FIT a/b/c).
 Blocked on: nothing.
