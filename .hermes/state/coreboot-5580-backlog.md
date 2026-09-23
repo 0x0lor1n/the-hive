@@ -105,10 +105,25 @@ Done when: cold-plug eGPU drives the 4K monitor, laptop still suspends/resumes w
 - me_cleaner -S + HAP, own SB keys → lanzaboote: already in the main plan (4.7/5.6).
 - TB3 NVM firmware: own SPI, Dell ships updates in the BIOS package. Under coreboot only `fwupd` if it lags; otherwise leave it.
 
+## B6 — Smart card bay → radio (LoRa 433 + SDR), antennas outside
+Source: `recon/xeon/sch/mods.md` "USH / Smart Card bay" (F39–F42, `JUSH1` p.41). No coreboot dependency: USB2 port 10 is plain USB.
+B6.1 Open the palmrest side, take the USH/smart-card board out, measure: bay L×W×H, slot height, where an SMA can exit (printed insert
+     in the slot vs drilled bulkhead). Photo + numbers to `recon/xeon/ush-bay.md`. Decides everything below.
+B6.2 Wiring: `FE1.1s` hub board on `USB20_N10/P10` (pins 8/9) + `+5V_RUN` (pin 20) + GND. Solder to the USH board's pads or the JUSH1
+     side; the CVILU mating connector is not a hobby part. Ferrite on USB + 5 V.
+B6.3 LoRa 433 first: SX1262. Pick after B6.1: CH341+SX1262 stick (meshtasticd native) or ESP32-C3 + E22-400M22S (USB KISS TNC →
+     `kissattach` → `ax0`, Direwolf/aprx igate on 433.775). 22 dBm max inside; 1 W only with the PA outside.
+B6.4 RTL-SDR bare board on hub port 2, own antenna (never shared with the LoRa TX). ADS-B / AIS / APRS 144.8 / NOAA RX.
+B6.5 Optional MMDVM_HS (ADF7021) on port 3 if there is room.
+B6.6 NixOS: `meshtasticd` or ax25-tools + direwolf services, `rtl-sdr` udev rules, stable `/dev/serial/by-id` names.
+Done when: LoRa APRS packets from the laptop show up on aprs.fi and the RTL-SDR decodes ADS-B at the same time, lid closed, no USB
+dropouts during TX.
+
 ## B5 — not worth it
 - HDMI 2.0 rework: LSPCON pads exist on some revisions, no BOM. No.
 - 4K internal panel: see B4. No.
 - EC firmware (battery whitelist, fan curve, PD): closed. Don't chase.
 
 ## Progress
+- 2026-09: B6 (smart card bay → LoRa 433 + RTL-SDR) added from the mods.md USH addendum (`JUSH1` read p.41).
 - 2026-09: mods.md is the source of truth for B1/B3/B4 slot decisions (`cells/wintermute/recon/xeon/sch/mods.md`). It contradicts B1 "RM520N-GL ~2.5 A fine" (3.0 A vs `PJP41` 2.5 A → H, EM9191 preferred), B4 "30-pin eDP" (`JEDP1` 40-pin) and B5 "eGPU over TB3: No" (kept as fallback).

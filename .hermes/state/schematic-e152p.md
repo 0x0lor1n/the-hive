@@ -221,6 +221,9 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   Backlog had no Progress section; appended one. Task complete.
 - 2026-09: user OK'd editing the backlog despite invariant 40: B1 power (6.8 A TDC, modems H, EM9191 pick), B3 TB3 fallback, B4 screen 40-pin `JEDP1`,
   B4 WWAN-NVMe x1/x2 + H, B5 TB3 line removed (moved to B3 fallback).
+- 2026-09: addendum after Phase 8 at user request: `JUSH1` read [visual] p.41 (USB2 port 10, +3.3V_ALW, +5V_ALW, +5V_RUN, 19 V via @RZ85 nopop,
+  no fuse). mods.md gets F39–F42 (LoRa 433, RTL-SDR, MMDVM, "no HF/high power inside") — NEW lines, marked as such; backlog B6.
+  User holds an amateur TX licence (class not stated).
 
 Next: nothing. Optional follow-up: short read of p.41 + p.3 for a `USH` FIT line (only if the nRF54L15 dongle idea matters).
 Blocked on: nothing.
