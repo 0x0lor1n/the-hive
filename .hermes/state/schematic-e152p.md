@@ -87,7 +87,7 @@ Exit criteria: `gpio.md` committed with all GPP_A…GPP_H + GPD rows (unused say
 Exit criteria: `dgpu.md` committed; ordered power-on sequence with cites; PEG width `[visual]`; PEG-tap verdict present with DIY field.
 3.1–3.4 DONE 2026-09 → `OUT/dgpu.md`: PEG x16 `[visual]`, 64 AC caps (CC34..65 CPU side, CV427..458 GPU side), board lane-reversed; 7-step power-on; 3 FIT lines.
 
-## Phase 4 — Thunderbolt 3 / USB-C PD (eGPU option A: dock or direct) ⏳
+## Phase 4 — Thunderbolt 3 / USB-C PD (eGPU option A: dock or direct) ✅
 4.1 p29–33: Alpine Ridge part (`JHL6540`/`DSL6340`? `[visual]`), PCH root port used (block diagram says PCIe[5..8]), `TBT_FORCE_PWR`, `TBT_RST#`,
     `TBT_WAKE#`, `TBT_CIO_PLUG_EVENT`, `TBT_DP0/1` sources, TPS65982 (`Port A`) I2C/GPIO to EC, `USB POWER SHARE`.
 4.2 Power: which rail feeds Alpine Ridge (always-on vs S0), current budget, PD sink path for 130 W input (charger p57 side) — does WD19TB 130 W
@@ -97,6 +97,7 @@ Exit criteria: `dgpu.md` committed; ordered power-on sequence with cites; PEG wi
     Alpine Ridge KBL-H Dells (7520/5520/3520/5580), r/eGPU "WD19TB eGPU" threads; note Dell TB3 firmware "PCIe x2" quirk reports if any.
 4.4 Write `OUT/tb3.md`. Commit.
 Exit criteria: `tb3.md` committed; Alpine Ridge part + root port `[visual]`; three FIT lines (a/b/c) with DIY URLs or "none found".
+4.1–4.4 DONE 2026-09 → `OUT/tb3.md`: PCH PCIE5..8 x4 + SRC6 `[visual]`; SKU not on sheet, port B unwired → 2C, field probes say JHL6340; 4 FIT lines (a/b/c + WD19TB power).
 
 ## Phase 5 — M.2 / SATA / WWAN slots (eGPU option B: OCuLink; networks; disk homes) ⏳
 5.1 p16 (PCH lanes), p37 (`KEYM`, `m3042_PCIE#_SATA`), p42–43 (`SATA`, SSD conn), p35 (`WWAN`), p2/p3 (`WLAN` Key A: PCIe port 2 + USB 6/7 + WiGig lane):
@@ -177,5 +178,12 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   PERST = PLTRST# AND GPP_D10 AND GPU GPIO21. EC sees DGPU_PWROK on UE2 MCP23008 (0x40) GP2. p50 class strap self-contradicts (table→302h, cell→300h).
   Stale-BOM `@` in path: RH195, RV269, RV204/RV206, PR1302/PR1305 → DMM list. PEG-tap verdict risk H; D12-off risk L.
 
-Next: Phase 4 — `tb3.md` (p29–33 Alpine Ridge part + root port `[visual]`, TPS65982, FIT a/b/c).
+- 2026-09: Phase 4 DONE → `cells/wintermute/recon/xeon/sch/tb3.md`. `UT1` ALPINE-RIDGE_BGA337 (SKU not printed; port B + DP source NC → 2C;
+  probes: JHL6340 `8086:15da`), NVM `UT2` W25Q80 with supply via `@RT9`/`@RT10` (both nopop → DMM). PCH PCIE5..8 x4, SRC6, PERST=`PCH_PLTRST#_AND` (shared).
+  DPSNK0=DDI2 direct, DPSNK1=PS8338 SW1. RTD3 unwired (`@RT392`); `+3.3V_TBT`=`+3.3V_RUN` via PJP5 → no TB wake from S3. PD TPS65982 config 7
+  (policy in its own flash `UT6`); Type-C sink path p.68: 2×5 A beads → S3/S4/S5 AON7409 → `+SDC_IN`, S4 by `EN_PD_HV_1`, S5 by EC `VBUS1_ECOK`, no strap cap.
+  Error in gpio.md: `GPP_H0` pull-up is `RH132`, not `RH133` (that's #7). Left unedited (one OUT file per session); fix with Phase 5 commit.
+  Dell KB 000060905: 3520 = four lanes. Open: `+3.3V_TBT_LC` source, WD19TB row for 3520 in the Dell dock matrix.
+
+Next: Phase 5 — `m2-storage.md` (p16/p37/p42–43 slots, 5.2 SATA-vs-KEYM lanes `[visual]`, ≥8 FIT lines, storage matrix); also fix gpio.md RH132.
 Blocked on: nothing.
