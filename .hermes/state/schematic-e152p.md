@@ -135,7 +135,7 @@ Exit criteria: `power.md` committed; rail table with TDC per rail; charger ILIM 
 Exit criteria: `display.md` committed; backlight/panel-power nets `[visual]`; eDP lane count stated; display-path verdict for eGPU present.
 7.1–7.3 DONE 2026-09 → `OUT/display.md`: eDP x2 (lanes 2/3 NC at CPU and on JEDP1) [visual]; DDI1 HDMI/PS8407, DDI2 AR P0, DDI3 → 2×PS8338 auto-HPD demux (AR > WiGig > VGA); panel/BL power [visual]; 8 FIT lines.
 
-## Phase 8 — Mod map: the three answers ⏳
+## Phase 8 — Mod map: the three answers ✅
 8.1 Collect every `FIT:` line from `OUT/*.md` (`grep -h '^FIT:' $OUT/*.md`), dedupe, keep page cites. No new FITs here (invariant).
 8.2 Section **eGPU**: rank TB3-direct / TB3-via-WD19TB / OCuLink-in-KEYM / PEG-tap by: usable lanes & Gen, hot-plug, what it displaces, coreboot dependency,
     parts list with prices already in chat (ADT-Link, PSU), risk. One recommendation + one fallback.
@@ -146,6 +146,7 @@ Exit criteria: `display.md` committed; backlight/panel-power nets `[visual]`; eD
 8.5 Section **order of operations**: which mods are safe before coreboot, which need coreboot (whitelist / hidden root port), which need soldering; map each to backlog B-item.
 8.6 Write `OUT/mods.md`; append to `coreboot-5580-backlog.md` Progress: "mods.md is the source of truth for B1/B3/B4 slot decisions". Commit both.
 Exit criteria: `mods.md` committed; three sections each end with a one-line recommendation; every recommendation traces to a FIT line with `(p.NN)` and `DIY:`; backlog Progress updated.
+8.1–8.6 DONE 2026-09 → `OUT/mods.md`: 38 FIT lines indexed F1..F38, none new; eGPU = OCuLink/KEYM (F17 M), fallback TB3 direct (F35 L); EM9191 (F21/F30 H) + MT7925 (F25/F34 M); bay SSD in every variant (F18).
 
 ## Fallback at any phase
 `pages.md` + lane budget (Phase 0) already give the raw slot/lane answer; the E151P-derived backlog notes cover WWAN and M.2. eGPU falls back to
@@ -213,5 +214,11 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   backlight supply `QV1` AO6405 from `+PWR_SRC` gated by EC `EN_INVPWR` ONLY → coreboot first-boot test item. p.56 block diagram says AP2821K (stale again).
   `FIT: nothing` lines got a `DIY:` field too (invariant 38 vs Phase-plan wording).
 
-Next: Phase 8 — `mods.md` (collect `grep -h '^FIT:' $OUT/*.md`, three sections + order of operations; backlog Progress line).
+- 2026-09: Phase 8 DONE → `cells/wintermute/recon/xeon/sch/mods.md`. 38 FIT lines collected (dgpu 3, display 8, gpio 4, m2-storage 12, power 5, spi-ec 2, tb3 4),
+  merged per subject at the highest risk. Modems end up H on power (F29/F30), not M: EM9191 picked over RM520N-GL (drop-in 3042, 2.7 vs 3.0 A).
+  Gap: no phase wrote a FIT for `USH`/`JUSH1` (p.41) or the RTS5242 SD reader (p.36), so 8.3 extras leave them open (invariant: no new FITs in 8).
+  Backlog lines contradicted by FITs listed in mods.md, not edited (invariant 40): B1 RM520N 2.5 A, B4 "30-pin eDP", B5 TB3 eGPU "No".
+  Backlog had no Progress section; appended one. Task complete.
+
+Next: nothing. Optional follow-up: short read of p.41 + p.3 for a `USH` FIT line (only if the nRF54L15 dongle idea matters).
 Blocked on: nothing.

@@ -106,3 +106,6 @@ Done when: cold-plug eGPU drives the 4K monitor, laptop still suspends/resumes w
 - 4K internal panel: see B4. No.
 - eGPU over TB3: see B3. No.
 - EC firmware (battery whitelist, fan curve, PD): closed. Don't chase.
+
+## Progress
+- 2026-09: mods.md is the source of truth for B1/B3/B4 slot decisions (`cells/wintermute/recon/xeon/sch/mods.md`). It contradicts B1 "RM520N-GL ~2.5 A fine" (3.0 A vs `PJP41` 2.5 A → H, EM9191 preferred), B4 "30-pin eDP" (`JEDP1` 40-pin) and B5 "eGPU over TB3: No" (kept as fallback).
