@@ -17,7 +17,7 @@ Columns: `dir` from the PCH's point of view; `pull` = parts on the sheet (`@` = 
 
 ## CLKREQ / reference clocks — flag for coreboot
 - `SRCCLKREQ0#..7#` = `GPP_B5..B10, H0, H1` → `CLKREQ_PCIE#0..7_R`. Destinations: #0 WWAN <37>, #1 WLAN <37>, #2 WiGig <37>, #3 KEYM <42>, #4 LAN <35>, #5 card reader <36>, #6 Alpine Ridge <29>, #7 dGPU <49> [visual] (p.18).
-- The series 0 Ω links from the device to the PCH, `@RF@RH10..RH17`, are drawn not fitted, and PCH-side pull-ups `RH124–127, RH131–133` 10 K to `+3.3V_RUN` are fitted (#7 has none) [visual] (p.18). On E151P the same links are `RF@` = fitted (E151P p.18) [text]. Same pattern as the SPI 0 Ω bridges in spi-ec.md: either the BOM view is stale or E152P really runs every root port with free-running clocks. DMM `RH10` / `RH13` before writing the devicetree.
+- The series 0 Ω links from the device to the PCH, `@RF@RH10..RH17`, are drawn not fitted, and PCH-side pull-ups `RH123–127, RH131–133` 10 K to `+3.3V_RUN` (#0..#7 in that order) are fitted [visual] (p.18). On E151P the same links are `RF@` = fitted (E151P p.18) [text]. Same pattern as the SPI 0 Ω bridges in spi-ec.md: either the BOM view is stale or E152P really runs every root port with free-running clocks. DMM `RH10` / `RH13` before writing the devicetree.
 - Coreboot consequence in either case: `PcieRpClkReqSupport[n] = false` works for both, because the clock just runs. That is how the upstream Dell SKL/KBL port handles its slots (`optiplex_3050/overridetree.cb`, rp5/rp8). Enable CLKREQ only after the DMM check.
 - `CLKOUT_PCIE_0..7` → `CLK_PCIE_P/N0..7` to the same eight devices [visual] (p.18), all cross-referenced [text] (p.29, p.35–37, p.42, p.49). `CLKOUT_PCIE_8..15` and `SRCCLKREQ8#..15#` (`GPP_H2..H9`) are NC with `X` at the ball [visual] (p.18).
 
@@ -53,12 +53,12 @@ Columns: `dir` from the PCH's point of view; `pull` = parts on the sheet (`@` = 
 | GPP_B2 | BD23 | VRALERT# (no dest) | NC | @RH203 10K +3.3V_ALW_PCH (nopop) | p.20 | unused | PAD_NC |
 | GPP_B3 | BC23 | TOUCHPAD_INTR# <39,46> | in | - | p.19 | touchpad IRQ | GPI_APIC (level, low) |
 | GPP_B4 | BD24 | TOUCH_SCREEN_DET# <34> | in | - | p.19 | touchscreen present | GPI |
-| GPP_B5 | BC24 | CLKREQ_PCIE#0_R | in | RH124 10K +3.3V_RUN; @RF@RH10 0R to CLKREQ_PCIE#0 <37> (nopop) | p.18 | SRCCLKREQ0# WWAN | NF1 |
-| GPP_B6 | AW24 | CLKREQ_PCIE#1_R | in | RH125 10K; @RF@RH11 (nopop) <37> | p.18 | SRCCLKREQ1# WLAN | NF1 |
-| GPP_B7 | AT24 | CLKREQ_PCIE#2_R | in | RH126 10K; @RF@RH12 (nopop) <37> | p.18 | SRCCLKREQ2# WiGig (WLAN slot 2nd port) | NF1 |
-| GPP_B8 | BD25 | CLKREQ_PCIE#3_R | in | RH127 10K; @RF@RH13 (nopop) <42> | p.18 | SRCCLKREQ3# KEYM | NF1 |
-| GPP_B9 | BB24 | CLKREQ_PCIE#4_R | in | RH131 10K; @RF@RH14 (nopop) <35> | p.18 | SRCCLKREQ4# LAN I219 | NF1 |
-| GPP_B10 | BE25 | CLKREQ_PCIE#5_R | in | RH132 10K; @RF@RH15 (nopop) <36> | p.18 | SRCCLKREQ5# card reader | NF1 |
+| GPP_B5 | BC24 | CLKREQ_PCIE#0_R | in | RH123 10K +3.3V_RUN; @RF@RH10 0R to CLKREQ_PCIE#0 <37> (nopop) | p.18 | SRCCLKREQ0# WWAN | NF1 |
+| GPP_B6 | AW24 | CLKREQ_PCIE#1_R | in | RH124 10K; @RF@RH11 (nopop) <37> | p.18 | SRCCLKREQ1# WLAN | NF1 |
+| GPP_B7 | AT24 | CLKREQ_PCIE#2_R | in | RH125 10K; @RF@RH12 (nopop) <37> | p.18 | SRCCLKREQ2# WiGig (WLAN slot 2nd port) | NF1 |
+| GPP_B8 | BD25 | CLKREQ_PCIE#3_R | in | RH126 10K; @RF@RH13 (nopop) <42> | p.18 | SRCCLKREQ3# KEYM | NF1 |
+| GPP_B9 | BB24 | CLKREQ_PCIE#4_R | in | RH127 10K; @RF@RH14 (nopop) <35> | p.18 | SRCCLKREQ4# LAN I219 | NF1 |
+| GPP_B10 | BE25 | CLKREQ_PCIE#5_R | in | RH131 10K; @RF@RH15 (nopop) <36> | p.18 | SRCCLKREQ5# card reader | NF1 |
 | GPP_B11 | AN24 | NC | NC | - | p.20 | - | PAD_NC |
 | GPP_B12 | BC26 | SIO_SLP_S0# <11,21,41,61> | out | - | p.20 | SLP_S0# | NF1 |
 | GPP_B13 | BB27 | PCH_PLTRST# | out | @RH62/@RH244/@RH195 0R options | p.19 | platform reset (fan-out p.19 options) | NF1 |
@@ -181,8 +181,8 @@ Columns: `dir` from the PCH's point of view; `pull` = parts on the sheet (`@` = 
 | GPP_G21 | U35 | NC | NC | - | p.21 | - | PAD_NC |
 | GPP_G22 | L44 | NC | NC | - | p.21 | - | PAD_NC |
 | GPP_G23 | L43 | NC | NC | - | p.21 | - | PAD_NC |
-| GPP_H0 | AT33 | CLKREQ_PCIE#6_R | in | RH133 10K +3.3V_RUN; @RF@RH16 (nopop) <29> | p.18 | SRCCLKREQ6# Alpine Ridge | NF1 |
-| GPP_H1 | AR31 | CLKREQ_PCIE#7_R | in | no PU; @RF@RH17 (nopop) <49>; @QH5 from DGPU_PWR_EN | p.18 | SRCCLKREQ7# dGPU | NF1 |
+| GPP_H0 | AT33 | CLKREQ_PCIE#6_R | in | RH132 10K +3.3V_RUN; @RF@RH16 (nopop) <29> | p.18 | SRCCLKREQ6# Alpine Ridge | NF1 |
+| GPP_H1 | AR31 | CLKREQ_PCIE#7_R | in | RH133 10K +3.3V_RUN; @RF@RH17 (nopop) <49>; @QH5 from DGPU_PWR_EN | p.18 | SRCCLKREQ7# dGPU | NF1 |
 | GPP_H2 | BD32 | NC | NC | - | p.18 | - | PAD_NC |
 | GPP_H3 | BC32 | NC | NC | - | p.18 | - | PAD_NC |
 | GPP_H4 | BB31 | NC | NC | - | p.18 | - | PAD_NC |

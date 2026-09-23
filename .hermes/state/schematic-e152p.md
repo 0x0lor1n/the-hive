@@ -99,7 +99,7 @@ Exit criteria: `dgpu.md` committed; ordered power-on sequence with cites; PEG wi
 Exit criteria: `tb3.md` committed; Alpine Ridge part + root port `[visual]`; three FIT lines (a/b/c) with DIY URLs or "none found".
 4.1–4.4 DONE 2026-09 → `OUT/tb3.md`: PCH PCIE5..8 x4 + SRC6 `[visual]`; SKU not on sheet, port B unwired → 2C, field probes say JHL6340; 4 FIT lines (a/b/c + WD19TB power).
 
-## Phase 5 — M.2 / SATA / WWAN slots (eGPU option B: OCuLink; networks; disk homes) ⏳
+## Phase 5 — M.2 / SATA / WWAN slots (eGPU option B: OCuLink; networks; disk homes) ✅
 5.1 p16 (PCH lanes), p37 (`KEYM`, `m3042_PCIE#_SATA`), p42–43 (`SATA`, SSD conn), p35 (`WWAN`), p2/p3 (`WLAN` Key A: PCIe port 2 + USB 6/7 + WiGig lane):
     per slot — lanes, clock (`CLK_PCIE_Pn`), `CLKREQ`, power rail + load switch + its current rating, sideband, mechanical length (3042/2242/2230/2280).
     Re-check every "Verified from schematic" bullet of backlog B1 against E152P; note any ref-des change.
@@ -112,6 +112,7 @@ Exit criteria: `tb3.md` committed; Alpine Ridge part + root port `[visual]`; thr
 5.4 Storage decision matrix (draft, finalised in Phase 8): rows = eGPU path {TB3, OCuLink-in-KEYM, none}; cols = where the system disk lives {KEYM NVMe, SATA SSD, WWAN-slot NVMe}; cell = OK / needs X / impossible (p.NN).
 5.5 Write `OUT/m2-storage.md`; patch backlog B1/B3 bullets that changed (cites now E152P). Commit both.
 Exit criteria: `m2-storage.md` committed; 5.2 answered `[visual]`; ≥8 FIT lines across the four slots; matrix present; backlog B1 says "re-verified on E152P (p.NN)".
+5.1–5.5 DONE 2026-09 → `OUT/m2-storage.md`: KEYM RP9..12 x4, bay SATA2 separate [visual] p.16; WWAN x2-capable via `UZ29` mux, CZ10/11 drawn fitted; 12 FIT lines; matrix; backlog B1/B3 patched.
 
 ## Phase 6 — Power tree, charger, batteries (budget for every FIT above; backlog B2, B4 battery 68/92 Wh) ⏳
 6.1 Power-tree sheet (E151P p47 equivalent; grep `Power Tree|TDC|Peak Current`): rails → regulator part → TDC/peak → loads.
@@ -185,5 +186,15 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   Error in gpio.md: `GPP_H0` pull-up is `RH132`, not `RH133` (that's #7). Left unedited (one OUT file per session); fix with Phase 5 commit.
   Dell KB 000060905: 3520 = four lanes. Open: `+3.3V_TBT_LC` source, WD19TB row for 3520 in the Dell dock matrix.
 
-Next: Phase 5 — `m2-storage.md` (p16/p37/p42–43 slots, 5.2 SATA-vs-KEYM lanes `[visual]`, ≥8 FIT lines, storage matrix); also fix gpio.md RH132.
+- 2026-09: Phase 5 DONE → `cells/wintermute/recon/xeon/sch/m2-storage.md`. KEYM = PCIE9..12 x4 (lane k = 9+k, CN65..72 0.22u, SRC3), power
+  `+3.3V_HDD_M2` = `+3.3V_RUN` via PJP31 "2.8A", no switch. Bay = PCIE15/SATA2 → UN7 PI3EQX6741 redriver, `+5V_HDD` via UZ23 AOZ1336 (`HDD_EN`=C15)
+  → SATA and KEYM never share lanes; SATA0B/1B/3 NC. WWAN: lane0 PCIE17 (CZ10/11 drawn fitted on E152P, `@` on E151P), lane1 = UZ29 PI3PCIE3212
+  USB3-2 vs PCIE18 selected by SLOT2_CONFIG_1 → x2 SSD capable; lane-1 TX through `@RZ1/@RZ2` nopop → DMM. `m3042_PCIE#_SATA` driven by EC J12.
+  `+3.3V_WWAN` PJP41 "2.5A"; `+3.3V_WLAN` PJP38 "2A", enable via `@RZ70`/`@RZ71` both nopop → DMM. WLAN = PCIE2/SRC1 + WiGig PCIE1/SRC2, no CNVi.
+  Wrong page map: NGFF is p.37 (not p.35 = LAN), SATA/SSD p.42–43 as planned. Phase 4 claim "gpio.md RH133→RH132" was only half: all CLKREQ PUs were
+  shifted one row (#0 RH123 … #7 RH133) — fixed in gpio.md; tb3.md link ref `@RF@RH13`→`RH16` fixed. Invariant "one OUT file per session"
+  bent on purpose: gpio.md/tb3.md fixes ride along (planned in Phase 4 Next).
+  DIY: no 5580/3520 NVMe-in-WWAN precedent; mattmillman: Dell 7x80 BIOS disables the WWAN root port. Dell manual: 92 Wh → no 2.5" drive.
+
+Next: Phase 6 — `power.md` (power tree p.47-equiv, charger ISL9237 p.66 ILIM/adapter-ID `[visual]`, budgets for every Phase 4–5 FIT: WWAN 2.5 A pad, WLAN 2 A, KEYM 2.8 A).
 Blocked on: nothing.
