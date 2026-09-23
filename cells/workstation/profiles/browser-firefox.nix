@@ -14,13 +14,14 @@
 #      environment and programs.firefox.policies read from its policies.json,
 #      which the NixOS firefox module writes to /etc/firefox/policies/ -- on
 #      Linux that path wins over the package's distribution/policies.json.
-#      Its /etc/firefox/defaults/pref/phoenix.js is dead weight here (nixpkgs
-#      firefox reads prefs from its own libDir); the wrapper's mozilla.cfg
-#      carries phoenix.cfg instead.
+#      Its /etc/firefox/defaults/pref/phoenix.js is read (locked
+#      general.config.filename = phoenix.cfg), so /etc/firefox/phoenix.cfg
+#      is the autoconfig actually loaded, not the wrapper's mozilla.cfg.
 # Our own policies (search engines, addons) merge into the same
 # programs.firefox.policies attrset; Phoenix's SearchEngines defaults are
 # mkForce'd since the module system cannot merge two scalars.
 {inputs, ...}: {
+  config,
   pkgs,
   lib,
   ...
@@ -47,6 +48,11 @@
     // lib.optionalAttrs (alias != null) {Alias = alias;};
 in {
   imports = [inputs.phoenix.nixosModules.default];
+
+  # mozilla.cfg = phoenix.cfg + autoConfig below; without this the
+  # autoConfig block is never loaded.
+  environment.etc."firefox/phoenix.cfg".source =
+    lib.mkForce "${config.programs.firefox.package}/lib/firefox/mozilla.cfg";
 
   programs.firefox = {
     enable = true;
@@ -138,7 +144,10 @@ in {
       defaultPref("privacy.clearOnShutdown_v2.cache", false);
       defaultPref("privacy.clearOnShutdown_v2.cookiesAndStorage", false);
       defaultPref("privacy.clearOnShutdown_v2.browsingHistoryAndDownloads", false);
+      defaultPref("privacy.clearOnShutdown_v2.downloads", false);
       defaultPref("privacy.sanitize.sanitizeOnShutdown", false);
+      defaultPref("places.history.enabled", true);
+      defaultPref("browser.toolbars.bookmarks.visibility", "always");
       defaultPref("privacy.sanitize.pending", "[]");
       defaultPref("browser.startup.page", 3);
       defaultPref("toolkit.legacyUserProfileCustomizations.stylesheets", true);
