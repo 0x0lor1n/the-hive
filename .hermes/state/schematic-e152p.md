@@ -114,7 +114,7 @@ Exit criteria: `tb3.md` committed; Alpine Ridge part + root port `[visual]`; thr
 Exit criteria: `m2-storage.md` committed; 5.2 answered `[visual]`; ≥8 FIT lines across the four slots; matrix present; backlog B1 says "re-verified on E152P (p.NN)".
 5.1–5.5 DONE 2026-09 → `OUT/m2-storage.md`: KEYM RP9..12 x4, bay SATA2 separate [visual] p.16; WWAN x2-capable via `UZ29` mux, CZ10/11 drawn fitted; 12 FIT lines; matrix; backlog B1/B3 patched.
 
-## Phase 6 — Power tree, charger, batteries (budget for every FIT above; backlog B2, B4 battery 68/92 Wh) ⏳
+## Phase 6 — Power tree, charger, batteries (budget for every FIT above; backlog B2, B4 battery 68/92 Wh) ✅
 6.1 Power-tree sheet (E151P p47 equivalent; grep `Power Tree|TDC|Peak Current`): rails → regulator part → TDC/peak → loads.
 6.2 p56 (ISL95857 `+VCC_CORE`, RT8207MZ DDR, SYX198 battery/charger) + p57 (primary battery connector, `PBAT_*` SMBus, coin cell): charger IC, input
     current limit strap (`ILIM` 8/12/16 A `[visual]`), adapter-ID (`DA-2` / 130 W PSID) path, does the charger accept >130 W if the ID says so.
@@ -124,6 +124,7 @@ Exit criteria: `m2-storage.md` committed; 5.2 answered `[visual]`; ≥8 FIT line
     ground-bonded to the laptop's DC-in ground (OCuLink adapter power scheme) — cite the charger ground topology.
 6.5 Write `OUT/power.md`. Commit.
 Exit criteria: `power.md` committed; rail table with TDC per rail; charger ILIM + adapter-ID `[visual]`; every Phase 4–5 FIT has a power verdict.
+6.1–6.5 DONE 2026-09 → `OUT/power.md`: 13 rails with TDC (no loads page on E152P, p.56 stale BOM); charger ISL88738 (ISL9237 colay), no ILIM strap, `PL901` 6.6 A caps input ≈129 W; PSID 1-wire → EC [visual]; 12 FIT power verdicts; 5 FIT lines.
 
 ## Phase 7 — Display / eDP / HDMI demux / panel (coreboot Phase 4; eGPU output path) ⏳
 7.1 p25–28 + p2: eDP lanes (block diagram says eDP x2), `EDP CONN` pinout, backlight (`LCD_BKLT_PWM`, `EN`), panel VDD switch, touch/camera on eDP cable
@@ -196,5 +197,13 @@ TB3-direct (no schematic needed, egpu.io precedent), disk stays in KEYM, network
   bent on purpose: gpio.md/tb3.md fixes ride along (planned in Phase 4 Next).
   DIY: no 5580/3520 NVMe-in-WWAN precedent; mattmillman: Dell 7x80 BIOS disables the WWAN root port. Dell manual: 92 Wh → no 2.5" drive.
 
-Next: Phase 6 — `power.md` (power tree p.47-equiv, charger ISL9237 p.66 ILIM/adapter-ID `[visual]`, budgets for every Phase 4–5 FIT: WWAN 2.5 A pad, WLAN 2 A, KEYM 2.8 A).
+- 2026-09: Phase 6 DONE → `cells/wintermute/recon/xeon/sch/power.md`. No E151P-style power-tree page; p.56 block diagram is stale (ISL95857/RT8207MZ
+  vs ISL95855/SY8210A on the sheets) → rail table from per-sheet TDC boxes. `+3.3V_ALW` SY8288B 6.8 A TDC feeds WWAN/WLAN/LAN/RUN switches (pad labels sum 11.3 A).
+  VCORE 2-ph 50/68 A, GT 25/55, SA 10/11.1. Charger `PU901` ISL88738, Rs1 `PR901` 10 mΩ, `PROG` `PR932` 105 K (outside ISL9237 Table 18 → Dell code);
+  no ILIM strap, limit = SMBus register set by EC from PSID; `EMC@PL901` 1 µH 6.6 A in series = 129 W → 180 W brick buys nothing. PSID: `PQ2` FDV301N pass + `PQ3` OV clamp.
+  Barrel minus → GND directly, all sense high-side → eGPU PSU ground bond harmless. RM520N-GL needs 3.0 A (Quectel) / EM9191 2.7 A vs `PJP41` "2.5A" → risk H.
+  Correction: WLAN pad is `PJP36`, not `PJP38` (fixed in m2-storage.md). DMM: charger SMBus `@PR920/@PR922`, `@PR936`, `@PR926`, `@RZ64/@RZ65`.
+  Not done: battery 68/92 Wh (no sheet data beyond the connector; mechanics in m2-storage.md).
+
+Next: Phase 7 — `display.md` (p.25–28 + p.34: eDP lane count, backlight/panel-power nets `[visual]`, PS8338 demux, eGPU → internal panel path).
 Blocked on: nothing.
