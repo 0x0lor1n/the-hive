@@ -122,6 +122,7 @@ Decisions owed before 4.1 (ask at the start of the Phase 4 session, one at a tim
 ## Phase 5 — Standalone GUI/TUI configs ⏳
 Audit 2026-09 (plan-audit, live code + HM 44831a7 = `home-manager_3`, the root `home-manager` input in cells/workstation/flake.lock). Palette access: desktop modules take the `theme` arg (home/default.nix:50 `_module.args.theme`, e.g. qt.nix:9); deck modules read `inputs.cells.common.theme` (btop.nix:8).
 5.1 Zathura: bare package at `home/dev/languages.nix:50` (forward-search for `lang-texlive.lua:56`). Move to `programs.zathura.enable` (HM `zathura.nix:26`, installs `cfg.package` at :84, writes zathurarc at :86) + `programs.zathura.options` from roles: default-bg/fg, statusbar-bg/fg, inputbar-bg/fg, notification(-error/-warning)-bg/fg, highlight-color/-active-color, completion-*, index-*, recolor-lightcolor/-darkcolor; `recolor` stays false. Where: a new `home/desktop/zathura.nix` (languages.nix has no `theme` arg today; dev/ is imported alongside desktop/ by home/default.nix:62, so either works — desktop keeps GUI theming together). Both accounts get it (same home module, built twice: home/default.nix:1-5).
+  — DONE 2026-09: new `home/desktop/zathura.nix` (imported in desktop/default.nix), bare `zathura` dropped from languages.nix. Options per zathurarc(5) of the installed 2026.05.20: plan's set + completion-group-*, highlight-fg, render-loading-bg/fg, signature-{success,warning,error}-color. Overlays over the page use `rgba()` (GTK3 parses no #rrggbbaa): highlight = highlight@0.5, active = warning@0.5, signatures @0.9. recolor-lightcolor = bg, -darkcolor = fg.
 5.2 mpv: `osd-color`, `osd-border-color`, `osd-back-color`, `osd-selected-color` (all in mpv 0.41 man) from roles in `programs.mpv.config` (mpv/default.nix:33). These colour OSD text + the `o`/seek OSD bar only. The OSC (seekbar/controls on mouse move) is osc.lua with its own `background_color`, `timecode_color`, `title_color`, `buttons_color`, `held_element_color` script-opts → `programs.mpv.scriptOpts.osc` (HM mpv.nix:95). Include both, else the most-seen mpv UI stays default.
 5.3 avizo: `services.avizo.settings.default` (HM `services/avizo.nix:17`, ini at :54) in `home/desktop/osd.nix:6`: `background`, `border-color`, `bar-fg-color`, `bar-bg-color` (keys from avizo_client.vala / upstream config.ini). Parsed by Gdk.RGBA (`#rrggbb` or `rgba(...)`); a bad value `error()`s and kills the client (avizo_client.vala:285), so eval-check the rendered ini. Read by the client (volumectl/lightctl) on every call, so no service restart needed.
 5.4 ANSI TUIs with their own colours (Phase 0):
@@ -136,6 +137,7 @@ Audit 2026-09 (plan-audit, live code + HM 44831a7 = `home-manager_3`, the root `
 Decisions owed before 5.5 (ask at the start of the Phase 5 session):
   - Vial: (a) exception (hardcoded palette, 5 min/year use), (b) try theme=System + QT_QPA_PLATFORMTHEME=gtk3 in the wrapper and persist ~/.config/Vial on both accounts, (c) same but the wrapper seeds Vial.conf each launch (no persistence entry).
   Answered 2026-09: (a) exception. 5.5 = KeePassXC only; Vial dropped from 5.6.
+verified 5.1: standalone HM eval (HM y3s3hn0…-source + workstation nixpkgs fmasn49…-source, /tmp/zat-hm/eval.nix) -> zathurarc 32 `set` lines, all palette hexes / rgba of palette; `alejandra --check` on the 3 files -> 0; headless dwl (pixman) + `zathura -c <rendered cfg>` on a PDF: surround #1f1f28, statusbar #2a2a37, inputbar ok, `--find` highlight blends of #e6c384/#ff9e3b on white, index (Tab) bg #1f1f28 / selected #2d4f67 / fg #dcd7ba, Ctrl+R page #1f1f28 @ 2026-09. elster drvPath NOT evaluated (cold TPM cache) — user.
 Exit criteria: screenshot of each tool shows palette bg/fg; user accepted 5.6 per app; Matrix rows flipped to themed.
 
 ## Phase 6 — Agent CLIs ⏳
@@ -179,6 +181,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: user accepted 4.3 ("ок!"); Phase 4 ✅. Phase 5 in a fresh session.
 - 2026-09: plan-audit of Phase 5: Vial env-var plan cannot work (app sets its own palette; settings unpersisted) → decision; Ctrl-R (histdb-skim) ignores SKIM_DEFAULT_OPTIONS, needs HISTDB_COLOR; skim is 5.4 not 0.10; mpv OSC needs osc script-opts, not osd-*; KeePassXC recent-db list lives in ~/.cache ini (plan said ~/.config); p10k has 1 cube colour, not 2; fzf has no in-repo consumer.
 - 2026-09: Vial decision: exception.
+- 2026-09: 5.1 landed (zathura via programs.zathura from roles); verified off-host. User test of Zathura waits for the batched 5.6 after 5.2-5.5 land (one rebuild for the phase).
 
-Next: 5.1 (Zathura) in a fresh session.
+Next: 5.2 (mpv OSD + OSC).
 Blocked on: nothing.

@@ -46,8 +46,8 @@ in {
     # latex: latexmk, xelatex, chktex, latexindent, biber for lang-texlive.lua.
     # The top-level scheme already ships biber; adding it separately collides
     # in buildEnv. Downgrade to texliveMedium if closure size bites.
+    # Forward-search viewer (zathura) lives in desktop/zathura.nix.
     texliveFull
-    zathura # forward-search PDF viewer wired up in lang-texlive.lua
     # misc
     d2
     # android
