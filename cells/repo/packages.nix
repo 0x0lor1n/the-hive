@@ -5,27 +5,22 @@
 }: let
   pkgs = inputs.pkgs;
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
-in {
-  # Re-exported from this cell's own llm-agents input (cells/repo/flake.nix),
-  # so the workstation cell installs the SAME pin the devshell runs, without
-  # declaring llm-agents a second time.
-  hermes-agent = llmAgents.hermes-agent;
-  # The two per-tty agents + opencode's plugin bundle, installed into both
-  # homes by workstation/home/dev/agents.nix.
-  claude-code = llmAgents.claude-code;
-  opencode = llmAgents.opencode;
-  oh-my-opencode = llmAgents.oh-my-opencode;
 
-  # Anthropic loopback proxy that images the bulky, hash-free parts of each
-  # request (system prompt, tool docs, cold history). Lossy: hashes read back
-  # from imaged history are a confabulation risk; fresh tool output stays text.
-  pxpipe = pkgs.buildGoModule {
-    pname = "pxpipe";
-    version = "0.4.19";
-    src = ./pxpipe;
-    vendorHash = "sha256-c+gc91FSkIegK3G+rZPjhV69vmvhZ6uLju4mO9h9IRQ=";
-    meta.mainProgram = "pxpipe";
-  };
+  # nixq goes in front of PATH inside the agent process, so only the shells
+  # the agent spawns get it; human shells keep the real client.
+  withNixq = pkg:
+    pkgs.symlinkJoin {
+      name = "${pkg.name}-nixq";
+      paths = [pkg];
+      nativeBuildInputs = [pkgs.makeWrapper];
+      postBuild = ''
+        for f in ${pkg}/bin/*; do
+          rm "$out/bin/''${f##*/}"
+          makeWrapper "$f" "$out/bin/''${f##*/}" --prefix PATH : ${nixq}/bin
+        done
+      '';
+      inherit (pkg) meta;
+    };
 
   # PATH shim named "nix" for agent shells: collapses copying/building progress
   # on stderr to one summary line. From the first "error" line onward
@@ -40,6 +35,29 @@ in {
     postInstall = "mv $out/bin/nixq $out/bin/nix";
     meta.mainProgram = "nix";
   };
+in {
+  # Re-exported from this cell's own llm-agents input (cells/repo/flake.nix),
+  # so the workstation cell installs the SAME pin the devshell runs, without
+  # declaring llm-agents a second time.
+  hermes-agent = withNixq llmAgents.hermes-agent;
+  # The two per-tty agents + opencode's plugin bundle, installed into both
+  # homes by workstation/home/dev/agents.nix.
+  claude-code = withNixq llmAgents.claude-code;
+  opencode = withNixq llmAgents.opencode;
+  oh-my-opencode = llmAgents.oh-my-opencode;
+
+  # Anthropic loopback proxy that images the bulky, hash-free parts of each
+  # request (system prompt, tool docs, cold history). Lossy: hashes read back
+  # from imaged history are a confabulation risk; fresh tool output stays text.
+  pxpipe = pkgs.buildGoModule {
+    pname = "pxpipe";
+    version = "0.4.19";
+    src = ./pxpipe;
+    vendorHash = "sha256-c+gc91FSkIegK3G+rZPjhV69vmvhZ6uLju4mO9h9IRQ=";
+    meta.mainProgram = "pxpipe";
+  };
+
+  inherit nixq;
 
   # Rust Token Killer: rewrites git/cargo/ls/... to compact output before it
   # reaches the model. Drops noise, keeps signal; pinned tag, CLI filters only —
