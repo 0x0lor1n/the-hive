@@ -190,7 +190,9 @@ return {
     },
     config = function(_, opts)
       local bufferline = require "bufferline"
-      lazy_utils.on_load("catppuccin", function()
+      lazy_utils.on_load("kanagawa.nvim", function()
+        -- bufferline defaults to bold+italic; the old theme's integration stripped both
+        opts.options.style_preset = { bufferline.style_preset.no_bold, bufferline.style_preset.no_italic }
         opts.highlights = bufferline_utils.get_highlights()
         bufferline.setup(opts)
 
@@ -679,9 +681,9 @@ return {
     },
     config = function(_, opts)
       local smear_cursor = require "smear_cursor"
-      lazy_utils.on_load("catppuccin", function()
-        local mocha = require("catppuccin.palettes").get_palette "mocha"
-        opts.cursor_color = mocha.green
+      lazy_utils.on_load("kanagawa.nvim", function()
+        local C = require("custom.plugins.colorscheme.palette").get()
+        opts.cursor_color = C.green
         smear_cursor.setup(opts)
       end)
     end,
@@ -699,8 +701,8 @@ return {
     },
     config = function(_, opts)
       local modes = require "modes"
-      lazy_utils.on_load("catppuccin", function()
-        local C = require("catppuccin.palettes").get_palette()
+      lazy_utils.on_load("kanagawa.nvim", function()
+        local C = require("custom.plugins.colorscheme.palette").get()
         opts.colors = {
           copy = C.yellow,
           delete = C.red,
@@ -710,23 +712,6 @@ return {
           visual = C.mauve,
         }
         modes.setup(opts)
-      end)
-    end,
-  },
-
-  -- very cool plugin but adds flashing :c
-  -- same as mvllow/modes.nvim
-  {
-    "rasulomaroff/reactive.nvim",
-    enabled = false,
-    event = "VeryLazy",
-    opts = {},
-    config = function(_, opts)
-      local reactive = require "reactive"
-      lazy_utils.on_load("catppuccin", function()
-        local flavour = require("catppuccin").flavour
-        opts.load = { "catppuccin-" .. flavour .. "-cursor", "catppuccin-" .. flavour .. "-cursorline" }
-        reactive.setup(opts)
       end)
     end,
   },
