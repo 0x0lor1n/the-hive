@@ -22,6 +22,7 @@
     crystalBlue = "7e9cd8";
     springViolet1 = "938aa9";
     oniViolet = "957fb8";
+    oniViolet2 = "b8b4d0";
     autumnRed = "c34043";
     samuraiRed = "e82424";
     autumnGreen = "76946a";
