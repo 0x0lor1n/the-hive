@@ -68,9 +68,10 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
   - hermes v0.20.5: yes. skin_engine.py docstring: `~/.hermes/skins/<name>.yaml`, `display.skin: <name>` in config.yaml or `/skin`; `hermes config get display.skin` → `default`. config.yaml is Hermes-owned (agent-proxy.nix:56), so set it through `hermes config set` in the seed script, not a symlink.
 Exit criteria: no `?` left in the Matrix `status` column; 0.4 answered yes/no with the command used; Matrix committed.
 
-## Phase 1 — Palette additions ⏳
-1.1 `cells/common/theme.nix`: the four `winter*` colours and roles `diffAdd = winterGreen`, `diffDelete = winterRed`, `diffChange = winterBlue`, `diffText = winterYellow`, `success = springGreen`, `warning = roninYellow`, `info = springBlue`.
+## Phase 1 — Palette additions ✅
+1.1 `cells/common/theme.nix`: the four `winter*` colours and roles `diffAdd = winterGreen`, `diffDelete = winterRed`, `diffChange = winterBlue`, `diffText = winterYellow`, `success = springGreen`, `warning = roninYellow`, `info = springBlue`. — DONE 2026-09, hexes re-checked against upstream master `lua/kanagawa/colors.lua` + wave `diff` in `themes.lua` (match).
 Exit criteria: old palette JSON is a subset of the new one; commit `feat(theme): diff and status roles`.
+verified 1: `nix eval --impure --json --expr 'removeAttrs (import ./cells/common/theme.nix {}) ["name"]'` before/after + recursive subset check -> true @ 2026-09; `alejandra --check cells/common/theme.nix` -> 0; consumers read only named keys (`k = theme.colors`/`r = theme.roles` aliases, no attrValues/mapAttrs over them) so elster drvPath should be unchanged; drvPath eval NOT run (age-plugin-tpm died, cold TPM cache) — user to run. No app changes, nothing to user-test.
 
 ## Phase 2 — bat + delta (+ lazygit diffs) ⏳
 2.1 `deck/homeModules/bat.nix`: `programs.bat.themes.kanagawa` from `kanagawaSrc` `extras/tmTheme/kanagawa.tmTheme`; `config.theme = "kanagawa"`.
@@ -126,6 +127,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: plan written, then rewritten around a full app inventory after review ("нет keepass, horizon, claude, hermes"). Palette already in `cells/common/theme.nix` (0251f2f). Lazygit state persistence fixed separately, not part of this plan.
 - 2026-09: added the user acceptance gate (invariant + per-phase test step): the user asked to be made to test every app after its theme lands.
 - 2026-09: Phase 0 done, read-only (headless dwl + private tmux, nothing on the real session touched). Surprises: KeePassXC and Vial do NOT inherit Qt; Horizon is forced to Adwaita by the nixpkgs wrapper; o365 = teams-for-linux, not Edge; skim/fzf/nmtui use their own colours; all 0.4 capabilities = yes. Phase 0 changes no app, so there is nothing for the user to test.
+- 2026-09: Phase 1 done: 4 winter* colours + diff*/success/warning/info roles, additions only. drvPath check pending on the user (TPM).
 
-Next: Phase 1.1 — palette additions in `cells/common/theme.nix` (offer plan-audit first: phases 1+ were written before Phase 0).
+Next: Phase 2.1 — bat kanagawa tmTheme (offer plan-audit first; pin `kanagawaSrc` rev).
 Blocked on: nothing.
