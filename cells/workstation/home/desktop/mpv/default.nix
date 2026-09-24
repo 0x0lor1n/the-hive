@@ -11,7 +11,13 @@
 #
 # No `vf = format=rgba`: an unconditional software RGBA convert on every frame
 # that also defeats hwdec by forcing a readback.
-{pkgs, ...}: let
+{
+  pkgs,
+  theme,
+  ...
+}: let
+  r = theme.roles;
+  hex = c: "#${c}";
   a4k = pkgs.anime4k;
   # Anime4K "Fast" presets, GLSL_Mac_Linux_Low-end/input.conf upstream.
   shaders = names: pkgs.lib.concatMapStringsSep ":" (n: "${a4k}/${n}.glsl") names;
@@ -39,6 +45,27 @@ in {
       vo = "gpu";
       gpu-context = "waylandvk";
       gpu-api = "vulkan";
+      # OSD text, the seek/volume bar and list menus. Back colour keeps mpv's
+      # default alpha (175 = AF).
+      osd-color = hex r.fg;
+      osd-outline-color = hex r.bgDim;
+      osd-back-color = "#AF${r.bg}";
+      osd-selected-color = hex r.highlight;
+      osd-selected-outline-color = hex r.bgDim;
+    };
+    # The on-screen controller is osc.lua, which ignores osd-* and takes
+    # #rrggbb only (anything else is warned about and dropped).
+    scriptOpts.osc = {
+      background_color = hex r.bg;
+      timecode_color = hex r.fg;
+      title_color = hex r.fg;
+      time_pos_color = hex r.fg;
+      time_pos_outline_color = hex r.bgDim;
+      buttons_color = hex r.fg;
+      small_buttonsL_color = hex r.fg;
+      small_buttonsR_color = hex r.fg;
+      top_buttons_color = hex r.fg;
+      held_element_color = hex r.focus;
     };
     profiles.hq = {
       profile = "high-quality";

@@ -25,4 +25,5 @@ in {
   tmux = mk ./homeModules/tmux.nix;
   neovim = mk ./homeModules/neovim.nix;
   btop = mk ./homeModules/btop.nix;
+  newt = mk ./homeModules/newt.nix;
 }
