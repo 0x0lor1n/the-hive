@@ -163,6 +163,27 @@ in
           mountpoint = "/srv/agents";
           options.mountpoint = "legacy";
         };
+        # /srv/data: personal files, not code (profiles/srv-data.nix). One
+        # dataset per kind so snapshot/backup policy can differ later; music
+        # is large sequential files -> 1M records.
+        "safe/srv/data" = {
+          type = "zfs_fs";
+          mountpoint = "/srv/data";
+          options.mountpoint = "legacy";
+        };
+        "safe/srv/data/music" = {
+          type = "zfs_fs";
+          mountpoint = "/srv/data/music";
+          options = {
+            mountpoint = "legacy";
+            recordsize = "1M";
+          };
+        };
+        "safe/srv/data/documents" = {
+          type = "zfs_fs";
+          mountpoint = "/srv/data/documents";
+          options.mountpoint = "legacy";
+        };
       };
     };
   }
