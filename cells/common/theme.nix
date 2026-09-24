@@ -40,6 +40,11 @@
     waveRed = "e46876";
     roninYellow = "ff9e3b";
     dragonBlue = "658594";
+    # diff line backgrounds
+    winterGreen = "2b3328";
+    winterRed = "43242b";
+    winterBlue = "252535";
+    winterYellow = "49443c";
   };
 
   # Semantic roles, mirroring hisilome's style.css so the desktop and the
@@ -57,6 +62,14 @@
     highlight = carpYellow;
     urgent = autumnRed;
     selection = waveBlue2;
+    # kanagawa.nvim wave `diff`: add/delete/change = line bg, text = changed words.
+    diffAdd = winterGreen;
+    diffDelete = winterRed;
+    diffChange = winterBlue;
+    diffText = winterYellow;
+    success = springGreen;
+    warning = roninYellow;
+    info = springBlue;
   };
 
   # The 16 ANSI slots: black red green yellow blue magenta cyan white, then
