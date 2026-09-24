@@ -117,6 +117,9 @@
         directory = ".local/share/keepassxc";
         mode = "0700";
       }
+      # home/desktop/torrent.nix: settings, resume data (BT_backup).
+      ".config/qBittorrent"
+      ".local/share/qBittorrent"
     ];
     files = [".bash_history"];
   };

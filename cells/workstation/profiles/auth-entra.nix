@@ -324,6 +324,9 @@ in {
       # (.local/share/keepassxc/*.kdbx). Recent-db list is under .cache.
       (entraHome ".config/keepassxc")
       (entraHome ".local/share/keepassxc")
+      # home/desktop/torrent.nix: settings, resume data (BT_backup).
+      (entraHome ".config/qBittorrent")
+      (entraHome ".local/share/qBittorrent")
       (entraHome ".local/share/Grayjay")
     ];
 
