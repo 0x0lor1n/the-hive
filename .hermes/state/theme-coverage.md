@@ -44,7 +44,7 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | vim | T | default colorscheme = 16 ANSI | inherits (by construction) | – |
 | neovim | T | catppuccin in dotfiles | wrong | 4 |
 | bat, delta, lazygit diffs | T | bat tmTheme + delta styles | themed (user OK 2026-09, Markdown after 2.4) | 2 |
-| btop | T | by-name kanagawa-wave, not palette | partial (0.2: #dcd7ba/#727169/#16161d match, #de8954/#bab067 off-palette) | 3 |
+| btop | T | themes/kanagawa.theme generated from palette | awaiting user test (3.1: generated from palette) | 3 |
 | Claude Code | T | custom theme file (0.4) | default | 6 |
 | Hermes | T | skin yaml (~/.hermes/skins) | default | 6 |
 | opencode | T | tui.json theme | wrong ("opencode") | 6 |
@@ -87,7 +87,9 @@ verified 2: `kanagawaSrc` hash via `nix flake prefetch github:rebelot/kanagawa.n
 
 ## Phase 3 — btop from the palette ⏳
 3.1 `deck/homeModules/btop.nix`: `programs.btop.themes.kanagawa` (HM `btop.nix:63`, `lines`) from roles/colours; `color_theme = "kanagawa"` (replaces `kanagawa-wave` at btop.nix:14); drop the now-false comment btop.nix:11-12 ("no file to derive").
-3.2 User test: btop main view, then the menu (Esc) and the process filter (f). Look at: graph gradients, box borders, selected row.
+  — DONE 2026-09: gradient families kept from btop's bundled kanagawa-wave, off-palette hexes swapped (#dca561 → roninYellow/carpYellow, #957fbb → oniViolet, #7e9cdb → crystalBlue, #9cabca → oniViolet2); main_bg = roles.bg #1f1f28 (bundled used #16161d); temp/cpu/process = success→warning→urgent; added graph_text = muted, meter_bg = border (bundled omitted both).
+3.2 User test: btop main view, then the menu (Esc) and the process filter (f). Look at: graph gradients, box borders, selected row. Known, not a theme bug: the menu's BTOP logo is red #cd2121 + greys #cc/#aa/#80, hardcoded (btop 1.4.7 src/btop.cpp:91, btop_menu.cpp:1222).
+verified 3.1: `alejandra --check btop.nix` -> 0; standalone HM (44831a7 + nixpkgs 34ab999, /tmp/btop-hm/eval.nix) builds, btop.conf `color_theme = "kanagawa"`, themes/kanagawa.theme 45 keys all palette hexes; private `tmux -L tc3` btop 1.4.7 with XDG_CONFIG_HOME=copy: main view truecolor = palette + gradient interpolations only, bg #1f1f28, selected row bg #2d4f67, no btop.log (no theme error); menu = palette + the hardcoded logo colours @ 2026-09. elster drvPath NOT evaluated (cold TPM cache) — user.
 Exit criteria: `grep color_theme ~/.config/btop/btop.conf` == kanagawa, no fallback on start; user accepted 3.2.
 
 ## Phase 4 — neovim to kanagawa.nvim ⏳
@@ -139,6 +141,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: user accepted 2.3 ("всё ок"); found no Markdown highlighting in skim preview → 2.4 (tmTheme lacks markup scopes).
 - 2026-09: 2.4 landed (markup rules patched into upstream tmTheme, + oniViolet2); awaiting rebuild + 2.4 user test.
 - 2026-09: user accepted 2.4 ("всё ок"); Phase 2 ✅. Phase 3 in a fresh session.
+- 2026-09: 3.1 landed (btop theme generated from roles/colours); verified off-host, awaiting rebuild + 3.2.
 
-Next: Phase 3.1 — btop theme from the palette (offer plan-audit first).
+Next: Phase 3.2 — user rebuilds, runs the 3.2 checklist, gives a verdict.
 Blocked on: nothing.
