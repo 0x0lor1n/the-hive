@@ -285,6 +285,8 @@ in {
       # nixpak apps: config/data/cache under one Flatpak-style dir each.
       (entraHome ".var/app/com.slack.Slack")
       (entraHome ".var/app/org.telegram.desktop")
+      # Horizon: server list, prefs, plus the gm sign-in Chromium profile.
+      (entraHome ".omnissa")
       (entraHome ".hermes")
       (entraHome ".claude")
       (entraHome ".local/share/bash")

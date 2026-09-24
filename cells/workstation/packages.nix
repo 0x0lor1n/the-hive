@@ -237,6 +237,90 @@ in {
     camera = true;
   };
 
+  # Horizon for client gm, whose Horizon logs in through gm's own Entra tenant.
+  # The client has no login webview: SAML goes out via gtk_show_uri to the
+  # default https handler and comes back as a horizon-client:// link. The
+  # session default is Firefox with linux-entra-sso force-installed by policy
+  # (every profile), which would answer gm's login.microsoftonline.com with
+  # our own tenant's PRT. So this launcher gets its own XDG_CONFIG_HOME whose
+  # mimeapps.list sends https to a bare Chromium profile, and the return link
+  # back here. ~/.omnissa is persisted (auth-entra.nix) and holds both.
+  # The return link reaches the session's OpenURI portal, not this env: it
+  # lands on the horizon-gm entry below, so the launcher must run with the
+  # portal's environment (DISPLAY: layer-compositor.nix).
+  horizon-gm = let
+    stateDir = "$HOME/.omnissa";
+    # The package only exposes /etc/omnissa/config (configText); the client's
+    # own settings are read from horizon-{default,mandatory}-config next to it.
+    # Mandatory: the file wins over ~/.omnissa/horizon-preferences.
+    horizon = pkgs.omnissa-horizon-client.override {
+      buildFHSEnv = args:
+        pkgs.buildFHSEnv (args
+          // {
+            targetPkgs = p:
+              args.targetPkgs p
+              ++ [
+                # Hide the selector while a desktop runs: the VM gets the tag
+                # to itself, the selector comes back on disconnect.
+                (pkgs.writeTextDir "etc/omnissa/horizon-mandatory-config" ''
+                  view.hideClientAfterLaunchSession = "TRUE"
+                '')
+              ];
+          });
+    };
+    icon = "${horizon.unwrapped}/share/icons/horizon-client.png";
+    schemes = ["x-scheme-handler/horizon-client" "x-scheme-handler/vmware-view"];
+    browser = pkgs.writeShellScript "horizon-gm-browser" ''
+      exec ${pkgs.chromium}/bin/chromium \
+        --user-data-dir="${stateDir}/browser-gm" \
+        --no-first-run --no-default-browser-check "$@"
+    '';
+    dataDir = pkgs.makeDesktopItem {
+      name = "horizon-gm-browser";
+      desktopName = "Horizon (gm) sign-in browser";
+      exec = "${browser} %U";
+      noDisplay = true;
+      mimeTypes = ["x-scheme-handler/http" "x-scheme-handler/https" "text/html"];
+    };
+    mimeapps = pkgs.writeText "mimeapps.list" ''
+      [Default Applications]
+      x-scheme-handler/http=horizon-gm-browser.desktop
+      x-scheme-handler/https=horizon-gm-browser.desktop
+      text/html=horizon-gm-browser.desktop
+    '';
+    launcher = pkgs.writeShellApplication {
+      name = "horizon-gm";
+      text = ''
+        xdg="${stateDir}/xdg-gm"
+        mkdir -p "$xdg"
+        ln -sfn ${mimeapps} "$xdg/mimeapps.list"
+        export XDG_CONFIG_HOME="$xdg"
+        export XDG_DATA_DIRS="${dataDir}/share:${pkgs.shared-mime-info}/share''${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
+        # Started by the return link = sign-in done; the browser has nothing
+        # left to do. SIGTERM is Chromium's clean shutdown, cookies survive.
+        case "''${1:-}" in
+          vmware-view:* | horizon-client:*)
+            ${pkgs.procps}/bin/pkill -TERM -f -- "--user-data-dir=${stateDir}/browser-gm" || true
+            ;;
+        esac
+        exec ${horizon}/bin/horizon-client "$@"
+      '';
+    };
+  in
+    pkgs.symlinkJoin {
+      name = "horizon-gm";
+      paths = [
+        launcher
+        (pkgs.makeDesktopItem {
+          name = "horizon-gm";
+          desktopName = "Horizon (gm)";
+          inherit icon;
+          exec = "${launcher}/bin/horizon-gm %u";
+          mimeTypes = schemes;
+        })
+      ];
+    };
+
   whisper-cpp-vulkan = whisperCppVulkan;
 
   # autoPatchelfHook rewrites DT_NEEDED only, so CEF's dlopen(libpulse) misses
