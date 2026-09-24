@@ -1,7 +1,7 @@
 local constants = require "custom.constants"
 
 local getColors = function(C)
-  local U = require "catppuccin.utils.colors"
+  local U = require "custom.utils.colors"
 
   return {
     state = {
@@ -37,7 +37,7 @@ local getColors = function(C)
 end
 
 local get_extra_hl = function(C)
-  local U = require "catppuccin.utils.colors"
+  local U = require "custom.utils.colors"
   local gitColors = getColors(C).git
   local stateColors = getColors(C).state
   local floatColors = getColors(C).float
@@ -263,7 +263,7 @@ local get_extra_hl = function(C)
 end
 
 local get_overrides_hl = function(C)
-  local U = require "catppuccin.utils.colors"
+  local U = require "custom.utils.colors"
   local gitColors = getColors(C).git
   local stateColors = getColors(C).state
   local floatColors = getColors(C).float
@@ -371,7 +371,7 @@ local get_overrides_hl = function(C)
     -- nvim-treesitter-context
     TreesitterContext = { fg = C.surface1, bg = constants.blur_background and "NONE" or C.base },
     TreesitterContextLineNumber = { link = "LineNr" },
-    TreesitterContextBottom = { style = {} },
+    TreesitterContextBottom = {},
 
     -- nvim spelling
     SpellBad = { sp = stateColors.error, undercurl = true }, -- Word that is not recognized by the spellchecker. |spell| Combined with the highlighting used otherwise.
@@ -457,9 +457,4 @@ local get_theme_overrides_hl = function(C)
   return vim.tbl_deep_extend("force", extra_hl, overrides_hl)
 end
 
-return {
-  latte = get_theme_overrides_hl,
-  frappe = get_theme_overrides_hl,
-  macchiato = get_theme_overrides_hl,
-  mocha = get_theme_overrides_hl,
-}
+return get_theme_overrides_hl

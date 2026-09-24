@@ -1661,23 +1661,23 @@ return {
     },
     config = function(_, opts)
       -- colors
-      lazy_utils.on_load("catppuccin", function()
-        local mocha = require("catppuccin.palettes").get_palette "mocha"
+      lazy_utils.on_load("kanagawa.nvim", function()
+        local C = require("custom.plugins.colorscheme.palette").get()
         opts.colors = {
-          mocha.rosewater,
-          mocha.flamingo,
-          mocha.pink,
-          mocha.mauve,
-          mocha.red,
-          mocha.maroon,
-          mocha.peach,
-          mocha.yellow,
-          mocha.green,
-          mocha.teal,
-          mocha.sky,
-          mocha.sapphire,
-          mocha.blue,
-          mocha.lavender,
+          C.rosewater,
+          C.flamingo,
+          C.pink,
+          C.mauve,
+          C.red,
+          C.maroon,
+          C.peach,
+          C.yellow,
+          C.green,
+          C.teal,
+          C.sky,
+          C.sapphire,
+          C.blue,
+          C.lavender,
         }
         require("blame").setup(opts)
       end)
@@ -1730,9 +1730,9 @@ return {
     },
     config = function(_, opts)
       local sniprun = require "sniprun"
-      lazy_utils.on_load("catppuccin", function()
-        local C = require("catppuccin.palettes").get_palette()
-        local U = require "catppuccin.utils.colors"
+      lazy_utils.on_load("kanagawa.nvim", function()
+        local C = require("custom.plugins.colorscheme.palette").get()
+        local U = require "custom.utils.colors"
         opts.snipruncolors = {
           SniprunVirtualTextOk = {
             bg = U.darken(C.blue, 0.095, C.base),
