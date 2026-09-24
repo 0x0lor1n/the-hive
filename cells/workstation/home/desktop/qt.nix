@@ -1,4 +1,4 @@
-# Qt palette for every Qt app (qBittorrent, KeePassXC), from cells/theme.
+# Qt palette for every Qt app (qBittorrent, KeePassXC), from common/theme.nix.
 # QT_QPA_PLATFORMTHEME and the plugins come from qt.* in layer-session.nix;
 # this writes the configs both plugins read. Unlike an app's own palette,
 # a qtct scheme fills the Inactive group too, so windows stay dark while a

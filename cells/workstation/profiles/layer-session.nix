@@ -10,7 +10,7 @@
   lib,
   ...
 }: let
-  theme = inputs.cells.theme.palettes.kanagawa;
+  theme = inputs.cells.common.theme;
 in {
   # wlroots takes the seat from logind. Enabling seatd as well would contend
   # for seat0.

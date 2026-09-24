@@ -171,7 +171,7 @@ in {
         "\\x1b[13;5u" = "Control+Return";
         "\\x1b[13;6u" = "Control+Shift+Return Super+Shift+Return";
       };
-      # Palette from cells/theme (foot uses rrggbb, no #); the 16 ANSI slots
+      # Palette from common/theme.nix (foot uses rrggbb, no #); the 16 ANSI slots
       # come from theme.ansi, same list the VT console uses.
       # foot >= 1.23 moved cursor.color into the colors section, and 1.27
       # renamed [colors] -> [colors-dark] ([colors] is deprecated, cursor.color

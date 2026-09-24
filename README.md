@@ -9,11 +9,10 @@ native encryption, TPM-sealed unlock, Secure Boot via lanzaboote, impermanence;
 ## Layout
 
 ```
-cells/common       globals (public schema + encrypted values), shared profiles
+cells/common       globals (public schema + encrypted values), shared profiles, theme (kanagawa palette: colors, roles, ansi)
 cells/server       hosts: nixosConfigurations, disks, server profiles
 cells/workstation  hosts: nixosConfigurations, disks, desktop profiles, home-manager
 cells/deck         the shell + terminal toolkit: homeModules shared by every account on every workstation
-cells/theme        palette as data (kanagawa: colors, roles, ansi); every desktop colour reads from it
 cells/repo         the deploy shell
 ```
 
