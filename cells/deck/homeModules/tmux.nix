@@ -114,4 +114,30 @@ in {
     };
     Install.WantedBy = ["default.target"];
   };
+
+  # The server (and continuum's restored panes) predate the compositor, so they
+  # lack WAYLAND_DISPLAY and wl-paste finds no clipboard. Push the session vars
+  # into the global env and drop per-session overrides (`-VAR` from attaches).
+  systemd.user.services.tmux-session-env = {
+    Unit = {
+      Description = "Hand the graphical session environment to tmux";
+      After = ["tmux-server.service" "graphical-session.target"];
+      PartOf = ["graphical-session.target"];
+      ConditionEnvironment = "WAYLAND_DISPLAY";
+    };
+    Service = {
+      Type = "oneshot";
+      ExecStart = pkgs.writeShellScript "tmux-session-env" ''
+        tmux=${pkgs.tmux}/bin/tmux
+        $tmux has-session 2>/dev/null || exit 0
+        for v in WAYLAND_DISPLAY DISPLAY; do
+          [ -n "''${!v-}" ] && $tmux set-environment -g "$v" "''${!v}"
+          $tmux list-sessions -F '#{session_name}' | while read -r s; do
+            $tmux set-environment -t "$s" -u "$v" 2>/dev/null || true
+          done
+        done
+      '';
+    };
+    Install.WantedBy = ["graphical-session.target"];
+  };
 }

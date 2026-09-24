@@ -122,6 +122,14 @@ in {
 
         # Clipboard (cross-platform clipcopy/clippaste)
         source ${pkgs.oh-my-zsh}/share/oh-my-zsh/lib/clipboard.zsh
+        # Panes restored before dwl came up have no WAYLAND_DISPLAY; pick it
+        # up from tmux (tmux-session-env) once it appears. No-op once set.
+        _tmux_wayland_env() {
+          [[ -n $TMUX && -z $WAYLAND_DISPLAY ]] || return 0
+          eval "$(tmux show-environment -gs WAYLAND_DISPLAY 2>/dev/null)" \
+            "$(tmux show-environment -gs DISPLAY 2>/dev/null)"
+        }
+        autoload -Uz add-zsh-hook && add-zsh-hook preexec _tmux_wayland_env
 
         # History reverse search
         source ${histdbSkim}
