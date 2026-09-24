@@ -14,8 +14,10 @@ Invariants:
 - `nix eval --raw .#nixosConfigurations.elster.config.system.build.toplevel.drvPath` succeeds (user runs it when the TPM cache is cold).
 - Tor Browser is never themed: any change to its look breaks the uniform fingerprint.
 - One phase = one Conventional Commit with why-body + Co-Authored-By: Claude; nothing pushed by Claude.
+- User acceptance gate: a row flips to `themed` only after the USER has tested it on the rebuilt system and said so. Claude's evals/screenshots are not acceptance. After every rebuild that touches a row, Claude stops and hands the user a per-app test checklist (what to open, which screen, what to look at: bg, fg, selection, diff/err colours, popups/dialogs), then waits. The phase is not ✅ and the next phase does not start while any of its rows is `awaiting user test`. The user's verdict + date goes into Progress; a failed test sets the row back to `wrong` with the note.
 
 ## Matrix (Phase 0 fills `status`; phases flip it)
+Status flow for every row a phase changes: `wrong`/`default` → `awaiting user test` (after rebuild + checklist handed over) → `themed` (user said OK) or back to `wrong` (user said no, note why).
 Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-user/crookedmirror, ~/.nix-profile (Entra), plus TUIs from home.packages. Kind: G = GUI, T = TUI/CLI with colour.
 
 | app | kind | mechanism | status | phase |
@@ -56,29 +58,34 @@ Exit criteria: old palette JSON is a subset of the new one; commit `feat(theme):
 ## Phase 2 — bat + delta (+ lazygit diffs) ⏳
 2.1 `deck/homeModules/bat.nix`: `programs.bat.themes.kanagawa` from `kanagawaSrc` `extras/tmTheme/kanagawa.tmTheme`; `config.theme = "kanagawa"`.
 2.2 `deck/homeModules/git.nix` delta: `syntax-theme = "kanagawa"`; minus/plus(-emph) styles from `diff*` roles; line-number styles from `urgent`/`accent`/`muted`.
-Exit criteria: `delta --show-config` shows `syntax-theme = kanagawa` and palette hexes; lazygit diff has no #3f0001/#002800.
+2.3 User test (after rebuild): `git diff` and `git log -p` in a dirty repo; lazygit → a file with changes, staged + unstaged; `bat` on a .nix and a .md file; `help git | head`. Look at: added/removed line bg, changed-word emphasis, line numbers, syntax colours vs nvim.
+Exit criteria: `delta --show-config` shows `syntax-theme = kanagawa` and palette hexes; lazygit diff has no #3f0001/#002800; user accepted 2.3.
 
 ## Phase 3 — btop from the palette ⏳
 3.1 `deck/homeModules/btop.nix`: generate `~/.config/btop/themes/kanagawa.theme` from roles/colours; `color_theme = "kanagawa"`.
-Exit criteria: `grep color_theme ~/.config/btop/btop.conf` == kanagawa, no fallback on start.
+3.2 User test: btop main view, then the menu (Esc) and the process filter (f). Look at: graph gradients, box borders, selected row.
+Exit criteria: `grep color_theme ~/.config/btop/btop.conf` == kanagawa, no fallback on start; user accepted 3.2.
 
 ## Phase 4 — neovim to kanagawa.nvim ⏳
 4.1 Replace the catppuccin spec with `rebelot/kanagawa.nvim` (wave); terminal_color_* in `theme.ansi` order.
 4.2 Port `hl_overrides.lua` + the 36 `catppuccin.palettes` calls (ui.lua, editor.lua, utils-plugins/bufferline.lua) to kanagawa `overrides(colors)`.
-Exit criteria: `nvim --headless -c 'lua print(vim.g.colors_name)' -c qa` == kanagawa; `grep -rn catppuccin dotfiles/nvim` empty; `nvim --headless +qa 2>&1` empty.
+4.3 User test (after `:Lazy sync`): a .nix and a .lua file, telescope/picker, completion popup, diagnostics (introduce an error), git signs, bufferline with 3 buffers, `:terminal`, a diff (`:Gitsigns diffthis` or nvimdiff). Look at: overrides that used catppuccin colours, floating window borders, terminal colours.
+Exit criteria: `nvim --headless -c 'lua print(vim.g.colors_name)' -c qa` == kanagawa; `grep -rn catppuccin dotfiles/nvim` empty; `nvim --headless +qa 2>&1` empty; user accepted 4.3.
 
 ## Phase 5 — Standalone GUI/TUI configs ⏳
 5.1 Zathura: `programs.zathura.options` (default-bg/fg, statusbar-*, inputbar-*, highlight-*, recolor-*) from roles; recolor off by default.
 5.2 mpv: `osd-color`, `osd-border-color`, `osd-back-color` from roles in `home/desktop/mpv/default.nix`.
 5.3 avizo: `services.avizo.settings.default` background/border/bar colours from roles in `home/desktop/osd.nix`.
 5.4 Whatever Phase 0 marked wrong among ANSI TUIs that use their own env (NEWT_COLORS for nmtui, LESS_TERMCAP_* for man): one line each from `theme.ansi` names.
-Exit criteria: screenshot of each tool shows palette bg/fg; Matrix rows flipped to themed.
+5.5 User test, one line per app: Zathura (open a PDF, `/` search → highlight, statusbar, `Ctrl+R` recolor); mpv (seek → OSD bar, `o`, pause text); avizo (volume and brightness keys); each 5.4 TUI (nmtui main menu + a dialog, `man git`).
+Exit criteria: screenshot of each tool shows palette bg/fg; user accepted 5.5 per app; Matrix rows flipped to themed.
 
 ## Phase 6 — Agent CLIs ⏳
 6.1 Hermes: generate `~/.hermes/skins/kanagawa.yaml` from roles via HM (both accounts; `.hermes` is persisted, the file is a store symlink); `display.skin: kanagawa` via `hermes config set` or the managed config, per 0.4.
 6.2 Claude Code: custom theme file from roles if 0.4 found the format, else `theme = "dark-ansi"` in settings.json so it renders with foot's Kanagawa ANSI.
 6.3 opencode: `opencodeTui.theme = "kanagawa"` (built-in) or palette-generated JSON if 0.4 == no.
-Exit criteria: each CLI's TUI shows bg #1f1f28 / accents from roles in a screenshot; Matrix rows flipped.
+6.4 User test: hermes (banner, a tool call, a diff/patch preview, a clarify prompt); claude (prompt, tool call, diff, permission dialog, `/theme`); opencode (session view, diff, command palette). Both accounts where the tool runs on both.
+Exit criteria: each CLI's TUI shows bg #1f1f28 / accents from roles in a screenshot; user accepted 6.4 per tool; Matrix rows flipped.
 
 ## Phase 7 — Browsers, Electron, PWAs, Horizon ⏳
 Sketch only; plan-audit rewrites from Phase 0 findings.
@@ -86,17 +93,20 @@ Sketch only; plan-audit rewrites from Phase 0 findings.
 7.2 o365 PWAs: inherit Edge; record exception if web apps ignore it.
 7.3 Slack/Telegram/Mattermost/SimpleX/Grayjay: each app's own theme import (Slack custom sidebar string, Telegram .tdesktop-theme generated from palette), else exception with reason.
 7.4 Horizon: GTK theme visible inside the FHS env (bind the theme dir / set GTK_THEME), per 0.3.
-Exit criteria: every row in scope is themed or exception with a one-line reason.
+7.5 User test per app, checklist written when 7.1–7.4 land (each app's main window, a dialog, a menu; browsers: new tab, settings page, a site under Dark Reader; Horizon: selector + disconnect dialog).
+Exit criteria: every row in scope is themed (user accepted 7.5 for it) or exception with a one-line reason.
 
 ## Phase 8 — colors → roles (stretch) ⏳
 8.1 Move the 57 `theme.colors.*` refs in home/default.nix and desktop/{bar,launcher,torrent,notify,screenshot,qt,lock}.nix onto roles.
-Exit criteria: `theme.colors` referenced only inside `cells/common/theme.nix`; elster drvPath unchanged across the phase.
+8.2 User test only if drvPath changed: quick look at bar, launcher, lock screen, notifications, qBittorrent.
+Exit criteria: `theme.colors` referenced only inside `cells/common/theme.nix`; elster drvPath unchanged across the phase (or user accepted 8.2).
 
 ## Fallback at any phase
 Phases after 1 are independent; stop anywhere and what is merged stays coherent. Minimum useful slice = 0 + 1 + 2 (fixes delta/lazygit), one session.
 
 ## Progress
 - 2026-09: plan written, then rewritten around a full app inventory after review ("нет keepass, horizon, claude, hermes"). Palette already in `cells/common/theme.nix` (0251f2f). Lazygit state persistence fixed separately, not part of this plan.
+- 2026-09: added the user acceptance gate (invariant + per-phase test step): the user asked to be made to test every app after its theme lands.
 
 Next: Phase 0.1 — regenerate the inventory on elster (read-only, minutes). Then 0.2–0.4.
 Blocked on: nothing.
