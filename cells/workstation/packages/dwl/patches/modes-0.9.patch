@@ -1,12 +1,15 @@
-modes from codeberg.org/dwl/dwl-patches (modes.patch, dwl v0.8), config.def.h
+modes from codeberg.org/dwl/dwl-patches (modes.patch, dwl v0.8; ported to v0.9 by hand), config.def.h
 hunks stripped -- the enum, modes_labels[] and modekeys[] live in our config.h.
 Local changes vs upstream patch: printstatus no longer indexes modes_labels[-1]
-in NORMAL mode (out-of-bounds read), and modekeybinding compares keysyms
-case-insensitively like keybinding() does, so MOD_SHIFT chords match.
+in NORMAL mode (out-of-bounds read). v0.9's keypress() runs exactly one Key
+per chord, so modekeybinding() runs every matching mode entry itself (ONESHOT =
+action + entermode) and returns a no-op Key to mark the chord consumed.
 
+diff --git a/dwl.c b/dwl.c
+index fe18703..cccb830 100644
 --- a/dwl.c
 +++ b/dwl.c
-@@ -148,6 +148,11 @@ typedef struct {
+@@ -168,6 +168,11 @@ typedef struct {
  	const Arg arg;
  } Key;
  
@@ -17,16 +20,16 @@ case-insensitively like keybinding() does, so MOD_SHIFT chords match.
 +
  typedef struct {
  	struct wlr_keyboard_group *wlr_group;
- 
-@@ -292,6 +297,7 @@ static void handlesig(int signo);
+ 	struct wlr_keyboard *virtual_keyboard;
+@@ -313,6 +318,7 @@ static void handlesig(int signo);
  static void incnmaster(const Arg *arg);
  static void inputdevice(struct wl_listener *listener, void *data);
- static int keybinding(uint32_t mods, xkb_keysym_t sym);
-+static int modekeybinding(uint32_t mods, xkb_keysym_t sym);
+ static const Key *keybinding(uint32_t mods, xkb_keysym_t sym);
++static const Key *modekeybinding(uint32_t mods, xkb_keysym_t sym);
  static void keypress(struct wl_listener *listener, void *data);
  static void keypressmod(struct wl_listener *listener, void *data);
  static int keyrepeat(void *data);
-@@ -351,6 +357,7 @@ static Monitor *xytomon(double x, double y);
+@@ -374,6 +380,7 @@ static Monitor *xytomon(double x, double y);
  static void xytonode(double x, double y, struct wlr_surface **psurface,
  		Client **pc, LayerSurface **pl, double *nx, double *ny);
  static void zoom(const Arg *arg);
@@ -34,60 +37,63 @@ case-insensitively like keybinding() does, so MOD_SHIFT chords match.
  
  /* variables */
  static pid_t child_pid = -1;
-@@ -406,6 +413,9 @@ static struct wlr_box sgeom;
+@@ -431,6 +438,9 @@ static struct wlr_output_layout *output_layout;
+ static struct wlr_box sgeom;
  static struct wl_list mons;
  static Monitor *selmon;
- 
++
 +static const int NORMAL = -1;
 +static int active_mode_index = NORMAL;
-+
+ static int consumed[KEY_MAX + 1];
+ 
  /* global event handlers */
- static struct wl_listener cursor_axis = {.notify = axisnotify};
- static struct wl_listener cursor_button = {.notify = buttonpress};
-@@ -1614,6 +1624,11 @@ keybinding(uint32_t mods, xkb_keysym_t sym)
+@@ -1729,6 +1739,10 @@ keybinding(uint32_t mods, xkb_keysym_t sym)
  	 * processing.
  	 */
  	const Key *k;
 +
-+	if (active_mode_index >= 0) {
++	if (active_mode_index >= 0)
 +		return modekeybinding(mods, sym);
-+	}
 +
  	for (k = keys; k < END(keys); k++) {
- 		if (CLEANMASK(mods) == CLEANMASK(k->mod)
- 				&& xkb_keysym_to_lower(sym) == xkb_keysym_to_lower(k->keysym)
-@@ -1625,6 +1640,30 @@ keybinding(uint32_t mods, xkb_keysym_t sym)
- 	return 0;
+ 		if (CLEANMASK(mods) == CLEANMASK(k->mod) && sym == k->keysym && k->func)
+ 			return k;
+@@ -1736,6 +1750,34 @@ keybinding(uint32_t mods, xkb_keysym_t sym)
+ 	return NULL;
  }
  
-+int
-+modekeybinding(uint32_t mods, xkb_keysym_t sym)
++/* A chord may match several entries of the active mode (ONESHOT = action +
++ * entermode(NORMAL)), but keypress() runs one Key: run them all here and hand
++ * back a no-op so the key still counts as consumed. */
++static void
++modenop(const Arg *arg)
 +{
-+	int handled = 0;
-+	const Modekey *mk;
-+	const Key *k;
-+
-+	for (mk = modekeys; mk < END(modekeys); mk++) {
-+		if (active_mode_index != mk->mode_index) {
-+			continue;
-+		}
-+
-+		k = &mk->key;
-+		if (CLEANMASK(mods) == CLEANMASK(k->mod) &&
-+				xkb_keysym_to_lower(sym) == xkb_keysym_to_lower(k->keysym) && k->func) {
-+			k->func(&k->arg);
-+			handled = 1;
-+		}
-+	}
-+
-+	return handled;
 +}
 +
++const Key *
++modekeybinding(uint32_t mods, xkb_keysym_t sym)
++{
++	static const Key handled = { 0, 0, modenop, {0} };
++	const Modekey *mk;
++	const Key *k;
++	int found = 0;
++
++	for (mk = modekeys; mk < END(modekeys); mk++) {
++		k = &mk->key;
++		if (active_mode_index == mk->mode_index
++				&& CLEANMASK(mods) == CLEANMASK(k->mod)
++				&& sym == k->keysym && k->func) {
++			k->func(&k->arg);
++			found = 1;
++		}
++	}
++	return found ? &handled : NULL;
++}
 +
  void
  keypress(struct wl_listener *listener, void *data)
  {
-@@ -2119,6 +2158,7 @@ printstatus(void)
+@@ -2333,6 +2375,7 @@ printstatus(void)
  		printf("%s tags %"PRIu32" %"PRIu32" %"PRIu32" %"PRIu32"\n",
  			m->wlr_output->name, occ, m->tagset[m->seltags], sel, urg);
  		printf("%s layout %s\n", m->wlr_output->name, m->ltsymbol);
@@ -95,7 +101,7 @@ case-insensitively like keybinding() does, so MOD_SHIFT chords match.
  	}
  	fflush(stdout);
  }
-@@ -3075,6 +3115,13 @@ zoom(const Arg *arg)
+@@ -3353,6 +3396,13 @@ zoom(const Arg *arg)
  	arrange(selmon);
  }
  

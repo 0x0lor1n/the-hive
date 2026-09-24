@@ -83,6 +83,57 @@
     exit 1
   '';
 
+  # xdpw chooser (dmenu mode: "Monitor: <out> <desc>" / "Window: <title> (<id>)"
+  # lines on stdin). Chromium's WebRTC drops PipeWire's VideoTransform meta,
+  # so a rotated output reaches Teams sideways. For those, open a wl-mirror
+  # of the output (dwl rule: tag 9, still capturable) and answer with that
+  # window instead; xdpw re-reads toplevels first (chooser-roundtrip.patch).
+  share-chooser = pkgs.writeShellApplication {
+    name = "share-chooser";
+    runtimeInputs = with pkgs; [fuzzel wl-mirror wlr-randr lswt jq util-linux coreutils];
+    text = ''
+      sel=$(fuzzel --dmenu --lines 10 --width 60 --prompt 'Share: ') || exit 0
+      case "$sel" in
+        "Monitor: "*) ;;
+        *) printf '%s\n' "$sel"; exit 0 ;;
+      esac
+      out=''${sel#Monitor: }
+      out=''${out%% *}
+      transform=$(wlr-randr --json | jq -r --arg o "$out" '.[] | select(.name == $o) | .transform // "normal"')
+      # The mirror maps straight onto hidden tag 9, where dwl never tiles it,
+      # so it keeps wl-mirror's 100x100 and Teams upscales mush. Fullscreen
+      # makes dwl size it to the monitor even hidden. -F waits for a
+      # wl_surface.enter that a hidden window never gets, and
+      # --fullscreen-output refuses the mirrored output: name another one
+      # (dwl sizes to the client's own monitor regardless).
+      other=$(wlr-randr --json | jq -r --arg o "$out" '[.[] | select(.enabled and .name != $o) | .name][0] // empty')
+      if [ "$transform" = normal ] || [ -z "$other" ]; then
+        printf '%s\n' "$sel"
+        exit 0
+      fi
+      title="Mirror $out"
+      mirror_id() {
+        lswt -j | jq -r --arg t "$title" \
+          '.toplevels[] | select(."app-id" == "at.yrlf.wl_mirror" and .title == $t) | .identifier' | head -n1
+      }
+      id=$(mirror_id)
+      if [ -z "$id" ]; then
+        setsid -f wl-mirror --fullscreen-output "$other" --title "$title" "$out" </dev/null >/dev/null 2>&1
+        for _ in $(seq 50); do
+          id=$(mirror_id)
+          [ -n "$id" ] && break
+          sleep 0.1
+        done
+      fi
+      # No mirror after 5 s: share the output as is (sideways, but working).
+      if [ -z "$id" ]; then
+        printf '%s\n' "$sel"
+      else
+        printf 'Window: %s (%s)\n' "$title" "$id"
+      fi
+    '';
+  };
+
   # `dwl -s <cmd>`: dwl makes the child's stdin the read end of its status
   # pipe, so dwl-status must be exec'd (not backgrounded) to hold it open or
   # the bar shows stale text. swaybg and the cliphist watchers start here;
@@ -230,6 +281,15 @@ in {
       enable = true;
       extraPortals = [pkgs.xdg-desktop-portal-wlr pkgs.xdg-desktop-portal-gtk];
       config.dwl.default = ["wlr" "gtk"];
+    };
+    # slurp (xdpw's first default chooser) only picks outputs. dmenu mode
+    # lists outputs and every toplevel (all tags) from ext-foreign-toplevel-list.
+    # share-chooser swaps a rotated output for a mirror window; exec_after
+    # closes the mirrors once the last screencast ends.
+    xdg.portal.wlr.settings.screencast = {
+      chooser_type = "dmenu";
+      chooser_cmd = "${share-chooser}/bin/share-chooser";
+      exec_after = "${pkgs.procps}/bin/pkill -f 'wl-mirro[r] .*--title Mirror '";
     };
 
     home-manager.useGlobalPkgs = true;
