@@ -1,7 +1,7 @@
 # GTK apps (Edge dialogs, file pickers via the gtk portal) would otherwise
 # come up in stock Adwaita with the default X cursor. nixpkgs dropped
 # kanagawa-gtk-theme (GTK2 murrine dep), so: adw-gtk3 as the base and the
-# palette from cells/theme injected via libadwaita named colours -- same
+# palette from common/theme.nix injected via libadwaita named colours -- same
 # source as foot/waybar/tuigreet.
 {
   pkgs,

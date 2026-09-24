@@ -15,7 +15,7 @@
 }: let
   dotfiles = "/srv/the-hive/dotfiles/tmux";
   live = f: config.lib.file.mkOutOfStoreSymlink "${dotfiles}/${f}";
-  theme = inputs.cells.theme.palettes.kanagawa;
+  theme = inputs.cells.common.theme;
   r = theme.roles;
 
   # resurrect's process capture greps `ps` output per pane; zsh-histdb's

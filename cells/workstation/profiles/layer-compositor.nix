@@ -16,7 +16,7 @@
   globals,
   ...
 }: let
-  theme = inputs.cells.theme.palettes.kanagawa;
+  theme = inputs.cells.common.theme;
   # Per-role encrypted attrset (git includeIf blocks, ssh matchBlocks), PIN
   # identity. Same flakeRoot shape as cells/common/globals.nix.
   userSecrets = role:

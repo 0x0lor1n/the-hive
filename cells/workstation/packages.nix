@@ -5,7 +5,7 @@
 }: let
   pkgs = inputs.pkgs;
   lib = pkgs.lib;
-  theme = inputs.cells.theme.palettes.kanagawa;
+  theme = inputs.cells.common.theme;
 
   # dwl is C and cannot import Nix, so config.h carries @theme_<role>@
   # placeholders that replaceVars fills from the palette (bare rrggbb inside

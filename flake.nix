@@ -24,7 +24,7 @@
 
       cellBlocks = with ren.blocks; [
         (simple "globals")
-        (simple "palettes")
+        (simple "theme")
         (simple "profiles")
         (simple "disks")
         (simple "nixosConfigurations")
