@@ -27,5 +27,6 @@
     ./chat.nix
     ./keepass.nix
     ./torrent.nix
+    ./zathura.nix
   ];
 }
