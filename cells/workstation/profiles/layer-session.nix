@@ -135,6 +135,13 @@ in {
   # Only the PAM file; HM configures swaylock itself (programs.swaylock).
   security.pam.services.swaylock = {};
 
+  # Qt apps read their palette from qt5ct/qt6ct (home/desktop/qt.nix); the
+  # "qt5ct" platform theme installs both plugins, qt6ct answers to either key.
+  qt = {
+    enable = true;
+    platformTheme = "qt5ct";
+  };
+
   # Chromium-based apps (microsoft-edge) run Wayland-native, not XWayland.
   environment.sessionVariables.NIXOS_OZONE_WL = "1";
 
