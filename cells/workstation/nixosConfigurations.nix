@@ -99,6 +99,8 @@
       p.srv-workspace
       # /srv/agents: hermes skills + memories shared by both accounts, sessions stay per-user
       p.srv-agents
+      # /srv/data: personal files (music/, documents/), not code
+      p.srv-data
       # destyle: Qwen3-8B + LoRA на iGPU по требованию, 127.0.0.1:8080
       p.llm-destyle
       # `cpu-governor@<name>.service` for the powermenu's performance toggle
