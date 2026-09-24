@@ -44,7 +44,7 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | vim | T | default colorscheme = 16 ANSI | inherits (by construction) | – |
 | neovim | T | catppuccin in dotfiles | wrong | 4 |
 | bat, delta, lazygit diffs | T | bat tmTheme + delta styles | themed (user OK 2026-09, Markdown after 2.4) | 2 |
-| btop | T | themes/kanagawa.theme generated from palette | awaiting user test (3.1: generated from palette) | 3 |
+| btop | T | themes/kanagawa.theme generated from palette | themed (user OK 2026-09) | 3 |
 | Claude Code | T | custom theme file (0.4) | default | 6 |
 | Hermes | T | skin yaml (~/.hermes/skins) | default | 6 |
 | opencode | T | tui.json theme | wrong ("opencode") | 6 |
@@ -85,10 +85,11 @@ verified 2.4: standalone HM build of bat.nix (pins as above) -> tmTheme parses (
 Exit criteria: `delta --show-config` shows `syntax-theme = kanagawa` and palette hexes; lazygit diff has no #3f0001/#002800; user accepted 2.3.
 verified 2: `kanagawaSrc` hash via `nix flake prefetch github:rebelot/kanagawa.nvim/bb85e4b…` -> sha256-fMP4NUCK…; HM 44831a7 + nixpkgs 34ab999 standalone `homeManagerConfiguration` of bat/git/lazygit modules (/tmp, TPM-free) builds; generated `[delta]` = syntax-theme kanagawa, minus #43242b, plus #2b3328, emph #49443c, line numbers #c34043/#98bb6c/#727169; lazygit `gui.authorColors."*"` = #7fb4ca; in a throwaway HOME `bat cache --build` + `bat --list-themes` lists kanagawa, `delta --show-config` syntax-theme = Kanagawa, a real diff's SGR = only those bgs + tmTheme fgs, 0 hits of 3f0001/002800 @ 2026-09. tmTheme fgs outside our palette subset (still Kanagawa Wave upstream: #b8b4d0 oniViolet2, #9cabca springViolet2, #717c7c katanaGray) accepted as upstream, same set nvim gets in Phase 4. `alejandra --check` on the 3 files -> 0. elster drvPath NOT evaluated (cold TPM cache) — user.
 
-## Phase 3 — btop from the palette ⏳
+## Phase 3 — btop from the palette ✅
 3.1 `deck/homeModules/btop.nix`: `programs.btop.themes.kanagawa` (HM `btop.nix:63`, `lines`) from roles/colours; `color_theme = "kanagawa"` (replaces `kanagawa-wave` at btop.nix:14); drop the now-false comment btop.nix:11-12 ("no file to derive").
   — DONE 2026-09: gradient families kept from btop's bundled kanagawa-wave, off-palette hexes swapped (#dca561 → roninYellow/carpYellow, #957fbb → oniViolet, #7e9cdb → crystalBlue, #9cabca → oniViolet2); main_bg = roles.bg #1f1f28 (bundled used #16161d); temp/cpu/process = success→warning→urgent; added graph_text = muted, meter_bg = border (bundled omitted both).
 3.2 User test: btop main view, then the menu (Esc) and the process filter (f). Look at: graph gradients, box borders, selected row. Known, not a theme bug: the menu's BTOP logo is red #cd2121 + greys #cc/#aa/#80, hardcoded (btop 1.4.7 src/btop.cpp:91, btop_menu.cpp:1222).
+  — DONE 2026-09: user "ок".
 verified 3.1: `alejandra --check btop.nix` -> 0; standalone HM (44831a7 + nixpkgs 34ab999, /tmp/btop-hm/eval.nix) builds, btop.conf `color_theme = "kanagawa"`, themes/kanagawa.theme 45 keys all palette hexes; private `tmux -L tc3` btop 1.4.7 with XDG_CONFIG_HOME=copy: main view truecolor = palette + gradient interpolations only, bg #1f1f28, selected row bg #2d4f67, no btop.log (no theme error); menu = palette + the hardcoded logo colours @ 2026-09. elster drvPath NOT evaluated (cold TPM cache) — user.
 Exit criteria: `grep color_theme ~/.config/btop/btop.conf` == kanagawa, no fallback on start; user accepted 3.2.
 
@@ -142,6 +143,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: 2.4 landed (markup rules patched into upstream tmTheme, + oniViolet2); awaiting rebuild + 2.4 user test.
 - 2026-09: user accepted 2.4 ("всё ок"); Phase 2 ✅. Phase 3 in a fresh session.
 - 2026-09: 3.1 landed (btop theme generated from roles/colours); verified off-host, awaiting rebuild + 3.2.
+- 2026-09: user accepted 3.2 ("ок"); Phase 3 ✅. Phase 4 in a fresh session.
 
-Next: Phase 3.2 — user rebuilds, runs the 3.2 checklist, gives a verdict.
+Next: Phase 4.1 — nvim catppuccin → kanagawa.nvim (offer plan-audit first; 4.2 starts with the key map for user review).
 Blocked on: nothing.
