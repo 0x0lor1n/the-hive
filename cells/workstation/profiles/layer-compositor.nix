@@ -218,9 +218,12 @@
     # dwl sets WAYLAND_DISPLAY only in its own environment; the HM units
     # (avizo, swayidle) gate on ConditionEnvironment=WAYLAND_DISPLAY, so hand
     # the session variables to the user manager and the session bus first.
+    # DISPLAY too (dwl sets it for Xwayland before running this): links the
+    # OpenURI portal hands to an X11-only app would otherwise start it with no
+    # display, and it dies before drawing (Horizon's sign-in return, 2026-09-24).
     export XDG_CURRENT_DESKTOP="''${XDG_CURRENT_DESKTOP:-dwl}"
-    ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
-    ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
+    ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
+    ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     # A previous dwl session (relogin via greeter) can leave the oneshot bridge
     # active and graphical-session.target up, so a plain `start` is a no-op and
     # avizo/swayidle stay dead from the moment the old compositor went away
