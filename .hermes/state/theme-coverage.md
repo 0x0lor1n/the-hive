@@ -26,12 +26,12 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | foot, tmux, tuigreet + VT | T | palette in Nix | themed | – |
 | Thunar, pwvucontrol, xdg-desktop-portal-gtk dialogs | G | GTK (gtk.nix) | inherits (0.2: Thunar bg #16161d/#1f1f28, pwvucontrol #1f1f28 + #7e9cd8 accent; portal = same GTK3 theme as Thunar, not opened) | – |
 | qBittorrent, qt5ct/qt6ct | G | Qt (qt.nix) | inherits (0.2: qBt #1f1f28/#16161d, qt6ct #181820/#393946) | – |
-| KeePassXC | G | `[GUI] ApplicationTheme=classic` via activation → qt6ct palette | awaiting user test (5.6) | 5 |
+| KeePassXC | G | `[GUI] ApplicationTheme=classic` via activation → qt6ct palette | themed (user OK 2026-09) | 5 |
 | Vial | G | PyInstaller Qt, xcb only (dies on Wayland), ignores qt5ct | exception (sets its own hardcoded palette, themes.py:248; settings unpersisted; rare use — user 2026-09) | – |
 | Horizon (gm) | G | omnissa `horizon-client_wrapper:2` hard-sets `GTK_THEME=Adwaita`; horizon-gm also sets `XDG_CONFIG_HOME=~/.omnissa/xdg-gm` (no gtk-3.0 there) | wrong (0.3: light Adwaita) | 7 |
-| Zathura | G | programs.zathura options from roles | awaiting user test (5.6) | 5 |
-| mpv (OSD), umpv | G | osd-* + script-opts/osc.conf from roles | awaiting user test (5.6) | 5 |
-| avizo (volume/brightness OSD) | G | config.ini from roles; callers pass -d (grey icons) | awaiting user test (5.6) | 5 |
+| Zathura | G | programs.zathura options from roles | themed (user OK 2026-09) | 5 |
+| mpv (OSD), umpv | G | osd-* + script-opts/osc.conf from roles | themed (user OK 2026-09) | 5 |
+| avizo (volume/brightness OSD) | G | config.ini from roles; callers pass -d (grey icons) | themed (user OK 2026-09) | 5 |
 | Firefox, Microsoft Edge | G | Dark Reader forced; chrome = GTK? | partial | 7 |
 | o365 PWAs (Teams, Outlook, Word, Excel, PowerPoint, OneNote, OneDrive, SharePoint) | G | NOT Edge: rust_o365 wraps teams-for-linux 2.17.1 (Electron), profiles in ~/.config/o365-profiles | wrong (web apps' own theme; not opened: would load the signed-in mailbox) | 7 |
 | Slack, Telegram (nixpak) | G | own in-app themes | wrong (not screenshotted: single-instance, already running on the real session) | 7 |
@@ -51,9 +51,9 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | rmpc, bluetui, eza, dircolors/ls, fast-syntax-highlighting, jq, rg | T | ANSI → foot | inherits (0.2: only 16-colour SGR / 256 idx < 16) | – |
 | lazygit UI | T | ANSI → foot | themed (authorColors = info; user OK 2026-09) | 2 |
 | p10k | T | dotfiles/zsh/.p10k.zsh, ANSI 1-7 | inherits (PERLBREW_FOREGROUND 67 → 6, same as PLENV; not observable without perlbrew) | 5 |
-| skim, fzf, Ctrl-R (histdb-skim) | T | one `--color` spec from roles: SKIM_DEFAULT_OPTIONS + HISTDB_COLOR; fzf `colors` | awaiting user test (5.6) | 5 |
+| skim, fzf, Ctrl-R (histdb-skim) | T | one `--color` spec from roles: SKIM_DEFAULT_OPTIONS + HISTDB_COLOR; fzf `colors` | themed (user OK 2026-09) | 5 |
 | nyx | T | curses, 16 ANSI | inherits (not observed: needs a Tor ControlPort, crookedmirror only) | – |
-| nmtui (newt) | T | NEWT_COLORS (ANSI names → foot palette), deck/homeModules/newt.nix | awaiting user test (5.6) | 5 |
+| nmtui (newt) | T | NEWT_COLORS (ANSI names → foot palette), deck/homeModules/newt.nix | themed (user OK 2026-09) | 5 |
 | man/less, fastfetch, git status/log, typst/tinymist, top | T | ANSI → foot | inherits (0.2: 16-colour only; man = bold/underline) | – |
 
 ## Phase 0 — Inventory + recon ✅
@@ -119,7 +119,7 @@ Decisions owed before 4.1 (ask at the start of the Phase 4 session, one at a tim
   - blame.nvim rainbow: 14 mocha accents → the closest 14 kanagawa accents, or a shorter list.
   Answered 2026-09: slot 0 = (b) `vim.g.terminal_color_0 = "#1f1f28"`; reactive.nvim spec deleted; blame = 14 accents through the same map (+ flamingo).
 
-## Phase 5 — Standalone GUI/TUI configs ⏳
+## Phase 5 — Standalone GUI/TUI configs ✅
 Audit 2026-09 (plan-audit, live code + HM 44831a7 = `home-manager_3`, the root `home-manager` input in cells/workstation/flake.lock). Palette access: desktop modules take the `theme` arg (home/default.nix:50 `_module.args.theme`, e.g. qt.nix:9); deck modules read `inputs.cells.common.theme` (btop.nix:8).
 5.1 Zathura: bare package at `home/dev/languages.nix:50` (forward-search for `lang-texlive.lua:56`). Move to `programs.zathura.enable` (HM `zathura.nix:26`, installs `cfg.package` at :84, writes zathurarc at :86) + `programs.zathura.options` from roles: default-bg/fg, statusbar-bg/fg, inputbar-bg/fg, notification(-error/-warning)-bg/fg, highlight-color/-active-color, completion-*, index-*, recolor-lightcolor/-darkcolor; `recolor` stays false. Where: a new `home/desktop/zathura.nix` (languages.nix has no `theme` arg today; dev/ is imported alongside desktop/ by home/default.nix:62, so either works — desktop keeps GUI theming together). Both accounts get it (same home module, built twice: home/default.nix:1-5).
   — DONE 2026-09: new `home/desktop/zathura.nix` (imported in desktop/default.nix), bare `zathura` dropped from languages.nix. Options per zathurarc(5) of the installed 2026.05.20: plan's set + completion-group-*, highlight-fg, render-loading-bg/fg, signature-{success,warning,error}-color. Overlays over the page use `rgba()` (GTK3 parses no #rrggbbaa): highlight = highlight@0.5, active = warning@0.5, signatures @0.9. recolor-lightcolor = bg, -darkcolor = fg.
@@ -138,6 +138,7 @@ Audit 2026-09 (plan-audit, live code + HM 44831a7 = `home-manager_3`, the root `
   Vial: the plan's `QT_STYLE_OVERRIDE`/palette env CANNOT work. Vial 0.7.5 calls `QApplication.setPalette(<hardcoded Dark>)` + Fusion itself at startup (vial-gui v0.7.5 themes.py:27,248; default theme "Dark", main_window.py:417). The only non-hardcoded path is its "System" theme (no setPalette) stored in `QSettings("Vial","Vial")` = ~/.config/Vial/Vial.conf, which is NOT persisted on either account (grep of both impermanence lists: no Vial) → erased at boot. Bundled Qt is 5.9.3 with only `libqgtk3` as platformtheme (no qt5ct, cannot load the system 5.15 plugin). So: theme=System + `QT_QPA_PLATFORMTHEME=gtk3` in the FHS wrapper, might pick up GTK Kanagawa (unverified: the bundled qgtk3 must find a GTK3 in the FHS env); needs either persisting ~/.config/Vial or writing Vial.conf in the wrapper. DECISION for the user (see Decisions), fallback = exception.
   — DONE 2026-09: keepass.nix `home.activation.keepassxcTheme` = crudini `--set GUI ApplicationTheme classic` (same pattern as torrent.nix:67), both accounts. Checked against 2.7.12 Application.cpp:166-199: classic = no own style, classicstyle.qss, dark icons still from isDarkMode.
 5.6 User test, one line per app: Zathura (open a PDF, `/` search → highlight, statusbar, index `Tab`, `Ctrl+R` recolor); mpv (move the mouse → OSC bar/timecode; seek → OSD bar; `o`; pause text); avizo (volume and brightness keys); nmtui (main menu + an edit dialog); skim Ctrl-T, Alt-C and Ctrl-R (histdb); fzf (`fd | fzf` ad hoc); p10k prompt in a git repo (perlbrew segment not observable without perlbrew — skip); KeePassXC (main window, entry edit dialog, settings; reopen: last DB still remembered). avizo: icons are grey now (-d), both keys and waybar scroll.
+  — DONE 2026-09: user "всё ок". First fzf/Ctrl-R look was stale: panes started before the rebuild, and `exec zsh` inherits `__HM_SESS_VARS_SOURCED=1` so hm-session-vars.sh is skipped; a new tmux pane picked the vars up. Test session vars in a NEW pane, not `exec zsh`.
 Decisions owed before 5.5 (ask at the start of the Phase 5 session):
   - Vial: (a) exception (hardcoded palette, 5 min/year use), (b) try theme=System + QT_QPA_PLATFORMTHEME=gtk3 in the wrapper and persist ~/.config/Vial on both accounts, (c) same but the wrapper seeds Vial.conf each launch (no persistence entry).
   Answered 2026-09: (a) exception. 5.5 = KeePassXC only; Vial dropped from 5.6.
@@ -194,5 +195,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: 5.1 landed (zathura via programs.zathura from roles); verified off-host. User test of Zathura waits for the batched 5.6 after 5.2-5.5 land (one rebuild for the phase).
 - 2026-09: 5.2-5.5 landed (mpv osd+osc, avizo + `-d` icons in dwl/waybar, newt/skim/histdb/fzf/p10k, KeePassXC classic); verified off-host. Matrix rows → awaiting user test; 5.6 checklist handed over.
 
-Next: 5.6 — user rebuilds (dwl changes too), opens a new shell (session vars), tests per the 5.6 list.
-Blocked on: user rebuild + 5.6 verdict per app.
+- 2026-09: user accepted 5.6 (all apps "ок"; fzf/Ctrl-R after a fresh tmux pane); Phase 5 ✅. Phase 6 in a fresh session.
+
+Next: Phase 6 (agent CLIs) — offer plan-audit first, in a fresh session.
+Blocked on: nothing.
