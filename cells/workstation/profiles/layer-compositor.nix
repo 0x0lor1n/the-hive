@@ -60,6 +60,8 @@
           cell.packages.telegram-desktop
           # One account only: fixed /tmp launch symlinks (nixpkgs#415842).
           cell.packages.grayjay
+          # Horizon behind a gm-only sign-in browser (packages.nix).
+          cell.packages.horizon-gm
         ];
         secrets = userSecrets "entra";
         # SharePoint/Word/Excel/PowerPoint links open in the o365 app, the
