@@ -46,6 +46,7 @@ static const Rule rules[] = {
 	/* app_id             title       tags mask     isfloating   monitor */
 	{ "Gimp_EXAMPLE",     NULL,       0,            1,           -1 }, /* Start on currently visible tags floating, not tiled */
 	{ "firefox_EXAMPLE",  NULL,       1 << 8,       0,           -1 }, /* Start on ONLY tag "9" */
+	{ "music",            NULL,       0,            1,           -1 }, /* rmpc, Super+Alt+M */
     /* default/example rule: can be changed but cannot be eliminated; at least one rule must exist */
 };
 
@@ -138,8 +139,11 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 /* commands */
 static const char *termcmd[] = { "foot", NULL };
 static const char *menucmd[] = { "fuzzel", NULL };
-/* raiseorspawn patch: focus the existing window by app_id, else spawn. */
+/* raiseorspawn patch: focus the existing window by app_id, else spawn.
+ * foot's app_id is "foot"; rmpc's window is tagged "music" via -a. */
 static const Raise termraise = { "foot", termcmd };
+static const char *const musiccmd[] = { "foot", "-a", "music", "rmpc", NULL };
+static const Raise musicraise = { "music", musiccmd };
 
 static const Key keys[] = {
 	/* Note that Shift changes certain key codes: 2 -> at, etc. */
@@ -166,6 +170,8 @@ static const Key keys[] = {
 	/* wochap: Super+Alt+T terminal (focuses an open one), Super+Alt+F file manager */
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_t,           raiseorspawn,     {.v = &termraise} },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_f,           spawn,            SHCMD("thunar") },
+	/* rmpc (home/desktop/music): a command arg replaces foot's sesh shell, so no tmux */
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_m,           raiseorspawn,     {.v = &musicraise} },
 	/* modes (see modekeys[] below): Super+R layout, Super+Alt+N notifications */
 	{ MODKEY,                    XKB_KEY_r,           entermode,        {.i = LAYOUT} },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_n,           entermode,        {.i = NOTIFICATION} },
@@ -174,6 +180,10 @@ static const Key keys[] = {
 	{ 0, XKB_KEY_XF86AudioRaiseVolume,  spawn, SHCMD("volumectl -u up") },
 	{ 0, XKB_KEY_XF86AudioLowerVolume,  spawn, SHCMD("volumectl -u down") },
 	{ 0, XKB_KEY_XF86AudioMute,         spawn, SHCMD("volumectl toggle-mute") },
+	{ 0, XKB_KEY_XF86AudioPlay,         spawn, SHCMD("playerctl play-pause") },
+	{ 0, XKB_KEY_XF86AudioNext,         spawn, SHCMD("playerctl next") },
+	{ 0, XKB_KEY_XF86AudioPrev,         spawn, SHCMD("playerctl previous") },
+	{ 0, XKB_KEY_XF86AudioStop,         spawn, SHCMD("playerctl stop") },
 	{ 0, XKB_KEY_XF86MonBrightnessUp,   spawn, SHCMD("lightctl up") },
 	{ 0, XKB_KEY_XF86MonBrightnessDown, spawn, SHCMD("lightctl down") },
 	{ MODKEY,                    XKB_KEY_j,           focusstack,       {.i = +1} },
