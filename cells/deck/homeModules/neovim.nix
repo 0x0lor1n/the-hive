@@ -28,6 +28,13 @@
     trash-cli
   ];
 
+  # Overrides NixOS's EDITOR=nano (programs.nano default): HM's zshenv sources
+  # hm-session-vars after /etc/zshenv. git merge/commit read it too.
+  home.sessionVariables = {
+    EDITOR = "nvim";
+    VISUAL = "nvim";
+  };
+
   xdg.configFile."nvim".source =
     config.lib.file.mkOutOfStoreSymlink "/srv/the-hive/dotfiles/nvim";
 }
