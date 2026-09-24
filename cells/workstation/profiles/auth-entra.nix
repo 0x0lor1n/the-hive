@@ -303,6 +303,8 @@ in {
       # zoxide frecency db + tmux-resurrect snapshots.
       (entraHome ".local/share/zoxide")
       (entraHome ".local/share/tmux/resurrect")
+      # lazygit state.yml -- see layer-users-local.nix.
+      (entraHome ".local/state/lazygit")
       # neovim: lazy.nvim plugins, mason, compiled treesitter parsers -- see
       # layer-users-local.nix.
       (entraHome ".local/share/nvim")
@@ -474,12 +476,12 @@ in {
         "/.local"
         "/.local/share"
         "/.local/share/tmux"
+        "/.local/state"
         "/.var"
         "/.var/app"
       ]
-      # No persisted children under .local/state -- home side only.
+      # nix/profiles is home-manager-entra's generation, never persisted.
       ++ map own [
-        "/.local/state"
         "/.local/state/nix"
         "/.local/state/nix/profiles"
       ]
