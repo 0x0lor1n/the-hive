@@ -8,7 +8,9 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: {...}: let
+  r = inputs.cells.common.theme.roles;
+in {
   programs.git = {
     enable = true;
 
@@ -32,6 +34,16 @@
       options = {
         side-by-side = true;
         file-modified-label = "modified:";
+        # The tmTheme registered by bat.nix, found through bat's cache.
+        syntax-theme = "kanagawa";
+        # kanagawa.nvim's DiffText: changed words share one bg on both sides.
+        minus-style = "syntax #${r.diffDelete}";
+        minus-emph-style = "syntax #${r.diffText}";
+        plus-style = "syntax #${r.diffAdd}";
+        plus-emph-style = "syntax #${r.diffText}";
+        line-numbers-minus-style = "#${r.urgent}";
+        line-numbers-plus-style = "#${r.accent}";
+        line-numbers-zero-style = "#${r.muted}";
       };
     };
   };
