@@ -11,6 +11,7 @@
 | `Super + Shift + Enter` | tmux: split — новый pane в текущем окне (то же, что `Ctrl + Shift + Enter`) |
 | `Super + D` / `Super + P` | лаунчер (fuzzel) |
 | `Super + Alt + F` | файловый менеджер (thunar) |
+| `Super + Alt + M` | музыка: rmpc в плавающем foot, без tmux; если уже открыт, фокус на него. `q` закрывает, mpd играет дальше |
 | `Super + C` | калькулятор (fuzzel, результат в буфер) |
 | `Super + V` | история буфера (cliphist) |
 | `Super + Alt + W` | wifi-меню (nmcli через fuzzel) |
@@ -118,7 +119,8 @@ Open / Copy PNG. Файлы: `~/Pictures/Screenshots`, `~/Videos/Recordings`.
 
 ## Медиа-клавиши
 
-`XF86 Vol±/Mute` → volumectl (avizo-осд), `XF86 Brightness±` → lightctl.
+`XF86 Vol±/Mute` → volumectl (avizo-осд), `XF86 Brightness±` → lightctl,
+`XF86 Play/Next/Prev/Stop` → playerctl (mpd через mpdris2).
 
 ## Служебное
 

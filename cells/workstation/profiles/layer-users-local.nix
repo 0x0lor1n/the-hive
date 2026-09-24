@@ -108,6 +108,8 @@
       # (~/.config/<productName>), SimpleX keeps its db under XDG_DATA_HOME.
       ".config/Mattermost"
       ".local/share/simplex"
+      # home/desktop/music: mpd db, queue/state, playlists.
+      ".local/share/mpd"
       # home/desktop/keepass.nix: settings (.config) and the vault itself
       # (.local/share/keepassxc/*.kdbx). Recent-db list is under .cache.
       ".config/keepassxc"

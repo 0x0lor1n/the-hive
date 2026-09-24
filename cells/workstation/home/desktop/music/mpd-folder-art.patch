@@ -1,0 +1,15 @@
+diff --git a/src/command/FileCommands.cxx b/src/command/FileCommands.cxx
+index bbf54c9..66c8144 100644
+--- a/src/command/FileCommands.cxx
++++ b/src/command/FileCommands.cxx
+@@ -134,6 +134,10 @@ find_stream_art(std::string_view directory, Mutex &mutex)
+ 		"cover.png",
+ 		"cover.jpg",
+ 		"cover.webp",
++		"folder.png",
++		"folder.jpg",
++		"front.png",
++		"front.jpg",
+ 	};
+ 
+ 	for(const auto name : art_names) {
