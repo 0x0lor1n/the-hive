@@ -3,8 +3,8 @@
 Status: PLANNING (2026-09). Owner: user; Claude = executor.
 Prereq: the-hive at 0251f2f or later (palette in `cells/common/theme.nix`, read as `inputs.cells.common.theme`). User runs every rebuild; Claude only edits + evals.
 
-Target: each row of the Matrix below is `themed` (colours trace to `cells/common/theme.nix`), `inherits` (verified to pick up foot ANSI / GTK / Qt without its own config), or `exception` (with the reason). No row stays `?`. Stretch: desktop consumers read `theme.roles.*` only, never `theme.colors.*` (57 refs in 8 files today), so switching the palette is one file.
-Source refs: `cells/common/theme.nix` (colors/roles/ansi/name); GTK `home/desktop/gtk.nix` and Qt `home/desktop/qt.nix` (the two inherited toolkits); `deck/homeModules/*.nix` (shell/TUI tools); `home/dev/agents.nix` (claude settings.json :144, opencode tui :126); `profiles/agent-proxy.nix` (hermes install); `packages.nix` (nixpak Slack/Telegram, grayjay, horizon-gm FHS); `profiles/auth-entra.nix` (o365 PWAs via Edge); `dotfiles/nvim/lua/custom/plugins/colorscheme/` (catppuccin, 171 refs in hl_overrides.lua + 36 in ui/editor/bufferline). Upstream themes: `rebelot/kanagawa.nvim` `extras/tmTheme/kanagawa.tmTheme` (bat/delta) and `lua/kanagawa/themes.lua` wave `diff = { add = winterGreen, delete = winterRed, change = winterBlue, text = winterYellow }`; opencode `packages/ui/src/theme/themes/kanagawa.json`; hermes skins = `~/.hermes/skins/<name>.yaml` + `display.skin` (schema in hermes_cli/skin_engine.py); Claude Code 2.1.239 lists "custom themes" in `--safe-mode` help (location unverified).
+Target: each row of the Matrix below is `themed` (colours trace to `cells/common/theme.nix`), `inherits` (verified to pick up foot ANSI / GTK / Qt without its own config), or `exception` (with the reason). No row stays `?`. Stretch: desktop consumers read `theme.roles.*` only, never `theme.colors.*` (58 refs in 8 files today), so switching the palette is one file.
+Source refs: `cells/common/theme.nix` (colors/roles/ansi/name); GTK `home/desktop/gtk.nix` and Qt `home/desktop/qt.nix` (the two inherited toolkits); `deck/homeModules/*.nix` (shell/TUI tools); `home/dev/agents.nix` (claude settings.json :144, opencode tui :126); `profiles/agent-proxy.nix` (hermes install); `packages.nix` (nixpak Slack/Telegram, grayjay, horizon-gm FHS); `profiles/auth-entra.nix` (o365 PWAs via Edge); `dotfiles/nvim/lua/custom/plugins/colorscheme/` (catppuccin: 191 `C.*` refs in hl_overrides.lua, 24 lines in ui/editor/bufferline, + init.lua, lazy.lua, lazy-lock.json). Upstream themes: `rebelot/kanagawa.nvim` `extras/tmTheme/kanagawa.tmTheme` (bat/delta) and `lua/kanagawa/themes.lua` wave `diff = { add = winterGreen, delete = winterRed, change = winterBlue, text = winterYellow }`; opencode `packages/ui/src/theme/themes/kanagawa.json`; hermes skins = `~/.hermes/skins/<name>.yaml` + `display.skin` (schema in hermes_cli/skin_engine.py); Claude Code 2.1.239 lists "custom themes" in `--safe-mode` help (location unverified).
 Repo: HM release-25.05 (`cells/workstation/flake.nix:34`): 25.05 option names (`programs.git.delta`). Format `nix run nixpkgs#alejandra`. Any `inputs.cells.common.*` read loads globals.nix.age: eval needs a warm TPM cache.
 Naming: palette additions `colors.winterGreen = "2b3328"`, `winterRed = "43242b"`, `winterBlue = "252535"`, `winterYellow = "49443c"` (verbatim kanagawa.nvim); roles `diffAdd`, `diffDelete`, `diffChange`, `diffText`, `success`, `warning`, `info`. Upstream source `kanagawaSrc` (fetchFromGitHub rebelot/kanagawa.nvim, rev pinned in 2.1). Theme/skin name `kanagawa` everywhere a tool takes a name (bat, btop, hermes skin, claude, opencode, zathura).
 
@@ -74,36 +74,37 @@ Exit criteria: old palette JSON is a subset of the new one; commit `feat(theme):
 verified 1: `nix eval --impure --json --expr 'removeAttrs (import ./cells/common/theme.nix {}) ["name"]'` before/after + recursive subset check -> true @ 2026-09; `alejandra --check cells/common/theme.nix` -> 0; consumers read only named keys (`k = theme.colors`/`r = theme.roles` aliases, no attrValues/mapAttrs over them) so elster drvPath should be unchanged; drvPath eval NOT run (age-plugin-tpm died, cold TPM cache) — user to run. No app changes, nothing to user-test.
 
 ## Phase 2 — bat + delta (+ lazygit diffs) ⏳
-2.1 `deck/homeModules/bat.nix`: `programs.bat.themes.kanagawa` from `kanagawaSrc` `extras/tmTheme/kanagawa.tmTheme`; `config.theme = "kanagawa"`.
-2.2 `deck/homeModules/git.nix` delta: `syntax-theme = "kanagawa"`; minus/plus(-emph) styles from `diff*` roles; line-number styles from `urgent`/`accent`/`muted`.
-2.3 User test (after rebuild): `git diff` and `git log -p` in a dirty repo; lazygit → a file with changes, staged + unstaged; `bat` on a .nix and a .md file; `help git | head`. Look at: added/removed line bg, changed-word emphasis, line numbers, syntax colours vs nvim.
+2.1 `deck/homeModules/bat.nix`: `programs.bat.themes.kanagawa` (HM `bat.nix:15`, `{src, file}`) from `kanagawaSrc` `extras/tmTheme/kanagawa.tmTheme` (exists upstream, bg #1F1F28 / fg #DCD7BA / selection #2D4F67 = palette); `config.theme = "kanagawa"`. `kanagawaSrc` = fetchFromGitHub rebelot/kanagawa.nvim rev bb85e4bfc8d89b0e62c8fa53ccdd13d12e2f77b3 (master @ audit), let-bound in bat.nix (only consumer; btop 3.1 does not need it). HM rebuilds the bat cache in `home.activation.batCache` (HM `bat.nix:210`); skim's preview calls `${pkgs.bat}` (skim.nix:19), same config/cache, no change.
+2.2 `deck/homeModules/git.nix:30` delta (25.05 `programs.git.delta.options`): `syntax-theme = "kanagawa"`; minus/plus(-emph) styles from `diff*` roles; line-number styles from `urgent`/`accent`/`muted`. lazygit's delta renderer (lazygit.nix:18) reads the same `[delta]` git config, no lazygit change for diffs.
+2.2b `deck/homeModules/lazygit.nix`: `settings.gui.authorColors."*"` = a palette role, so author names stop being hash-generated truecolor (Matrix row "lazygit UI").
+2.3 User test (after rebuild): `git diff` and `git log -p` in a dirty repo; lazygit → a file with changes, staged + unstaged, commits panel (author colour); `bat` on a .nix and a .md file; `help git | head`; skim Ctrl-T preview. Look at: added/removed line bg, changed-word emphasis, line numbers, syntax colours vs nvim.
 Exit criteria: `delta --show-config` shows `syntax-theme = kanagawa` and palette hexes; lazygit diff has no #3f0001/#002800; user accepted 2.3.
 
 ## Phase 3 — btop from the palette ⏳
-3.1 `deck/homeModules/btop.nix`: generate `~/.config/btop/themes/kanagawa.theme` from roles/colours; `color_theme = "kanagawa"`.
+3.1 `deck/homeModules/btop.nix`: `programs.btop.themes.kanagawa` (HM `btop.nix:63`, `lines`) from roles/colours; `color_theme = "kanagawa"` (replaces `kanagawa-wave` at btop.nix:14); drop the now-false comment btop.nix:11-12 ("no file to derive").
 3.2 User test: btop main view, then the menu (Esc) and the process filter (f). Look at: graph gradients, box borders, selected row.
 Exit criteria: `grep color_theme ~/.config/btop/btop.conf` == kanagawa, no fallback on start; user accepted 3.2.
 
 ## Phase 4 — neovim to kanagawa.nvim ⏳
-4.1 Replace the catppuccin spec with `rebelot/kanagawa.nvim` (wave); terminal_color_* in `theme.ansi` order.
-4.2 Port `hl_overrides.lua` + the 36 `catppuccin.palettes` calls (ui.lua, editor.lua, utils-plugins/bufferline.lua) to kanagawa `overrides(colors)`.
+4.1 Replace the catppuccin spec in `plugins/colorscheme/init.lua` with `rebelot/kanagawa.nvim` (wave); terminal_color_* in `theme.ansi` order. Also `custom/lazy.lua` and `custom/init.lua` (1 catppuccin ref each: install fallback / colorscheme call) and `lazy-lock.json` (`:Lazy clean`, else the exit grep fails).
+4.2 Port `hl_overrides.lua` (465 lines, 191 `C.*` refs over 23 catppuccin keys: base blue dark_purple green lavender mantle maroon mauve overlay0 peach pink red rosewater sapphire sky subtext0 sun surface0 surface1 teal text vibrant_green yellow) and ui.lua (8 lines) / editor.lua (6) / utils-plugins/bufferline.lua (10) to kanagawa `overrides(colors)`. Write the catppuccin→kanagawa key map first (one table, reviewed by the user). Two non-palette deps: `catppuccin.utils.colors` darken (hl_overrides ×3, editor ×1) → `kanagawa.lib.color`; `catppuccin.special.bufferline` (bufferline.lua) → plain bufferline highlights. Big enough to split: 4.2a map + hl_overrides, 4.2b ui/editor/bufferline.
 4.3 User test (after `:Lazy sync`): a .nix and a .lua file, telescope/picker, completion popup, diagnostics (introduce an error), git signs, bufferline with 3 buffers, `:terminal`, a diff (`:Gitsigns diffthis` or nvimdiff). Look at: overrides that used catppuccin colours, floating window borders, terminal colours.
 Exit criteria: `nvim --headless -c 'lua print(vim.g.colors_name)' -c qa` == kanagawa; `grep -rn catppuccin dotfiles/nvim` empty; `nvim --headless +qa 2>&1` empty; user accepted 4.3.
 
 ## Phase 5 — Standalone GUI/TUI configs ⏳
-5.1 Zathura: `programs.zathura.options` (default-bg/fg, statusbar-*, inputbar-*, highlight-*, recolor-*) from roles; recolor off by default.
-5.2 mpv: `osd-color`, `osd-border-color`, `osd-back-color` from roles in `home/desktop/mpv/default.nix`.
-5.3 avizo: `services.avizo.settings.default` background/border/bar colours from roles in `home/desktop/osd.nix`.
-5.4 Whatever Phase 0 marked wrong among ANSI TUIs that use their own env (NEWT_COLORS for nmtui, LESS_TERMCAP_* for man): one line each from `theme.ansi` names. Phase 0 result: nmtui (NEWT_COLORS), skim + fzf (`programs.{skim,fzf}.colors` from roles), p10k cube colours 67/208 → ANSI indices; man/less already ANSI-only, no change.
-5.6 KeePassXC: `[GUI] ApplicationTheme=classic` in keepassxc.ini so it takes the Qt palette (the file is user-writable, settings persist; check how keepass.nix handles it first). Vial: xcb-only PyInstaller Qt, ignores qt5ct; try `QT_STYLE_OVERRIDE`/palette env in its wrapper, else exception.
-5.5 User test, one line per app: Zathura (open a PDF, `/` search → highlight, statusbar, `Ctrl+R` recolor); mpv (seek → OSD bar, `o`, pause text); avizo (volume and brightness keys); each 5.4 TUI (nmtui main menu + a dialog, `man git`).
-Exit criteria: screenshot of each tool shows palette bg/fg; user accepted 5.5 per app; Matrix rows flipped to themed.
+5.1 Zathura: today a bare package in `home/dev/languages.nix:50` (texlive forward-search). Move it to `programs.zathura.enable` (HM `zathura.nix:30,84` installs the package itself; drop the languages.nix entry) + `programs.zathura.options` (default-bg/fg, statusbar-*, inputbar-*, highlight-*, recolor-*) from roles; recolor off by default.
+5.2 mpv: `osd-color`, `osd-border-color`, `osd-back-color` from roles in `programs.mpv.config` (`home/desktop/mpv/default.nix:33`).
+5.3 avizo: `services.avizo.settings.default` (HM `services/avizo.nix:17`) background/border/bar colours from roles in `home/desktop/osd.nix:6`.
+5.4 ANSI TUIs with their own colours (Phase 0): nmtui via `NEWT_COLORS` session var; fzf via `programs.fzf.colors` (HM `fzf.nix:152`); skim has NO `colors` option on this HM pin (only *Options lists) → `--color=...` in `programs.skim.defaultOptions`; check whether zsh-histdb-skim (Ctrl-R, `deck/packages/zsh-histdb-skim.nix`) honours SKIM_DEFAULT_OPTIONS, else note it; p10k cube colours 67/208 in `dotfiles/zsh/.p10k.zsh` → ANSI indices. man/less already ANSI-only, no change.
+5.5 KeePassXC: `[GUI] ApplicationTheme=classic` so it takes the Qt palette. NOT via HM `programs.keepassxc.settings` (HM `keepassxc.nix:53` makes keepassxc.ini a read-only store symlink; KeePassXC writes last-opened DBs/geometry there and would lose them). keepass.nix today is only `home.packages`; set the one key with an idempotent activation edit of the persisted ini (~/.config/keepassxc, keepass.nix:7-10), both accounts. Vial (`profiles/input-vial.nix`): xcb-only PyInstaller Qt, ignores qt5ct; try `QT_STYLE_OVERRIDE`/palette env in its wrapper, else exception.
+5.6 User test, one line per app: Zathura (open a PDF, `/` search → highlight, statusbar, `Ctrl+R` recolor); mpv (seek → OSD bar, `o`, pause text); avizo (volume and brightness keys); nmtui (main menu + a dialog); fzf and skim (Ctrl-T, Alt-C, Ctrl-R); p10k prompt in a git repo; KeePassXC (main window, entry edit dialog, settings; reopen: last DB still remembered); Vial if not an exception.
+Exit criteria: screenshot of each tool shows palette bg/fg; user accepted 5.6 per app; Matrix rows flipped to themed.
 
 ## Phase 6 — Agent CLIs ⏳
-6.1 Hermes: generate `~/.hermes/skins/kanagawa.yaml` from roles via HM (both accounts; `.hermes` is persisted, the file is a store symlink); `display.skin: kanagawa` via `hermes config set` or the managed config, per 0.4.
-6.2 Claude Code: custom theme file from roles if 0.4 found the format, else `theme = "dark-ansi"` in settings.json so it renders with foot's Kanagawa ANSI.
-6.3 opencode: `opencodeTui.theme = "kanagawa"` (built-in) or palette-generated JSON if 0.4 == no.
-6.4 User test: hermes (banner, a tool call, a diff/patch preview, a clarify prompt); claude (prompt, tool call, diff, permission dialog, `/theme`); opencode (session view, diff, command palette). Both accounts where the tool runs on both.
+6.1 Hermes: `~/.hermes/skins/kanagawa.yaml` from roles via HM `home.file` (both accounts; `.hermes` persisted: layer-users-local.nix:74, auth-entra.nix:290; skins/ is not one of the /srv/agents shared links, agent-proxy.nix:84, so per-home is right); `display.skin kanagawa` via `hermes config set` in `seedHermes` (agent-proxy.nix:67), same get-compare-set pattern as `model.*` there.
+6.2 Claude Code: `~/.claude/themes/kanagawa.json` from roles via `home.file`; `theme = "custom:kanagawa"` in `claudeSettings` (agents.nix; settings schema accepts `startsWith("custom:")`, re-seen in 2.1.239 strings). settings.json is a store symlink (agents.nix `home.file.".claude/settings.json"`), so `/theme` cannot persist a change: expected, test only that it lists kanagawa.
+6.3 opencode: `opencodeTui.theme = "kanagawa"` at agents.nix:126 (built-in, 0.4).
+6.4 User test: hermes (banner, a tool call, a diff/patch preview, a clarify prompt); claude (prompt, tool call, diff, permission dialog, `/theme` lists kanagawa); opencode (session view, diff, command palette). Both accounts where the tool runs on both.
 Exit criteria: each CLI's TUI shows bg #1f1f28 / accents from roles in a screenshot; user accepted 6.4 per tool; Matrix rows flipped.
 
 ## Phase 7 — Browsers, Electron, PWAs, Horizon ⏳
@@ -116,7 +117,7 @@ Sketch only; plan-audit rewrites from Phase 0 findings.
 Exit criteria: every row in scope is themed (user accepted 7.5 for it) or exception with a one-line reason.
 
 ## Phase 8 — colors → roles (stretch) ⏳
-8.1 Move the 57 `theme.colors.*` refs in home/default.nix and desktop/{bar,launcher,torrent,notify,screenshot,qt,lock}.nix onto roles.
+8.1 Move the 58 `theme.colors` refs (via `k`/`c` aliases: default 6, bar 1, launcher 7, torrent 18, notify 3, screenshot 5, qt 4, lock 14) in home/default.nix and desktop/{bar,launcher,torrent,notify,screenshot,qt,lock}.nix onto roles.
 8.2 User test only if drvPath changed: quick look at bar, launcher, lock screen, notifications, qBittorrent.
 Exit criteria: `theme.colors` referenced only inside `cells/common/theme.nix`; elster drvPath unchanged across the phase (or user accepted 8.2).
 
@@ -128,6 +129,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: added the user acceptance gate (invariant + per-phase test step): the user asked to be made to test every app after its theme lands.
 - 2026-09: Phase 0 done, read-only (headless dwl + private tmux, nothing on the real session touched). Surprises: KeePassXC and Vial do NOT inherit Qt; Horizon is forced to Adwaita by the nixpkgs wrapper; o365 = teams-for-linux, not Edge; skim/fzf/nmtui use their own colours; all 0.4 capabilities = yes. Phase 0 changes no app, so there is nothing for the user to test.
 - 2026-09: Phase 1 done: 4 winter* colours + diff*/success/warning/info roles, additions only. drvPath check pending on the user (TPM).
+- 2026-09: plan-audit of phases 2-8 against live code: fixed skim `colors` (no such HM option), KeePassXC via HM settings (would make the ini read-only), zathura not an HM program yet, nvim counts/missed files, Claude theme = custom:kanagawa (was a conditional), added lazygit authorColors (2.2b), renumbered 5.5/5.6.
 
 Next: Phase 2.1 — bat kanagawa tmTheme (offer plan-audit first; pin `kanagawaSrc` rev).
 Blocked on: nothing.
