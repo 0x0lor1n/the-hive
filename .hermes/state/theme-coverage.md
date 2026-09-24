@@ -43,13 +43,13 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | cups web UI, NixOS manual | G | web pages in the browser | exception (covered by Dark Reader, row Firefox/Edge) | – |
 | vim | T | default colorscheme = 16 ANSI | inherits (by construction) | – |
 | neovim | T | catppuccin in dotfiles | wrong | 4 |
-| bat, delta, lazygit diffs | T | bat tmTheme + delta styles | wrong (Monokai); code in 2.1-2.2 landed, awaiting rebuild + user test | 2 |
+| bat, delta, lazygit diffs | T | bat tmTheme + delta styles | themed (user OK 2026-09), except Markdown in bat (2.4) | 2 |
 | btop | T | by-name kanagawa-wave, not palette | partial (0.2: #dcd7ba/#727169/#16161d match, #de8954/#bab067 off-palette) | 3 |
 | Claude Code | T | custom theme file (0.4) | default | 6 |
 | Hermes | T | skin yaml (~/.hermes/skins) | default | 6 |
 | opencode | T | tui.json theme | wrong ("opencode") | 6 |
 | rmpc, bluetui, eza, dircolors/ls, fast-syntax-highlighting, jq, rg | T | ANSI → foot | inherits (0.2: only 16-colour SGR / 256 idx < 16) | – |
-| lazygit UI | T | ANSI → foot | inherits, except hash-generated author colours (truecolor, e.g. #7fc60b); authorColors in 2.2b, awaiting rebuild + user test | 2 |
+| lazygit UI | T | ANSI → foot | themed (authorColors = info; user OK 2026-09) | 2 |
 | p10k | T | dotfiles/zsh/.p10k.zsh, ANSI 1-7 | inherits, except 2 cube colours (67, 208) | 5 |
 | skim, fzf | T | built-in 256-cube defaults (161, 168, 59, 144, 236, 110) | wrong (0.2) | 5 |
 | nyx | T | curses, 16 ANSI | inherits (not observed: needs a Tor ControlPort, crookedmirror only) | – |
@@ -78,6 +78,10 @@ verified 1: `nix eval --impure --json --expr 'removeAttrs (import ./cells/common
 2.2 DONE 2026-09 `cells/deck/homeModules/git.nix:30` delta (25.05 `programs.git.delta.options`): `syntax-theme = "kanagawa"`; minus/plus(-emph) styles from `diff*` roles; line-number styles from `urgent`/`accent`/`muted`. lazygit's delta renderer (lazygit.nix:18) reads the same `[delta]` git config, no lazygit change for diffs.
 2.2b DONE 2026-09 `cells/deck/homeModules/lazygit.nix`: `settings.gui.authorColors."*"` = a palette role, so author names stop being hash-generated truecolor (Matrix row "lazygit UI"). Chose `info` (springBlue).
 2.3 User test (after rebuild): `git diff` and `git log -p` in a dirty repo; lazygit → a file with changes, staged + unstaged, commits panel (author colour); `bat` on a .nix and a .md file; `help git | head`; skim Ctrl-T preview. Look at: added/removed line bg, changed-word emphasis, line numbers, syntax colours vs nvim.
+  — DONE 2026-09: user "всё ок", one finding: skim Ctrl-T preview of .md has no highlighting.
+2.4 DONE 2026-09 Markdown in bat. Cause (measured): upstream kanagawa.tmTheme has no `markup.*` scopes except diff ones (no heading/bold/italic/raw/link/quote/list), so a README renders ~all #dcd7ba + #54546d gutter; not a skim problem, plain `bat README.md` is the same. Fix (user chose option 1 of 3: patch upstream, not regenerate/not exception): bat.nix `runCommand` appends 7 rules before `</array>` of upstream's tmTheme, colours from `theme.colors` per kanagawa.nvim wave treesitter links (heading → crystalBlue, raw → springGreen, link url → springBlue underline, quote → oniViolet2, list marker → springViolet1, bold/italic font styles). Palette addition `oniViolet2 = "b8b4d0"` (verbatim colors.lua:38).
+  2.4 user test: skim Ctrl-T on a .md (README.md of the-hive) and `bat` on one: headings, `code`, links, `>` quotes, list markers, **bold**. Italic stays plain: bat's `--italic-text` defaults to never (same for upstream comments), not a theme issue.
+verified 2.4: standalone HM build of bat.nix (pins as above) -> tmTheme parses (`bat cache --build` okay); sample .md SGR: `#` + heading #7e9cd8, `-`/`1.` #938aa9, `>` quote #b8b4d0, `**b**` bold, `` `c` `` #98bb6c, url underline #7fb4ca; README.md 60 lines now 7 colours (was 2 fgs); bat.nix itself unchanged set @ 2026-09.
 Exit criteria: `delta --show-config` shows `syntax-theme = kanagawa` and palette hexes; lazygit diff has no #3f0001/#002800; user accepted 2.3.
 verified 2: `kanagawaSrc` hash via `nix flake prefetch github:rebelot/kanagawa.nvim/bb85e4b…` -> sha256-fMP4NUCK…; HM 44831a7 + nixpkgs 34ab999 standalone `homeManagerConfiguration` of bat/git/lazygit modules (/tmp, TPM-free) builds; generated `[delta]` = syntax-theme kanagawa, minus #43242b, plus #2b3328, emph #49443c, line numbers #c34043/#98bb6c/#727169; lazygit `gui.authorColors."*"` = #7fb4ca; in a throwaway HOME `bat cache --build` + `bat --list-themes` lists kanagawa, `delta --show-config` syntax-theme = Kanagawa, a real diff's SGR = only those bgs + tmTheme fgs, 0 hits of 3f0001/002800 @ 2026-09. tmTheme fgs outside our palette subset (still Kanagawa Wave upstream: #b8b4d0 oniViolet2, #9cabca springViolet2, #717c7c katanaGray) accepted as upstream, same set nvim gets in Phase 4. `alejandra --check` on the 3 files -> 0. elster drvPath NOT evaluated (cold TPM cache) — user.
 
@@ -132,6 +136,8 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: Phase 1 done: 4 winter* colours + diff*/success/warning/info roles, additions only. drvPath check pending on the user (TPM).
 - 2026-09: plan-audit of phases 2-8 against live code: fixed skim `colors` (no such HM option), KeePassXC via HM settings (would make the ini read-only), zathura not an HM program yet, nvim counts/missed files, Claude theme = custom:kanagawa (was a conditional), added lazygit authorColors (2.2b), renumbered 5.5/5.6.
 - 2026-09: Phase 2.1-2.2b code landed (bat tmTheme, delta styles from diff* roles, lazygit authorColors); verified off-host, awaiting rebuild + 2.3.
+- 2026-09: user accepted 2.3 ("всё ок"); found no Markdown highlighting in skim preview → 2.4 (tmTheme lacks markup scopes).
+- 2026-09: 2.4 landed (markup rules patched into upstream tmTheme, + oniViolet2); awaiting rebuild + 2.4 user test.
 
-Next: 2.3 — user rebuilds elster, then runs the 2.3 checklist and gives a verdict.
+Next: 2.4 user test after rebuild; on OK flip the bat row to themed, Phase 2 ✅, then Phase 3 (btop).
 Blocked on: user rebuild + test.
