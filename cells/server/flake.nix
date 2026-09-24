@@ -6,7 +6,7 @@
     # Its NixOS module builds with the host's pkgs (i.parent.pkgs), so its own
     # nixpkgs is lock-only: nothing in the osgiliath closure comes from it.
     # Pinned by rev; bump deliberately after `nix build github:0x0lor1n/hisilome`.
-    hisilome.url = "github:0x0lor1n/hisilome/50a725320fde7d321b5b92dd6179d32fe532dfc4";
+    hisilome.url = "github:0x0lor1n/hisilome/53b2f322edeb373c592049312f937b2f40d57e35";
     # colmena deliberately not declared: its nixosModules must come from the
     # root pin that colmenaHive reads __schema from.
   };
