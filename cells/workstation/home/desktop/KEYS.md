@@ -7,7 +7,7 @@
 
 | Клавиша | Что |
 |---|---|
-| `Super + Alt + T` | терминал (foot) |
+| `Super + Alt + T` | терминал (foot); если уже открыт, фокус на него (переключит тег) |
 | `Super + Shift + Enter` | tmux: split — новый pane в текущем окне (то же, что `Ctrl + Shift + Enter`) |
 | `Super + D` / `Super + P` | лаунчер (fuzzel) |
 | `Super + Alt + F` | файловый менеджер (thunar) |

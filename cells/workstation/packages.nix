@@ -190,6 +190,10 @@ in {
         # over stack on portrait (the work monitors). Also adds bstack as a
         # standalone layout, so layout tracks the kanshi transform.
         ./packages/dwl/patches/autotile-0.8.patch
+        # raiseorspawn(): focus the last-focused client with a given app_id
+        # (switching to its tags/monitor), else spawn. Single-instance binds
+        # in config.h (Super+Alt+T, Super+Alt+M).
+        ./packages/dwl/patches/raiseorspawn-0.8.patch
       ];
     postPatch =
       (old.postPatch or "")

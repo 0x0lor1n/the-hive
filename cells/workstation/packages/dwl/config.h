@@ -138,6 +138,8 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 /* commands */
 static const char *termcmd[] = { "foot", NULL };
 static const char *menucmd[] = { "fuzzel", NULL };
+/* raiseorspawn patch: focus the existing window by app_id, else spawn. */
+static const Raise termraise = { "foot", termcmd };
 
 static const Key keys[] = {
 	/* Note that Shift changes certain key codes: 2 -> at, etc. */
@@ -161,8 +163,8 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_Escape,      spawn,            SHCMD("powermenu") },
 	{ MODKEY,                    XKB_KEY_c,           spawn,            SHCMD("calcmenu") },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_w,           spawn,            SHCMD("wifimenu") },
-	/* wochap: Super+Alt+T second terminal bind, Super+Alt+F file manager */
-	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_t,           spawn,            {.v = termcmd} },
+	/* wochap: Super+Alt+T terminal (focuses an open one), Super+Alt+F file manager */
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_t,           raiseorspawn,     {.v = &termraise} },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_f,           spawn,            SHCMD("thunar") },
 	/* modes (see modekeys[] below): Super+R layout, Super+Alt+N notifications */
 	{ MODKEY,                    XKB_KEY_r,           entermode,        {.i = LAYOUT} },

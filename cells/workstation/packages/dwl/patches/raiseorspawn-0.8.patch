@@ -1,0 +1,49 @@
+diff --git a/dwl.c b/dwl.c
+index d61c6eb..8a268f2 100644
+--- a/dwl.c
++++ b/dwl.c
+@@ -148,6 +148,12 @@ typedef struct {
+ 	const Arg arg;
+ } Key;
+ 
++/* raiseorspawn: focus the most recently focused client with app_id, else run cmd */
++typedef struct {
++	const char *appid;
++	const char *const *cmd;
++} Raise;
++
+ typedef struct {
+ 	int mode_index;
+ 	Key key;
+@@ -320,6 +326,7 @@ static void pointerfocus(Client *c, struct wlr_surface *surface,
+ static void printstatus(void);
+ static void powermgrsetmode(struct wl_listener *listener, void *data);
+ static void quit(const Arg *arg);
++static void raiseorspawn(const Arg *arg);
+ static void rendermon(struct wl_listener *listener, void *data);
+ static void requestdecorationmode(struct wl_listener *listener, void *data);
+ static void requeststartdrag(struct wl_listener *listener, void *data);
+@@ -2236,6 +2243,23 @@ powermgrsetmode(struct wl_listener *listener, void *data)
+ 	updatemons(NULL, NULL);
+ }
+ 
++void
++raiseorspawn(const Arg *arg)
++{
++	const Raise *r = arg->v;
++	Client *c;
++	wl_list_for_each(c, &fstack, flink) {
++		if (!c->mon || strcmp(client_get_appid(c), r->appid))
++			continue;
++		selmon = c->mon;
++		if (!VISIBLEON(c, selmon))
++			view(&(Arg){.ui = c->tags});
++		focusclient(c, 1);
++		return;
++	}
++	spawn(&(Arg){.v = r->cmd});
++}
++
+ void
+ quit(const Arg *arg)
+ {
