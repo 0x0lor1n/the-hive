@@ -18,7 +18,17 @@
   # (pkgs.phoenix, pkgs.withPhoenix); the browser profile applies withPhoenix
   # itself, since Phoenix's own module would go through the ignored path.
   pkgs =
-    ((inputs.pkgs.extend inputs.chaotic.overlays.default).extend inputs.phoenix.overlays.default).extend evdiOverlay;
+    (((inputs.pkgs.extend inputs.chaotic.overlays.default).extend inputs.phoenix.overlays.default).extend evdiOverlay).extend xdpwOverlay;
+
+  # xdg-desktop-portal-wlr snapshots toplevels before running the chooser, so
+  # a window the chooser maps itself is "unknown". share-chooser
+  # (profiles/layer-compositor.nix) answers a rotated output with a wl-mirror
+  # window it just opened; the patch re-reads toplevels before matching.
+  xdpwOverlay = _final: prev: {
+    xdg-desktop-portal-wlr = prev.xdg-desktop-portal-wlr.overrideAttrs (old: {
+      patches = (old.patches or []) ++ [./packages/xdg-desktop-portal-wlr/chooser-roundtrip.patch];
+    });
+  };
 
   # evdi (DisplayLink DRM shim, host-elster) at the nixpkgs pin is 1.14.15 and
   # does not compile against 7.x: DRM renamed `drm_atomic_state` to

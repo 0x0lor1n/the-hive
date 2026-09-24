@@ -174,18 +174,28 @@ in {
   # dwl with our config.h. dwl's Makefile copies config.def.h to config.h only
   # when the latter is absent, so dropping the file in is the whole override.
   # Keybinds and rationale live in packages/dwl/config.h.
-  dwl = pkgs.dwl.overrideAttrs (old: {
+  # v0.9 ahead of nixpkgs (still 0.8 on wlroots 0.19): 0.9 adds ext-image-
+  # capture-source + ext-foreign-toplevel-list, which xdg-desktop-portal-wlr
+  # needs to share single windows, including ones on hidden tags.
+  dwl = (pkgs.dwl.override {wlroots_0_19 = pkgs.wlroots_0_20;}).overrideAttrs (old: {
+    version = "0.9";
+    src = pkgs.fetchFromCodeberg {
+      owner = "dwl";
+      repo = "dwl";
+      rev = "v0.9";
+      hash = "sha256-PYBOi/A9n1611XBEaZW9PolSfjwe1KWoI2VbVrS2s0Q=";
+    };
     patches =
       (old.patches or [])
       ++ [
         ./packages/dwl/patches/movestack-0.8.patch
         # Keybindings are latin; without this none of them fire while the
-        # ru group is active (xkb_state_key_get_syms follows the group).
+        # ru group is active (keysyms are looked up in the active layout).
         ./packages/dwl/patches/latin-keybindings.patch
         # Prefix-key modes (Super+R layout, Super+Alt+N notifications). Adds a
         # "<output> mode <label>" status line that dwl-status
         # (profiles/layer-compositor.nix) turns into the bar's mode badge.
-        ./packages/dwl/patches/modes-0.8.patch
+        ./packages/dwl/patches/modes-0.9.patch
         # tile() follows the output shape: master|stack on landscape, master
         # over stack on portrait (the work monitors). Also adds bstack as a
         # standalone layout, so layout tracks the kanshi transform.
