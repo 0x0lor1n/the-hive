@@ -85,8 +85,10 @@ Hermes reaches it via `base_url: http://pxpipe.anthropic.com:47821`.
 
 ## nixq
 
-`cells/repo/nixq` is a Go PATH shim shipped as `nix` in the deploy shell. It
-sits in front of the real `nix` client and squeezes progress noise out of stderr
+`cells/repo/nixq` is a Go PATH shim shipped as `nix`, for agents only:
+hermes, claude and opencode are wrapped (`withNixq`, `cells/repo/packages.nix`)
+to prepend it to their own PATH, so the shells they spawn get it and human
+shells keep the real client. It sits in front of the real `nix` client and squeezes progress noise out of stderr
 (plan lists, `copying path`, `building '…'`) into one summary line. From the
 first `error:` line onward everything is verbatim; warnings, traces and unknown
 lines always survive (fail-open).

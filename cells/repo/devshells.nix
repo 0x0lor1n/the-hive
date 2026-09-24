@@ -131,9 +131,9 @@ in {
     name = "nix-rensa";
 
     packages = [
-      # Agent-facing `nix`. The real client is not in packages: buildEnv
-      # rejects two bin/nix. NIXQ_REAL_NIX below pins it by store path.
-      cell.packages.nixq
+      # The client nix-plugins is built against. Agents started here put nixq
+      # in front of it themselves (withNixq); NIXQ_REAL_NIX pins it for them.
+      pkgs.nix
 
       pkgs.rage
       pkgs.age-plugin-tpm
@@ -211,7 +211,7 @@ in {
       echo "  unlock-secrets  decrypt globals.nix.age + secrets/user-*.nix.age with this host's TPM (PIN); eval prompts itself when it has a tty"
       echo "  agenix edit|generate|rekey|view   workstation secrets (generated/ + rekeyed/<host>)"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
-      echo "  nix             = nixq shim (quiet progress; NIXQ=off to bypass); rtk <cmd> for compact git/ls/…"
+      echo "  rtk <cmd>        compact git/ls/…; agents get nixq as nix (NIXQ=off to bypass)"
       echo "  treefmt         alejandra + deadnix + gofumpt + shfmt; runs on pre-commit (LEFTHOOK=0 to skip)"
       echo "  go-test-all     go test every module; runs on pre-push"
     '';
