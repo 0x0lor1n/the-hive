@@ -84,6 +84,9 @@
       ".local/share/zoxide"
       # tmux-resurrect snapshots (prefix+C-s), restored with prefix+C-r.
       ".local/share/tmux/resurrect"
+      # lazygit state.yml: recent repos, dismissed startup popups. Without it
+      # every first lazygit after boot behaves like a fresh install.
+      ".local/state/lazygit"
       # neovim state: lazy.nvim plugin clones (~110 repos), mason binaries,
       # compiled treesitter parsers. Nothing authoritative (lazy-lock.json
       # pins it), but without it every first nvim after boot re-clones and
