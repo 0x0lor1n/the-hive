@@ -202,18 +202,18 @@ in {
         device = "intel_backlight";
         format = "{icon} {percent}%";
         format-icons = ["󰃞" "󰃟" "󰃠"];
-        on-scroll-up = "${pkgs.avizo}/bin/lightctl up";
-        on-scroll-down = "${pkgs.avizo}/bin/lightctl down";
+        on-scroll-up = "${pkgs.avizo}/bin/lightctl -d up";
+        on-scroll-down = "${pkgs.avizo}/bin/lightctl -d down";
       };
       pulseaudio = {
         format = "{icon} {volume}%";
         format-muted = "󰝟 {volume}%";
         format-bluetooth = "{icon}󰂯 {volume}%";
         format-icons.default = ["󰕿" "󰖀" "󰕾"];
-        on-click = "${pkgs.avizo}/bin/volumectl toggle-mute";
+        on-click = "${pkgs.avizo}/bin/volumectl -d toggle-mute";
         on-click-right = "${pkgs.pwvucontrol}/bin/pwvucontrol";
-        on-scroll-up = "${pkgs.avizo}/bin/volumectl -u up";
-        on-scroll-down = "${pkgs.avizo}/bin/volumectl -u down";
+        on-scroll-up = "${pkgs.avizo}/bin/volumectl -d -u up";
+        on-scroll-down = "${pkgs.avizo}/bin/volumectl -d -u down";
       };
       bluetooth = {
         format = "";

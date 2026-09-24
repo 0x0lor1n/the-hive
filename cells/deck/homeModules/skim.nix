@@ -7,11 +7,46 @@
 {
   inputs,
   cell,
-}: {pkgs, ...}: {
+}: {
+  lib,
+  pkgs,
+  ...
+}: let
+  r = inputs.cells.common.theme.roles;
+  # One spec for two parsers: sk 5.4 (the widgets) and the skim 0.10.4 that
+  # zsh-histdb-skim links for Ctrl-R. Each ignores the other's unknown
+  # names: 5.4 wants `normal`, 0.10 wants `fg`. `empty` as base in both, so
+  # nothing falls back to the built-in 256-cube theme.
+  color = builtins.concatStringsSep "," (["empty"]
+    ++ lib.mapAttrsToList (n: v: "${n}:#${v}") {
+      normal = r.fg;
+      fg = r.fg;
+      bg = r.bg;
+      hl = r.highlight;
+      "fg+" = r.fg;
+      "bg+" = r.selection;
+      "hl+" = r.highlight;
+      current_match_bg = r.selection;
+      query = r.fg;
+      prompt = r.focus;
+      pointer = r.hover;
+      marker = r.accent;
+      spinner = r.info;
+      info = r.muted;
+      header = r.info;
+      border = r.border;
+      scrollbar = r.border;
+    });
+in {
+  # Ctrl-R never sees SKIM_DEFAULT_OPTIONS; it reads this instead.
+  home.sessionVariables.HISTDB_COLOR = color;
+
   programs.skim = {
     enable = true;
     enableBashIntegration = false;
     enableZshIntegration = false;
+
+    defaultOptions = ["--color=${color}"];
 
     # fd instead of find for the widgets, hidden files included, .git skipped.
     fileWidgetCommand = "${pkgs.fd}/bin/fd --type f --hidden --follow --exclude .git";

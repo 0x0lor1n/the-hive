@@ -4,11 +4,33 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: {...}: let
+  r = inputs.cells.common.theme.roles;
+  hex = c: "#${c}";
+in {
   programs.fzf = {
     enable = true;
     enableBashIntegration = false;
     enableZshIntegration = false;
+    # Replaces fzf's 256-cube defaults; the rest stays terminal-default.
+    colors = {
+      fg = hex r.fg;
+      bg = hex r.bg;
+      hl = hex r.highlight;
+      "fg+" = hex r.fg;
+      "bg+" = hex r.selection;
+      "hl+" = hex r.highlight;
+      query = hex r.fg;
+      prompt = hex r.focus;
+      pointer = hex r.hover;
+      marker = hex r.accent;
+      spinner = hex r.info;
+      info = hex r.muted;
+      header = hex r.info;
+      border = hex r.border;
+      scrollbar = hex r.border;
+      gutter = hex r.bg;
+    };
     defaultOptions = [
       "--no-height"
       "--walker-skip=.git,.direnv,node_modules"
