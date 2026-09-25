@@ -391,6 +391,9 @@ in {
         "ifoakfbpdcdoeenechcleahebpibofpc" # Dark Reader
         "kgnghhfkloifoabeaobjkgagcecbnppg" # Surfingkeys
       ];
+      # Edge sync (extensions on) reinstalls the old CWS copy of Dark Reader
+      # from the account next to the forced one.
+      ExtensionInstallBlocklist = ["eimadpbcbfnmbkopoojfekhnkhdbieeh"];
     };
 
     # Known path for greetd's --cmd.
