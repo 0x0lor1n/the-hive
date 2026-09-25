@@ -33,7 +33,7 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | mpv (OSD), umpv | G | osd-* + script-opts/osc.conf from roles | themed (user OK 2026-09) | 5 |
 | avizo (volume/brightness OSD) | G | config.ini from roles; callers pass -d (grey icons) | themed (user OK 2026-09) | 5 |
 | Firefox, Microsoft Edge | G | Dark Reader forced (built-in Kanagawa scheme); Fx chrome = userChrome.css from roles linked into every profile by HM activation (7.1b); Edge chrome = exception; own static theme impossible (signing) | Fx chrome themed (user OK 2026-09, incl. primary-button fix); Edge content = Dark Reader, 7.2 open | 7 |
-| o365 PWAs (Teams, Outlook, Word, Excel, PowerPoint, OneNote, OneDrive, SharePoint) | G | NOT Edge: rust_o365 wraps teams-for-linux 2.17.1 (Electron), profiles in ~/.config/o365-profiles | partial, awaiting user test (7.4: `followSystemTheme` → Teams' own dark; Outlook/Office web keep Microsoft's theme) | 7 |
+| o365 PWAs (Teams, Outlook, Word, Excel, PowerPoint, OneNote, OneDrive, SharePoint) | G | NOT Edge: rust_o365 wraps teams-for-linux 2.17.1 (Electron), profiles in ~/.config/o365-profiles | partial (7.4, user 2026-09: Teams = its own dark, Outlook/Office web = Microsoft's light; palette would need customCSSLocation, not taken) | 7 |
 | Slack, Telegram (nixpak) | G | own in-app themes | Slack partial (user screenshot 2026-09: own dark #1a1d21 + catppuccin mauve #cba6f7 selection); Telegram wrong (not screenshotted) | 7 |
 | Mattermost | G | Electron, own theme | wrong (0.2: light default) | 7 |
 | SimpleX | G | Compose/skiko, own theme | exception (theme import lives in unpersisted ~/.config/simplex; built-in dark — user 2026-09) | – |
@@ -203,6 +203,7 @@ Split by mechanism, because most of this phase is NOT declarative: server-side o
   DECISION (below).
   7.4 DONE 2026-09 auth-entra.nix: `followSystemTheme = true` (flat) next to `auth.intune` in /etc/teams-for-linux/config.json. Key checked in 2.17.1 app.asar: config schema defines flat `followSystemTheme` (default false, restart); the `appearance.*` table says "None of these nested targets are implemented yet. The flat names … are the only names the app accepts today". Main process sends `nativeTheme.shouldUseDarkColors` 2.5 s after load + on change; preload sets Teams V2 `userTheme = dark|default`. Input: portal `org.freedesktop.appearance color-scheme` = 1 (prefer-dark) on vkokurin (busctl ReadOne), Electron 42.9.3.
   verified 7.4: `alejandra --check auth-entra.nix` -> 0; elster eval NOT run (age-plugin-tpm, cold cache) — user @ 2026-09.
+  7.4 user test 2026-09: Teams "как был с Канагавой, так и остался" (Teams' own dark was already chosen in its account settings, so the flag is a no-op here; kept for fresh profiles), Outlook not Kanagawa (expected, 7.4 does not reach it). Palette in Outlook only via option (b) customCSSLocation — not taken.
 7.5 Chat/media apps — none has a file Nix can own:
   - Mattermost (both accounts): channel colours are a per-user SERVER setting (Settings → Display → Theme → Custom, paste a JSON of ~20 keys: sidebarBg, centerChannelBg, …); desktop `~/.config/Mattermost/config.json` only has `darkMode: false`, `themeSyncing: true` (app chrome follows the server theme). Artefact: theme JSON from roles, user pastes once per server account.
   - Slack 4.51.180 (Entra, nixpak): per-workspace server-side theme; whether 4.51 still accepts the legacy custom-colour paste string is UNVERIFIED → check in the app; else exception (Slack's own dark).
@@ -311,6 +312,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: user rebuilt and accepted Firefox chrome + session restore ("всем доволен"). 7.1 ✅.
 
 - 2026-09: 7.4 landed: teams-for-linux `followSystemTheme = true` (flat key; 2.17.1 ignores `appearance.*`). o365 row → awaiting rebuild + test (batched in 7.7).
+- 2026-09: user: Teams unchanged (already dark), Outlook light, Edge has NO Dark Reader at all. Cause: Edge forcelist used the Chrome Web Store id eimadpbc…; Edge Add-ons updatecheck for it = `error-unknownApplication`, for ifoakfbpdcdoeenechcleahebpibofpc (Edge store Dark Reader) = ok; Preferences has only a `lastpingday` stub for eimadpbc…, no Extensions/ dir. The earlier "Edge storage says Default" read was that stub's leftover storage, not a live addon. Fixed id in layer-compositor.nix. 7.2 = after rebuild: Dark Reader appears in Edge, pick Kanagawa, restart, check it sticks.
 
-Next: 7.2 — Edge Dark Reader persistence (user sets Kanagawa in Edge on the Entra home, restarts Edge; re-read `Sync Extension Settings/eimadpbc…`).
+Next: 7.2 — rebuild, then Edge: Dark Reader present (edge://extensions, "installed by policy"), pick Kanagawa, restart Edge, re-read `Sync Extension Settings/ifoakfbp…`.
 Blocked on: nothing.
