@@ -73,7 +73,8 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 - 2026-09: 1.1–1.3 written: herdr input + package + `herdr-server` user unit in layer-compositor.nix. User eval'd the unit and rebuilt elster; server up.
 - 2026-09: 1.4 done, Phase 0 + 1 ✅ (user). Side finding, out of scope: Entra user cannot read its own user journal (`journalctl --user` → insufficient permissions).
 - 2026-09: side finding fixed outside the plan: Entra gets `systemd-journal` via himmelblau `local_groups` (auth-entra.nix); after reboot `journalctl --user -u herdr-server -b` shows the unit's start. herdr-server came up on boot by itself (default.target).
-- 2026-09: 2.1–2.4 written. User decided: tag 1 foot runs foot's default shell (sesh → the-hive session), not `tmux new -A -s main`; no plain-foot keybind at all. 2.5 = user rebuild.
+- 2026-09: 2.1–2.4 written. User decided: tag 1 foot runs foot's default shell (sesh → the-hive session), not `tmux new -A -s main`; no plain-foot keybind at all. 2.5 user.
+- 2026-09: 2.5 first try (user): terminals, keys and bar OK; claude integration failed (`herdr integration install claude` → "config has multiple hard links": settings.json is an HM store symlink), herdr UI in built-in catppuccin (tab accent `#89b4fa`), welcome screen. Fix, user decision: everything declarative. `cell.packages.herdr-integrations` = output of the pinned `herdr integration install claude|hermes|opencode` in a sandbox (asserts the claude hook entry and the opencode registrations); HM places the files (agents.nix: claude hook + SessionStart entry in settings, opencode plugins + `tui.jsonc` + `cli.json`, `~/.config/herdr/config.toml` = `onboarding=false` + kanagawa + `[theme.custom]` from theme.nix); Hermes plugin linked by hermes-seed-proxy (agent-proxy.nix) next to rtk-rewrite.
 
 ## verified
 0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
@@ -88,6 +89,9 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 2.2: flake dwl build blocked (TPM cache cold); same derivation outside the flake (pinned nixpkgs 34ab9907, v0.9 + 5 patches, our config.h with dummy theme colours) -> `/nix/store/fbb04i8d…-dwl-0.9` built @ 2026-09-25
 2.4: `render_tags` extracted to bash, `"3 1 0 0"` -> `[S 🧑][o 🤖] 3 …`, `"7 4 0 2"` -> `[o 🧑][U 🤖][S 3] …` @ 2026-09-25
 2.3: `herdr status server --json` as Entra -> `running:true`, socket `~/.config/herdr/herdr.sock` (bare `herdr` in foot-herdr attaches to it) @ 2026-09-25
+2.5-fix: `nix build` of herdr-integrations outside the flake (pinned herdr 065ef9d6 + nixpkgs 34ab9907) -> `/nix/store/05mzigzb…-herdr-integrations` (claude/, hermes/, opencode/) @ 2026-09-25
+2.5-fix: generated herdr config.toml, `HERDR_CONFIG_PATH=… herdr config check` -> `config: ok` @ 2026-09-25
+2.5-fix: HM layout mocked in a tmp HOME (store symlinks + settings/tui.jsonc/cli.json), `herdr integration status` -> claude `current (v10)`, hermes `current (v5)`, opencode `current (v12)` (with tui.json only, no tui.jsonc: `needs repair`) @ 2026-09-25
 
 Next: Phase 2.5 — user: `unlock-secrets`, eval + rebuild elster, relogin, check the exit criteria.
 Blocked on: user rebuild + acceptance.

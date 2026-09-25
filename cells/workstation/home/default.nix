@@ -29,7 +29,8 @@
   # every workstation. Passed in, not imported: home/ has no `inputs`.
   deck ? {},
   # cells/repo/packages: claude-code, opencode, oh-my-opencode, rtk -- the
-  # agent CLIs dev/agents.nix installs. Same reason as deck: no `inputs` here.
+  # agent CLIs dev/agents.nix installs -- plus herdr and its generated
+  # integrations (cells/workstation). Same reason as deck: no `inputs` here.
   agentPkgs ? {},
   # Where a plain login shell lands (tty, ssh, `su -`). null keeps $HOME.
   startDir ? null,
