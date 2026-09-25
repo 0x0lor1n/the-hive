@@ -28,7 +28,7 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | qBittorrent, qt5ct/qt6ct | G | Qt (qt.nix) | inherits (0.2: qBt #1f1f28/#16161d, qt6ct #181820/#393946) | – |
 | KeePassXC | G | `[GUI] ApplicationTheme=classic` via activation → qt6ct palette | themed (user OK 2026-09) | 5 |
 | Vial | G | PyInstaller Qt, xcb only (dies on Wayland), ignores qt5ct | exception (sets its own hardcoded palette, themes.py:248; settings unpersisted; rare use — user 2026-09) | – |
-| Horizon (gm) | G | omnissa `horizon-client_wrapper:2` hard-sets `GTK_THEME=Adwaita` (runs after our launcher's env, so only a patched runScript can change it, 7.6); horizon-gm also sets `XDG_CONFIG_HOME=~/.omnissa/xdg-gm` (no gtk-3.0 there) | wrong (0.3: light Adwaita); 7.6 code: GTK_THEME=Kanagawa + xdg-gm gtk.css (chrome dark, body fg: captions are cairo-drawn black) → awaiting rebuild + 7.7 | 7 |
+| Horizon (gm) | G | omnissa `horizon-client_wrapper:2` hard-sets `GTK_THEME=Adwaita` (runs after our launcher's env, so only a patched runScript can change it, 7.6); horizon-gm also sets `XDG_CONFIG_HOME=~/.omnissa/xdg-gm` (no gtk-3.0 there) | wrong (0.3: light Adwaita); 7.6 code: GTK_THEME=Kanagawa + xdg-gm gtk.css (chrome dark, body fg: captions are cairo-drawn black) → awaiting user test (rebuilt 2026-09) | 7 |
 | Zathura | G | programs.zathura options from roles | themed (user OK 2026-09) | 5 |
 | mpv (OSD), umpv | G | osd-* + script-opts/osc.conf from roles | themed (user OK 2026-09) | 5 |
 | avizo (volume/brightness OSD) | G | config.ini from roles; callers pass -d (grey icons) | themed (user OK 2026-09) | 5 |
@@ -294,6 +294,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 
 - 2026-09: 7.6a landed (Horizon wrapper GTK_THEME=Kanagawa), uncommitted; measured: only the menubar follows, the client hard-paints its body #f2f2f2 → decision 7.6b.
 - 2026-09: 7.6b/c: user chose gtk.css (a), then light body (a1) since tile captions are hard-black; 7.6 committed, test in 7.7.
+- 2026-09: user rebuilt; live `horizon-gm` = whsb1cw8…, links zmnx9y3b…-horizon-gm-gtk.css (bgAlt/fg/bg), FHS wrapper `export GTK_THEME='Kanagawa'`. Horizon row → awaiting user test (checklist handed over).
 
-Next: 7.1 — Firefox chrome measurement (headless dwl + throwaway profile). Horizon user test batched into 7.7 (selector, login, disconnect dialog).
-Blocked on: nothing.
+Next: Horizon user verdict (checklist handed over), then 7.1 — Firefox chrome measurement (headless dwl + throwaway profile).
+Blocked on: user test of Horizon.
