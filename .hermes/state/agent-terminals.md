@@ -19,7 +19,7 @@ Invariants:
 - One phase = one Conventional Commit with why-body + Co-Authored-By: Claude; nothing pushed by Claude.
 - User acceptance gate: a phase flips to ✅ only after the USER has tested it on the rebuilt elster and said so. Claude's evals are not acceptance.
 
-## Phase 0 — Recon (kill-switch) ⏳
+## Phase 0 — Recon (kill-switch) ✅
 Autonomy: safe
 0.1 Pin herdr: `git ls-remote --tags https://github.com/herdrdev/herdr | tail -5` → pick the latest `v0.x.y`; `nix build github:herdrdev/herdr/<tag> --print-out-paths` on elster. Record tag + store path here.
     Kill-switch: if the flake does not build on nixpkgs `34ab9907` (see `cells/workstation/flake.nix` line 9) and cannot be overridden via `inputs.nixpkgs.follows`, stop; fallback below.
@@ -32,7 +32,7 @@ Autonomy: safe
     DONE 2026-09: the grep missed because the path was wrong — the font lives system-wide in `cells/workstation/profiles/layer-session.nix:132` (`fonts.packages`), and `home/desktop/gtk.nix:97` pins `defaultFonts.emoji = ["Noto Color Emoji"]`. `fc-match -s 'monospace:charset=1f9d1'` lists Unifont Upper first (it comes from outside the repo, most likely `fonts.enableDefaultPackages`; not checked, eval needs the TPM PIN), but pango picks the color font anyway for emoji-presentation codepoints: `pango-view --font='monospace 14'` drew 🧑🤖 in color. waybar (`bar.nix:255`, `font-family: monospace`) renders through the same pango → nothing to add in Phase 2. The real bar check stays in 2.5.
 Exit criteria: `herdr` tag and store path written here; verbs (a)(b)(c) written into `Naming:`; emoji font confirmed present; `Blocked on:` == nothing.
 
-## Phase 1 — herdr packaged + server unit ⏳
+## Phase 1 — herdr packaged + server unit ✅
 1.1 `cells/workstation/flake.nix`: add input `herdr.url = "github:herdrdev/herdr/<tag>"` with `inputs.nixpkgs.follows = "nixpkgs"`; `nix flake lock` in `cells/workstation/`.
     DONE 2026-09: input `herdr` = `github:herdrdev/herdr/v0.9.1`, locked rev `065ef9d6`; lock adds `herdr/rust-overlay` (`4cdea398`, its nixpkgs follows `herdr/nixpkgs` → ours).
 1.2 `cells/workstation/packages.nix`: `herdr = inputs.herdr.packages.${system}.default;` (or the attr name 0.2 found). `nix build .#herdr` → binary present.
@@ -40,7 +40,7 @@ Exit criteria: `herdr` tag and store path written here; verbs (a)(b)(c) written 
 1.3 `cells/workstation/profiles/layer-session.nix` (home-manager side, next to the other user units): `systemd.user.services.herdr-server` = `ExecStart=${cell.packages.herdr}/bin/herdr server <foreground flag from 0.2>`, `Restart=on-failure`, `WantedBy=[default.target]`, no `PartOf=graphical-session.target`.
     DONE 2026-09 (in `layer-compositor.nix`, not layer-session.nix: the user units — dwl-session-bridge, home-manager-entra — live there; NixOS `systemd.user.services`, so both accounts get it): `ExecStart=herdr server`, `Restart=on-failure`, `RestartSec=2`, `wantedBy=[default.target]`, `enableDefaultPath=false` (else PATH = coreutils+grep+sed, which every pane shell would inherit). alejandra clean. Unit text NOT eval'd: TPM secrets cache cold.
 1.4 Rebuild elster; `systemctl --user status herdr-server.service` → `active (running)`; `MOD+Shift+Q`, relogin → still `active`, same PID.
-    HALF 2026-09 (user): after rebuild, Entra account → `active (running)`, MainPID 75176, `/etc/systemd/user/herdr-server.service` enabled. Relogin + journal still open. (`systemctl --user` from `su`/ssh to the local account: no user bus → that is the shell, not the unit.)
+    DONE 2026-09 (user): after rebuild, Entra account → `active (running)`, MainPID 75176; after `MOD+Shift+Q` + relogin still MainPID 75176 → no restart since 21:14:43. Journal not read: the Entra user gets "insufficient permissions" on its own user journal, `journalctl --user` under crookedmirror reads crookedmirror's journal (empty, wrong user). Same PID stands in for the restart check. (`systemctl --user` from `su`/ssh to the local account: no user bus → that is the shell, not the unit.)
 Exit criteria: `systemctl --user is-active herdr-server.service` == `active` across one logout/login; `journalctl --user -u herdr-server -b` free of restarts; commit `feat(workstation): herdr server as a user service`.
 
 ## Phase 2 — two pinned foots + emoji tags ⏳
@@ -67,6 +67,7 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 - 2026-09: 0.3 done — session state = `~/.config/herdr/session.json`, manifests under `~/.local/state/herdr/`; unit needs no env/conditions. Plan's doc refs were off: 3.2 "agents doc" repointed `209af94041` (session-state) → `bf16d7040f`.
 - 2026-09: 0.4 done — Noto Color Emoji is installed system-wide (layer-session.nix, not home/default.nix as the plan said) and set as the emoji default; waybar's pango draws 🧑🤖 in color. Phase 2 gets no font work.
 - 2026-09: 1.1–1.3 written: herdr input + package + `herdr-server` user unit in layer-compositor.nix. User eval'd the unit and rebuilt elster; server up.
+- 2026-09: 1.4 done, Phase 0 + 1 ✅ (user). Side finding, out of scope: Entra user cannot read its own user journal (`journalctl --user` → insufficient permissions).
 
 ## verified
 0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
@@ -76,6 +77,7 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 1.2: `nix build --no-link --print-out-paths '.#x86_64-linux.workstation.packages.herdr'` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
 1.3: `alejandra -q --check` on the 3 touched files -> exit 0; user `nix eval .#nixosConfigurations.elster…"herdr-server.service".text` -> `ExecStart=…gkryfp31…-herdr-0.9.1/bin/herdr server`, `WantedBy=default.target`, no PATH line @ 2026-09-25
 1.4: user `systemctl --user status herdr-server.service` -> `active (running)`, MainPID 75176 @ 2026-09-25 21:14
+1.4: user, after `MOD+Shift+Q` + relogin: `systemctl --user show -p MainPID herdr-server.service` -> `MainPID=75176` @ 2026-09-25
 
-Next: Phase 1.4 rest — user: `MOD+Shift+Q`, relogin, MainPID still 75176, `journalctl --user -u herdr-server -b` without restarts. Then Phase 1 ✅ on user's word. Phase 0 ✅ also waits for the user.
-Blocked on: user relogin test.
+Next: Phase 2.1 — the two `rules[]` entries in `cells/workstation/packages/dwl/config.h`.
+Blocked on: nothing.
