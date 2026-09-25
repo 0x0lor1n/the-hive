@@ -28,7 +28,7 @@
   ...
 }: let
   skills = import ./agents/skills.nix {inherit lib;};
-  inherit (agentPkgs) claude-code opencode oh-my-opencode rtk;
+  inherit (agentPkgs) claude-code opencode oh-my-opencode rtk herdr-integrations;
 
   # Local-plugin shim (~/.config/opencode/plugins/*.ts is auto-discovered):
   # re-exports the Nix-built bundle so the loaded plugin and the
@@ -69,6 +69,22 @@
       DISABLE_TELEMETRY = "1";
     };
     hooks = {
+      # herdr: reports the session id to the pane it runs in, for restore
+      # after a server restart. Same entry `herdr integration install claude`
+      # writes (packages.nix herdr-integrations asserts it), so `herdr
+      # integration status` sees it as installed.
+      SessionStart = [
+        {
+          matcher = "^(startup|resume|clear|compact|fork)$";
+          hooks = [
+            {
+              type = "command";
+              command = "bash '${config.home.homeDirectory}/.claude/hooks/herdr-agent-state.sh' session";
+              timeout = 10;
+            }
+          ];
+        }
+      ];
       # rtk rewrites `git status` etc. to their compact forms before the
       # shell runs them (`rtk init -g` would add exactly this).
       PreToolUse = [
@@ -281,6 +297,45 @@
     theme = "kanagawa";
     plugin = [];
   };
+
+  # herdr UI on the repo palette. panel_bg/sidebar_bg unset = foot's bg.
+  # onboarding = false: the welcome screen would install integrations by
+  # hand, they are declared here instead. Store-backed, so the in-app
+  # settings cannot save; edit here.
+  herdrConfig = {
+    onboarding = false;
+    theme = {
+      name = "kanagawa";
+      custom = lib.mapAttrs (_: v: "#${v}") (let
+        r = theme.roles;
+        c = theme.colors;
+      in {
+        accent = r.focus;
+        active_row_bg = r.bgAlt;
+        selection_bg = r.selection;
+        surface_dim = c.sumiInk1;
+        surface0 = r.bgAlt;
+        surface1 = r.border;
+        overlay0 = c.sumiInk6;
+        overlay1 = r.muted;
+        text = r.fg;
+        subtext0 = c.oldWhite;
+        mauve = r.hover;
+        green = r.success;
+        yellow = r.highlight;
+        red = r.urgent;
+        blue = r.focus;
+        teal = c.waveAqua2;
+        peach = c.surimiOrange;
+      });
+    };
+  };
+  # herdr writes these itself on a live install; force: that install (or
+  # the welcome screen) may already have left real files here.
+  herdrFile = source: {
+    inherit source;
+    force = true;
+  };
   json = pkgs.formats.json {};
 in {
   home.packages =
@@ -307,6 +362,7 @@ in {
       # (tracked here, empty today). Store-backed, so claude's `#` quick-add
       # to the user file fails -- edit agents/CLAUDE.md instead.
       ".claude/CLAUDE.md".text = "@RTK.md\n" + builtins.readFile ./agents/CLAUDE.md;
+      ".claude/hooks/herdr-agent-state.sh" = herdrFile "${herdr-integrations}/claude/herdr-agent-state.sh";
       ".omo/omo.jsonc".source =
         config.lib.file.mkOutOfStoreSymlink "/srv/the-hive/dotfiles/opencode/omo.jsonc";
     }
@@ -320,6 +376,16 @@ in {
       # `omo doctor` will still say "not registered" -- it only knows the npm
       # route; ignore that line.
       "opencode/plugins/oh-my-openagent.ts".source = omoShim;
+      # herdr: server plugin (auto-discovered), V1 TUI plugin registered in
+      # tui.jsonc (the file herdr's status checks; opencode reads it next to
+      # tui.json), V2 TUI entry in cli.json.
+      "opencode/plugins/herdr-agent-state.js" = herdrFile "${herdr-integrations}/opencode/plugins/herdr-agent-state.js";
+      "opencode/herdr-tui-session.js" = herdrFile "${herdr-integrations}/opencode/herdr-tui-session.js";
+      "opencode/herdr-opencode/tui.js" = herdrFile "${herdr-integrations}/opencode/herdr-opencode/tui.js";
+      "opencode/tui.jsonc" = herdrFile (json.generate "opencode-tui.jsonc" {plugin = ["./herdr-tui-session.js"];});
+      "opencode/cli.json" = herdrFile (json.generate "opencode-cli.json" {plugins = ["./herdr-opencode"];});
+
+      "herdr/config.toml" = herdrFile ((pkgs.formats.toml {}).generate "herdr-config.toml" herdrConfig);
 
       # rtk config. Telemetry is already off via RTK_TELEMETRY_DISABLED
       # (agent-proxy.nix); nix stays with nixq.

@@ -37,7 +37,10 @@
     import ../home {
       inherit userName homeDir theme extraPackages git secrets personal startDir httpsHandler;
       deck = inputs.cells.deck.homeModules;
-      agentPkgs = {inherit (inputs.cells.repo.packages) claude-code opencode oh-my-opencode rtk;};
+      agentPkgs = {
+        inherit (inputs.cells.repo.packages) claude-code opencode oh-my-opencode rtk;
+        inherit (cell.packages) herdr herdr-integrations;
+      };
     };
 
   # The Entra user is an NSS user (himmelblau), not in users.users, so the HM

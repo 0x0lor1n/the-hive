@@ -176,15 +176,20 @@
     done
 
     mkdir -p "$HOME/.hermes/plugins"
-    # A real directory here is a hand-run `rtk init` of some other version;
-    # ours is the pinned one.
-    [ -d "$HOME/.hermes/plugins/rtk-rewrite" ] && [ ! -L "$HOME/.hermes/plugins/rtk-rewrite" ] && rm -rf "$HOME/.hermes/plugins/rtk-rewrite"
-    ln -sfn ${rtkPlugin} "$HOME/.hermes/plugins/rtk-rewrite"
-    enabled=$(${lib.getExe hermes-agent} config get plugins.enabled 2>/dev/null || true)
-    if ! printf '%s\n' "$enabled" | grep -qx -- '- rtk-rewrite'; then
-      rest=$(printf '%s\n' "$enabled" | sed -n 's/^- \(.*\)$/"\1",/p' | tr -d '\n')
-      ${lib.getExe hermes-agent} config set plugins.enabled "[''${rest}\"rtk-rewrite\"]"
-    fi
+    # rtk-rewrite: rtk's pre_tool_call rewrite. herdr-agent-state: session id
+    # to the herdr pane (packages.nix herdr-integrations). A real directory
+    # here is a hand-run `rtk init` / `herdr integration install` of some
+    # other version; ours is the pinned one.
+    for p in rtk-rewrite=${rtkPlugin} herdr-agent-state=${cell.packages.herdr-integrations}/hermes; do
+      name=''${p%%=*}
+      [ -d "$HOME/.hermes/plugins/$name" ] && [ ! -L "$HOME/.hermes/plugins/$name" ] && rm -rf "$HOME/.hermes/plugins/$name"
+      ln -sfn "''${p#*=}" "$HOME/.hermes/plugins/$name"
+      enabled=$(${lib.getExe hermes-agent} config get plugins.enabled 2>/dev/null || true)
+      if ! printf '%s\n' "$enabled" | grep -qx -- "- $name"; then
+        rest=$(printf '%s\n' "$enabled" | sed -n 's/^- \(.*\)$/"\1",/p' | tr -d '\n')
+        ${lib.getExe hermes-agent} config set plugins.enabled "[''${rest}\"$name\"]"
+      fi
+    done
   '';
 in {
   environment.systemPackages = [
