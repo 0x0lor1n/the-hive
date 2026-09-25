@@ -161,7 +161,10 @@
     sel=""
     last=""
     declare -A layout title mode tags
-    declare -A taglabel=([1]="🧑" [2]="🤖")
+    # Nerd Font glyphs (Symbols Nerd Font via fontconfig fallback): tag 1 =
+    # nf-md-pulse (U+F0430, human), tag 2 = nf-md-transit_connection_variant
+    # (U+F0D3D, hub fanning out to agents).
+    declare -A taglabel=([1]="󰐰" [2]="󰴽")
     render_tags() {
       read -r occ tagset _ urg <<<"$1"
       local i bit l out=""
