@@ -1,0 +1,45 @@
+diff --git a/hermes_cli/skin_engine.py b/hermes_cli/skin_engine.py
+index a2a093b..061759e 100644
+--- a/hermes_cli/skin_engine.py
++++ b/hermes_cli/skin_engine.py
+@@ -61,6 +61,13 @@ All fields are optional. Missing values inherit from the ``default`` skin.
+       session_border: "#8B8682"          # Session ID dim color
+       status_bar_bg: "#1a1a2e"          # TUI status/usage bar background
+       voice_status_bg: "#1a1a2e"        # TUI voice status background
++      status_bar_title_bg: "#FFD700"    # Session-title badge background
++      status_bar_title_text: "#1a1a2e"  # Session-title badge text
++      status_bar_yolo: "#FF4444"        # YOLO-mode marker in the status bar
++      clarify_answer: "#98FB98"         # Answer echoed in the clarify panel
++      voice_prompt: "#87CEEB"           # Voice-mode prompt
++      voice_recording: "#FF4444"        # Voice recording indicator
++      voice_processing: "#FFA500"       # Voice transcription indicator
+       selection_bg: "#333355"           # TUI mouse-selection highlight background
+       completion_menu_bg: "#1a1a2e"      # Completion menu background
+       completion_menu_current_bg: "#333355"  # Active completion row background
+@@ -1021,6 +1028,15 @@ def get_prompt_toolkit_style_overrides() -> Dict[str, str]:
+     menu_current_bg = skin.get_color("completion_menu_current_bg", "#333355")
+     menu_meta_bg = skin.get_color("completion_menu_meta_bg", menu_bg)
+     menu_meta_current_bg = skin.get_color("completion_menu_meta_current_bg", menu_current_bg)
++    # Defaults = the base TUI style in cli.py, so skins without these keys
++    # render exactly as before.
++    title_badge_bg = skin.get_color("status_bar_title_bg", "#FFD700")
++    title_badge_text = skin.get_color("status_bar_title_text", "#1a1a2e")
++    status_yolo = skin.get_color("status_bar_yolo", "#FF4444")
++    clarify_answer = skin.get_color("clarify_answer", "#98FB98")
++    voice_prompt = skin.get_color("voice_prompt", "#87CEEB")
++    voice_recording = skin.get_color("voice_recording", "#FF4444")
++    voice_processing = skin.get_color("voice_processing", "#FFA500")
+ 
+     return {
+         # Typed input always uses terminal default fg/bg so it's
+@@ -1065,4 +1081,10 @@ def get_prompt_toolkit_style_overrides() -> Dict[str, str]:
+         "approval-selected": f"{title} bold",
+         "voice-status": f"bg:{voice_bg} {label}",
+         "voice-status-recording": f"bg:{voice_bg} {error} bold",
++        "status-bar-session-title": f"bg:{title_badge_bg} {title_badge_text} bold",
++        "status-bar-yolo": f"bg:{status_bg} {status_yolo} bold",
++        "clarify-answer": clarify_answer,
++        "voice-prompt": voice_prompt,
++        "voice-recording": f"{voice_recording} bold",
++        "voice-processing": f"{voice_processing} italic",
+     }
