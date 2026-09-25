@@ -33,9 +33,9 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | mpv (OSD), umpv | G | osd-* + script-opts/osc.conf from roles | themed (user OK 2026-09) | 5 |
 | avizo (volume/brightness OSD) | G | config.ini from roles; callers pass -d (grey icons) | themed (user OK 2026-09) | 5 |
 | Firefox, Microsoft Edge | G | Dark Reader forced (built-in Kanagawa scheme; settings = import of ~/.config/darkreader/kanagawa.json, generated from roles, once per browser); Fx chrome = userChrome.css from roles linked into every profile by HM activation (7.1b); Edge chrome = exception; own static theme impossible (signing) | Fx chrome themed (user OK 2026-09, incl. primary-button fix); content = Dark Reader Kanagawa in Firefox + Edge, themed (user OK 2026-09, 7.2) | 7 |
-| o365 PWAs (Teams, Outlook, Word, Excel, PowerPoint, OneNote, OneDrive, SharePoint) | G | NOT Edge: rust_o365 wraps teams-for-linux 2.17.1 (Electron), profiles in ~/.config/o365-profiles | partial (7.4, user 2026-09: Teams = its own dark, Outlook/Office web = Microsoft's light; palette would need customCSSLocation, not taken) | 7 |
-| Slack, Telegram (nixpak) | G | import artefacts from roles, ~/.config/chat-themes/ (chat-themes.nix): Slack `slack.txt` legacy 8-hex string per workspace; Telegram `kanagawa.tdesktop-theme` (586 keys) via ~/Downloads → Settings → Chat settings → theme file | awaiting user test (7.5; before: Slack own dark + catppuccin mauve #cba6f7, Telegram default) | 7 |
-| Mattermost | G | import artefact `mattermost.json` (Settings → Display → Theme → Custom), per server account | awaiting user test (7.5; 0.2: light default) | 7 |
+| o365 PWAs (Teams, Outlook, Word, Excel, PowerPoint, OneNote, OneDrive, SharePoint) | G | NOT Edge: rust_o365 wraps teams-for-linux 2.17.1 (Electron), profiles in ~/.config/o365-profiles | exception, partial (7.4, user 2026-09: Teams = its own dark, Outlook/Office web = Microsoft's light; palette would need customCSSLocation, not taken) | 7 |
+| Slack, Telegram (nixpak) | G | import artefacts from roles, ~/.config/chat-themes/ (chat-themes.nix): Slack `slack.txt` legacy 8-hex string per workspace; Telegram `kanagawa.tdesktop-theme` (586 keys) via ~/Downloads → Settings → Chat settings → theme file | themed (user OK 2026-09, 7.5) | 7 |
+| Mattermost | G | import artefact `mattermost.json` (Settings → Display → Theme → Custom), per server account | themed (user OK 2026-09, 7.5) | 7 |
 | SimpleX | G | Compose/skiko, own theme | exception (theme import lives in unpersisted ~/.config/simplex; built-in dark — user 2026-09) | – |
 | Grayjay | G | CEF, own theme | exception (no theme setting, CSS baked in wwwroot; own dark #1b1b1b — user 2026-09) | – |
 | Tor Browser | G | – | exception | – |
@@ -179,7 +179,7 @@ Decisions owed before 6.1 (ask one at a time at the start of the Phase 6 session
   6.1 DONE 2026-09 (code; user test batched into 6.4).
   verified 6.1: standalone build /tmp/hskin/eval.nix (stub theme input, real `.#x86_64-linux.repo.packages.hermes-agent`) -> seed script with 4 get-compare-set blocks + skin link; skin yaml hexes all in theme.colors; skin_engine.load_skin("kanagawa") under a throwaway HERMES_HOME: 41 keys, 0 default keys left, 0 off-palette; private `tmux -L tc6` startup banner truecolor = #7e9cd8 #727169 #dcd7ba #7fb4ca #938aa9 #a3d4d5 #98bb6c #e6c384 only (was #ffbf00/#cd7f32/#b8860b/#ffd700); `alejandra --check agent-proxy.nix` -> 0 @ 2026-09.
 
-## Phase 7 — Browsers, Electron, PWAs, Horizon ⏳
+## Phase 7 — Browsers, Electron, PWAs, Horizon ✅
 Audit 2026-09 (plan-audit, live code + installed binaries: Firefox 154.0.1 `firefox-unwrapped-154.0.1`, Edge 152.0.4191.53, teams-for-linux 2.17.1 `app.asar`, rust_o365 4.0.0, Dark Reader 4.9.133 xpi from the vkokurin profile, omnissa-horizon-files-2605, nixpkgs `fmasn49…-source`). Nothing started (`git log` on the touched files: no theme commits). Account split (layer-compositor.nix:53-64): Slack, Telegram, Grayjay, Horizon = Entra home only; Firefox, Edge (+ Dark Reader), Mattermost, SimpleX = both accounts; o365 = Entra only (auth-entra.nix:542).
 Split by mechanism, because most of this phase is NOT declarative: server-side or in-app state (Mattermost, Slack, Telegram, Dark Reader) can only get a palette-generated artefact the user imports once per account; Nix can own only Horizon, teams-for-linux CSS, and browser chrome.
 7.1 Firefox chrome. Old text "follow GTK dark or userChrome/Edge theme" was unmeasured; facts:
@@ -227,7 +227,7 @@ Split by mechanism, because most of this phase is NOT declarative: server-side o
   7.6c DONE 2026-09 packages.nix horizon-gm: `gtkCss` (writeText from roles: strip bgAlt, body fg bg + `color: bg` for theme-drawn text) linked by the launcher to `xdg-gm/gtk-3.0/gtk.css` (next to mimeapps.list; USER priority beats the client's override_background_color).
   verified 7.6c: `alejandra --check` -> 0; the css rendered from theme.nix roles, headless dwl + throwaway HOME: menubar #222226, strip #2a2a37, body #dcd7ba, "Add Server" caption black on #dcd7ba readable, tile card = client's own light plate + white PNG @ 2026-09. `nix build .#…horizon-gm` of the final version NOT run: age-plugin-tpm died (cold TPM cache) after the 7.6a build — user (`unlock-secrets`, then build / rebuild). Throwaway dirs /tmp/hz76 removed.
   7.6 user test 2026-09 (screenshots): selector + desktop list OK, but the Disconnect confirmation dialog body is blank #ffffff (message text invisible: theme fg on the client's white). User: keep Horizon as is → exception. 7.6 REVERTED: packages.nix back to 9a64f2d^ (stock wrapper, no gtk.css); the launcher no longer links `~/.omnissa/xdg-gm/gtk-3.0/gtk.css`, the old symlink must be removed by hand (GTK would keep reading it).
-7.7 User test per app after 7.1–7.6 land, checklist written then (each app's main window, a dialog, a menu; browsers: new tab, settings, a site under Dark Reader; Horizon: selector + login + disconnect dialog; o365: Teams chat + Outlook inbox if 7.4 ≠ exception). Imports (Dark Reader ×4, Mattermost, Telegram, SimpleX) are done by the user and are part of the test.
+7.7 DONE 2026-09 (per step: 7.1, 7.2, 7.4, 7.6 accepted/decided earlier; 7.5 Telegram/Slack/Mattermost user OK). User test per app after 7.1–7.6 land, checklist written then (each app's main window, a dialog, a menu; browsers: new tab, settings, a site under Dark Reader; Horizon: selector + login + disconnect dialog; o365: Teams chat + Outlook inbox if 7.4 ≠ exception). Imports (Dark Reader ×4, Mattermost, Telegram, SimpleX) are done by the user and are part of the test.
 Exit criteria: every row in scope is themed (user accepted 7.7 for it) or exception with a one-line reason; for imported artefacts the generator is in the repo (from roles) and the import step is written in the row.
 Decisions owed before 7.1 (ask one at a time at the start of the execution session):
   - Firefox chrome: (a) measure first, if System theme already follows GTK Kanagawa → inherits, done; (b) userChrome.css from roles, linked into every profile by an activation glob; (c) Dark Reader `changeBrowserTheme` (derived colours); (d) exception.
@@ -327,5 +327,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 
 - 2026-09: 7.5 landed: chat-themes.nix generates Slack string, Mattermost JSON, Telegram .tdesktop-theme (586 keys, 0 off-palette) from roles; verified off-host. Rows → awaiting rebuild + imports + 7.7.
 
-Next: 7.7: user rebuilds, imports the 3 artefacts, tests Slack / Mattermost / Telegram (the checklist from the session).
-Blocked on: user rebuild + imports.
+- 2026-09: user imported all 3 and accepted 7.7: Telegram, Slack, Mattermost "доволен". o365 row recorded as exception (partial, reason in row). Phase 7 ✅.
+
+Next: 8.1 — colors → roles (stretch), fresh session.
+Blocked on: nothing.
