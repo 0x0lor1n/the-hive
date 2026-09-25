@@ -19,6 +19,7 @@ Invariants:
 - User acceptance gate: a phase flips to ✅ only after the USER has tested it on the rebuilt elster and said so. Claude's evals are not acceptance.
 
 ## Phase 0 — Recon (kill-switch) ⏳
+Autonomy: safe
 0.1 Pin herdr: `git ls-remote --tags https://github.com/herdrdev/herdr | tail -5` → pick the latest `v0.x.y`; `nix build github:herdrdev/herdr/<tag> --print-out-paths` on elster. Record tag + store path here.
     Kill-switch: if the flake does not build on nixpkgs `34ab9907` (see `cells/workstation/flake.nix` line 9) and cannot be overridden via `inputs.nixpkgs.follows`, stop; fallback below.
 0.2 CLI surface: `<store>/bin/herdr --help`, `herdr server --help`, `herdr attach --help` (or whatever the TUI-attach verb is). Write the exact verbs for (a) start server in foreground for systemd, (b) attach TUI to running server, (c) socket/state dir env var into `Naming:`.
