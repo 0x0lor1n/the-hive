@@ -43,7 +43,7 @@ Exit criteria: `herdr` tag and store path written here; verbs (a)(b)(c) written 
     DONE 2026-09 (user): after rebuild, Entra account → `active (running)`, MainPID 75176; after `MOD+Shift+Q` + relogin still MainPID 75176 → no restart since 21:14:43. Journal not read: the Entra user gets "insufficient permissions" on its own user journal, `journalctl --user` under crookedmirror reads crookedmirror's journal (empty, wrong user). Same PID stands in for the restart check. (`systemctl --user` from `su`/ssh to the local account: no user bus → that is the shell, not the unit.)
 Exit criteria: `systemctl --user is-active herdr-server.service` == `active` across one logout/login; `journalctl --user -u herdr-server -b` free of restarts; commit `feat(workstation): herdr server as a user service`.
 
-## Phase 2 — two pinned foots + emoji tags ⏳
+## Phase 2 — two pinned foots + emoji tags ✅
 2.1 `cells/workstation/packages/dwl/config.h` `rules[]`: add the two rules from `Naming:`; keep `Gimp_EXAMPLE` line as-is.
     DONE 2026-09: `foot-tmux` → `1 << 0`, `foot-herdr` → `1 << 1`, after the wl_mirror rule. Plan's `grep -c 'app_id'` probe is useless (== 2, header comments); the check is the `1 << ` grep in `verified`.
 2.2 `config.h` keys: `termraise` → new `Raise tmuxraise = { "foot-tmux", tmuxcmd }` with `tmuxcmd = { "foot", "--app-id", "foot-tmux", "-e", "tmux", "new", "-A", "-s", "main", NULL }`; `Raise herdrraise = { "foot-herdr", herdrcmd }` with the attach verb from 0.2; bind `MODKEY|WLR_MODIFIER_ALT, XKB_KEY_t` → `tmuxraise`, `MODKEY|WLR_MODIFIER_ALT, XKB_KEY_h` → `herdrraise`. Check `XKB_KEY_h` is free: `grep -n 'XKB_KEY_h,' config.h` == no hit before edit.
@@ -53,6 +53,7 @@ Exit criteria: `systemctl --user is-active herdr-server.service` == `active` acr
 2.4 `layer-compositor.nix` `dwl-status` `render_tags()`: `declare -A taglabel=([1]="🧑" [2]="🤖")`; render `"''${taglabel[$i]:-$i}"` instead of `$i` in all four spans.
     DONE 2026-09: as planned, via local `l`.
 2.5 Rebuild elster; login; `swaymsg`-less check: `ls /run/user/$UID/dwl/` bar state shows tag 1 and 2 occupied; screenshot bar (`grim -g "$(slurp)"` on the bar strip) → 🧑 🤖 visible.
+    DONE 2026-09 (user): after rebuild with 090ebda, user confirmed every exit criterion on elster: pinned foots on tags 1/2, Super+Alt+T/H raise, bar 🧑 🤖, herdr integrations claude/hermes/opencode, no welcome screen, kanagawa theme.
 Exit criteria: fresh login → tag 1 = one foot with tmux (sesh `the-hive`), tag 2 = one foot with herdr TUI, no extra foots; `Super+Alt+T`/`Super+Alt+H` from any tag jump to those windows instead of spawning; bar shows 🧑 🤖; user confirms on elster; commit `feat(desktop): personal and agent terminals pinned to tags 1/2`.
 
 ## Phase 3 — tmux/herdr polish (only after user drives Phase 2 for ≥ 3 days) ⏳
@@ -75,6 +76,7 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 - 2026-09: side finding fixed outside the plan: Entra gets `systemd-journal` via himmelblau `local_groups` (auth-entra.nix); after reboot `journalctl --user -u herdr-server -b` shows the unit's start. herdr-server came up on boot by itself (default.target).
 - 2026-09: 2.1–2.4 written. User decided: tag 1 foot runs foot's default shell (sesh → the-hive session), not `tmux new -A -s main`; no plain-foot keybind at all. 2.5 user.
 - 2026-09: 2.5 first try (user): terminals, keys and bar OK; claude integration failed (`herdr integration install claude` → "config has multiple hard links": settings.json is an HM store symlink), herdr UI in built-in catppuccin (tab accent `#89b4fa`), welcome screen. Fix, user decision: everything declarative. `cell.packages.herdr-integrations` = output of the pinned `herdr integration install claude|hermes|opencode` in a sandbox (asserts the claude hook entry and the opencode registrations); HM places the files (agents.nix: claude hook + SessionStart entry in settings, opencode plugins + `tui.jsonc` + `cli.json`, `~/.config/herdr/config.toml` = `onboarding=false` + kanagawa + `[theme.custom]` from theme.nix); Hermes plugin linked by hermes-seed-proxy (agent-proxy.nix) next to rtk-rewrite.
+- 2026-09: 2.5 done, Phase 2 ✅ (user confirmed on elster after rebuild with 090ebda). Phase 3 waits ≥ 3 days of daily use.
 
 ## verified
 0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
@@ -93,5 +95,5 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 2.5-fix: generated herdr config.toml, `HERDR_CONFIG_PATH=… herdr config check` -> `config: ok` @ 2026-09-25
 2.5-fix: HM layout mocked in a tmp HOME (store symlinks + settings/tui.jsonc/cli.json), `herdr integration status` -> claude `current (v10)`, hermes `current (v5)`, opencode `current (v12)` (with tui.json only, no tui.jsonc: `needs repair`) @ 2026-09-25
 
-Next: Phase 2.5 — user: `unlock-secrets`, eval + rebuild elster, relogin, check the exit criteria.
-Blocked on: user rebuild + acceptance.
+Next: Phase 3 — not before 2026-09-28 (≥ 3 days on Phase 2); 3.1/3.2 only on user request, 3.3 optional.
+Blocked on: user living with Phase 2.
