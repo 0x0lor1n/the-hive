@@ -59,6 +59,16 @@
     sidebar-text-color = r.fg;
     focus-outline-color = r.focus;
     color-accent-primary = r.focus;
+    # Primary buttons (translation/permission popups) fill with the accent;
+    # their text defaults to white/AccentColorText, unreadable on light blue.
+    color-accent-primary-hover = r.info;
+    color-accent-primary-active = r.selection;
+    button-background-color-primary = r.focus;
+    button-background-color-primary-hover = r.info;
+    button-background-color-primary-active = r.selection;
+    button-text-color-primary = r.bgDim;
+    button-text-color-primary-hover = r.bgDim;
+    button-text-color-primary-active = r.fg;
   };
   # !important: a user sheet otherwise loses to the browser's own :root rules.
   userChrome = pkgs.writeText "firefox-userChrome.css" ''
