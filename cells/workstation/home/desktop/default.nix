@@ -29,5 +29,6 @@
     ./torrent.nix
     ./zathura.nix
     ./firefox.nix
+    ./darkreader.nix
   ];
 }
