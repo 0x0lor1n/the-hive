@@ -92,6 +92,14 @@
         session_label = r.info;
         session_border = r.muted;
         voice_status_bg = r.bgAlt;
+        # Keys added by cells/repo/hermes-skin-pt-classes.patch.
+        status_bar_title_bg = r.focus;
+        status_bar_title_text = r.bg;
+        status_bar_yolo = r.urgent;
+        clarify_answer = r.success;
+        voice_prompt = r.info;
+        voice_recording = r.urgent;
+        voice_processing = r.warning;
         selection_bg = r.selection;
         completion_menu_bg = r.bgAlt;
         completion_menu_current_bg = r.selection;

@@ -39,7 +39,12 @@ in {
   # Re-exported from this cell's own llm-agents input (cells/repo/flake.nix),
   # so the workstation cell installs the SAME pin the devshell runs, without
   # declaring llm-agents a second time.
-  hermes-agent = withNixq llmAgents.hermes-agent;
+  # The patch routes six prompt_toolkit classes (session-title badge, yolo,
+  # clarify answer, voice) through the skin; upstream hardcodes them in
+  # cli.py's base style. Drop it once upstream skin_engine.py has them.
+  hermes-agent = withNixq (llmAgents.hermes-agent.overrideAttrs (old: {
+    patches = (old.patches or []) ++ [./hermes-skin-pt-classes.patch];
+  }));
   # The two per-tty agents + opencode's plugin bundle, installed into both
   # homes by workstation/home/dev/agents.nix.
   claude-code = withNixq llmAgents.claude-code;
