@@ -28,7 +28,7 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | qBittorrent, qt5ct/qt6ct | G | Qt (qt.nix) | inherits (0.2: qBt #1f1f28/#16161d, qt6ct #181820/#393946) | – |
 | KeePassXC | G | `[GUI] ApplicationTheme=classic` via activation → qt6ct palette | themed (user OK 2026-09) | 5 |
 | Vial | G | PyInstaller Qt, xcb only (dies on Wayland), ignores qt5ct | exception (sets its own hardcoded palette, themes.py:248; settings unpersisted; rare use — user 2026-09) | – |
-| Horizon (gm) | G | omnissa `horizon-client_wrapper:2` hard-sets `GTK_THEME=Adwaita` (runs after our launcher's env, so only a patched runScript can change it, 7.6); horizon-gm also sets `XDG_CONFIG_HOME=~/.omnissa/xdg-gm` (no gtk-3.0 there) | wrong (0.3: light Adwaita); 7.6 code: GTK_THEME=Kanagawa + xdg-gm gtk.css (chrome dark, body fg: captions are cairo-drawn black) → awaiting user test (rebuilt 2026-09) | 7 |
+| Horizon (gm) | G | omnissa `horizon-client_wrapper:2` hard-sets `GTK_THEME=Adwaita` (runs after our launcher's env, so only a patched runScript can change it, 7.6); horizon-gm also sets `XDG_CONFIG_HOME=~/.omnissa/xdg-gm` (no gtk-3.0 there) | exception (user 2026-09: "не стоит"; client hard-paints its greys + cairo-black captions, and our theme blanked the disconnect dialog text → reverted to stock Adwaita, 7.6) | – |
 | Zathura | G | programs.zathura options from roles | themed (user OK 2026-09) | 5 |
 | mpv (OSD), umpv | G | osd-* + script-opts/osc.conf from roles | themed (user OK 2026-09) | 5 |
 | avizo (volume/brightness OSD) | G | config.ini from roles; callers pass -d (grey icons) | themed (user OK 2026-09) | 5 |
@@ -213,6 +213,7 @@ Split by mechanism, because most of this phase is NOT declarative: server-side o
   Answered 2026-09: (a1).
   7.6c DONE 2026-09 packages.nix horizon-gm: `gtkCss` (writeText from roles: strip bgAlt, body fg bg + `color: bg` for theme-drawn text) linked by the launcher to `xdg-gm/gtk-3.0/gtk.css` (next to mimeapps.list; USER priority beats the client's override_background_color).
   verified 7.6c: `alejandra --check` -> 0; the css rendered from theme.nix roles, headless dwl + throwaway HOME: menubar #222226, strip #2a2a37, body #dcd7ba, "Add Server" caption black on #dcd7ba readable, tile card = client's own light plate + white PNG @ 2026-09. `nix build .#…horizon-gm` of the final version NOT run: age-plugin-tpm died (cold TPM cache) after the 7.6a build — user (`unlock-secrets`, then build / rebuild). Throwaway dirs /tmp/hz76 removed.
+  7.6 user test 2026-09 (screenshots): selector + desktop list OK, but the Disconnect confirmation dialog body is blank #ffffff (message text invisible: theme fg on the client's white). User: keep Horizon as is → exception. 7.6 REVERTED: packages.nix back to 9a64f2d^ (stock wrapper, no gtk.css); the launcher no longer links `~/.omnissa/xdg-gm/gtk-3.0/gtk.css`, the old symlink must be removed by hand (GTK would keep reading it).
 7.7 User test per app after 7.1–7.6 land, checklist written then (each app's main window, a dialog, a menu; browsers: new tab, settings, a site under Dark Reader; Horizon: selector + login + disconnect dialog; o365: Teams chat + Outlook inbox if 7.4 ≠ exception). Imports (Dark Reader ×4, Mattermost, Telegram, SimpleX) are done by the user and are part of the test.
 Exit criteria: every row in scope is themed (user accepted 7.7 for it) or exception with a one-line reason; for imported artefacts the generator is in the repo (from roles) and the import step is written in the row.
 Decisions owed before 7.1 (ask one at a time at the start of the execution session):
@@ -295,6 +296,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: 7.6a landed (Horizon wrapper GTK_THEME=Kanagawa), uncommitted; measured: only the menubar follows, the client hard-paints its body #f2f2f2 → decision 7.6b.
 - 2026-09: 7.6b/c: user chose gtk.css (a), then light body (a1) since tile captions are hard-black; 7.6 committed, test in 7.7.
 - 2026-09: user rebuilt; live `horizon-gm` = whsb1cw8…, links zmnx9y3b…-horizon-gm-gtk.css (bgAlt/fg/bg), FHS wrapper `export GTK_THEME='Kanagawa'`. Horizon row → awaiting user test (checklist handed over).
+- 2026-09: user test: disconnect dialog text blank; user "оставим как есть" → Horizon = exception, 7.6 reverted (needs rebuild + rm of the xdg-gm gtk.css symlink).
 
-Next: Horizon user verdict (checklist handed over), then 7.1 — Firefox chrome measurement (headless dwl + throwaway profile).
-Blocked on: user test of Horizon.
+Next: 7.1 — Firefox chrome measurement (headless dwl + throwaway profile).
+Blocked on: nothing (user: rebuild for the Horizon revert).

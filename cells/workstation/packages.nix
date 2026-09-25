@@ -257,18 +257,6 @@ in {
       buildFHSEnv = args:
         pkgs.buildFHSEnv (args
           // {
-            # The nixpkgs wrapper `--set`s GTK_THEME=Adwaita after our env, so
-            # only its own copy can change it. Name = gtk.nix theme.name.
-            runScript =
-              if args.pname == "horizon-client"
-              then
-                pkgs.runCommand "horizon-client_wrapper" {} ''
-                  cp ${args.runScript} $out
-                  chmod u+w $out
-                  substituteInPlace $out \
-                    --replace-fail "export GTK_THEME='Adwaita'" "export GTK_THEME='Kanagawa'"
-                ''
-              else args.runScript;
             targetPkgs = p:
               args.targetPkgs p
               ++ [
@@ -300,26 +288,12 @@ in {
       x-scheme-handler/https=horizon-gm-browser.desktop
       text/html=horizon-gm-browser.desktop
     '';
-    # The client override_background_color()s its own greys, which only the
-    # USER css priority beats. Tile captions are cairo-drawn black whatever
-    # the theme, so the body stays light (fg) and the chrome goes dark.
-    gtkCss = let
-      r = theme.roles;
-    in
-      pkgs.writeText "horizon-gm-gtk.css" ''
-        window > box > notebook > stack > widget { background-color: #${r.bgAlt}; }
-        viewport > widget > box, notebook > stack > widget > box.vertical {
-          background-color: #${r.fg};
-          color: #${r.bg};
-        }
-      '';
     launcher = pkgs.writeShellApplication {
       name = "horizon-gm";
       text = ''
         xdg="${stateDir}/xdg-gm"
-        mkdir -p "$xdg/gtk-3.0"
+        mkdir -p "$xdg"
         ln -sfn ${mimeapps} "$xdg/mimeapps.list"
-        ln -sfn ${gtkCss} "$xdg/gtk-3.0/gtk.css"
         export XDG_CONFIG_HOME="$xdg"
         export XDG_DATA_DIRS="${dataDir}/share:${pkgs.shared-mime-info}/share''${XDG_DATA_DIRS:+:$XDG_DATA_DIRS}"
         # Started by the return link = sign-in done; the browser has nothing
