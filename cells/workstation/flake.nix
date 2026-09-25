@@ -59,6 +59,10 @@
     # track Spotify's own releases; pin to the current HEAD, bump on demand.
     spicetify.url = "github:Gerg-L/spicetify-nix/09eed5c95105aada9ffabd4c7eb6b345dc4ba66f";
     spicetify.inputs.nixpkgs.follows = "nixpkgs";
+    # Agent multiplexer (tag 2 terminal). Its rust-overlay follows herdr's
+    # nixpkgs, so this one follows covers the toolchain too.
+    herdr.url = "github:herdrdev/herdr/v0.9.1";
+    herdr.inputs.nixpkgs.follows = "nixpkgs";
     # zsh-defer / zsh-vi-mode / llm-agents are not inputs: the first two ship
     # in the nixpkgs pin, llm-agents is re-exported by cells/repo/packages.nix.
     # tuigreet is not an input either: the nixpkgs pin already ships the
