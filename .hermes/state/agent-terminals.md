@@ -68,6 +68,7 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 - 2026-09: 0.4 done — Noto Color Emoji is installed system-wide (layer-session.nix, not home/default.nix as the plan said) and set as the emoji default; waybar's pango draws 🧑🤖 in color. Phase 2 gets no font work.
 - 2026-09: 1.1–1.3 written: herdr input + package + `herdr-server` user unit in layer-compositor.nix. User eval'd the unit and rebuilt elster; server up.
 - 2026-09: 1.4 done, Phase 0 + 1 ✅ (user). Side finding, out of scope: Entra user cannot read its own user journal (`journalctl --user` → insufficient permissions).
+- 2026-09: side finding fixed outside the plan: Entra gets `systemd-journal` via himmelblau `local_groups` (auth-entra.nix); after reboot `journalctl --user -u herdr-server -b` shows the unit's start. herdr-server came up on boot by itself (default.target).
 
 ## verified
 0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
