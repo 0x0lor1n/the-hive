@@ -32,7 +32,7 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | Zathura | G | programs.zathura options from roles | themed (user OK 2026-09) | 5 |
 | mpv (OSD), umpv | G | osd-* + script-opts/osc.conf from roles | themed (user OK 2026-09) | 5 |
 | avizo (volume/brightness OSD) | G | config.ini from roles; callers pass -d (grey icons) | themed (user OK 2026-09) | 5 |
-| Firefox, Microsoft Edge | G | Dark Reader forced (colours only via manual import, no managed storage); chrome = System theme / GTK mode, unmeasured; own static theme impossible (signing) | partial | 7 |
+| Firefox, Microsoft Edge | G | Dark Reader forced (built-in Kanagawa scheme); Fx chrome = System theme: tabstrip #2a2a37 from GTK, toolbar/urlbar own greys (7.1a); Edge chrome = exception; own static theme impossible (signing) | partial | 7 |
 | o365 PWAs (Teams, Outlook, Word, Excel, PowerPoint, OneNote, OneDrive, SharePoint) | G | NOT Edge: rust_o365 wraps teams-for-linux 2.17.1 (Electron), profiles in ~/.config/o365-profiles | wrong (web apps' own theme; not opened: would load the signed-in mailbox) | 7 |
 | Slack, Telegram (nixpak) | G | own in-app themes | Slack partial (user screenshot 2026-09: own dark #1a1d21 + catppuccin mauve #cba6f7 selection); Telegram wrong (not screenshotted) | 7 |
 | Mattermost | G | Electron, own theme | wrong (0.2: light default) | 7 |
@@ -189,6 +189,8 @@ Split by mechanism, because most of this phase is NOT declarative: server-side o
   - Dark Reader `changeBrowserTheme` (default false, background/index.js ~:6270) repaints chrome via `browser.theme.update` with its own modify*Color of fixed greys — derived, not palette-exact.
   - Invariant: do NOT flip `layout.css.prefers-color-scheme.content-override` (Phoenix phoenix.cfg:2427 sets 1 = light on purpose, fingerprinting); content darkness stays Dark Reader's job.
   DECISION (below).
+  7.1a measured 2026-09: headless dwl (pixman) + throwaway `--profile` (system policies/addons applied, activeThemeID default = System theme auto), real HOME GTK settings (Kanagawa, prefer-dark), histogram of `grim`: tabstrip + inactive tabs #2a2a37 (= bgAlt, from GTK headerbar), tab text #dcd7ba, accent #7e9cd8; active tab, navbar, bookmarks bar #414148, urlbar field #2d2d32, borders #444444 — the last three are Firefox's own blends, not in the palette. → row `partial`, not `inherits`. Throwaway profile + dwl removed; screenshot /tmp/ff71-chrome.png.
+  DECISION owed (7.1b): (b) userChrome.css from roles, linked into every profile by an activation glob over profiles.ini; (c) Dark Reader `changeBrowserTheme` (derived greys); (d) accept partial as exception.
 7.2 Dark Reader colours (Firefox + Edge, both accounts). The "managed policy" seed in the old text does not exist: 4.9.133 never calls `storage.managed` (0 hits in background/index.js; only storage.local/sync), so `3rdparty.Extensions` in policies.json is ignored. Its only input is Settings → Advanced → Import (ui/options exportSettings/importSettings). So: generate a settings JSON from roles (`darkSchemeBackgroundColor` = bg, `darkSchemeTextColor` = fg; defaults #181a1b/#e8e6e3) as a store file / repo artefact, user imports once per browser per account (4 imports); state then lives in each profile (persisted). Check at execution: exact exported-JSON shape (export one from the live addon, change only the two keys).
 7.3 Edge chrome. Chromium prefs present in the Entra profile: `browser.theme.color_scheme`, `browser.theme.follows_system_colors` (= "Use GTK"), `browser.theme.user_color` (strings of msedge); managed policies dir already used (layer-compositor.nix:387). `BrowserThemeColor`-style policy names were NOT found as literal strings in msedge (policy templates may be in a .pak) → unverified. Measure first: does Edge with follows_system_colors pick up the GTK Kanagawa headerbar (screenshot). DECISION (below).
 7.4 o365 apps (teams-for-linux 2.17.1). Launcher = rust_o365 `o365` script → `teams-for-linux --user-data-dir=~/.config/o365-profiles/<App>` (o365:31,43), one Electron per M365 web app. Every instance reads /etc/teams-for-linux/config.json first (auth-entra.nix:519-537, already ours, only `auth.intune`). Levers in 2.17.1 (app.asar):
@@ -298,5 +300,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 - 2026-09: user rebuilt; live `horizon-gm` = whsb1cw8…, links zmnx9y3b…-horizon-gm-gtk.css (bgAlt/fg/bg), FHS wrapper `export GTK_THEME='Kanagawa'`. Horizon row → awaiting user test (checklist handed over).
 - 2026-09: user test: disconnect dialog text blank; user "оставим как есть" → Horizon = exception, 7.6 reverted (needs rebuild + rm of the xdg-gm gtk.css symlink).
 
-Next: 7.1 — Firefox chrome measurement (headless dwl + throwaway profile).
-Blocked on: nothing (user: rebuild for the Horizon revert).
+- 2026-09: 7.1a measured: Firefox System theme takes only the tabstrip from GTK (#2a2a37); toolbar/urlbar are its own blends (#414148/#2d2d32) → decision 7.1b.
+
+Next: 7.1b — user picks Firefox chrome option, then implement.
+Blocked on: 7.1b decision (user); Horizon revert rebuild + rm ~/.omnissa/xdg-gm/gtk-3.0/gtk.css (user).
