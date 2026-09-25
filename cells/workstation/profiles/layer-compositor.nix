@@ -158,19 +158,21 @@
     sel=""
     last=""
     declare -A layout title mode tags
+    declare -A taglabel=([1]="🧑" [2]="🤖")
     render_tags() {
       read -r occ tagset _ urg <<<"$1"
-      local i bit out=""
+      local i bit l out=""
       for i in 1 2 3 4 5 6 7 8 9; do
         bit=$((1 << (i - 1)))
+        l="''${taglabel[$i]:-$i}"
         if (( urg & bit )); then
-          out+="<span foreground='#${theme.roles.bg}' background='#${theme.roles.urgent}' weight='bold'> $i </span>"
+          out+="<span foreground='#${theme.roles.bg}' background='#${theme.roles.urgent}' weight='bold'> $l </span>"
         elif (( tagset & bit )); then
-          out+="<span foreground='#${theme.roles.bg}' background='#${theme.roles.focus}' weight='bold'> $i </span>"
+          out+="<span foreground='#${theme.roles.bg}' background='#${theme.roles.focus}' weight='bold'> $l </span>"
         elif (( occ & bit )); then
-          out+="<span foreground='#${theme.roles.fg}'> $i </span>"
+          out+="<span foreground='#${theme.roles.fg}'> $l </span>"
         else
-          out+="<span foreground='#${theme.roles.muted}'> $i </span>"
+          out+="<span foreground='#${theme.roles.muted}'> $l </span>"
         fi
       done
       printf '%s' "$out"
@@ -239,6 +241,12 @@
     ${pkgs.swaybg}/bin/swaybg -c '#${theme.roles.bg}' &
     ${pkgs.wl-clipboard}/bin/wl-paste --type text  --watch ${pkgs.cliphist}/bin/cliphist store &
     ${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store &
+    # Pinned to tags 1/2 by app_id (packages/dwl/config.h rules[]). foot-tmux
+    # needs no command: foot's shell is sesh -> tmux. The server is already
+    # up via default.target; the start only covers a unit that failed.
+    ${pkgs.foot}/bin/foot -a foot-tmux &
+    ${pkgs.systemd}/bin/systemctl --user start herdr-server.service 2>/dev/null || true
+    ${pkgs.foot}/bin/foot -a foot-herdr ${cell.packages.herdr}/bin/herdr &
     exec ${dwl-status}
   '';
 
@@ -355,6 +363,8 @@ in {
       cell.packages.transcribe
       cell.packages.transcribe-parakeet
       pkgs.foot
+      # By name from dwl's Super+Alt+H, and the CLI agents drive panes with.
+      cell.packages.herdr
       pkgs.fuzzel
       pkgs.swaylock
       pkgs.swaybg

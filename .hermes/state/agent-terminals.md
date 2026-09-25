@@ -45,11 +45,15 @@ Exit criteria: `systemctl --user is-active herdr-server.service` == `active` acr
 
 ## Phase 2 — two pinned foots + emoji tags ⏳
 2.1 `cells/workstation/packages/dwl/config.h` `rules[]`: add the two rules from `Naming:`; keep `Gimp_EXAMPLE` line as-is.
+    DONE 2026-09: `foot-tmux` → `1 << 0`, `foot-herdr` → `1 << 1`, after the wl_mirror rule. Plan's `grep -c 'app_id'` probe is useless (== 2, header comments); the check is the `1 << ` grep in `verified`.
 2.2 `config.h` keys: `termraise` → new `Raise tmuxraise = { "foot-tmux", tmuxcmd }` with `tmuxcmd = { "foot", "--app-id", "foot-tmux", "-e", "tmux", "new", "-A", "-s", "main", NULL }`; `Raise herdrraise = { "foot-herdr", herdrcmd }` with the attach verb from 0.2; bind `MODKEY|WLR_MODIFIER_ALT, XKB_KEY_t` → `tmuxraise`, `MODKEY|WLR_MODIFIER_ALT, XKB_KEY_h` → `herdrraise`. Check `XKB_KEY_h` is free: `grep -n 'XKB_KEY_h,' config.h` == no hit before edit.
+    DONE 2026-09, changed by user decision: `tmuxcmd = { "foot", "-a", "foot-tmux", NULL }` — no command, foot's `main.shell` is already `sesh connect the-hive` (home/default.nix:144), so tag 1 keeps the existing sesh session, no `main` session. `herdrcmd = { "foot", "-a", "foot-herdr", "herdr", NULL }`. `termcmd`/`termraise` removed: no plain-foot bind at all (user: throwaway foot not needed; `Super+Return` stays `zoom`, as before). `XKB_KEY_h` hits were `MODKEY` setmfact and the NOTIFICATION mode key, not `MODKEY|ALT` → free. `herdr` added to `environment.systemPackages` (dwl spawns it by name).
 2.3 `layer-compositor.nix` `dwl-startup-with-bar`: after the clipboard watchers, `${pkgs.foot}/bin/foot --app-id foot-tmux -e ${pkgs.tmux}/bin/tmux new -A -s main &` and `${pkgs.foot}/bin/foot --app-id foot-herdr -e ${cell.packages.herdr}/bin/herdr <attach verb> &`. herdr foot must start after `herdr-server` is up: precede with `${pkgs.systemd}/bin/systemctl --user start herdr-server.service` (idempotent).
+    DONE 2026-09: `foot -a foot-tmux &`, `systemctl --user start herdr-server.service || true`, `foot -a foot-herdr …/bin/herdr &` (foot's `-e` is a no-op, dropped).
 2.4 `layer-compositor.nix` `dwl-status` `render_tags()`: `declare -A taglabel=([1]="🧑" [2]="🤖")`; render `"''${taglabel[$i]:-$i}"` instead of `$i` in all four spans.
+    DONE 2026-09: as planned, via local `l`.
 2.5 Rebuild elster; login; `swaymsg`-less check: `ls /run/user/$UID/dwl/` bar state shows tag 1 and 2 occupied; screenshot bar (`grim -g "$(slurp)"` on the bar strip) → 🧑 🤖 visible.
-Exit criteria: fresh login → tag 1 = one foot with tmux `main`, tag 2 = one foot with herdr TUI, no extra foots; `Super+Alt+T`/`Super+Alt+H` from any tag jump to those windows instead of spawning; bar shows 🧑 🤖; user confirms on elster; commit `feat(desktop): personal and agent terminals pinned to tags 1/2`.
+Exit criteria: fresh login → tag 1 = one foot with tmux (sesh `the-hive`), tag 2 = one foot with herdr TUI, no extra foots; `Super+Alt+T`/`Super+Alt+H` from any tag jump to those windows instead of spawning; bar shows 🧑 🤖; user confirms on elster; commit `feat(desktop): personal and agent terminals pinned to tags 1/2`.
 
 ## Phase 3 — tmux/herdr polish (only after user drives Phase 2 for ≥ 3 days) ⏳
 3.1 `cells/deck/homeModules/tmux.nix`: only what the user asked for after living with it (e.g. `set -g detach-on-destroy off`, session `main` default). Nothing speculative.
@@ -69,6 +73,7 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 - 2026-09: 1.1–1.3 written: herdr input + package + `herdr-server` user unit in layer-compositor.nix. User eval'd the unit and rebuilt elster; server up.
 - 2026-09: 1.4 done, Phase 0 + 1 ✅ (user). Side finding, out of scope: Entra user cannot read its own user journal (`journalctl --user` → insufficient permissions).
 - 2026-09: side finding fixed outside the plan: Entra gets `systemd-journal` via himmelblau `local_groups` (auth-entra.nix); after reboot `journalctl --user -u herdr-server -b` shows the unit's start. herdr-server came up on boot by itself (default.target).
+- 2026-09: 2.1–2.4 written. User decided: tag 1 foot runs foot's default shell (sesh → the-hive session), not `tmux new -A -s main`; no plain-foot keybind at all. 2.5 = user rebuild.
 
 ## verified
 0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
@@ -79,6 +84,10 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 1.3: `alejandra -q --check` on the 3 touched files -> exit 0; user `nix eval .#nixosConfigurations.elster…"herdr-server.service".text` -> `ExecStart=…gkryfp31…-herdr-0.9.1/bin/herdr server`, `WantedBy=default.target`, no PATH line @ 2026-09-25
 1.4: user `systemctl --user status herdr-server.service` -> `active (running)`, MainPID 75176 @ 2026-09-25 21:14
 1.4: user, after `MOD+Shift+Q` + relogin: `systemctl --user show -p MainPID herdr-server.service` -> `MainPID=75176` @ 2026-09-25
+2.1–2.4: `alejandra -q --check layer-compositor.nix` -> exit 0; `grep -nE '^\s*\{ "[^"]+",.*1 << ' config.h` -> only firefox_EXAMPLE/wl_mirror (tag 9) + foot-tmux/foot-herdr; `git diff 6a0c14b -- cells/deck/homeModules/tmux.nix` -> empty @ 2026-09-25
+2.2: flake dwl build blocked (TPM cache cold); same derivation outside the flake (pinned nixpkgs 34ab9907, v0.9 + 5 patches, our config.h with dummy theme colours) -> `/nix/store/fbb04i8d…-dwl-0.9` built @ 2026-09-25
+2.4: `render_tags` extracted to bash, `"3 1 0 0"` -> `[S 🧑][o 🤖] 3 …`, `"7 4 0 2"` -> `[o 🧑][U 🤖][S 3] …` @ 2026-09-25
+2.3: `herdr status server --json` as Entra -> `running:true`, socket `~/.config/herdr/herdr.sock` (bare `herdr` in foot-herdr attaches to it) @ 2026-09-25
 
-Next: Phase 2.1 — the two `rules[]` entries in `cells/workstation/packages/dwl/config.h`.
-Blocked on: nothing.
+Next: Phase 2.5 — user: `unlock-secrets`, eval + rebuild elster, relogin, check the exit criteria.
+Blocked on: user rebuild + acceptance.
