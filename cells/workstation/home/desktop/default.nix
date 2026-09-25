@@ -28,5 +28,6 @@
     ./keepass.nix
     ./torrent.nix
     ./zathura.nix
+    ./firefox.nix
   ];
 }
