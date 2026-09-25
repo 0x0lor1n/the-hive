@@ -37,7 +37,8 @@
 
 <h2>dwl · launching</h2>
 <table>
-<tr><td><kbd>Super+Alt+T</kbd></td><td>new terminal window (foot + tmux)</td></tr>
+<tr><td><kbd>Super+Alt+T</kbd></td><td>new terminal window (foot + tmux), or focus the open one (tag 1)</td></tr>
+<tr><td><kbd>Super+Alt+H</kbd></td><td>agents: foot + herdr, or focus the open one (tag 2) — keys in the last section</td></tr>
 <tr><td><kbd>Super+D</kbd> / <kbd>Super+P</kbd></td><td>app launcher (fuzzel)</td></tr>
 <tr><td><kbd>Super+Alt+F</kbd></td><td>file manager (thunar)</td></tr>
 <tr><td><kbd>Super+C</kbd></td><td>calculator (fuzzel; result goes to the clipboard)</td></tr>
@@ -186,6 +187,22 @@
 <tr><td><kbd>Ctrl+Shift+F5</kbd></td><td>reload tmux.conf</td></tr>
 </table>
 <p class="note">Copy mode uses vi keys (<code>mode-keys vi</code>). Mouse is off in tmux — select text with the keyboard.</p>
+
+<h2 class="tmux">herdr · agents (tag 2, <kbd>Super+Alt+H</kbd>) — same shape as tmux</h2>
+<table>
+<tr><td><kbd>Ctrl+Shift+Enter</kbd></td><td>spawn agent: fuzzel asks kind (hermes / claude / opencode), then dir — first row is the focused pane's dir, then other panes, then zoxide. Enter-Enter = same agent, here</td></tr>
+<tr><td><kbd>Ctrl+↑</kbd> / <kbd>Ctrl+↓</kbd></td><td>previous / next agent</td></tr>
+<tr><td><kbd>Ctrl+←</kbd> / <kbd>Ctrl+→</kbd></td><td>focus pane left / right inside the workspace</td></tr>
+<tr><td><kbd>Ctrl+,</kbd> / <kbd>Ctrl+.</kbd></td><td>previous / next workspace</td></tr>
+<tr><td><kbd>Alt+1..9</kbd></td><td>jump to workspace N</td></tr>
+<tr><td><kbd>Ctrl+Shift+W</kbd> / <kbd>Ctrl+Shift+Q</kbd></td><td>close pane / close workspace</td></tr>
+<tr><td><kbd>Ctrl+Shift+F</kbd></td><td>zoom pane / back</td></tr>
+<tr><td><kbd>Ctrl+Shift+←↑↓→</kbd></td><td>resize pane</td></tr>
+<tr><td><kbd>Ctrl+Shift+T</kbd></td><td>new tab</td></tr>
+<tr><td><kbd>Ctrl+Shift+B</kbd> <kbd>-</kbd></td><td>prefix + split (herdr default; <kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd> are prefixed too — inside the agents they are prompt history)</td></tr>
+<tr><td><kbd>Shift+Enter</kbd></td><td>newline in the hermes prompt (works under herdr via the <code>HERDR_ENV</code> patch, under tmux natively)</td></tr>
+</table>
+<p class="note">Source: <code>herdrConfig.keys</code> in <code>cells/workstation/home/dev/agents.nix</code>.</p>
 
 </body>
 </html>

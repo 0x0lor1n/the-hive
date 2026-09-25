@@ -298,12 +298,77 @@
     plugin = [];
   };
 
+  # fuzzel (layer-shell, over the foot window) picks agent kind then cwd;
+  # first cwd row is the focused pane's dir so Enter-Enter clones "this
+  # agent, here". Reads HERDR_ACTIVE_PANE_CWD when run from a herdr
+  # keys.command, else asks the socket for the focused pane.
+  herdrSpawnAgent = pkgs.writeShellScriptBin "herdr-spawn-agent" ''
+    set -eu
+    PATH=${lib.makeBinPath [pkgs.jq pkgs.fuzzel pkgs.coreutils pkgs.gawk pkgs.gnugrep]}:$PATH
+    cur=''${HERDR_ACTIVE_PANE_CWD:-}
+    [ -n "$cur" ] || cur=$(herdr pane list | jq -r '.result.panes[] | select(.focused) | .cwd')
+    kind=$(printf 'hermes\nclaude\nopencode\n' | fuzzel --dmenu --prompt 'agent > ' --lines 3) || exit 0
+    cwd=$({ echo "$cur"; herdr pane list | jq -r '.result.panes[].cwd'
+            command -v zoxide >/dev/null && zoxide query -l; } | awk 'NF && !s[$0]++' \
+          | fuzzel --dmenu --prompt "$kind in > " --lines 12) || exit 0
+    [ -d "$cwd" ] || exit 1
+    # Agent names are global; several agents per dir is the normal case
+    # (hermes + claude on the same repo), so suffix on collision.
+    base="$(basename "$cwd")-$kind"
+    taken=$(herdr agent list | jq -r '.result.agents[].name // empty')
+    name=$base; n=2
+    while printf '%s\n' "$taken" | grep -qx "$name"; do name="$base-$n"; n=$((n + 1)); done
+    pane=$(herdr workspace create --cwd "$cwd" --focus --label "$name" | jq -r .result.root_pane.pane_id)
+    # agent_not_ready is claude's trust prompt in a new dir, not a failure:
+    # the agent is running and the pane is focused, answer it there.
+    # herdr prints errors on stderr, so capture both streams.
+    out=$(herdr agent start "$name" --kind "$kind" --pane "$pane" 2>&1) && exit 0
+    code=$(printf '%s' "$out" | jq -r '.error.code // empty' 2>/dev/null || true)
+    [ "$code" = agent_not_ready ] && exit 0
+    printf '%s\n' "$out" >&2
+    herdr workspace close "$(printf '%s' "$pane" | cut -d: -f1)" >/dev/null 2>&1 || true
+    exit 1
+  '';
+
   # herdr UI on the repo palette. panel_bg/sidebar_bg unset = foot's bg.
   # onboarding = false: the welcome screen would install integrations by
   # hand, they are declared here instead. Store-backed, so the in-app
   # settings cannot save; edit here.
   herdrConfig = {
     onboarding = false;
+    # Mirrors dotfiles/tmux/config.conf so the two tags feel the same:
+    # C-Up/Down walks the agent list (tmux: panes), C-,/. walks workspaces
+    # (tmux: windows), M-1..9 jumps (dwl holds Super, Alt is free),
+    # C-S-Enter spawns an agent (tmux: split in cwd), C-S-w/q/f close/zoom.
+    # foot already emits every C-S-* chord as CSI-u (home/default.nix).
+    # C-n/C-p stay on prefix: unconditional here, and they are prompt
+    # history inside hermes/claude. split_horizontal stays prefix+minus.
+    keys = {
+      prefix = "ctrl+shift+b";
+      previous_agent = "ctrl+up";
+      next_agent = "ctrl+down";
+      focus_pane_left = "ctrl+left";
+      focus_pane_right = "ctrl+right";
+      previous_workspace = "ctrl+comma";
+      next_workspace = "ctrl+period";
+      switch_workspace = "alt+1..9";
+      # No new_tab: one agent = one workspace, tabs inside it are unused.
+      close_pane = "ctrl+shift+w";
+      close_workspace = "ctrl+shift+q";
+      zoom = "ctrl+shift+f";
+      resize_pane_left = "ctrl+shift+left";
+      resize_pane_right = "ctrl+shift+right";
+      resize_pane_up = "ctrl+shift+up";
+      resize_pane_down = "ctrl+shift+down";
+      command = [
+        {
+          key = "ctrl+shift+enter";
+          type = "shell";
+          command = "${herdrSpawnAgent}/bin/herdr-spawn-agent";
+          description = "spawn agent (fuzzel: kind, cwd)";
+        }
+      ];
+    };
     theme = {
       name = "kanagawa";
       custom = lib.mapAttrs (_: v: "#${v}") (let
@@ -346,6 +411,7 @@ in {
       pkgs.bun # opencode's plugin system
       pkgs.ast-grep # oh-my-opencode
       pkgs.jq # statusline.sh
+      herdrSpawnAgent # also callable from a shell / future dwl bind
     ]
     ++ skills.packages pkgs;
 
