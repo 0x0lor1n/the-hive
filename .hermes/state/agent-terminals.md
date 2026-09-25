@@ -29,6 +29,7 @@ Autonomy: safe
 0.3 `cat ~/.hermes/cache/web/herdr.dev-63cccd5320.md | grep -n -i 'socket\|XDG\|state dir'` → confirm where the server keeps session state, so `herdr-server.service` can be given the right `Environment=`/`ConditionPathExists=`.
     DONE 2026-09: the grep had no hits — `63cccd5320` is the Keyboard page; session-state = `herdr.dev-209af94041.md`, agents = `herdr.dev-bf16d7040f.md`. Server log (`persist.restore`/`persist.save`) + probe with `HERDR_SOCKET_PATH` moved to another dir: `session.json` (+ `session-history.json` if `[experimental] pane_history`, `session-backups/`) always in `$XDG_CONFIG_HOME/herdr/`, independent of the socket path; remote agent manifests in `$XDG_STATE_HOME/herdr/agent-detection/`. Server creates both dirs itself; `~/.config/herdr` does not exist yet on elster. Pane shells inherit the server env (probe panes wrote zsh/p10k cache into the tmp `XDG_CACHE_HOME`) → unit sets NO `Environment=` XDG/HERDR overrides and NO `ConditionPathExists=`; defaults are correct.
 0.4 `grep -n 'noto-fonts-color-emoji' cells/workstation/home/default.nix` == hit (bar font can render 🧑🤖). If not, add to `To do` of Phase 2.
+    DONE 2026-09: the grep missed because the path was wrong — the font lives system-wide in `cells/workstation/profiles/layer-session.nix:132` (`fonts.packages`), and `home/desktop/gtk.nix:97` pins `defaultFonts.emoji = ["Noto Color Emoji"]`. `fc-match -s 'monospace:charset=1f9d1'` lists Unifont Upper first (it comes from outside the repo, most likely `fonts.enableDefaultPackages`; not checked, eval needs the TPM PIN), but pango picks the color font anyway for emoji-presentation codepoints: `pango-view --font='monospace 14'` drew 🧑🤖 in color. waybar (`bar.nix:255`, `font-family: monospace`) renders through the same pango → nothing to add in Phase 2. The real bar check stays in 2.5.
 Exit criteria: `herdr` tag and store path written here; verbs (a)(b)(c) written into `Naming:`; emoji font confirmed present; `Blocked on:` == nothing.
 
 ## Phase 1 — herdr packaged + server unit ⏳
@@ -60,11 +61,13 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 - 2026-09: 0.1 done — herdr v0.9.1 builds on elster, also with nixpkgs overridden to our pin; kill-switch not fired, fallback not needed.
 - 2026-09: 0.2 done — `herdr server` is a foreground process (fits `Type=simple`), attach = bare `herdr`, socket/config/logs default to `~/.config/herdr/`.
 - 2026-09: 0.3 done — session state = `~/.config/herdr/session.json`, manifests under `~/.local/state/herdr/`; unit needs no env/conditions. Plan's doc refs were off: 3.2 "agents doc" repointed `209af94041` (session-state) → `bf16d7040f`.
+- 2026-09: 0.4 done — Noto Color Emoji is installed system-wide (layer-session.nix, not home/default.nix as the plan said) and set as the emoji default; waybar's pango draws 🧑🤖 in color. Phase 2 gets no font work.
 
 ## verified
 0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
 0.2: `timeout 4 herdr server` (tmp XDG_CONFIG_HOME + HERDR_SOCKET_PATH) -> exit 124, `herdr status server --json` `.running=true` meanwhile @ 2026-09-25
 0.3: `herdr server` (tmp XDG_*, `HERDR_SOCKET_PATH=$T/sock/herdr.sock`) + `herdr workspace create` + `herdr server stop` -> log `persist.save ok path=$T/cfg/herdr/session.json`, `$T/sock/` holds only the socket @ 2026-09-25
+0.4: `grep -n noto-fonts-color-emoji cells/workstation/profiles/layer-session.nix` -> `132`; `pango-view --no-display --font='monospace 14' --text='1 🧑 2 🤖 3'` -> color emoji rendered @ 2026-09-25
 
-Next: Phase 0.4 — `grep -n 'noto-fonts-color-emoji' cells/workstation/home/default.nix`; bar font renders 🧑🤖 or goes to Phase 2 `To do`.
+Next: Phase 1.1 — add the `herdr` input (`v0.9.1`, `nixpkgs.follows`) to `cells/workstation/flake.nix`, `nix flake lock`. Phase 0's exit criteria are met; ✅ waits for the user to accept.
 Blocked on: nothing.
