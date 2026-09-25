@@ -5,25 +5,25 @@
   theme,
   ...
 }: let
-  k = theme.colors;
+  k = theme.roles;
 in {
   programs.swaylock = {
     enable = true;
     settings = {
-      color = k.sumiInk3;
-      inside-color = k.sumiInk4;
-      ring-color = k.crystalBlue;
-      key-hl-color = k.springGreen;
-      bs-hl-color = k.autumnRed;
-      inside-ver-color = k.sumiInk4;
-      ring-ver-color = k.oniViolet;
-      inside-wrong-color = k.sumiInk4;
-      ring-wrong-color = k.autumnRed;
-      text-color = k.fujiWhite;
-      text-ver-color = k.fujiWhite;
-      text-wrong-color = k.fujiWhite;
-      line-color = k.sumiInk3;
-      separator-color = k.sumiInk3;
+      color = k.bg;
+      inside-color = k.bgAlt;
+      ring-color = k.focus;
+      key-hl-color = k.accent;
+      bs-hl-color = k.urgent;
+      inside-ver-color = k.bgAlt;
+      ring-ver-color = k.hover;
+      inside-wrong-color = k.bgAlt;
+      ring-wrong-color = k.urgent;
+      text-color = k.fg;
+      text-ver-color = k.fg;
+      text-wrong-color = k.fg;
+      line-color = k.bg;
+      separator-color = k.bg;
       font-size = 24;
       indicator-idle-visible = true;
       indicator-radius = 100;

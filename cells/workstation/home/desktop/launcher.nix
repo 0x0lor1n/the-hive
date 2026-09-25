@@ -6,7 +6,7 @@
   theme,
   ...
 }: let
-  k = theme.colors;
+  k = theme.roles;
 in {
   programs.fuzzel = {
     enable = true;
@@ -24,13 +24,13 @@ in {
       };
       # fuzzel wants rrggbbaa.
       colors = {
-        background = "${k.sumiInk3}ff";
-        text = "${k.fujiWhite}ff";
-        match = "${k.carpYellow}ff";
-        selection = "${k.waveBlue2}ff";
-        selection-text = "${k.fujiWhite}ff";
-        selection-match = "${k.carpYellow}ff";
-        border = "${k.crystalBlue}ff";
+        background = "${k.bg}ff";
+        text = "${k.fg}ff";
+        match = "${k.highlight}ff";
+        selection = "${k.selection}ff";
+        selection-text = "${k.fg}ff";
+        selection-match = "${k.highlight}ff";
+        border = "${k.focus}ff";
       };
     };
   };

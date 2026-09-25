@@ -42,6 +42,7 @@
   ...
 }: let
   k = theme.colors;
+  r = theme.roles;
   ansi = theme.ansi;
   sec = secrets;
 in {
@@ -178,11 +179,11 @@ in {
       # is a hard error). The CachyOS nixpkgs pin ships 1.27.
       colors-dark =
         {
-          foreground = k.fujiWhite;
-          background = k.sumiInk3;
-          cursor = "${k.sumiInk3} ${k.oldWhite}";
+          foreground = r.fg;
+          background = r.bg;
+          cursor = "${r.bg} ${k.oldWhite}";
           selection-foreground = k.oldWhite;
-          selection-background = k.waveBlue2;
+          selection-background = r.selection;
         }
         // builtins.listToAttrs (pkgs.lib.imap0 (i: c: {
             name =

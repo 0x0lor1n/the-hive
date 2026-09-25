@@ -256,8 +256,12 @@ Decisions owed before 7.1 (ask one at a time at the start of the execution sessi
 
 ## Phase 8 — colors → roles (stretch) ⏳
 8.1 Move the 58 `theme.colors` refs (via `k`/`c` aliases: default 6, bar 1, launcher 7, torrent 18, notify 3, screenshot 5, qt 4, lock 14) in home/default.nix and desktop/{bar,launcher,torrent,notify,screenshot,qt,lock}.nix onto roles.
+  Audit 2026-09: 58 refs confirmed in those 8 files, but 10 of them have no role (default oldWhite ×2; qt sumiInk6/sumiInk1 ×2/oldWhite; torrent surimiOrange/waveRed/autumnGreen/dragonBlue/waveAqua2 ×4/peachRed). Outside the 8 files, phases 2-7 added ~150 more (agents 114, btop 19, bat 5, chat-themes 4, agent-proxy 6), about 2/3 of them non-role accents (syntax/rainbow/subagent colours). So "colors only in theme.nix" would need a second role layer (accent hues + syntax.*).
+  Decision: clarify timed out, Claude took the narrow reversible option: move only refs whose hex == a role hex (drvPath unchanged by construction); non-role accents stay on `theme.colors`. Widening = new phase, if the user asks.
+  8.1 DONE 2026-09 (narrow): 48 refs → roles in default (foot fg/bg/selection, new `r` alias), bar (#clock, `k` alias dropped), launcher/notify/lock/screenshot (`k = theme.roles`, all refs), torrent (9: success/info/highlight/hover). springGreen → `accent` in UI files, `success` in torrent states. Left on colors: the 10 above.
+  verified 8.1: `nix eval` of theme.nix: all 13 colors→role pairs used are hex-equal -> true; `alejandra --check` on the 7 files -> 0; elster drvPath NOT evaluated (age-plugin-tpm, cold TPM cache) — user compares HEAD~1 vs HEAD @ 2026-09.
 8.2 User test only if drvPath changed: quick look at bar, launcher, lock screen, notifications, qBittorrent.
-Exit criteria: `theme.colors` referenced only inside `cells/common/theme.nix`; elster drvPath unchanged across the phase (or user accepted 8.2).
+Exit criteria (revised 2026-09, narrow scope): in the 8 files, every `theme.colors` ref left has no role with the same hex (the 10 listed); elster drvPath unchanged across the phase (or user accepted 8.2).
 
 ## Fallback at any phase
 Phases after 1 are independent; stop anywhere and what is merged stays coherent. Minimum useful slice = 0 + 1 + 2 (fixes delta/lazygit), one session.
@@ -329,5 +333,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 
 - 2026-09: user imported all 3 and accepted 7.7: Telegram, Slack, Mattermost "доволен". o365 row recorded as exception (partial, reason in row). Phase 7 ✅.
 
-Next: 8.1 — colors → roles (stretch), fresh session.
+- 2026-09: 8.1 landed narrow (48 hex-equal refs → roles; 10 non-role accents stay on colors; ~150 newer refs in agents/btop/bat/chat/agent-proxy out of scope). drvPath comparison on the user.
+
+Next: 8.2 gate — user compares elster drvPath HEAD~1 vs HEAD; equal → Phase 8 ✅ and the plan is done.
 Blocked on: nothing.

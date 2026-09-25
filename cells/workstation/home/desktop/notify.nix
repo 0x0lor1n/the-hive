@@ -6,7 +6,7 @@
   theme,
   ...
 }: let
-  k = theme.colors;
+  k = theme.roles;
 in {
   # notify-send, for testing mako from the terminal.
   home.packages = [pkgs.libnotify];
@@ -17,9 +17,9 @@ in {
       default-timeout = 5000;
       ignore-timeout = true;
       font = "monospace 11";
-      background-color = "#${k.sumiInk3}ff";
-      text-color = "#${k.fujiWhite}ff";
-      border-color = "#${k.crystalBlue}ff";
+      background-color = "#${k.bg}ff";
+      text-color = "#${k.fg}ff";
+      border-color = "#${k.focus}ff";
       border-size = 2;
       padding = "10";
       # Notification actions (takeshot uses them): left click runs the
