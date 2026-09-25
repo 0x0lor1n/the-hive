@@ -212,9 +212,73 @@
     plugin = ["@franlol/opencode-md-table-formatter@0.0.3"];
     autoupdate = false;
   };
+
+  # ~/.config/opencode/themes/kanagawa.json shadows the built-in `kanagawa`,
+  # whose yellows and diff hexes are off-palette. The 48 keys of the
+  # built-in; syntax/markdown follow kanagawa.nvim wave, as nvim and bat do.
+  # diffHighlight* are the +/- sign fg, not word bgs.
+  opencodeTheme = let
+    r = theme.roles;
+    c = theme.colors;
+  in {
+    "$schema" = "https://opencode.ai/theme.json";
+    theme = lib.mapAttrs (_: v: "#${v}") {
+      primary = r.focus;
+      secondary = r.hover;
+      accent = c.sakuraPink;
+      error = r.urgent;
+      warning = r.warning;
+      success = r.success;
+      info = r.info;
+      text = r.fg;
+      textMuted = r.muted;
+      background = r.bg;
+      backgroundPanel = r.bgAlt;
+      backgroundElement = r.border;
+      border = c.sumiInk6;
+      borderActive = r.focus;
+      borderSubtle = r.border;
+      diffAdded = r.success;
+      diffRemoved = r.urgent;
+      diffContext = r.muted;
+      diffHunkHeader = r.info;
+      diffHighlightAdded = r.success;
+      diffHighlightRemoved = r.urgent;
+      diffAddedBg = r.diffAdd;
+      diffRemovedBg = r.diffDelete;
+      diffContextBg = r.bgAlt;
+      diffLineNumber = r.muted;
+      diffAddedLineNumberBg = r.diffAdd;
+      diffRemovedLineNumberBg = r.diffDelete;
+      markdownText = r.fg;
+      markdownHeading = c.crystalBlue;
+      markdownLink = c.springBlue;
+      markdownLinkText = c.crystalBlue;
+      markdownCode = c.springGreen;
+      markdownBlockQuote = c.oniViolet2;
+      markdownEmph = c.carpYellow;
+      markdownStrong = c.roninYellow;
+      markdownHorizontalRule = r.muted;
+      markdownListItem = c.springViolet1;
+      markdownListEnumeration = c.springViolet1;
+      markdownImage = c.crystalBlue;
+      markdownImageText = c.springBlue;
+      markdownCodeBlock = r.fg;
+      syntaxComment = c.fujiGray;
+      syntaxKeyword = c.oniViolet;
+      syntaxFunction = c.crystalBlue;
+      syntaxVariable = c.fujiWhite;
+      syntaxString = c.springGreen;
+      syntaxNumber = c.sakuraPink;
+      syntaxType = c.waveAqua2;
+      syntaxOperator = c.boatYellow2;
+      syntaxPunctuation = c.springViolet1;
+    };
+  };
+
   opencodeTui = {
     "$schema" = "https://opencode.ai/tui.json";
-    theme = "opencode";
+    theme = "kanagawa";
     plugin = [];
   };
   json = pkgs.formats.json {};
@@ -252,6 +316,7 @@ in {
     {
       "opencode/opencode.json".source = json.generate "opencode.json" opencodeConfig;
       "opencode/tui.json".source = json.generate "tui.json" opencodeTui;
+      "opencode/themes/kanagawa.json".source = json.generate "opencode-theme-kanagawa.json" opencodeTheme;
       # `omo doctor` will still say "not registered" -- it only knows the npm
       # route; ignore that line.
       "opencode/plugins/oh-my-openagent.ts".source = omoShim;
