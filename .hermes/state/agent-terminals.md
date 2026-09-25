@@ -27,6 +27,7 @@ Autonomy: safe
 0.2 CLI surface: `<store>/bin/herdr --help`, `herdr server --help`, `herdr attach --help` (or whatever the TUI-attach verb is). Write the exact verbs for (a) start server in foreground for systemd, (b) attach TUI to running server, (c) socket/state dir env var into `Naming:`.
     DONE 2026-09: verbs written under `Naming:` (`herdr CLI` line). Probe with isolated `XDG_CONFIG_HOME`/`HERDR_SOCKET_PATH` in a tmpdir: `herdr server` stayed up until `timeout` killed it (exit 124), `status server --json` saw `running:true`; only files created = `cfg/herdr/{herdr-server.log,.plugins.lock}`, nothing in real `~/.config/herdr`. (b) taken from `--help` only, not exercised (needs a tty) — first real check in 1.4/2.5.
 0.3 `cat ~/.hermes/cache/web/herdr.dev-63cccd5320.md | grep -n -i 'socket\|XDG\|state dir'` → confirm where the server keeps session state, so `herdr-server.service` can be given the right `Environment=`/`ConditionPathExists=`.
+    DONE 2026-09: the grep had no hits — `63cccd5320` is the Keyboard page; session-state = `herdr.dev-209af94041.md`, agents = `herdr.dev-bf16d7040f.md`. Server log (`persist.restore`/`persist.save`) + probe with `HERDR_SOCKET_PATH` moved to another dir: `session.json` (+ `session-history.json` if `[experimental] pane_history`, `session-backups/`) always in `$XDG_CONFIG_HOME/herdr/`, independent of the socket path; remote agent manifests in `$XDG_STATE_HOME/herdr/agent-detection/`. Server creates both dirs itself; `~/.config/herdr` does not exist yet on elster. Pane shells inherit the server env (probe panes wrote zsh/p10k cache into the tmp `XDG_CACHE_HOME`) → unit sets NO `Environment=` XDG/HERDR overrides and NO `ConditionPathExists=`; defaults are correct.
 0.4 `grep -n 'noto-fonts-color-emoji' cells/workstation/home/default.nix` == hit (bar font can render 🧑🤖). If not, add to `To do` of Phase 2.
 Exit criteria: `herdr` tag and store path written here; verbs (a)(b)(c) written into `Naming:`; emoji font confirmed present; `Blocked on:` == nothing.
 
@@ -47,7 +48,7 @@ Exit criteria: fresh login → tag 1 = one foot with tmux `main`, tag 2 = one fo
 
 ## Phase 3 — tmux/herdr polish (only after user drives Phase 2 for ≥ 3 days) ⏳
 3.1 `cells/deck/homeModules/tmux.nix`: only what the user asked for after living with it (e.g. `set -g detach-on-destroy off`, session `main` default). Nothing speculative.
-3.2 herdr: agent presets / workspaces per `~/.hermes/cache/web/herdr.dev-209af94041.md` (agents doc), if the TUI needs them for Claude Code + Hermes.
+3.2 herdr: agent presets / workspaces per `~/.hermes/cache/web/herdr.dev-bf16d7040f.md` (agents doc), if the TUI needs them for Claude Code + Hermes.
 3.3 Optional: replicate Phase 1–2 for penrose / sevastopol (same profile; only the rebuild target changes).
 Exit criteria: user-named items from 3.1/3.2 committed, each with its own test note in Progress.
 
@@ -58,10 +59,12 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 - 2026-09: plan written. Decided in chat: foot is the only terminal; tmux = personal multiplexer, herdr = agent multiplexer; one foot per tag, splits live inside the multiplexer; `Super+Return` stays a plain throwaway foot. Nothing built yet.
 - 2026-09: 0.1 done — herdr v0.9.1 builds on elster, also with nixpkgs overridden to our pin; kill-switch not fired, fallback not needed.
 - 2026-09: 0.2 done — `herdr server` is a foreground process (fits `Type=simple`), attach = bare `herdr`, socket/config/logs default to `~/.config/herdr/`.
+- 2026-09: 0.3 done — session state = `~/.config/herdr/session.json`, manifests under `~/.local/state/herdr/`; unit needs no env/conditions. Plan's doc refs were off: 3.2 "agents doc" repointed `209af94041` (session-state) → `bf16d7040f`.
 
 ## verified
 0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
 0.2: `timeout 4 herdr server` (tmp XDG_CONFIG_HOME + HERDR_SOCKET_PATH) -> exit 124, `herdr status server --json` `.running=true` meanwhile @ 2026-09-25
+0.3: `herdr server` (tmp XDG_*, `HERDR_SOCKET_PATH=$T/sock/herdr.sock`) + `herdr workspace create` + `herdr server stop` -> log `persist.save ok path=$T/cfg/herdr/session.json`, `$T/sock/` holds only the socket @ 2026-09-25
 
-Next: Phase 0.3 — `grep -n -i 'socket\|XDG\|state dir' ~/.hermes/cache/web/herdr.dev-63cccd5320.md`; where session state lives (0.2 already shows socket/config/logs under `~/.config/herdr/`).
+Next: Phase 0.4 — `grep -n 'noto-fonts-color-emoji' cells/workstation/home/default.nix`; bar font renders 🧑🤖 or goes to Phase 2 `To do`.
 Blocked on: nothing.
