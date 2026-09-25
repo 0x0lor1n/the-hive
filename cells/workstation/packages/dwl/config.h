@@ -1,6 +1,7 @@
 /* nix-rensa dwl config: copy of upstream config.def.h (dwl v0.9) with local
  * changes. On a dwl bump: diff against the new config.def.h and re-apply.
- * Changes vs upstream: MODKEY=Super, terminal on Super+Alt+T only, fuzzel on
+ * Changes vs upstream: MODKEY=Super, terminals pinned to tags 1/2 on
+ * Super+Alt+T (tmux) / Super+Alt+H (herdr), no plain-foot bind, fuzzel on
  * Mod+D/Mod+P, swaylock on Mod+L, waybar toggle on Mod+B, cliphist/grim
  * binds, XF86 media keys; displaced incnmaster-/setmfact+ moved to
  * Mod+Shift+D / Mod+Shift+L. Ported from wochap/nix-config dwl:
@@ -54,6 +55,10 @@ static const Rule rules[] = {
 	/* share-chooser's wl-mirror for rotated outputs (profiles/layer-compositor.nix):
 	 * out of sight on tag 9, still capturable */
 	{ "at.yrlf.wl_mirror", "Mirror ",  1 << 8,       0,           -1 },
+	/* the two pinned terminals (dwl-startup-with-bar opens both, Super+Alt+T/H
+	 * raise them); splits live inside tmux/herdr, never a second foot here */
+	{ "foot-tmux",        NULL,       1 << 0,       0,           -1 },
+	{ "foot-herdr",       NULL,       1 << 1,       0,           -1 },
     /* default/example rule: can be changed but cannot be eliminated; at least one rule must exist */
 };
 
@@ -144,11 +149,13 @@ static const enum libinput_config_tap_button_map button_map = LIBINPUT_CONFIG_TA
 #define SHCMD(cmd) { .v = (const char*[]){ "/bin/sh", "-c", cmd, NULL } }
 
 /* commands */
-static const char *termcmd[] = { "foot", NULL };
 static const char *menucmd[] = { "fuzzel", NULL };
 /* raiseorspawn patch: focus the existing window by app_id, else spawn.
- * foot's app_id is "foot"; rmpc's window is tagged "music" via -a. */
-static const Raise termraise = { "foot", termcmd };
+ * foot-tmux has no command: foot's shell is already sesh -> tmux. */
+static const char *const tmuxcmd[] = { "foot", "-a", "foot-tmux", NULL };
+static const Raise tmuxraise = { "foot-tmux", tmuxcmd };
+static const char *const herdrcmd[] = { "foot", "-a", "foot-herdr", "herdr", NULL };
+static const Raise herdrraise = { "foot-herdr", herdrcmd };
 static const char *const musiccmd[] = { "foot", "-a", "music", "rmpc", NULL };
 static const Raise musicraise = { "music", musiccmd };
 
@@ -173,8 +180,9 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_Escape,      spawn,            SHCMD("powermenu") },
 	{ MODKEY,                    XKB_KEY_c,           spawn,            SHCMD("calcmenu") },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_w,           spawn,            SHCMD("wifimenu") },
-	/* wochap: Super+Alt+T terminal (focuses an open one), Super+Alt+F file manager */
-	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_t,           raiseorspawn,     {.v = &termraise} },
+	/* Super+Alt+T tmux (tag 1), Super+Alt+H herdr (tag 2), Super+Alt+F file manager */
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_t,           raiseorspawn,     {.v = &tmuxraise} },
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_h,           raiseorspawn,     {.v = &herdrraise} },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_f,           spawn,            SHCMD("thunar") },
 	/* rmpc (home/desktop/music): a command arg replaces foot's sesh shell, so no tmux */
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_m,           raiseorspawn,     {.v = &musicraise} },
