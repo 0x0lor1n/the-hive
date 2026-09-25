@@ -49,10 +49,12 @@
 in {
   imports = [inputs.phoenix.nixosModules.default];
 
-  # mozilla.cfg = phoenix.cfg + autoConfig below; without this the
-  # autoConfig block is never loaded.
+  # mozilla.cfg = phoenix.cfg + autoConfig below. It has to come from
+  # finalPackage: `package` is the pre-override wrapper whose mozilla.cfg has
+  # no autoConfig, and pointing at it silently left Phoenix's sanitize-on-
+  # shutdown in force (history and session wiped at every exit).
   environment.etc."firefox/phoenix.cfg".source =
-    lib.mkForce "${config.programs.firefox.package}/lib/firefox/mozilla.cfg";
+    lib.mkForce "${config.programs.firefox.finalPackage}/lib/firefox/mozilla.cfg";
 
   programs.firefox = {
     enable = true;
