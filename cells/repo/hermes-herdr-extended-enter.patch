@@ -1,0 +1,15 @@
+--- a/cli.py
++++ b/cli.py
+@@ -4242,6 +4242,12 @@
+         return True
+     if term.startswith("tmux") or term_program.lower() == "tmux":
+         return True
++    # herdr (herdr.dev) exports HERDR_ENV=1 into every pane and, like tmux,
++    # only forwards a distinct Shift+Enter once the app asks for it; TERM
++    # inside a pane is the outer terminal's (xterm-256color), so it never
++    # matches above.
++    if env.get("HERDR_ENV"):
++        return True
+     return False
+ 
+ 

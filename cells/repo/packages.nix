@@ -42,8 +42,13 @@ in {
   # The patch routes six prompt_toolkit classes (session-title badge, yolo,
   # clarify answer, voice) through the skin; upstream hardcodes them in
   # cli.py's base style. Drop it once upstream skin_engine.py has them.
+  # extended-enter: hermes only requests kitty-protocol Shift+Enter under
+  # terminals it knows (tmux, kitty, ghostty...); inside herdr TERM is the
+  # outer xterm-256color, so Shift+Enter fell through to submit. Keys on
+  # HERDR_ENV=1. Drop once upstream `_terminal_supports_extended_enter_keys`
+  # checks it.
   hermes-agent = withNixq (llmAgents.hermes-agent.overrideAttrs (old: {
-    patches = (old.patches or []) ++ [./hermes-skin-pt-classes.patch];
+    patches = (old.patches or []) ++ [./hermes-skin-pt-classes.patch ./hermes-herdr-extended-enter.patch];
   }));
   # The two per-tty agents + opencode's plugin bundle, installed into both
   # homes by workstation/home/dev/agents.nix.
