@@ -7,6 +7,7 @@ Target: on elster, after login into dwl, tag 1 already shows one foot running `t
 Source refs: `cells/workstation/profiles/layer-compositor.nix` (`dwl-startup-with-bar` = the only autostart hook; `dwl-status` `render_tags()` = bar tag labels), `cells/workstation/packages/dwl/config.h` (`rules[]` line 46, `termraise`/`raiseorspawn` line 149–177), `~/.hermes/cache/web/herdr.dev-*.md` (herdr docs: install-with-nix `nix run github:herdrdev/herdr/v0.x.y`, session-state, agents), `.hermes/state/theme-coverage.md` (invariant style, acceptance gate).
 Repo: cell `workstation`; inputs pinned by commit in `cells/workstation/flake.nix`; packages in `cells/workstation/packages.nix` (`cell.packages.<name>`); `nix eval --raw .#nixosConfigurations.elster.config.system.build.toplevel.drvPath` is the build probe.
 Naming: flake input `herdr` (`github:herdrdev/herdr/<tag>`), package `cell.packages.herdr`; foot app_ids `foot-tmux` / `foot-herdr` (via `foot --app-id`); tmux session `main`; systemd user unit `herdr-server.service`; dwl rules `{ "foot-tmux", NULL, 1 << 0, 0, -1 }` / `{ "foot-herdr", NULL, 1 << 1, 0, -1 }`; keys `Super+Alt+T` = raiseorspawn `foot-tmux`, `Super+Alt+H` = raiseorspawn `foot-herdr`, `Super+Return` stays plain `foot` (untagged, throwaway); bar labels array `taglabel` in `dwl-status` (`1`→🧑 `2`→🤖, rest numeric).
+herdr CLI (v0.9.1, from 0.2): (a) server for systemd = `herdr server` (no flag; foreground until SIGTERM, `capabilities.detached_server_daemon=false`); stop = `herdr server stop`; health = `herdr status server --json` (`.running`). (b) TUI attach = bare `herdr` ("Launch or attach to the persistent session"; named: `herdr session attach <name>` / `herdr --session <name>`). (c) env: `HERDR_SOCKET_PATH` (default `$XDG_CONFIG_HOME/herdr/herdr.sock`, client socket = `<stem>-client.sock`), `HERDR_CONFIG_PATH` (default `$XDG_CONFIG_HOME/herdr/config.toml`); logs `$XDG_CONFIG_HOME/herdr/herdr-server.log`. No XDG_RUNTIME_DIR use — socket lives in `~/.config/herdr/`.
 
 Invariants:
 - `nix run nixpkgs#alejandra -- --check <touched .nix>` == exit 0.
@@ -19,11 +20,16 @@ Invariants:
 - User acceptance gate: a phase flips to ✅ only after the USER has tested it on the rebuilt elster and said so. Claude's evals are not acceptance.
 
 ## Phase 0 — Recon (kill-switch) ⏳
+Autonomy: safe
 0.1 Pin herdr: `git ls-remote --tags https://github.com/herdrdev/herdr | tail -5` → pick the latest `v0.x.y`; `nix build github:herdrdev/herdr/<tag> --print-out-paths` on elster. Record tag + store path here.
     Kill-switch: if the flake does not build on nixpkgs `34ab9907` (see `cells/workstation/flake.nix` line 9) and cannot be overridden via `inputs.nixpkgs.follows`, stop; fallback below.
+    DONE 2026-09: tag `v0.9.1` (rev `065ef9d6a531c49fb8bee7e818ef837065b21ee9`, latest by `sort -V`). Flake inputs: `nixpkgs`, `rust-overlay` (its nixpkgs follows herdr's). Own lock: `/nix/store/vmgh0yp88y87waiv77ijl5m9yvky0x46-herdr-0.9.1`. With `--override-input nixpkgs github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9`: `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` (only `stdenv.isLinux/isDarwin` deprecation warnings) → `follows` works, kill-switch NOT fired. Binary: `bin/herdr`. Attr: `packages.<system>.default` (what `nix build github:…` resolves to).
 0.2 CLI surface: `<store>/bin/herdr --help`, `herdr server --help`, `herdr attach --help` (or whatever the TUI-attach verb is). Write the exact verbs for (a) start server in foreground for systemd, (b) attach TUI to running server, (c) socket/state dir env var into `Naming:`.
+    DONE 2026-09: verbs written under `Naming:` (`herdr CLI` line). Probe with isolated `XDG_CONFIG_HOME`/`HERDR_SOCKET_PATH` in a tmpdir: `herdr server` stayed up until `timeout` killed it (exit 124), `status server --json` saw `running:true`; only files created = `cfg/herdr/{herdr-server.log,.plugins.lock}`, nothing in real `~/.config/herdr`. (b) taken from `--help` only, not exercised (needs a tty) — first real check in 1.4/2.5.
 0.3 `cat ~/.hermes/cache/web/herdr.dev-63cccd5320.md | grep -n -i 'socket\|XDG\|state dir'` → confirm where the server keeps session state, so `herdr-server.service` can be given the right `Environment=`/`ConditionPathExists=`.
+    DONE 2026-09: the grep had no hits — `63cccd5320` is the Keyboard page; session-state = `herdr.dev-209af94041.md`, agents = `herdr.dev-bf16d7040f.md`. Server log (`persist.restore`/`persist.save`) + probe with `HERDR_SOCKET_PATH` moved to another dir: `session.json` (+ `session-history.json` if `[experimental] pane_history`, `session-backups/`) always in `$XDG_CONFIG_HOME/herdr/`, independent of the socket path; remote agent manifests in `$XDG_STATE_HOME/herdr/agent-detection/`. Server creates both dirs itself; `~/.config/herdr` does not exist yet on elster. Pane shells inherit the server env (probe panes wrote zsh/p10k cache into the tmp `XDG_CACHE_HOME`) → unit sets NO `Environment=` XDG/HERDR overrides and NO `ConditionPathExists=`; defaults are correct.
 0.4 `grep -n 'noto-fonts-color-emoji' cells/workstation/home/default.nix` == hit (bar font can render 🧑🤖). If not, add to `To do` of Phase 2.
+    DONE 2026-09: the grep missed because the path was wrong — the font lives system-wide in `cells/workstation/profiles/layer-session.nix:132` (`fonts.packages`), and `home/desktop/gtk.nix:97` pins `defaultFonts.emoji = ["Noto Color Emoji"]`. `fc-match -s 'monospace:charset=1f9d1'` lists Unifont Upper first (it comes from outside the repo, most likely `fonts.enableDefaultPackages`; not checked, eval needs the TPM PIN), but pango picks the color font anyway for emoji-presentation codepoints: `pango-view --font='monospace 14'` drew 🧑🤖 in color. waybar (`bar.nix:255`, `font-family: monospace`) renders through the same pango → nothing to add in Phase 2. The real bar check stays in 2.5.
 Exit criteria: `herdr` tag and store path written here; verbs (a)(b)(c) written into `Naming:`; emoji font confirmed present; `Blocked on:` == nothing.
 
 ## Phase 1 — herdr packaged + server unit ⏳
@@ -43,7 +49,7 @@ Exit criteria: fresh login → tag 1 = one foot with tmux `main`, tag 2 = one fo
 
 ## Phase 3 — tmux/herdr polish (only after user drives Phase 2 for ≥ 3 days) ⏳
 3.1 `cells/deck/homeModules/tmux.nix`: only what the user asked for after living with it (e.g. `set -g detach-on-destroy off`, session `main` default). Nothing speculative.
-3.2 herdr: agent presets / workspaces per `~/.hermes/cache/web/herdr.dev-209af94041.md` (agents doc), if the TUI needs them for Claude Code + Hermes.
+3.2 herdr: agent presets / workspaces per `~/.hermes/cache/web/herdr.dev-bf16d7040f.md` (agents doc), if the TUI needs them for Claude Code + Hermes.
 3.3 Optional: replicate Phase 1–2 for penrose / sevastopol (same profile; only the rebuild target changes).
 Exit criteria: user-named items from 3.1/3.2 committed, each with its own test note in Progress.
 
@@ -52,6 +58,16 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 
 ## Progress
 - 2026-09: plan written. Decided in chat: foot is the only terminal; tmux = personal multiplexer, herdr = agent multiplexer; one foot per tag, splits live inside the multiplexer; `Super+Return` stays a plain throwaway foot. Nothing built yet.
+- 2026-09: 0.1 done — herdr v0.9.1 builds on elster, also with nixpkgs overridden to our pin; kill-switch not fired, fallback not needed.
+- 2026-09: 0.2 done — `herdr server` is a foreground process (fits `Type=simple`), attach = bare `herdr`, socket/config/logs default to `~/.config/herdr/`.
+- 2026-09: 0.3 done — session state = `~/.config/herdr/session.json`, manifests under `~/.local/state/herdr/`; unit needs no env/conditions. Plan's doc refs were off: 3.2 "agents doc" repointed `209af94041` (session-state) → `bf16d7040f`.
+- 2026-09: 0.4 done — Noto Color Emoji is installed system-wide (layer-session.nix, not home/default.nix as the plan said) and set as the emoji default; waybar's pango draws 🧑🤖 in color. Phase 2 gets no font work.
 
-Next: Phase 0.1 — `git ls-remote --tags https://github.com/herdrdev/herdr | tail -5` then `nix build github:herdrdev/herdr/<tag>` on elster (minutes). Then 0.2 → 0.3 → 0.4 in the same session.
+## verified
+0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
+0.2: `timeout 4 herdr server` (tmp XDG_CONFIG_HOME + HERDR_SOCKET_PATH) -> exit 124, `herdr status server --json` `.running=true` meanwhile @ 2026-09-25
+0.3: `herdr server` (tmp XDG_*, `HERDR_SOCKET_PATH=$T/sock/herdr.sock`) + `herdr workspace create` + `herdr server stop` -> log `persist.save ok path=$T/cfg/herdr/session.json`, `$T/sock/` holds only the socket @ 2026-09-25
+0.4: `grep -n noto-fonts-color-emoji cells/workstation/profiles/layer-session.nix` -> `132`; `pango-view --no-display --font='monospace 14' --text='1 🧑 2 🤖 3'` -> color emoji rendered @ 2026-09-25
+
+Next: Phase 1.1 — add the `herdr` input (`v0.9.1`, `nixpkgs.follows`) to `cells/workstation/flake.nix`, `nix flake lock`. Phase 0's exit criteria are met; ✅ waits for the user to accept.
 Blocked on: nothing.
