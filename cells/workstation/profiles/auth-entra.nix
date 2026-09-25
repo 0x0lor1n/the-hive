@@ -526,12 +526,15 @@ in {
   # file) -- the per-user file would have to live in each --user-data-dir
   # (~/.config/o365-profiles/<app>), not in ~/.config/teams-for-linux.
   # Drop this once the o365 wrapper learns the new keys.
+  # followSystemTheme: flat key, 2.17.1 does not read `appearance.*` yet. Teams
+  # only (its own dark from the portal colour-scheme); other o365 apps ignore it.
   environment.etc = lib.mkIf (globals.entra.user.upn != null) {
     "teams-for-linux/config.json".text = builtins.toJSON {
       auth.intune = {
         enabled = true;
         user = globals.entra.user.upn;
       };
+      followSystemTheme = true;
     };
   };
 
