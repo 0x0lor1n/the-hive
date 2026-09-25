@@ -25,6 +25,7 @@
     ./mpv
     ./music
     ./chat.nix
+    ./chat-themes.nix
     ./keepass.nix
     ./torrent.nix
     ./zathura.nix
