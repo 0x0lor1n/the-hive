@@ -171,6 +171,10 @@ in {
   # has no such input) ships the same binary the workstation shell does.
   agenix = inputs.agenix-rekey.packages.${pkgs.stdenv.hostPlatform.system}.default;
 
+  # Agent multiplexer: the TUI on tag 2 and herdr-server.service
+  # (layer-compositor.nix).
+  herdr = inputs.herdr.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
   # dwl with our config.h. dwl's Makefile copies config.def.h to config.h only
   # when the latter is absent, so dropping the file in is the whole override.
   # Keybinds and rationale live in packages/dwl/config.h.

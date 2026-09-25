@@ -421,5 +421,20 @@ in {
         ExecStart = "${pkgs.coreutils}/bin/true";
       };
     };
+
+    # herdr keeps agent panes alive across detach; default.target, not the
+    # graphical session, so they also survive MOD+Shift+Q and a dwl crash.
+    # Pane shells inherit this env: enableDefaultPath would swap the
+    # manager's PATH for coreutils+grep+sed.
+    systemd.user.services.herdr-server = {
+      description = "herdr server (agent sessions)";
+      wantedBy = ["default.target"];
+      enableDefaultPath = false;
+      serviceConfig = {
+        ExecStart = "${cell.packages.herdr}/bin/herdr server";
+        Restart = "on-failure";
+        RestartSec = "2";
+      };
+    };
   };
 }
