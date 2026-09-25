@@ -384,11 +384,16 @@ in {
     # Edge managed policy: Chromium-on-Linux never reads
     # ~/.config/microsoft-edge/policies, only the system dir. Force-installs
     # Dark Reader + Surfingkeys from the Edge Add-ons store for every account.
+    # Edge Add-ons ids, not Chrome Web Store ones: Dark Reader's CWS id
+    # (eimadpbc…) is unknownApplication there and silently never installs.
     environment.etc."opt/edge/policies/managed/extensions.json".text = builtins.toJSON {
       ExtensionInstallForcelist = map (id: "${id};https://edge.microsoft.com/extensionwebstorebase/v1/crx") [
-        "eimadpbcbfnmbkopoojfekhnkhdbieeh" # Dark Reader
+        "ifoakfbpdcdoeenechcleahebpibofpc" # Dark Reader
         "kgnghhfkloifoabeaobjkgagcecbnppg" # Surfingkeys
       ];
+      # Edge sync (extensions on) reinstalls the old CWS copy of Dark Reader
+      # from the account next to the forced one.
+      ExtensionInstallBlocklist = ["eimadpbcbfnmbkopoojfekhnkhdbieeh"];
     };
 
     # Known path for greetd's --cmd.
