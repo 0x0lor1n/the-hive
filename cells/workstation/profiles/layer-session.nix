@@ -127,10 +127,27 @@ in {
 
   fonts.packages = with pkgs; [
     nerd-fonts.jetbrains-mono
+    nerd-fonts.symbols-only
     inter
     noto-fonts
     noto-fonts-color-emoji
   ];
+
+  # Nerd Font icons live in the Private Use Area, and Firefox refuses system
+  # font fallback for PUA codepoints (gfxTextRun.cpp: "we only support such
+  # codepoints when used with an explicitly-specified font"). So any page whose
+  # font-family names a font we don't have (Consolas, Menlo, ...) renders the
+  # icons as tofu, while foot/Chromium are fine. The one hook Firefox gives us:
+  # it asks fontconfig to substitute "<family>, -moz-sentinel" and treats every
+  # family fontconfig inserts *before* the sentinel as explicitly named.
+  # Appending Symbols Nerd Font to every non-sentinel pattern lands it in that
+  # list; for everyone else it's just a symbols font at the tail of fallback.
+  fonts.fontconfig.localConf = ''
+    <match target="pattern">
+      <test name="family" compare="not_eq"><string>-moz-sentinel</string></test>
+      <edit name="family" mode="append"><string>Symbols Nerd Font</string></edit>
+    </match>
+  '';
 
   # Only the PAM file; HM configures swaylock itself (programs.swaylock).
   security.pam.services.swaylock = {};
