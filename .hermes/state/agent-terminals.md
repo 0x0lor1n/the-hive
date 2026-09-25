@@ -22,6 +22,7 @@ Invariants:
 Autonomy: safe
 0.1 Pin herdr: `git ls-remote --tags https://github.com/herdrdev/herdr | tail -5` → pick the latest `v0.x.y`; `nix build github:herdrdev/herdr/<tag> --print-out-paths` on elster. Record tag + store path here.
     Kill-switch: if the flake does not build on nixpkgs `34ab9907` (see `cells/workstation/flake.nix` line 9) and cannot be overridden via `inputs.nixpkgs.follows`, stop; fallback below.
+    DONE 2026-09: tag `v0.9.1` (rev `065ef9d6a531c49fb8bee7e818ef837065b21ee9`, latest by `sort -V`). Flake inputs: `nixpkgs`, `rust-overlay` (its nixpkgs follows herdr's). Own lock: `/nix/store/vmgh0yp88y87waiv77ijl5m9yvky0x46-herdr-0.9.1`. With `--override-input nixpkgs github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9`: `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` (only `stdenv.isLinux/isDarwin` deprecation warnings) → `follows` works, kill-switch NOT fired. Binary: `bin/herdr`. Attr: `packages.<system>.default` (what `nix build github:…` resolves to).
 0.2 CLI surface: `<store>/bin/herdr --help`, `herdr server --help`, `herdr attach --help` (or whatever the TUI-attach verb is). Write the exact verbs for (a) start server in foreground for systemd, (b) attach TUI to running server, (c) socket/state dir env var into `Naming:`.
 0.3 `cat ~/.hermes/cache/web/herdr.dev-63cccd5320.md | grep -n -i 'socket\|XDG\|state dir'` → confirm where the server keeps session state, so `herdr-server.service` can be given the right `Environment=`/`ConditionPathExists=`.
 0.4 `grep -n 'noto-fonts-color-emoji' cells/workstation/home/default.nix` == hit (bar font can render 🧑🤖). If not, add to `To do` of Phase 2.
@@ -53,6 +54,10 @@ Phase 0 kill-switch fires → skip herdr entirely: tag 2 gets `foot --app-id foo
 
 ## Progress
 - 2026-09: plan written. Decided in chat: foot is the only terminal; tmux = personal multiplexer, herdr = agent multiplexer; one foot per tag, splits live inside the multiplexer; `Super+Return` stays a plain throwaway foot. Nothing built yet.
+- 2026-09: 0.1 done — herdr v0.9.1 builds on elster, also with nixpkgs overridden to our pin; kill-switch not fired, fallback not needed.
 
-Next: Phase 0.1 — `git ls-remote --tags https://github.com/herdrdev/herdr | tail -5` then `nix build github:herdrdev/herdr/<tag>` on elster (minutes). Then 0.2 → 0.3 → 0.4 in the same session.
+## verified
+0.1: `nix build 'github:herdrdev/herdr/v0.9.1' --override-input nixpkgs 'github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9' --no-link --print-out-paths` -> `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1` @ 2026-09-25
+
+Next: Phase 0.2 — `/nix/store/gkryfp3177lfq0b997xv3plry9hia6ck-herdr-0.9.1/bin/herdr --help` + subcommand `--help`s; write verbs (a)(b)(c) into `Naming:`.
 Blocked on: nothing.
