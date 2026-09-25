@@ -182,6 +182,11 @@ in {
         # rule on it (2026-09-15: it was missing here, so `vpn up` under Entra
         # asked for an admin password).
         "networkmanager"
+        # Read-only journal. himmelblau's idmap uids fall in systemd's
+        # container range (uid_for_system_journal): journald writes them into
+        # system.journal, not a user-<uid>.journal with a per-user ACL, so
+        # without the group `journalctl --user` has nothing it may open.
+        "systemd-journal"
       ];
 
       # Software HSM with its AuthCode sealed to the TPM if present — pairs
