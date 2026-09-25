@@ -32,7 +32,7 @@ Inventory source: `.desktop` files in /run/current-system/sw, /etc/profiles/per-
 | Zathura | G | programs.zathura options from roles | themed (user OK 2026-09) | 5 |
 | mpv (OSD), umpv | G | osd-* + script-opts/osc.conf from roles | themed (user OK 2026-09) | 5 |
 | avizo (volume/brightness OSD) | G | config.ini from roles; callers pass -d (grey icons) | themed (user OK 2026-09) | 5 |
-| Firefox, Microsoft Edge | G | Dark Reader forced (built-in Kanagawa scheme); Fx chrome = userChrome.css from roles linked into every profile by HM activation (7.1b); Edge chrome = exception; own static theme impossible (signing) | awaiting user test (Fx chrome; Edge content = Dark Reader, 7.2 open) | 7 |
+| Firefox, Microsoft Edge | G | Dark Reader forced (built-in Kanagawa scheme); Fx chrome = userChrome.css from roles linked into every profile by HM activation (7.1b); Edge chrome = exception; own static theme impossible (signing) | Fx chrome themed (user OK 2026-09, incl. primary-button fix); Edge content = Dark Reader, 7.2 open | 7 |
 | o365 PWAs (Teams, Outlook, Word, Excel, PowerPoint, OneNote, OneDrive, SharePoint) | G | NOT Edge: rust_o365 wraps teams-for-linux 2.17.1 (Electron), profiles in ~/.config/o365-profiles | wrong (web apps' own theme; not opened: would load the signed-in mailbox) | 7 |
 | Slack, Telegram (nixpak) | G | own in-app themes | Slack partial (user screenshot 2026-09: own dark #1a1d21 + catppuccin mauve #cba6f7 selection); Telegram wrong (not screenshotted) | 7 |
 | Mattermost | G | Electron, own theme | wrong (0.2: light default) | 7 |
@@ -305,6 +305,8 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 
 - 2026-09: 7.1a measured: Firefox System theme takes only the tabstrip from GTK (#2a2a37); toolbar/urlbar are its own blends (#414148/#2d2d32) → decision 7.1b.
 - 2026-09: Horizon revert rebuilt by the user; xdg-gm/gtk-3.0 is empty. 7.1b (b) landed: userChrome.css from roles via activation; verified headless. Firefox chrome → awaiting user test (batched in 7.7).
+- 2026-09: out of scope, found while here: /etc/firefox/phoenix.cfg pointed at `programs.firefox.package` (no autoConfig appended) → none of our prefs loaded, Phoenix sanitize-on-shutdown wiped tabs/history; fixed to `finalPackage` (e908f3a). User reported primary buttons in chrome popups (translation) unreadable: white text on the new #7e9cd8 accent → button-*-primary tokens from roles (eafc6fb).
+- 2026-09: user rebuilt and accepted Firefox chrome + session restore ("всем доволен"). 7.1 ✅.
 
 Next: 7.4 — o365 `followSystemTheme` (check flat vs `appearance.*` key in 2.17.1 app.asar).
-Blocked on: elster drvPath eval + rebuild for 7.1b (user, TPM).
+Blocked on: nothing.
