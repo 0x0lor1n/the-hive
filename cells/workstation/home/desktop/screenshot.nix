@@ -31,7 +31,7 @@
       [theme.roles.bg theme.roles.focus]
       (builtins.readFile ./takeshot.sh);
   };
-  k = theme.colors;
+  k = theme.roles;
 in {
   # satty also on PATH for `satty -f some.png` by hand.
   home.packages = [takeshot pkgs.satty];
@@ -47,11 +47,11 @@ in {
     };
     color-palette = {
       palette = [
-        "#${k.autumnRed}"
-        "#${k.springGreen}"
-        "#${k.crystalBlue}"
-        "#${k.fujiWhite}"
-        "#${k.sumiInk3}"
+        "#${k.urgent}"
+        "#${k.accent}"
+        "#${k.focus}"
+        "#${k.fg}"
+        "#${k.bg}"
       ];
     };
   };

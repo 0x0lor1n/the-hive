@@ -16,7 +16,6 @@
   theme,
   ...
 }: let
-  k = theme.colors;
   r = theme.roles;
 
   # `<field>` file written by dwl-status: per output (waybar exports
@@ -288,7 +287,7 @@ in {
       #network.disconnected { color: #${r.urgent}; }
       #battery.warning { color: #${r.highlight}; }
       #battery.critical:not(.charging) { color: #${r.urgent}; }
-      #clock { color: #${k.fujiWhite}; }
+      #clock { color: #${r.fg}; }
       #tray > .passive { -gtk-icon-effect: dim; }
       #tray > .needs-attention { -gtk-icon-effect: highlight; }
       tooltip { background: #${r.bgAlt}; border: 2px solid #${r.focus}; }
