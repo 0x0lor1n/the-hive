@@ -24,6 +24,7 @@
   pkgs,
   lib,
   agentPkgs,
+  theme,
   ...
 }: let
   skills = import ./agents/skills.nix {inherit lib;};
@@ -113,6 +114,96 @@
       repo = "anthropics/claude-plugins-official";
     };
     alwaysThinkingEnabled = true;
+    # Beats the `theme` that /theme writes to ~/.claude.json.
+    theme = "custom:kanagawa";
+  };
+
+  # ~/.claude/themes/<slug>.json. Claude drops an override SILENTLY when the
+  # key is not in the `base` palette or the value does not parse, so the set
+  # below is exactly the 72 keys of 2.1.239's dark palette.
+  claudeTheme = let
+    r = theme.roles;
+    c = theme.colors;
+  in {
+    name = "Kanagawa";
+    base = "dark";
+    overrides = lib.mapAttrs (_: v: "#${v}") {
+      text = r.fg;
+      inverseText = r.bg;
+      inactive = r.muted;
+      inactiveShimmer = c.oldWhite;
+      subtle = c.sumiInk6;
+      promptBorder = c.sumiInk6;
+      promptBorderShimmer = r.muted;
+      suggestion = r.focus;
+      remember = r.focus;
+      permission = r.focus;
+      permissionShimmer = r.info;
+      claudeBlue_FOR_SYSTEM_SPINNER = r.focus;
+      claudeBlueShimmer_FOR_SYSTEM_SPINNER = r.info;
+      rate_limit_fill = r.focus;
+      rate_limit_empty = r.border;
+      ide = r.info;
+      professionalBlue = r.focus;
+      # A cyan accent (dialog titles), not the screen bg.
+      background = c.waveAqua2;
+      planMode = c.waveAqua1;
+      autoAccept = r.hover;
+      autoAcceptShimmer = c.oniViolet2;
+      skill = r.hover;
+      merged = r.hover;
+      effortUltra = r.hover;
+      bashBorder = c.sakuraPink;
+      claude = c.surimiOrange;
+      claudeShimmer = r.highlight;
+      clawd_body = c.surimiOrange;
+      clawd_background = r.bgDim;
+      briefLabelYou = r.info;
+      briefLabelClaude = c.surimiOrange;
+      fastMode = r.warning;
+      fastModeShimmer = r.highlight;
+      chromeYellow = r.highlight;
+      success = r.success;
+      error = r.urgent;
+      warning = r.warning;
+      warningShimmer = r.highlight;
+      # Line bgs (plain and dimmed variant).
+      diffAdded = r.diffAdd;
+      diffRemoved = r.diffDelete;
+      diffAddedDimmed = r.diffAdd;
+      diffRemovedDimmed = r.diffDelete;
+      # Word bg in diffs AND the fg of the +N/-N counts: must read both ways.
+      diffAddedWord = c.autumnGreen;
+      diffRemovedWord = r.urgent;
+      userMessageBackground = r.bgAlt;
+      userMessageBackgroundHover = r.border;
+      composerSidebarBackground = c.sumiInk1;
+      bashMessageBackgroundColor = r.bgAlt;
+      memoryBackgroundColor = c.waveBlue1;
+      selectionBg = r.selection;
+      red_FOR_SUBAGENTS_ONLY = c.waveRed;
+      blue_FOR_SUBAGENTS_ONLY = c.crystalBlue;
+      green_FOR_SUBAGENTS_ONLY = c.springGreen;
+      yellow_FOR_SUBAGENTS_ONLY = c.carpYellow;
+      purple_FOR_SUBAGENTS_ONLY = c.oniViolet;
+      orange_FOR_SUBAGENTS_ONLY = c.surimiOrange;
+      pink_FOR_SUBAGENTS_ONLY = c.sakuraPink;
+      cyan_FOR_SUBAGENTS_ONLY = c.waveAqua2;
+      rainbow_red = c.waveRed;
+      rainbow_orange = c.surimiOrange;
+      rainbow_yellow = c.carpYellow;
+      rainbow_green = c.springGreen;
+      rainbow_blue = c.springBlue;
+      rainbow_indigo = c.crystalBlue;
+      rainbow_violet = c.oniViolet;
+      rainbow_red_shimmer = c.peachRed;
+      rainbow_orange_shimmer = c.roninYellow;
+      rainbow_yellow_shimmer = c.oldWhite;
+      rainbow_green_shimmer = c.waveAqua2;
+      rainbow_blue_shimmer = c.lightBlue;
+      rainbow_indigo_shimmer = c.springBlue;
+      rainbow_violet_shimmer = c.oniViolet2;
+    };
   };
 
   opencodeConfig = {
@@ -142,6 +233,7 @@ in {
   home.file =
     {
       ".claude/settings.json".source = json.generate "claude-settings.json" claudeSettings;
+      ".claude/themes/kanagawa.json".source = json.generate "claude-theme-kanagawa.json" claudeTheme;
       ".claude/statusline.sh" = {
         source = ./agents/statusline.sh;
         executable = true;
