@@ -109,8 +109,9 @@ in {
       # command there under Entra ("dubious ownership"), which also kills the
       # rensa direnv hook (`git rev-parse --show-toplevel` -> "Not inside a
       # git repository"). /srv/workspace/* the same way for cross-owned
-      # checkouts. Trailing /* needs git >= 2.46 (pinned 2.55).
-      safe.directory = ["/srv/the-hive" "/srv/workspace/*"];
+      # checkouts, /srv/agents/* for the shared agent skill trees. Trailing /*
+      # needs git >= 2.46 (pinned 2.55).
+      safe.directory = ["/srv/the-hive" "/srv/workspace/*" "/srv/agents/*"];
     };
   };
 
