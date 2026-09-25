@@ -1,6 +1,6 @@
 # theme-coverage — every installed GUI/TUI on elster paints from cells/common/theme.nix (Kanagawa Wave), or is on a written exceptions list
 
-Status: PLANNING (2026-09). Owner: user; Claude = executor.
+Status: DONE (2026-09). Owner: user; Claude = executor.
 Prereq: the-hive at 0251f2f or later (palette in `cells/common/theme.nix`, read as `inputs.cells.common.theme`). User runs every rebuild; Claude only edits + evals.
 
 Target: each row of the Matrix below is `themed` (colours trace to `cells/common/theme.nix`), `inherits` (verified to pick up foot ANSI / GTK / Qt without its own config), or `exception` (with the reason). No row stays `?`. Stretch: desktop consumers read `theme.roles.*` only, never `theme.colors.*` (58 refs in 8 files today), so switching the palette is one file.
@@ -254,12 +254,13 @@ Decisions owed before 7.1 (ask one at a time at the start of the execution sessi
   - Grayjay: exception (no theme knob, CSS baked in; own dark #1b1b1b close to bg).
   Execution order: 7.6 Horizon → 7.1 Firefox measurement → 7.4 o365 followSystemTheme → 7.2 Edge Dark Reader persistence → generators (Slack, Mattermost, Telegram) → 7.7 user test.
 
-## Phase 8 — colors → roles (stretch) ⏳
+## Phase 8 — colors → roles (stretch) ✅
 8.1 Move the 58 `theme.colors` refs (via `k`/`c` aliases: default 6, bar 1, launcher 7, torrent 18, notify 3, screenshot 5, qt 4, lock 14) in home/default.nix and desktop/{bar,launcher,torrent,notify,screenshot,qt,lock}.nix onto roles.
   Audit 2026-09: 58 refs confirmed in those 8 files, but 10 of them have no role (default oldWhite ×2; qt sumiInk6/sumiInk1 ×2/oldWhite; torrent surimiOrange/waveRed/autumnGreen/dragonBlue/waveAqua2 ×4/peachRed). Outside the 8 files, phases 2-7 added ~150 more (agents 114, btop 19, bat 5, chat-themes 4, agent-proxy 6), about 2/3 of them non-role accents (syntax/rainbow/subagent colours). So "colors only in theme.nix" would need a second role layer (accent hues + syntax.*).
   Decision: clarify timed out, Claude took the narrow reversible option: move only refs whose hex == a role hex (drvPath unchanged by construction); non-role accents stay on `theme.colors`. Widening = new phase, if the user asks.
   8.1 DONE 2026-09 (narrow): 48 refs → roles in default (foot fg/bg/selection, new `r` alias), bar (#clock, `k` alias dropped), launcher/notify/lock/screenshot (`k = theme.roles`, all refs), torrent (9: success/info/highlight/hover). springGreen → `accent` in UI files, `success` in torrent states. Left on colors: the 10 above.
   verified 8.1: `nix eval` of theme.nix: all 13 colors→role pairs used are hex-equal -> true; `alejandra --check` on the 7 files -> 0; elster drvPath NOT evaluated (age-plugin-tpm, cold TPM cache) — user compares HEAD~1 vs HEAD @ 2026-09.
+  verified 8.2: user eval elster drvPath 6c82a41 vs 453008c -> both 0fsna44kfqq70ngd0g4v1p6fqdvaqm1p-nixos-system-elster-26.11pre-git.drv (unchanged, no test needed); user looked anyway: clock fg, calendar tooltip, mako = palette @ 2026-09.
 8.2 User test only if drvPath changed: quick look at bar, launcher, lock screen, notifications, qBittorrent.
 Exit criteria (revised 2026-09, narrow scope): in the 8 files, every `theme.colors` ref left has no role with the same hex (the 10 listed); elster drvPath unchanged across the phase (or user accepted 8.2).
 
@@ -335,5 +336,7 @@ Phases after 1 are independent; stop anywhere and what is merged stays coherent.
 
 - 2026-09: 8.1 landed narrow (48 hex-equal refs → roles; 10 non-role accents stay on colors; ~150 newer refs in agents/btop/bat/chat/agent-proxy out of scope). drvPath comparison on the user.
 
-Next: 8.2 gate — user compares elster drvPath HEAD~1 vs HEAD; equal → Phase 8 ✅ and the plan is done.
+- 2026-09: 8.2 drvPath unchanged across Phase 8 (user eval). Phase 8 ✅, plan done. Open follow-up outside the plan: upstream PR for hermes' 6 base-only pt classes, then drop cells/repo/hermes-skin-pt-classes.patch.
+
+Next: nothing — plan complete.
 Blocked on: nothing.
