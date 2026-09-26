@@ -248,8 +248,9 @@
     ${pkgs.wl-clipboard}/bin/wl-paste --type text  --watch ${pkgs.cliphist}/bin/cliphist store &
     ${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store &
     # Pinned to tags 1/2 by app_id (packages/dwl/config.h rules[]). foot-tmux
-    # needs no command: foot's shell is sesh -> tmux. The server is already
-    # up via default.target; the start only covers a unit that failed.
+    # needs no command: foot's shell is sesh -> tmux. herdr-server is started
+    # here, after import-environment, so pane shells inherit WAYLAND_DISPLAY
+    # (agents read clipboard images via wl-paste). No-op on relogin.
     ${pkgs.foot}/bin/foot -a foot-tmux &
     ${pkgs.systemd}/bin/systemctl --user start herdr-server.service 2>/dev/null || true
     ${pkgs.foot}/bin/foot -a foot-herdr ${cell.packages.herdr}/bin/herdr &
@@ -438,8 +439,12 @@ in {
       };
     };
 
-    # herdr keeps agent panes alive across detach; default.target, not the
-    # graphical session, so they also survive MOD+Shift+Q and a dwl crash.
+    # herdr keeps agent panes alive across detach. Started by
+    # dwl-startup-with-bar, not wantedBy default.target: from default.target
+    # it came up before import-environment, every pane lacked WAYLAND_DISPLAY
+    # and agents could not read clipboard images (2026-09-27). No PartOf=
+    # graphical-session.target, so it still survives MOD+Shift+Q and a dwl
+    # crash.
     # Pane shells inherit this env: enableDefaultPath would swap the
     # manager's PATH for coreutils+grep+sed.
     # After=home-manager-entra: the server reads ~/.config/herdr/config.toml
@@ -447,11 +452,10 @@ in {
     # Entra account the link is (re)made by HM activation; racing it left
     # the server on the stale config and Ctrl+Shift+Enter fell through to
     # the pane as CSI-u `[13;6u` (2026-09-26). Local account: inert.
-    # ConditionUser=!@system: default.target also runs for greeter (uid 999,
-    # $HOME=/var/empty) — herdr looped on PermissionDenied 50x per boot.
+    # ConditionUser=!@system: greeter (uid 999, $HOME=/var/empty) made herdr
+    # loop on PermissionDenied 50x per boot.
     systemd.user.services.herdr-server = {
       description = "herdr server (agent sessions)";
-      wantedBy = ["default.target"];
       unitConfig = {
         After = ["home-manager-entra.service"];
         ConditionUser = "!@system";

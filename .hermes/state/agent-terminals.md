@@ -14,7 +14,7 @@ Invariants:
 - `nix eval --raw .#nixosConfigurations.elster.config.system.build.toplevel.drvPath` succeeds (user runs it when the TPM cache is cold).
 - `grep -c 'app_id' cells/workstation/packages/dwl/config.h` — rules for `foot-tmux` and `foot-herdr` are the ONLY rules with a non-zero tags mask besides the existing tag-9 mirror rule; nothing else is pinned to a tag.
 - Hard rule (no command form): tag 1 holds exactly one `foot-tmux` client, tag 2 exactly one `foot-herdr` client; all splitting happens inside tmux / herdr, never by tiling a second foot on those tags. `Super+Return` foots are never given a tags mask.
-- `herdr-server.service` is `WantedBy=default.target`, NOT `graphical-session.target`: agent sessions must survive `MOD+Shift+Q` and a compositor crash.
+- `herdr-server.service` is NOT `PartOf`/`WantedBy` `graphical-session.target`: agent sessions must survive `MOD+Shift+Q` and a compositor crash. Since 2026-09-27 it is started by `dwl-startup-with-bar` after `import-environment` (no `wantedBy`), not by `default.target`: from `default.target` it came up before `WAYLAND_DISPLAY` existed and every pane lacked it, so agents could not read clipboard images.
 - `cells/deck/homeModules/tmux.nix` is byte-identical to 6a0c14b until Phase 3 (`git diff 6a0c14b -- cells/deck/homeModules/tmux.nix` == empty).
 - One phase = one Conventional Commit with why-body + Co-Authored-By: Claude; nothing pushed by Claude.
 - User acceptance gate: a phase flips to ✅ only after the USER has tested it on the rebuilt elster and said so. Claude's evals are not acceptance.
