@@ -442,9 +442,20 @@ in {
     # graphical session, so they also survive MOD+Shift+Q and a dwl crash.
     # Pane shells inherit this env: enableDefaultPath would swap the
     # manager's PATH for coreutils+grep+sed.
+    # After=home-manager-entra: the server reads ~/.config/herdr/config.toml
+    # once at start and publishes keys.command to the TUI from that. On the
+    # Entra account the link is (re)made by HM activation; racing it left
+    # the server on the stale config and Ctrl+Shift+Enter fell through to
+    # the pane as CSI-u `[13;6u` (2026-09-26). Local account: inert.
+    # ConditionUser=!@system: default.target also runs for greeter (uid 999,
+    # $HOME=/var/empty) — herdr looped on PermissionDenied 50x per boot.
     systemd.user.services.herdr-server = {
       description = "herdr server (agent sessions)";
       wantedBy = ["default.target"];
+      unitConfig = {
+        After = ["home-manager-entra.service"];
+        ConditionUser = "!@system";
+      };
       enableDefaultPath = false;
       serviceConfig = {
         ExecStart = "${cell.packages.herdr}/bin/herdr server";
