@@ -229,9 +229,11 @@ in {
 
   # Per-user: every login (local user over ssh/greetd, Entra user on seat0)
   # gets model.* pointed at the proxy. Idempotent, so a no-op on later logins.
+  # !@system: greeter (uid 999, HOME=/var/empty) also reaches default.target.
   systemd.user.services.hermes-seed-proxy = {
     description = "Point ~/.hermes/config.yaml at the pxpipe proxy, enable the rtk plugin, link shared skills/memories";
     wantedBy = ["default.target"];
+    unitConfig.ConditionUser = "!@system";
     path = [pkgs.coreutils pkgs.gnugrep pkgs.gnused];
     serviceConfig = {
       Type = "oneshot";
