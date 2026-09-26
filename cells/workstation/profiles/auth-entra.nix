@@ -340,6 +340,9 @@ in {
       (entraHome ".config/qBittorrent")
       (entraHome ".local/share/qBittorrent")
       (entraHome ".local/share/Grayjay")
+      # herdr session.json + agent-detection cache -- see layer-users-local.nix.
+      (entraHome ".config/herdr")
+      (entraHome ".local/state/herdr")
     ];
 
   # HISTFILE into the persisted dir instead of persisting ~/.bash_history
