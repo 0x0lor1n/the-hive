@@ -123,6 +123,14 @@
       # home/desktop/torrent.nix: settings, resume data (BT_backup).
       ".config/qBittorrent"
       ".local/share/qBittorrent"
+      # home/dev/agents.nix: herdr keeps session.json (workspaces, cwds,
+      # agent names + native session ids) in .config/herdr, next to the
+      # config.toml symlink and the sockets. Without it every reboot starts
+      # with one empty workspace. resume_agents_on_restore is on by default,
+      # so hermes/claude/opencode panes come back with `--resume <id>`.
+      # .local/state/herdr: agent-detection cache, cheap to keep.
+      ".config/herdr"
+      ".local/state/herdr"
     ];
     files = [".bash_history"];
   };
