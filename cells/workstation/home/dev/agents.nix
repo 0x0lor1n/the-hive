@@ -318,9 +318,14 @@
             command -v zoxide >/dev/null && zoxide query -l; } | awk 'NF && !s[$0]++' \
           | fuzzel --dmenu --prompt "$kind in > " --lines 12) || exit 0
     [ -d "$cwd" ] || exit 1
-    # Agent names are global; several agents per dir is the normal case
-    # (hermes + claude on the same repo), so suffix on collision.
-    base="$(basename "$cwd")-$kind"
+    # Agent names are global and must match [a-z][a-z0-9_-]{0,31} (herdr
+    # src/app/agents.rs valid_agent_name), so "Parallax" -> "parallax" and
+    # the dir part is capped so "-$kind-N" always fits. Several agents per
+    # dir is the normal case (hermes + claude on the same repo), so suffix
+    # on collision.
+    dir=$(basename "$cwd" | tr '[:upper:]' '[:lower:]' | tr -c 'a-z0-9_\n-' '-' \
+          | sed 's/^[^a-z]*//; s/-*$//' | cut -c1-20)
+    base="''${dir:-agent}-$kind"
     taken=$(herdr agent list | jq -r '.result.agents[].name // empty')
     name=$base; n=2
     while printf '%s\n' "$taken" | grep -qx "$name"; do name="$base-$n"; n=$((n + 1)); done
@@ -331,9 +336,40 @@
     out=$(herdr agent start "$name" --kind "$kind" --pane "$pane" 2>&1) && exit 0
     code=$(printf '%s' "$out" | jq -r '.error.code // empty' 2>/dev/null || true)
     [ "$code" = agent_not_ready ] && exit 0
-    printf '%s\n' "$out" >&2
+    # herdr runs this with stderr on /dev/null, so the toast is the only
+    # place the error can surface.
+    herdr notification show "spawn $kind failed" \
+      --body "$(printf '%s' "$out" | jq -r '.error.message // .' 2>/dev/null || printf '%s' "$out")" \
+      >/dev/null 2>&1 || true
     herdr workspace close "$(printf '%s' "$pane" | cut -d: -f1)" >/dev/null 2>&1 || true
     exit 1
+  '';
+
+  # Mirror of spawn: fuzzel over every workspace with its agent status; pick
+  # one to close, or the sweep row to close every workspace that has no
+  # agent in it (plain shells left behind). Agent workspaces are only ever
+  # closed one at a time, by name.
+  herdrKillAgent = pkgs.writeShellScriptBin "herdr-kill-agent" ''
+    set -eu
+    PATH=${lib.makeBinPath [pkgs.jq pkgs.fuzzel pkgs.coreutils pkgs.gawk pkgs.gnugrep pkgs.gnused pkgs.systemd]}:$PATH
+    [ -n "''${WAYLAND_DISPLAY:-}" ] \
+      || export WAYLAND_DISPLAY="$(systemctl --user show-environment | sed -n 's/^WAYLAND_DISPLAY=//p')"
+    with_agent=$(herdr agent list | jq -r '[.result.agents[].workspace_id] | unique | join(" ")')
+    # id<TAB>agent?<TAB>label: id first so the pick maps back without parsing.
+    rows=$(herdr workspace list | jq -r --arg a " $with_agent " '
+      .result.workspaces[]
+      | .workspace_id as $id | ($a | contains(" \($id) ")) as $has
+      | "\($id)\t\($has)\t\(.number)  \(.label)  [\(if $has then .agent_status else "no agent" end)]\(if .focused then "  *" else "" end)"')
+    [ -n "$rows" ] || exit 0
+    empty=$(printf '%s\n' "$rows" | awk -F'\t' '$2 == "false"' | wc -l)
+    choice=$( { [ "$empty" -gt 0 ] && printf '✕ close %s workspaces without an agent\n' "$empty"
+                printf '%s\n' "$rows" | cut -f3; } \
+      | fuzzel --dmenu --prompt 'kill > ' --lines 14) || exit 0
+    case $choice in
+      "✕ "*) ids=$(printf '%s\n' "$rows" | awk -F'\t' '$2 == "false" {print $1}') ;;
+      *) ids=$(printf '%s\n' "$rows" | awk -F'\t' -v c="$choice" '$3 == c {print $1}') ;;
+    esac
+    for id in $ids; do herdr workspace close "$id" >/dev/null 2>&1 || true; done
   '';
 
   # herdr UI on the repo palette. panel_bg/sidebar_bg unset = foot's bg.
@@ -372,6 +408,12 @@
           type = "shell";
           command = "${herdrSpawnAgent}/bin/herdr-spawn-agent";
           description = "spawn agent (fuzzel: kind, cwd)";
+        }
+        {
+          key = "ctrl+shift+backspace";
+          type = "shell";
+          command = "${herdrKillAgent}/bin/herdr-kill-agent";
+          description = "kill agent (fuzzel: pick one, or sweep all idle)";
         }
       ];
     };
