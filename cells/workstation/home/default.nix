@@ -173,6 +173,8 @@ in {
         "\\x1b[13;2u" = "Shift+Return";
         "\\x1b[13;5u" = "Control+Return";
         "\\x1b[13;6u" = "Control+Shift+Return Super+Shift+Return";
+        # Inverse of the spawn chord: herdr binds it to the kill picker.
+        "\\x1b[127;6u" = "Control+Shift+BackSpace";
       };
       # Palette from common/theme.nix (foot uses rrggbb, no #); the 16 ANSI slots
       # come from theme.ansi, same list the VT console uses.
