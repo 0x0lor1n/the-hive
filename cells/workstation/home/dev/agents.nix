@@ -302,9 +302,15 @@
   # first cwd row is the focused pane's dir so Enter-Enter clones "this
   # agent, here". Reads HERDR_ACTIVE_PANE_CWD when run from a herdr
   # keys.command, else asks the socket for the focused pane.
+  # keys.command runs in herdr-server's env (default.target, no
+  # WAYLAND_DISPLAY), so fuzzel died on "no compositor" and the chord looked
+  # dead (2026-09-26). Take the display from the user manager, where
+  # dwl-session imports it, so it also tracks a compositor restart.
   herdrSpawnAgent = pkgs.writeShellScriptBin "herdr-spawn-agent" ''
     set -eu
-    PATH=${lib.makeBinPath [pkgs.jq pkgs.fuzzel pkgs.coreutils pkgs.gawk pkgs.gnugrep]}:$PATH
+    PATH=${lib.makeBinPath [pkgs.jq pkgs.fuzzel pkgs.coreutils pkgs.gawk pkgs.gnugrep pkgs.gnused pkgs.systemd]}:$PATH
+    [ -n "''${WAYLAND_DISPLAY:-}" ] \
+      || export WAYLAND_DISPLAY="$(systemctl --user show-environment | sed -n 's/^WAYLAND_DISPLAY=//p')"
     cur=''${HERDR_ACTIVE_PANE_CWD:-}
     [ -n "$cur" ] || cur=$(herdr pane list | jq -r '.result.panes[] | select(.focused) | .cwd')
     kind=$(printf 'hermes\nclaude\nopencode\n' | fuzzel --dmenu --prompt 'agent > ' --lines 3) || exit 0
