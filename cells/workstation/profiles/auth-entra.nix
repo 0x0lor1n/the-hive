@@ -168,10 +168,13 @@ in {
       # employer. Any user in these domains may log in (no group filter yet).
       domain = globals.entra.domains;
 
-      # No wheel: the Entra account is the desktop plane only. sudo, polkit
-      # admin, nix trusted-users and the TPM (himmelblaud group) stay with the
-      # local user, who holds the repo checkout and runs unlock-secrets.
+      # No wheel: sudo, polkit admin and nix trusted-users stay with the local
+      # user, who holds the repo checkout and runs unlock-secrets.
       local_groups = [
+        # /dev/tpmrm0 (udev rule below): PIN-less age-plugin-tpm identities
+        # for secrets committed to work repos. Host agenix identities keep
+        # their PIN, so this does not open the-hive's secrets.
+        "himmelblaud"
         "video"
         "audio"
         "input"
