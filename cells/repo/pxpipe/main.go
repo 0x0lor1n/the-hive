@@ -12,6 +12,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	pxpipe "github.com/evan-choi/pxpipe-go"
 )
@@ -49,8 +50,17 @@ func main() {
 		pxpipe.SetAllowedModelBases([]string{"claude-fable-5", "claude-fable-5-1"})
 	}
 
+	// A VPN up/down re-routes the pooled HTTP/2 connection without a RST, so
+	// it hangs until the agent's 240s stale timer. Pings drop it in ~25s.
+	transport := http.DefaultTransport.(*http.Transport).Clone()
+	transport.HTTP2 = &http.HTTP2Config{
+		SendPingTimeout: 15 * time.Second,
+		PingTimeout:     10 * time.Second,
+	}
+
 	handler := pxpipe.NewHandler(pxpipe.HandlerOptions{
 		AnthropicUpstream: upstream,
+		Transport:         transport,
 		ProtocolOf: func(path string) pxpipe.Protocol {
 			return pxpipe.DefaultProtocolOf(strings.TrimPrefix(path, "/anthropic"))
 		},
