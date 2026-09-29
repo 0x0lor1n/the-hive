@@ -1,6 +1,6 @@
-# powermenu / calcmenu / wifimenu: fuzzel --dmenu menus (our launcher,
-# home/desktop/launcher.nix). Bound in packages/dwl/config.h to Super+Esc,
-# Super+C, Super+Alt+W.
+# powermenu / calcmenu / wifimenu / vpnmenu: fuzzel --dmenu menus (our
+# launcher, home/desktop/launcher.nix). Bound in packages/dwl/config.h to
+# Super+Esc, Super+C, Super+Alt+W, Super+Alt+V.
 #
 # powermenu: no uwsm here, so Logout kills the compositor -- dwl-session
 # (layer-compositor.nix) then stops graphical-session.target and greetd
@@ -162,6 +162,32 @@
       fi
     '';
   };
+  # vpnmenu: fuzzel over `vpn status` (profiles/vpn.nix); Enter flips the
+  # picked tunnel. openvpn units count as started before the MFA push is
+  # approved, so "up" means the unit, not the tunnel.
+  vpnmenu = pkgs.writeShellApplication {
+    name = "vpnmenu";
+    runtimeInputs = with pkgs; [fuzzel libnotify gawk procps coreutils];
+    text = ''
+      notify() { notify-send -a vpnmenu "$@"; }
+      command -v vpn >/dev/null || { notify "vpn" "no vpn command on this host"; exit 1; }
+
+      # Non-blank marker for inactive too: `read` below splits on it.
+      menu="$(vpn status | awk '{ printf "%s  %s  %s\n", ($2 == "active" ? "󰖂" : "·"), $1, $2 }')"
+      selected="$(printf '%s\n' "$menu" | fuzzel --dmenu --prompt 'vpn: ' --lines "$(wc -l <<< "$menu")" --width 28)" || exit 0
+      [ -n "$selected" ] || exit 0
+
+      read -r _ name state <<< "$selected"
+      [ "$state" = "active" ] && action=down || action=up
+      if out="$(vpn "$action" "$name" 2>&1)"; then
+        notify "vpn $name" "$action"
+      else
+        notify -u critical "vpn $name" "$action failed: $out"
+      fi
+      # SIGRTMIN+5: custom/vpn in bar.nix.
+      pkill -RTMIN+5 waybar || true
+    '';
+  };
 in {
-  home.packages = [powermenu calcmenu wifimenu];
+  home.packages = [powermenu calcmenu wifimenu vpnmenu];
 }

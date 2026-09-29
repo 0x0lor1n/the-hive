@@ -180,6 +180,7 @@ static const Key keys[] = {
 	{ MODKEY,                    XKB_KEY_Escape,      spawn,            SHCMD("powermenu") },
 	{ MODKEY,                    XKB_KEY_c,           spawn,            SHCMD("calcmenu") },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_w,           spawn,            SHCMD("wifimenu") },
+	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_v,           spawn,            SHCMD("vpnmenu") },
 	/* Super+Alt+T tmux (tag 1), Super+Alt+H herdr (tag 2), Super+Alt+F file manager */
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_t,           raiseorspawn,     {.v = &tmuxraise} },
 	{ MODKEY|WLR_MODIFIER_ALT,   XKB_KEY_h,           raiseorspawn,     {.v = &herdrraise} },

@@ -16,6 +16,7 @@
 | `Super + C` | калькулятор (fuzzel, результат в буфер) |
 | `Super + V` | история буфера (cliphist) |
 | `Super + Alt + W` | wifi-меню (nmcli через fuzzel) |
+| `Super + Alt + V` | vpn-меню: up/down туннеля (fuzzel) |
 | `Super + Esc` | меню питания |
 | `Super + L` | блокировка (swaylock) |
 
@@ -114,6 +115,7 @@ Open / Copy PNG. Файлы: `~/Pictures/Screenshots`, `~/Videos/Recordings`.
 | клик `REC` | остановить запись |
 | клик на колокольчик | toggle do-not-disturb (mako); ПКМ — закрыть все уведомления |
 | клик на wifi | wifi-меню |
+| клик на VPN | vpn-меню (модуль виден, только когда туннель поднят) |
 | клик на bluetooth | bluetui |
 | громкость: клик / ПКМ / скролл | mute / pwvucontrol / громкость |
 | яркость: скролл | яркость |
