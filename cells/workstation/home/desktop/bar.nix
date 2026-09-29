@@ -162,6 +162,8 @@ in {
         exec = vpnStatus;
         return-type = "json";
         interval = 10;
+        signal = 5;
+        on-click = "vpnmenu";
       };
       "custom/notifications" = {
         exec = makoStatus;
