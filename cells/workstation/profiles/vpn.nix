@@ -88,19 +88,29 @@ in
     };
 
     services.openvpn.servers = let
-      ovpn = name: pushedDns: {
+      ovpn = name: pushedDns: extra: {
         config = ''
           config ${config.age.secrets."vpn-${name}-ovpn".path}
           auth-user-pass ${config.age.secrets."vpn-${name}-auth".path}
+          ${extra}
         '';
         autoStart = false;
         updateResolvConf = pushedDns;
       };
     in {
-      t = ovpn "t" false;
+      # The server pushes its resolver as `dns server ...` (2.6 syntax), which
+      # update-resolv-conf does not see; restate it as dhcp-option so
+      # openresolv picks it up while the tunnel is up.
+      t = ovpn "t" true ''
+        dhcp-option DNS 10.109.0.2
+      '';
       # Split-horizon: the pushed resolver answers internal 10.x for hosts
       # whose public addresses are dead from inside the tunnel.
-      w = ovpn "w" true;
+      # redirect-gateway takes api.anthropic.com too, and it is unreachable
+      # through w (pxpipe 502s); send Anthropic's inbound /23 around it.
+      w = ovpn "w" true ''
+        route 160.79.104.0 255.255.254.0 net_gateway
+      '';
     };
 
     # AUTH_FAILED (MFA push not yet approved) exits 0; Restart=always turned
