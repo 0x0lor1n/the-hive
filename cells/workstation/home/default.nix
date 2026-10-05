@@ -22,9 +22,11 @@
   # (profiles/secrets.nix). {} when the file is absent, so a host without
   # secrets still evaluates.
   secrets ? {},
-  # The personal account: osint + tor (home/security). The Entra home gets
-  # neither -- the employer's desktop plane carries no bridges or recon kit.
+  # The personal account: osint (home/security). The Entra home does not
+  # get it -- the employer's desktop plane carries no recon kit.
   personal ? false,
+  # tor + obfs4 bridges + Tor Browser (home/security/tor.nix).
+  tor ? personal,
   # cells/deck/homeModules: the shell toolkit, shared by every account on
   # every workstation. Passed in, not imported: home/ has no `inputs`.
   deck ? {},
@@ -61,7 +63,11 @@ in {
   # nixpkgs is unstable, home-manager is release-25.05: intentional.
   home.enableNixpkgsReleaseCheck = false;
 
-  imports = [./desktop ./dev] ++ lib.optional personal ./security ++ builtins.attrValues deck;
+  imports =
+    [./desktop ./dev]
+    ++ lib.optional personal ./security
+    ++ lib.optional tor ./security/tor.nix
+    ++ builtins.attrValues deck;
 
   home.packages = extraPackages;
 

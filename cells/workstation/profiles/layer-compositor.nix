@@ -31,11 +31,12 @@
     git ? null,
     secrets ? {},
     personal ? false,
+    tor ? personal,
     startDir ? null,
     httpsHandler ? "firefox.desktop",
   }:
     import ../home {
-      inherit userName homeDir theme extraPackages git secrets personal startDir httpsHandler;
+      inherit userName homeDir theme extraPackages git secrets personal tor startDir httpsHandler;
       deck = inputs.cells.deck.homeModules;
       agentPkgs = {
         inherit (inputs.cells.repo.packages) claude-code opencode oh-my-opencode rtk;
@@ -67,6 +68,7 @@
           cell.packages.horizon-gm
         ];
         secrets = userSecrets "entra";
+        tor = true;
         # SharePoint/Word/Excel/PowerPoint links open in the o365 app, the
         # rest fall through to Firefox. Entra only: the local account has no
         # SSO and would get a login wall. See auth-entra.nix.
