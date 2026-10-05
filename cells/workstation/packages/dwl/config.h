@@ -7,7 +7,8 @@
  * Mod+Shift+D / Mod+Shift+L. Ported from wochap/nix-config dwl:
  * Super+Esc power menu, Super+C calc, Super+Alt+T terminal, Super+Alt+F
  * Thunar, Super+Alt+N notification mode, Super+R layout mode (modes patch,
- * packages/dwl/patches/modes-0.9.patch). */
+ * packages/dwl/patches/modes-0.9.patch). Ctrl+arrows = focusdir patch,
+ * passed through to tmux/herdr. */
 /* Taken from https://github.com/djpohly/dwl/issues/466 */
 #define COLOR(hex)    { ((hex >> 24) & 0xFF) / 255.0f, \
                         ((hex >> 16) & 0xFF) / 255.0f, \
@@ -158,6 +159,8 @@ static const char *const herdrcmd[] = { "foot", "-a", "foot-herdr", "herdr", NUL
 static const Raise herdrraise = { "foot-herdr", herdrcmd };
 static const char *const musiccmd[] = { "foot", "-a", "music", "rmpc", NULL };
 static const Raise musicraise = { "music", musiccmd };
+/* focusdir patch: Ctrl+arrows go to these instead (tmux/herdr own them) */
+static const char *const focusdir_passthrough[] = { "foot-tmux", "foot-herdr" };
 
 static const Key keys[] = {
 	/* modifier                  key                  function          argument */
@@ -203,6 +206,11 @@ static const Key keys[] = {
 	{ 0, XKB_KEY_XF86MonBrightnessDown, spawn, SHCMD("lightctl -d down") },
 	{ MODKEY,                    XKB_KEY_j,           focusstack,       {.i = +1} },
 	{ MODKEY,                    XKB_KEY_k,           focusstack,       {.i = -1} },
+	/* focusdir patch: Ctrl+arrows as in tmux, except inside tmux/herdr */
+	{ WLR_MODIFIER_CTRL,         XKB_KEY_Left,        focusdir,         {.i = WLR_DIRECTION_LEFT} },
+	{ WLR_MODIFIER_CTRL,         XKB_KEY_Right,       focusdir,         {.i = WLR_DIRECTION_RIGHT} },
+	{ WLR_MODIFIER_CTRL,         XKB_KEY_Up,          focusdir,         {.i = WLR_DIRECTION_UP} },
+	{ WLR_MODIFIER_CTRL,         XKB_KEY_Down,        focusdir,         {.i = WLR_DIRECTION_DOWN} },
 	/* movestack patch: swap the focused window up/down the stack */
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_j,           movestack,        {.i = +1} },
 	{ MODKEY|WLR_MODIFIER_SHIFT, XKB_KEY_k,           movestack,        {.i = -1} },
