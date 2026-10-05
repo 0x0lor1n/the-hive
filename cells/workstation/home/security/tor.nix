@@ -1,4 +1,5 @@
-# tor with obfs4 bridges. Personal-account only (see ./default.nix).
+# tor with obfs4 bridges, plus Tor Browser. Both accounts (home/default.nix
+# `tor`). Both torrcs bind 9050/9051: one tor-start at a time per host.
 #
 # A user-level torrc + tor-start/stop/status helpers rather than services.tor:
 # raised on demand, not a daemon on every boot, and the bridge list is the
