@@ -5,10 +5,10 @@
 #
 # docked:   only the 4K on, panel off -- the laptop lid stays closed on the
 #           desk, no point driving the panel through evdi's USB framebuffer.
-# work:     HP dock, two HP E27u G4 (QHD) over DP-MST, both portrait, side by
-#           side. MST connector numbers (DP-7/DP-10 today) are not stable
-#           across replugs, so these match on the EDID description
-#           ("<vendor> <model> <serial>") instead. Panel off, as at home.
+# work:     HP dock, one HP E27u G4 (QHD) over DP-MST, landscape. MST
+#           connector numbers are not stable across replugs, so it matches on
+#           the EDID description ("<vendor> <model> <serial>") instead.
+#           Panel off, as at home.
 # undocked: panel only.
 # Profiles match the exact output set, so pulling the dock cable flips back
 # to `undocked` automatically; kanshi is PartOf graphical-session.target and
@@ -39,16 +39,7 @@
             criteria = "HP Inc. HP E27u G4 CN423206D3";
             status = "enable";
             mode = "2560x1440@60Hz";
-            transform = "90";
             position = "0,0";
-          }
-          {
-            criteria = "HP Inc. HP E27u G4 CN423205ZS";
-            status = "enable";
-            mode = "2560x1440@60Hz";
-            # right panel is physically mounted the other way round
-            transform = "270";
-            position = "1440,0";
           }
           {
             criteria = "eDP-1";

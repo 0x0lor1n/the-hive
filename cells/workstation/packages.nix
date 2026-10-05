@@ -236,7 +236,7 @@ in {
         # (profiles/layer-compositor.nix) turns into the bar's mode badge.
         ./packages/dwl/patches/modes-0.9.patch
         # tile() follows the output shape: master|stack on landscape, master
-        # over stack on portrait (the work monitors). Also adds bstack as a
+        # over stack on portrait. Also adds bstack as a
         # standalone layout, so layout tracks the kanshi transform.
         ./packages/dwl/patches/autotile-0.8.patch
         # raiseorspawn(): focus the last-focused client with a given app_id
