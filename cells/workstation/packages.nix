@@ -243,6 +243,9 @@ in {
         # (switching to its tags/monitor), else spawn. Single-instance binds
         # in config.h (Super+Alt+T, Super+Alt+M).
         ./packages/dwl/patches/raiseorspawn-0.8.patch
+        # focusdir(): Ctrl+arrows move focus geometrically; skipped while
+        # foot-tmux/foot-herdr is focused (focusdir_passthrough in config.h).
+        ./packages/dwl/patches/focusdir.patch
       ];
     postPatch =
       (old.postPatch or "")
