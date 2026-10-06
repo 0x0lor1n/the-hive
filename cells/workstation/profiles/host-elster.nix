@@ -54,6 +54,10 @@
   # udev rules, the DisplayLinkManager service) is gated on that same
   # switch. dwl/wlroots picks the evdi DRM node up like any other card.
   services.xserver.videoDrivers = ["displaylink"];
+  # The monitor is on evdi, whose cursor plane DLM appears to drop updates
+  # for (the pointer vanishes until the next shape change). A software
+  # cursor is drawn into the frame, which DLM always ships.
+  session.compositorEnvironment.WLR_NO_HARDWARE_CURSORS = "1";
   # The nixpkgs unit orders after display-manager.service, which greetd does
   # not provide; anchor it on the seat instead so it comes up at boot.
   systemd.services.dlm = {
