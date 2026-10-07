@@ -107,6 +107,10 @@ in {
     # decides which remotes get which author. Only remotes this account holds
     # a key for are listed there, so alias, glob and key stay in lockstep.
     includes = sec.git.includes or [];
+    # Agent working state (`<repo>/.hermes/state/*.md`, see the stateful-*
+    # skills) is per-checkout scratch: never committed, in any repo. Global so
+    # a fresh clone needs no per-repo .gitignore line.
+    ignores = [".hermes/"];
     extraConfig = {
       init.defaultBranch = "main";
       pull.rebase = true;
