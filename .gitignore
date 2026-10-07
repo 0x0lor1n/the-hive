@@ -1,9 +1,6 @@
 .ren/
 .omc/
-# Hermes runtime state; project skills and task state are tracked.
-.hermes/*
-!.hermes/skills/
-!.hermes/state/
+.hermes/
 result
 result-*
 .direnv/

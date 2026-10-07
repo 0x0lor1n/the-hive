@@ -4,7 +4,7 @@
   # stock BIOS -> coreboot, ME neutered, own Secure Boot keys.
   # Tooling only: nothing here is read by cells/server or cells/workstation,
   # so a cell input cannot leak into a host's evaluation.
-  # Plan: .hermes/state/coreboot-5580.md
+  # Plan: hive-plans/wintermute/coreboot-5580.md
   inputs = {
     # Pinned upstream coreboot; the board port lives in-tree under
     # mainboard/dell/latitude_5580 once Phase 1 starts.
