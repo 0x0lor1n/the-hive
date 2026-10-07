@@ -2,7 +2,7 @@
 
 Source: `~/.hermes/cache/web/Dell-3520-LA-E152P-schematic.pdf`, sha256 `551d1fe5…1a9cb` (74 pages, Compal "Breckenridge 15 DSC (TBT)", Rev 1.0 (A00), 2016-11-10).
 Method: `pdftotext -layout` per page → title from `Title` field; where the title is drawn as an image (marked `[ocr]`) it was read with tesseract from a 400 dpi crop of the title block; `[vis]` = confirmed with vision on a crop. Key parts/nets are the most frequent refdes/net names on the page (text layer).
-Legend for `feeds`: **Px** = phase of `.hermes/state/schematic-e152p.md`; **CB-n** = step of `coreboot-5580.md`; **B-n** = backlog item.
+Legend for `feeds`: **Px** = phase of `hive-plans/wintermute/schematic-e152p.md`; **CB-n** = step of `coreboot-5580.md`; **B-n** = backlog item.
 
 ## Kill-switch (0.4) — PASSED
 | check | page | evidence |
