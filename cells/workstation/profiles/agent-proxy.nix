@@ -204,6 +204,15 @@ in {
     RTK_TELEMETRY_DISABLED = "1";
   };
 
+  # Model per workflow: hermes has no per-skill model hook, so routing is per
+  # invocation (-m applies to chat sessions too). System-level because the
+  # Entra account has no home-manager. htask = model.default.
+  environment.shellAliases = {
+    hplan = "hermes -m claude-fable-5-1";
+    htask = "hermes";
+    hstatus = "hermes -m claude-haiku-5-5";
+  };
+
   systemd.services.pxpipe = {
     description = "pxpipe: Anthropic loopback proxy";
     wantedBy = ["multi-user.target"];
