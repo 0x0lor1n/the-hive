@@ -136,11 +136,9 @@ in
         # /srv/workspace: shared project clones, work/ and projects/ inside
         # (profiles/srv-workspace.nix).
         #
-        # On an already installed host disko does not create these: add here
-        # for reproducibility AND run once by hand
-        #   zfs create -o canmount=off -o mountpoint=none rpool/safe/srv
-        #   zfs create -o mountpoint=legacy rpool/safe/srv/the-hive
-        #   zfs create -o mountpoint=legacy rpool/safe/srv/workspace
+        # On an already installed host disko does not create these;
+        # zfs-ensure-datasets (profiles/storage-zfs.nix) creates whatever is
+        # missing at boot, before local-fs-pre.target.
         "safe/srv" = {
           type = "zfs_fs";
           options = {
