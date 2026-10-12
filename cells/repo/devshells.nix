@@ -202,9 +202,7 @@ in {
       inputs.colmena.packages.${pkgs.stdenv.hostPlatform.system}.colmena
 
       pkgs.nixos-anywhere
-      # Workstation secrets (generated/ + rekeyed/<host>). agenix-rekey is a
-      # workstation-cell input; that cell re-exports the CLI.
-      inputs.cells.workstation.packages.agenix
+      cell.packages.agenix
       deploy-key
       unlock-secrets
       agents-bump
@@ -269,7 +267,7 @@ in {
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
       echo "  unlock-secrets  decrypt globals.nix.age + secrets/user-*.nix.age with this host's TPM (PIN); eval prompts itself when it has a tty"
-      echo "  agenix edit|generate|rekey|view   workstation secrets (generated/ + rekeyed/<host>)"
+      echo "  agenix edit|generate|rekey|view   host secrets (generated/ + rekeyed/<host>)"
       echo "  agents-bump     bump hermes/claude/opencode/herdr, check, snapshot hermes state; prints the switch"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
       echo "  rtk <cmd>        compact git/ls/…; agents get nixq as nix (NIXQ=off to bypass)"
