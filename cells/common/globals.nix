@@ -78,6 +78,13 @@ in let
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN0MnzHtFzfGdAKGxda4bXNWCR9Kg+8ybwW8+6Lq/dvB root@elster";
             };
 
+            # Router. Disk by-id + root hash in the encrypted half;
+            # host key in secrets/hosts/minas-tirith/, as penrose.
+            hosts.minas-tirith = {
+              hasTpm = true; # Intel PTT
+              sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMDuTHwkZsXZn+hhkR0Bop26pZjevyEIlKl3PZhlhkMC root@minas-tirith";
+            };
+
             persistence = {
               statePath = "/persist/state";
               dataPath = "/persist/data";
