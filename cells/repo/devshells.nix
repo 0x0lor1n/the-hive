@@ -123,6 +123,65 @@
     runtimeInputs = with pkgs; [git direnv coreutils];
     text = builtins.readFile "${inputs.self.outPath}/nix/dev.sh";
   };
+
+  # Moves llm-agents (hermes, claude, opencode) to numtide's main and herdr to
+  # its newest tag, builds agents-check and this host's toplevel, shows the
+  # nvd diff. Green: snapshots persist + srv/agents (hermes state, shared
+  # skills/memories) and prints the switch; red: restores the four files.
+  # Restore hermes after a bad bump, then roll the generation back:
+  #   rsync -a --delete /persist/.zfs/snapshot/pre-agents-<ts>/home/<user>/.hermes/ ~/.hermes/
+  #   rsync -a --delete /srv/agents/.zfs/snapshot/pre-agents-<ts>/ /srv/agents/
+  agents-bump = pkgs.writeShellApplication {
+    name = "agents-bump";
+    # No `nix`: the shell's pkgs.nix must stay first on PATH (nix-plugins).
+    runtimeInputs = with pkgs; [git coreutils gnused gnugrep nvd hostname];
+    text = ''
+      root=$(git rev-parse --show-toplevel)
+      host=$(hostname)
+      files=(cells/repo/flake.nix cells/repo/flake.lock cells/workstation/flake.nix cells/workstation/flake.lock)
+      if ! git -C "$root" diff --quiet HEAD -- "''${files[@]}"; then
+        echo "agents-bump: uncommitted changes in ''${files[*]}; commit or stash first." >&2
+        exit 1
+      fi
+      restore() { git -C "$root" checkout HEAD -- "''${files[@]}"; }
+      trap 'echo "agents-bump: failed, inputs restored, no snapshot." >&2; restore' ERR
+
+      rev=$(git ls-remote https://github.com/numtide/llm-agents.nix refs/heads/main | cut -f1)
+      tag=$(git ls-remote --tags --refs https://github.com/herdrdev/herdr 'v*' | sed 's|.*/||' | sort -V | tail -1)
+      sed -i "s|numtide/llm-agents.nix/[0-9a-f]\{40\}\"|numtide/llm-agents.nix/$rev\"|" "$root/cells/repo/flake.nix"
+      sed -i "s|herdrdev/herdr/v[0-9.]*\"|herdrdev/herdr/$tag\"|" "$root/cells/workstation/flake.nix"
+      nix flake update llm-agents --flake "$root/cells/repo"
+      nix flake update herdr --flake "$root/cells/workstation"
+      if git -C "$root" diff --quiet HEAD -- "''${files[@]}"; then
+        echo "agents-bump: already at llm-agents $rev, herdr $tag."
+        exit 0
+      fi
+
+      nix build --no-link -L "$root#x86_64-linux.workstation.packages.agents-check"
+      top=$(nix build --no-link --print-out-paths "$root#nixosConfigurations.$host.config.system.build.toplevel")
+      nvd diff /run/current-system "$top"
+      trap - ERR
+
+      ts=$(date +%Y%m%d-%H%M%S)
+      datasets=()
+      for ds in rpool/safe/persist rpool/safe/srv/agents; do
+        zfs list -H -o name "$ds" >/dev/null 2>&1 && datasets+=("$ds@pre-agents-$ts")
+      done
+      sudo zfs snapshot "''${datasets[@]}"
+      for snap in "''${datasets[@]}"; do
+        # Keep the five newest pre-agents-* per dataset.
+        zfs list -H -t snapshot -o name -s creation -d 1 "''${snap%@*}" \
+          | grep '@pre-agents-' | head -n -5 \
+          | while read -r old; do sudo zfs destroy "$old"; done
+      done
+
+      echo
+      echo "agents-bump: snapshot pre-agents-$ts on ''${datasets[*]%@*}"
+      echo "  llm-agents $rev, herdr $tag; commit ''${files[*]} after the switch."
+      echo "  sudo nix-env -p /nix/var/nix/profiles/system --set $top"
+      echo "  sudo $top/bin/switch-to-configuration switch"
+    '';
+  };
 in {
   # rensa devshell module, not pkgs.mkShell: the lefthook module needs
   # enterShellCommands to (re)install git hooks on every shell entry.
@@ -148,6 +207,7 @@ in {
       inputs.cells.workstation.packages.agenix
       deploy-key
       unlock-secrets
+      agents-bump
       dev
       cell.packages.rtk
       pkgs.direnv
@@ -210,6 +270,7 @@ in {
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
       echo "  unlock-secrets  decrypt globals.nix.age + secrets/user-*.nix.age with this host's TPM (PIN); eval prompts itself when it has a tty"
       echo "  agenix edit|generate|rekey|view   workstation secrets (generated/ + rekeyed/<host>)"
+      echo "  agents-bump     bump hermes/claude/opencode/herdr, check, snapshot hermes state; prints the switch"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
       echo "  rtk <cmd>        compact git/ls/…; agents get nixq as nix (NIXQ=off to bypass)"
       echo "  treefmt         alejandra + deadnix + gofumpt + shfmt; runs on pre-commit (LEFTHOOK=0 to skip)"

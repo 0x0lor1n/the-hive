@@ -61,7 +61,7 @@
     spicetify.inputs.nixpkgs.follows = "nixpkgs";
     # Agent multiplexer (tag 2 terminal). Its rust-overlay follows herdr's
     # nixpkgs, so this one follows covers the toolchain too.
-    herdr.url = "github:herdrdev/herdr/v0.9.1";
+    herdr.url = "github:herdrdev/herdr/v0.9.3";
     herdr.inputs.nixpkgs.follows = "nixpkgs";
     # zsh-defer / zsh-vi-mode / llm-agents are not inputs: the first two ship
     # in the nixpkgs pin, llm-agents is re-exported by cells/repo/packages.nix.
