@@ -415,6 +415,15 @@
           command = "${herdrKillAgent}/bin/herdr-kill-agent";
           description = "kill agent (fuzzel: pick one, or sweep all idle)";
         }
+        {
+          # Swallowed so a stray C-d never reaches a pane: it is EOF that
+          # ends a hermes/claude/opencode session. Costs C-d everywhere
+          # inside herdr (shell exit, less/nvim half-page).
+          key = "ctrl+d";
+          type = "shell";
+          command = "${pkgs.coreutils}/bin/true";
+          description = "C-d blocked (EOF would end the agent)";
+        }
       ];
     };
     theme = {
