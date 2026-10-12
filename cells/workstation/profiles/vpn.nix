@@ -108,8 +108,12 @@ in
       # whose public addresses are dead from inside the tunnel.
       # redirect-gateway takes api.anthropic.com too, and it is unreachable
       # through w (pxpipe 502s); send Anthropic's inbound /23 around it.
+      # The client's network overlaps the home LAN (192.168.10.0/24); the
+      # on-link route beats redirect-gateway's /1s, so the hosts reached on
+      # their side need a /32 into the tunnel. Home .33 is unreachable while w is up.
       w = ovpn "w" true ''
         route 160.79.104.0 255.255.254.0 net_gateway
+        route 192.168.10.33 255.255.255.255 vpn_gateway
       '';
     };
 
