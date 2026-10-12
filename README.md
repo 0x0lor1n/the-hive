@@ -115,7 +115,7 @@ PIN-protected identity only: `unlock-secrets` once per change. `secrets/deploy.a
 is the fleet deploy key, to the PIN-protected identity. `secrets/<cell>/*.age`
 are that service's colmena `deployment.keys`. Pubkeys are public.
 
-Workstation hosts use agenix-rekey: `secrets/generated/<host>/` holds generated
+Workstations and ZFS servers use agenix-rekey: `secrets/generated/<host>/` holds generated
 material, `secrets/rekeyed/<host>/` the copies for that host's key
 (`agenix generate` / `agenix rekey`). Both are keyed by hostname -- renaming a
 host means regenerating.

@@ -7,7 +7,16 @@
   inherit (inputs) utilsLib pkgs disko colmena;
   globals = inputs.cells.common.globals;
   common = inputs.cells.common.profiles;
+  ws = inputs.cells.workstation.profiles;
   p = cell.profiles;
+
+  flakeRoot = /. + builtins.unsafeDiscardStringContext inputs.self.outPath;
+  # Same recipients as globals.nix.age.
+  siteOf = hostKey:
+    builtins.extraBuiltins.rageImportEncrypted [
+      (flakeRoot + "/secrets/penrose-nix-rage.pub")
+      (flakeRoot + "/secrets/elster-nix-rage.pub")
+    ] (flakeRoot + "/secrets/${hostKey}-site.nix.age");
 
   foundation = [
     common.base
@@ -15,21 +24,33 @@
     common.layer-users-root
   ];
 
-  server =
-    foundation
-    ++ [
-      p.storage-btrfs
-      p.storage-btrfs-rollback
-      p.layer-server-hardening
-    ];
+  btrfs = [
+    p.storage-btrfs
+    p.storage-btrfs-rollback
+  ];
 
-  kvmGuest = [p.platform-virtio];
+  # Shared with the workstations.
+  zfsTpm = [
+    ws.storage-zfs
+    ws.storage-zfs-rollback
+    ws.hardware-zfs-unlock
+    ws.hardware-zfs-tpm
+    p.secrets-agenix-zfs
+  ];
+
+  router = [
+    p.layer-users-admin
+    p.net-router-wan
+    p.net-router-lan
+    p.yggdrasil
+    p.initrd-ssh
+  ];
 
   mkHost = {
     hostKey,
-    base,
-    hardware,
-    extraModules ? [],
+    modules,
+    stateVersion,
+    site ? false,
   }: let
     host = globals.hosts.${hostKey};
   in
@@ -45,9 +66,8 @@
           colmena.nixosModules.keyServiceModule
           colmena.nixosModules.assertionModule
         ]
-        ++ base
-        ++ hardware
-        ++ extraModules;
+        ++ foundation
+        ++ modules;
 
       _module.args.globals = globals;
       # colmena's own evaluator supplies `name`; deployment.targetHost defaults
@@ -55,21 +75,43 @@
       _module.args.name = hostKey;
       _module.args.host = host;
       _module.args.inputs = inputs;
+      _module.args.site =
+        if site
+        then siteOf hostKey
+        else null;
 
-      disko.devices = utilsLib.collectDisks cell.disks;
+      disko.devices = utilsLib.collectDisks {${hostKey} = cell.disks.${hostKey};};
 
       networking.hostName = host.hostName;
-      system.stateVersion = "24.11";
+      system.stateVersion = stateVersion;
     };
 in {
   osgiliath = mkHost {
     hostKey = "osgiliath";
-    base = server;
-    hardware = kvmGuest;
-    extraModules = [
-      p.net-osgiliath
-      p.site-hisilome
-      p.deploy-osgiliath
-    ];
+    stateVersion = "24.11";
+    modules =
+      btrfs
+      ++ [
+        p.layer-server-hardening
+        p.platform-virtio
+        p.net-osgiliath
+        p.site-hisilome
+        p.deploy-osgiliath
+      ];
+  };
+
+  minas-tirith = mkHost {
+    hostKey = "minas-tirith";
+    stateVersion = "26.05";
+    site = true;
+    modules =
+      zfsTpm
+      ++ router
+      ++ [
+        p.layer-server-hardening
+        p.platform-minas-tirith
+        p.fiber-bypass
+        p.deploy-minas-tirith
+      ];
   };
 }

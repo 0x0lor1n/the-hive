@@ -7,6 +7,8 @@
 }:
 inputs.agenix-rekey.configure {
   userFlake = inputs.self;
-  nixosConfigurations = inputs.cells.workstation.nixosConfigurations;
+  nixosConfigurations =
+    inputs.cells.workstation.nixosConfigurations
+    // {inherit (inputs.cells.server.nixosConfigurations) minas-tirith;};
   systems = [system];
 }
