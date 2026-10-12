@@ -1,5 +1,5 @@
-# A host on a public IP: SSH exposure, bootloader, swap, store housekeeping,
-# deploy key.
+# A host on a public IP: SSH exposure, store housekeeping, deploy key.
+# Bootloader and swap are platform facts (platform-*.nix).
 {
   inputs,
   cell,
@@ -27,23 +27,6 @@
       '';
     }
   ];
-
-  # BIOS boot. `device` stays unset: disko already populates
-  # boot.loader.grub.devices from the EF02 partition, and nixpkgs folds
-  # `device` into the same list -> "duplicated devices in mirroredBoots".
-  boot.loader.grub = {
-    enable = true;
-    efiSupport = false;
-    # /boot is 512 MB ext4; ~70 MB per generation.
-    configurationLimit = 5;
-  };
-
-  # 1 vCPU / 1.9 GB / no swap / 15 GB disk. zram, not a swapfile: disk is the
-  # binding constraint and nothing builds here (buildOnTarget = false).
-  zramSwap = {
-    enable = true;
-    memoryPercent = 50;
-  };
 
   nix.gc = {
     automatic = true;
