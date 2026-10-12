@@ -95,6 +95,26 @@ in
         "local/state" = legacy "/state";
         safe = container;
         "safe/persist" = legacy "/persist";
+        # IDS output: no snapshots, no backup, capped so a broken rotation
+        # cannot eat the pool. Quotas are start values (`zfs set quota=`).
+        logs = container;
+        "logs/suricata" =
+          legacy "/var/log/suricata"
+          // {
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M"; # eve.json / pcap: large sequential writes
+              quota = "300G";
+            };
+          };
+        "logs/kismet" =
+          legacy "/var/lib/kismet"
+          // {
+            options = {
+              mountpoint = "legacy";
+              quota = "50G"; # sqlite .kismet files: default recordsize
+            };
+          };
       };
     };
   }
