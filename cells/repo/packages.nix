@@ -36,6 +36,8 @@
     meta.mainProgram = "nix";
   };
 in {
+  agenix = inputs.agenix-rekey.packages.${pkgs.stdenv.hostPlatform.system}.default;
+
   # Re-exported from this cell's own llm-agents input (cells/repo/flake.nix),
   # so the workstation cell installs the SAME pin the devshell runs, without
   # declaring llm-agents a second time.

@@ -196,7 +196,7 @@ in {
       pkgs.nix
       pkgs.rage
       pkgs.age-plugin-tpm
-      cell.packages.agenix
+      inputs.cells.repo.packages.agenix
       pkgs.sbctl
       ws-image
       ws-switch

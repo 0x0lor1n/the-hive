@@ -15,6 +15,12 @@
     # One `treefmt` for every formatter; lefthook calls it, not each tool.
     # Its nixpkgs is only used for `lib` -- the wrapper is built with ours.
     treefmt-nix.url = "github:numtide/treefmt-nix";
+
+    # agenix CLI for every agenix host. Pins match the host cells' (the modules
+    # come from there); nixpkgs is only the follows target.
+    nixpkgs.url = "github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9";
+    agenix-rekey.url = "github:oddlama/agenix-rekey/8b9c179bc1300ab130c90f2d25426bf0e7a2b58d";
+    agenix-rekey.inputs.nixpkgs.follows = "nixpkgs";
   };
 
   # colmena deliberately not declared (see root flake.nix). A cell input with
