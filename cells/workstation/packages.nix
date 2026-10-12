@@ -388,4 +388,9 @@ in {
   # Separate tool, not a flag on transcribe: Parakeet is a transducer served by
   # sherpa-onnx and its options don't overlap whisper's.
   transcribe-parakeet = pkgs.callPackage ./packages/transcribe-parakeet.nix {};
+
+  agents-check = pkgs.callPackage ./packages/agents-check.nix {
+    inherit (inputs.cells.repo.packages) hermes-agent claude-code opencode rtk rtk-hermes-plugin;
+    inherit (cell.packages) herdr herdr-integrations;
+  };
 }

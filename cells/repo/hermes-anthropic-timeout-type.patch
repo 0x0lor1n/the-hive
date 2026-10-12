@@ -1,0 +1,15 @@
+--- a/agent/anthropic_adapter.py
++++ b/agent/anthropic_adapter.py
+@@ -340,7 +340,11 @@
+ 
+ def _client_timeout(timeout):
+     """httpx.Timeout with the caller's read timeout (default 900s) and a 10s connect."""
+-    from httpx import Timeout
++    # The SDK's own Timeout class. anthropic>=1.x runs on the vendored httpx2;
++    # a stock httpx.Timeout fails its isinstance check, is wrapped as a scalar
++    # and reaches socket.create_connection as an object (TypeError, no request
++    # ever leaves the process). anthropic 0.x re-exports httpx.Timeout: no-op.
++    from anthropic import Timeout
+     read = timeout if (isinstance(timeout, (int, float)) and timeout > 0) else 900.0
+     return Timeout(timeout=float(read), connect=10.0)
+ 

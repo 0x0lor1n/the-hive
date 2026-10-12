@@ -1,15 +1,12 @@
---- a/cli.py
-+++ b/cli.py
-@@ -4242,6 +4242,12 @@
-         return True
-     if term.startswith("tmux") or term_program.lower() == "tmux":
-         return True
-+    # herdr (herdr.dev) exports HERDR_ENV=1 into every pane and, like tmux,
-+    # only forwards a distinct Shift+Enter once the app asks for it; TERM
-+    # inside a pane is the outer terminal's (xterm-256color), so it never
-+    # matches above.
-+    if env.get("HERDR_ENV"):
-+        return True
-     return False
+--- a/hermes_cli/cli_terminal_input.py
++++ b/hermes_cli/cli_terminal_input.py
+@@ -370,6 +370,9 @@
+         or env.get("KITTY_WINDOW_ID") or "kitty" in term
+         or term == "xterm-ghostty"
+         or term.startswith("tmux") or term_program.lower() == "tmux"
++        # herdr exports HERDR_ENV=1 into every pane; TERM there is the outer
++        # terminal's (xterm-256color), so nothing above matches.
++        or env.get("HERDR_ENV")
+     )
  
  

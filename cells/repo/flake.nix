@@ -5,7 +5,7 @@
     # Does NOT follow our nixpkgs: its package set references nodejs_26, which
     # our pin lacks, and forcing the follow aborts eval. Its own nixpkgs also
     # lets numtide's cache serve these prebuilt.
-    llm-agents.url = "github:numtide/llm-agents.nix/304ada966596829e870cacc580e6b8bf27186744";
+    llm-agents.url = "github:numtide/llm-agents.nix/c9ef0fb47c91abf5c637218b69a018d3b37bb8d9";
 
     # Devshell as a module system (env, enterShellCommands) and the lefthook
     # module on top of it. Same pair rensa/core uses for its own repo shell.
