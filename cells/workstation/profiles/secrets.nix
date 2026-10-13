@@ -151,6 +151,9 @@ in {
         # The local user's SSH keypair (layer-users-local reads the .pub). Custom
         # generator: agenix's built-in ssh-ed25519 does not write a .pub. The private
         # key is the secret; the .pub is committed next to the .age in generated/.
+        # User-owned: the fleet's servers authorise it (server/layer-users-admin).
+        user-ssh-key.owner = host.userName;
+        user-ssh-key.mode = "0600";
         user-ssh-key.generator.script = {
           pkgs,
           lib,

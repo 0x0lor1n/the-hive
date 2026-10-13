@@ -150,4 +150,32 @@
       mode = "0700";
     }
   ];
+
+  programs.ssh = {
+    knownHosts = {
+      minas-tirith = {
+        hostNames = ["minas-tirith" "192.168.10.1"];
+        publicKeyFile = inputs.self.outPath + "/secrets/hosts/minas-tirith/ssh_host_ed25519_key.pub";
+      };
+      minas-tirith-initrd = {
+        hostNames = ["minas-tirith-initrd" "[192.168.10.1]:2222"];
+        publicKeyFile = inputs.self.outPath + "/secrets/hosts/minas-tirith/initrd_ssh_host_ed25519_key.pub";
+      };
+    };
+    extraConfig = ''
+      Host minas-tirith
+        HostName 192.168.10.1
+        User ${host.userName}
+        IdentityFile /run/agenix/user-ssh-key
+        IdentitiesOnly yes
+      # ZFS passphrase prompt when the TPM unseal fails (server/initrd-ssh).
+      Host minas-tirith-initrd
+        HostName 192.168.10.1
+        Port 2222
+        User root
+        HostKeyAlias minas-tirith-initrd
+        IdentityFile /run/agenix/user-ssh-key
+        IdentitiesOnly yes
+    '';
+  };
 }
