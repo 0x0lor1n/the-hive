@@ -20,8 +20,8 @@
 # core.sharedRepository only touches .git/, setgid fixes the group but not the
 # mode, umask is per shell and a checkout under 022 silently drops the group
 # bit. A default ACL is inherited by every file git creates later, under any
-# umask. ACLs are not in git and are lost on a fresh clone, so the rule is
-# re-applied by tmpfiles at every boot (A+ is recursive).
+# umask. Not A+: the recursive walk of /srv/workspace runs on every boot and
+# switch (10+ min at 900k inodes); the default ACL already covers new files.
 #
 # The dataset (rpool/safe/srv/the-hive, disks/<host>.nix) is not subject to
 # the @blank rollback. The clone itself is a one-off user step:
@@ -59,6 +59,6 @@
     # line is a no-op with a warning. This also covers .ren/ (rensa's direnv
     # layout, written on every cd by whichever account) which used to need
     # its own rule (2026-09-15).
-    "A+ /srv/the-hive - - - - d:group:hive:rwx,group:hive:rwx"
+    "A /srv/the-hive - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 }

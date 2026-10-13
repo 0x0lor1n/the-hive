@@ -27,6 +27,6 @@
     "d /srv/agents/hermes          2770 ${host.userName} hive -"
     "d /srv/agents/hermes/skills   2770 ${host.userName} hive -"
     "d /srv/agents/hermes/memories 2770 ${host.userName} hive -"
-    "A+ /srv/agents - - - - d:group:hive:rwx,group:hive:rwx"
+    "A /srv/agents - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 }
