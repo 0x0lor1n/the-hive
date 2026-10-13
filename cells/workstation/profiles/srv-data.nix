@@ -22,6 +22,6 @@
     "d /srv/data/documents 2770 ${host.userName} hive -"
     # qBittorrent save path (home/desktop/torrent.nix).
     "d /srv/data/torrents  2770 ${host.userName} hive -"
-    "A+ /srv/data - - - - d:group:hive:rwx,group:hive:rwx"
+    "A /srv/data - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 }

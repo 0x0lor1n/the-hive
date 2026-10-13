@@ -8,7 +8,6 @@
 # Same mechanism as srv-the-hive.nix, but writable for the whole hive group
 # from the root down: setgid dir so new files land in the group, plus a
 # default POSIX ACL so group write survives any umask git clones under.
-# ACLs live in the fs, not in git; tmpfiles re-applies them at every boot.
 #
 # The dataset (rpool/safe/srv/workspace, disks/<host>.nix) survives the
 # @blank rollback. On an already installed host, once by hand:
@@ -21,7 +20,7 @@
     "d /srv/workspace          2770 ${host.userName} hive -"
     "d /srv/workspace/work     2770 ${host.userName} hive -"
     "d /srv/workspace/projects 2770 ${host.userName} hive -"
-    "A+ /srv/workspace - - - - d:group:hive:rwx,group:hive:rwx"
+    "A /srv/workspace - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 
   # Project .envrc files load without `direnv allow`. System-level for the
