@@ -115,14 +115,14 @@ in {
       init.defaultBranch = "main";
       pull.rebase = true;
       push.autoSetupRemote = true;
-      # /srv/the-hive is owned by the local account but shared with the Entra
-      # user over the hive group (0750). Without this git refuses every
-      # command there under Entra ("dubious ownership"), which also kills the
-      # rensa direnv hook (`git rev-parse --show-toplevel` -> "Not inside a
-      # git repository"). /srv/workspace/* the same way for cross-owned
-      # checkouts, /srv/agents/* for the shared agent skill trees. Trailing /*
-      # needs git >= 2.46 (pinned 2.55).
-      safe.directory = ["/srv/the-hive" "/srv/workspace/*" "/srv/agents/*"];
+      # /srv/the-hive, /srv/workspace and /srv/agents are shared by both
+      # accounts over the hive group, so most checkouts there are owned by
+      # the other one. Without this git refuses them ("dubious ownership"),
+      # which also kills the rensa direnv hook, and nix cannot fetch them as
+      # git+file inputs. "*" rather than path globs: nix goes through libgit2,
+      # which has no glob support. No boundary lost -- both accounts already
+      # have group rwx on all of /srv (srv-the-hive.nix, srv-workspace.nix).
+      safe.directory = ["*"];
     };
   };
 
