@@ -124,7 +124,7 @@
 
   # HP ZBook Firefly 16 G10 (Raptor Lake, iGPU only, TB4 dock): the same
   # laptop shape plus what only this host needs (docker, DisplayLink).
-  raptorLaptop = intelLaptop ++ [p.host-elster];
+  raptorLaptop = intelLaptop ++ [p.host-elster p.audio-dawnctl];
 
   # Encryption + unlock; must match what the host's disk file created.
   zfsNative = [
