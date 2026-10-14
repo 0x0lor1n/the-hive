@@ -124,6 +124,26 @@
         "type": "github"
       }
     },
+    "dawnctl": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792017210,
+        "narHash": "sha256-goeDkcWKggZwXJBAWYB4jvczSZrwc2TyGvwqlXiVFWc=",
+        "ref": "refs/heads/main",
+        "rev": "58f4ce20d13fb3b0b098fe6e3b64789d8cc479da",
+        "revCount": 5,
+        "type": "git",
+        "url": "file:///srv/workspace/projects/dawnctl"
+      },
+      "original": {
+        "type": "git",
+        "url": "file:///srv/workspace/projects/dawnctl"
+      }
+    },
     "devshell": {
       "inputs": {
         "nixpkgs": [
@@ -579,6 +599,7 @@
         "agenix": "agenix",
         "agenix-rekey": "agenix-rekey",
         "chaotic": "chaotic",
+        "dawnctl": "dawnctl",
         "disko": "disko",
         "herdr": "herdr",
         "himmelblau": "himmelblau",
