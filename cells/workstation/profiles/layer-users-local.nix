@@ -162,7 +162,7 @@
         publicKeyFile = inputs.self.outPath + "/secrets/hosts/minas-tirith/initrd_ssh_host_ed25519_key.pub";
       };
       imladris = {
-        hostNames = ["imladris" "192.168.10.154"];
+        hostNames = ["imladris" "192.168.10.10"];
         publicKeyFile = inputs.self.outPath + "/secrets/hosts/imladris/ssh_host_ed25519_key.pub";
       };
     };
@@ -181,7 +181,7 @@
         IdentityFile /run/agenix/user-ssh-key
         IdentitiesOnly yes
       Host imladris
-        HostName 192.168.10.154
+        HostName 192.168.10.10
         User ${host.userName}
         IdentityFile /run/agenix/user-ssh-key
         IdentitiesOnly yes
