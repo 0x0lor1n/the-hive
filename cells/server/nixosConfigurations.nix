@@ -114,4 +114,19 @@ in {
         p.deploy-minas-tirith
       ];
   };
+
+  # No TPM, no encryption: zfsTpm minus the unlock half.
+  imladris = mkHost {
+    hostKey = "imladris";
+    stateVersion = "26.11";
+    modules = [
+      ws.storage-zfs
+      ws.storage-zfs-rollback
+      p.layer-users-admin
+      p.layer-server-hardening
+      p.platform-imladris
+      p.atx-watchdog
+      p.deploy-imladris
+    ];
+  };
 }

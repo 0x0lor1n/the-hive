@@ -92,6 +92,13 @@
                   # the provider's config drive.
                   diskDevice = lib.mkOption {type = lib.types.str;};
 
+                  # Encrypted half (serials). Data-pool members, by-id; order
+                  # is disko's hdd1..N.
+                  dataDisks = lib.mkOption {
+                    type = lib.types.listOf lib.types.str;
+                    default = [];
+                  };
+
                   # Workstation axes (cells/workstation). Server hosts keep the
                   # defaults.
                   isVm = lib.mkOption {

@@ -7,6 +7,9 @@
     # nixpkgs is lock-only: nothing in the osgiliath closure comes from it.
     # Pinned by rev; bump deliberately after `nix build github:0x0lor1n/hisilome`.
     hisilome.url = "github:0x0lor1n/hisilome/70c516938a04fbcf572d43e4967364e3db8ac7b4";
+    # NAS power button/watchdog (profiles/atx-watchdog.nix); module only.
+    atx-watchdog.url = "github:0x0lor1n/atx-watchdog/908c11486eafe5710e8c2129ce5d4a812ed21f69";
+    atx-watchdog.inputs.nixpkgs.follows = "nixpkgs";
 
     # agenix for ZFS hosts; pins match cells/workstation, else a second copy.
     nixpkgs.url = "github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9";
