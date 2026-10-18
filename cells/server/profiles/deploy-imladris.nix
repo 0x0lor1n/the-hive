@@ -11,7 +11,7 @@
 
   deployment = {
     # Static lease on minas-tirith (lan.staticLeases).
-    targetHost = "192.168.10.154";
+    targetHost = "192.168.10.10";
     targetUser = "root";
     buildOnTarget = false;
     tags = ["nas"];
