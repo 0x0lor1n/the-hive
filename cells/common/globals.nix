@@ -85,6 +85,13 @@ in let
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMDuTHwkZsXZn+hhkR0Bop26pZjevyEIlKl3PZhlhkMC root@minas-tirith";
             };
 
+            # NAS. Disk by-ids + root hash in the encrypted half; host key in
+            # secrets/hosts/imladris/, as penrose.
+            hosts.imladris = {
+              hasTpm = false;
+              sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEwAkSSJZvsb/d9LNkbYGtAcFL2ydkSJZC6PYa0IbYjP root@imladris";
+            };
+
             persistence = {
               statePath = "/persist/state";
               dataPath = "/persist/data";

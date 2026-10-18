@@ -49,6 +49,27 @@
         "type": "github"
       }
     },
+    "atx-watchdog": {
+      "inputs": {
+        "nixpkgs": [
+          "nixpkgs"
+        ]
+      },
+      "locked": {
+        "lastModified": 1792327047,
+        "narHash": "sha256-6wF1MnggY02BKRY/E7DrgH4mWuKejfsk/juJHF8Qu4M=",
+        "owner": "0x0lor1n",
+        "repo": "atx-watchdog",
+        "rev": "908c11486eafe5710e8c2129ce5d4a812ed21f69",
+        "type": "github"
+      },
+      "original": {
+        "owner": "0x0lor1n",
+        "repo": "atx-watchdog",
+        "rev": "908c11486eafe5710e8c2129ce5d4a812ed21f69",
+        "type": "github"
+      }
+    },
     "darwin": {
       "inputs": {
         "nixpkgs": [
@@ -285,6 +306,7 @@
       "inputs": {
         "agenix": "agenix",
         "agenix-rekey": "agenix-rekey",
+        "atx-watchdog": "atx-watchdog",
         "disko": "disko",
         "hisilome": "hisilome",
         "nixpkgs": "nixpkgs_3",
