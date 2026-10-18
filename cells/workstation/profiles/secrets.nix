@@ -84,6 +84,18 @@
       "ssh-w"
     ])
   );
+  # gitleaks rule naming the user, for public repos' pre-commit. Encrypted
+  # because the regex is the list of names it hunts for. Both accounts commit
+  # to those repos, so it is read through hive; home/dev links it into
+  # ~/.config, which does not survive a relogin.
+  gitleaksPersonal = lib.optionalAttrs (!host.isVm) {
+    gitleaks-personal = {
+      rekeyFile = "${flakeRoot}/secrets/gitleaks/personal.toml.age";
+      owner = host.userName;
+      group = "hive";
+      mode = "0640";
+    };
+  };
 in {
   imports = [
     inputs.agenix.nixosModules.default
@@ -170,7 +182,8 @@ in {
         '';
       }
     ]
-    ++ sshIdentities);
+    ++ sshIdentities
+    ++ [gitleaksPersonal]);
 
   zfsUnlock.passphraseFile = config.age.secrets.zfs-rpool-passphrase.path;
 }
