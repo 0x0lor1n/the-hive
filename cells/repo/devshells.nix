@@ -70,7 +70,7 @@
       fi
 
       rage -d \
-        -i "$root/secrets/elster-nix-rage.pub" \
+        -i "$root/secrets/$(uname -n)-nix-rage.pub" \
         "$root/secrets/deploy.age" \
         | ssh-add -t 900 -
 
