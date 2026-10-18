@@ -161,6 +161,10 @@
         hostNames = ["minas-tirith-initrd" "[192.168.10.1]:2222"];
         publicKeyFile = inputs.self.outPath + "/secrets/hosts/minas-tirith/initrd_ssh_host_ed25519_key.pub";
       };
+      imladris = {
+        hostNames = ["imladris" "192.168.10.154"];
+        publicKeyFile = inputs.self.outPath + "/secrets/hosts/imladris/ssh_host_ed25519_key.pub";
+      };
     };
     extraConfig = ''
       Host minas-tirith
@@ -174,6 +178,11 @@
         Port 2222
         User root
         HostKeyAlias minas-tirith-initrd
+        IdentityFile /run/agenix/user-ssh-key
+        IdentitiesOnly yes
+      Host imladris
+        HostName 192.168.10.154
+        User ${host.userName}
         IdentityFile /run/agenix/user-ssh-key
         IdentitiesOnly yes
     '';
