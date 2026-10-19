@@ -144,6 +144,14 @@
                     type = lib.types.nullOr lib.types.str;
                     default = null;
                   };
+
+                  # Encrypted half. Yggdrasil 2xx:/3xx: address, derived from
+                  # the node key; `yggdrasilctl getSelf` on the host. Public
+                  # repo must never name it: it is a global, routable handle.
+                  yggAddress = lib.mkOption {
+                    type = lib.types.nullOr lib.types.str;
+                    default = null;
+                  };
                 };
               }
             )
