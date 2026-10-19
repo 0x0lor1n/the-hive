@@ -13,7 +13,11 @@
 # calcmenu: qalc (libqalculate) instead of bc -- unit-aware, no `scale=`
 # dance, and "2^10" means what it says. The result goes to the clipboard
 # and, while the popup is open again, the history is offered for reuse.
-{pkgs, ...}: let
+{
+  pkgs,
+  theme,
+  ...
+}: let
   powermenu = pkgs.writeShellApplication {
     name = "powermenu";
     runtimeInputs = with pkgs; [fuzzel systemd coreutils libnotify procps];
@@ -164,7 +168,23 @@
   };
   # vpnmenu: fuzzel over `vpn status` (profiles/vpn.nix); Enter flips the
   # picked tunnel. openvpn units count as started before the MFA push is
-  # approved, so "up" means the unit, not the tunnel.
+  # approved, so "up" means the unit, not the tunnel. fuzzel has one text
+  # colour for all rows, so state is the icon's colour: the bar's glyphs as
+  # SVGs, accent when active, muted when not.
+  tunnelIcon = glyph: colour:
+    pkgs.writeText "${glyph}-${colour}.svg" ''
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2048 2048"><path fill="#${colour}" d="${(import ./__tunnel-glyphs.nix).${glyph}}"/></svg>
+    '';
+  icons = {
+    tree = {
+      active = tunnelIcon "tree" theme.roles.accent;
+      inactive = tunnelIcon "tree" theme.roles.muted;
+    };
+    vpn = {
+      active = tunnelIcon "vpn" theme.roles.accent;
+      inactive = tunnelIcon "vpn" theme.roles.muted;
+    };
+  };
   vpnmenu = pkgs.writeShellApplication {
     name = "vpnmenu";
     runtimeInputs = with pkgs; [fuzzel libnotify gawk procps coreutils];
@@ -172,13 +192,23 @@
       notify() { notify-send -a vpnmenu "$@"; }
       command -v vpn >/dev/null || { notify "vpn" "no vpn command on this host"; exit 1; }
 
-      # Non-blank marker for inactive too: `read` below splits on it. Icon per
-      # kind (bar.nix custom/vpn): tree for yggdrasil, shield for the rest.
-      menu="$(vpn status | awk '{ printf "%s  %s  %s\n", ($1 == "yggdrasil" ? "󰔱" : "󰖂"), $1, $2 }')"
-      selected="$(printf '%s\n' "$menu" | fuzzel --dmenu --prompt 'vpn: ' --lines "$(wc -l <<< "$menu")" --width 28)" || exit 0
+      icon() {
+        case "$1:$2" in
+          yggdrasil:active) echo ${icons.tree.active} ;;
+          yggdrasil:*)      echo ${icons.tree.inactive} ;;
+          *:active)         echo ${icons.vpn.active} ;;
+          *)                echo ${icons.vpn.inactive} ;;
+        esac
+      }
+      # "<name>  <state>" plus rofi's \0icon\x1f<path> per row. Piped, never
+      # captured: $(...) drops the NUL.
+      rows=$(vpn status | wc -l)
+      selected="$(vpn status | while read -r name state; do
+        printf '%s  %s\0icon\x1f%s\n' "$name" "$state" "$(icon "$name" "$state")"
+      done | fuzzel --dmenu --prompt 'vpn: ' --lines "$rows" --width 28)" || exit 0
       [ -n "$selected" ] || exit 0
 
-      read -r _ name state <<< "$selected"
+      read -r name state <<< "$selected"
       [ "$state" = "active" ] && action=down || action=up
       if out="$(vpn "$action" "$name" 2>&1)"; then
         notify "vpn $name" "$action"
