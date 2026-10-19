@@ -16,7 +16,7 @@ return {
     "nvim-treesitter/nvim-treesitter",
     optional = true,
     opts = {
-      ensure_installed = { "make", "meson" },
+      ensure_installed = { "make", "meson", "arduino" },
     },
   },
   {

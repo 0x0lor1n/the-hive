@@ -33,11 +33,13 @@
     enableOnBoot = false;
     autoPrune.enable = true;
   };
-  users.users.${host.userName}.extraGroups = ["docker"];
+  # dialout: flash and talk to the bench MCUs (/dev/ttyACM*, root:dialout)
+  # without sudo; under sudo nix runs as root, which lacks safe.directory.
+  users.users.${host.userName}.extraGroups = ["docker" "dialout"];
   # The Entra account: himmelblau reconciles group membership on login
   # (local_groups_reconcile_interval), same path as `hive`/`networkmanager`
   # in auth-entra.nix.
-  services.himmelblau.settings.local_groups = ["docker"];
+  services.himmelblau.settings.local_groups = ["docker" "dialout"];
 
   # btop reads the i915 PMU and the card's sysfs for the Iris Xe panel; both
   # are refused without these caps (upstream `make setcap`). /run/wrappers/bin
