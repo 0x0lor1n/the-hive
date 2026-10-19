@@ -172,8 +172,9 @@
       notify() { notify-send -a vpnmenu "$@"; }
       command -v vpn >/dev/null || { notify "vpn" "no vpn command on this host"; exit 1; }
 
-      # Non-blank marker for inactive too: `read` below splits on it.
-      menu="$(vpn status | awk '{ printf "%s  %s  %s\n", ($2 == "active" ? "󰖂" : "·"), $1, $2 }')"
+      # Non-blank marker for inactive too: `read` below splits on it. Icon per
+      # kind (bar.nix custom/vpn): tree for yggdrasil, shield for the rest.
+      menu="$(vpn status | awk '{ printf "%s  %s  %s\n", ($1 == "yggdrasil" ? "󰔱" : "󰖂"), $1, $2 }')"
       selected="$(printf '%s\n' "$menu" | fuzzel --dmenu --prompt 'vpn: ' --lines "$(wc -l <<< "$menu")" --width 28)" || exit 0
       [ -n "$selected" ] || exit 0
 
