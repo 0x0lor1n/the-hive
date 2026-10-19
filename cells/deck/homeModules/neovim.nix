@@ -26,6 +26,9 @@
     # `trash-put`, shelled out to by neo-tree delete (plugins/editor.lua);
     # without it every delete from the file tree fails.
     trash-cli
+    # image.nvim (plugins/image.lua) shells out to `magick ... sixel:-`; the
+    # nixpkgs build has the SIXEL coder, so no override needed.
+    imagemagick
   ];
 
   # Overrides NixOS's EDITOR=nano (programs.nano default): HM's zshenv sources
