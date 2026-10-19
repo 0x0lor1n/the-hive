@@ -1,0 +1,10 @@
+--- a/dwl.c
++++ b/dwl.c
+@@ -1394,6 +1394,7 @@
+ 	wl_list_remove(&l->destroy.link);
+ 	wl_list_remove(&l->unmap.link);
+ 	wl_list_remove(&l->surface_commit.link);
++	l->layer_surface->surface->data = NULL;
+ 	wlr_scene_node_destroy(&l->scene->node);
+ 	wlr_scene_node_destroy(&l->popups->node);
+ 	free(l);
