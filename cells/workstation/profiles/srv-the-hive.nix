@@ -20,8 +20,10 @@
 # core.sharedRepository only touches .git/, setgid fixes the group but not the
 # mode, umask is per shell and a checkout under 022 silently drops the group
 # bit. A default ACL is inherited by every file git creates later, under any
-# umask. Not A+: the recursive walk of /srv/workspace runs on every boot and
-# switch (10+ min at 900k inodes); the default ACL already covers new files.
+# umask. Lowercase `a+`, root only: in tmpfiles case is recursion (A/A+ walk
+# the tree, `+` only means append). The walk of /srv/workspace ran on every
+# boot and switch (10+ min at 900k inodes); the default ACL already covers
+# new files.
 #
 # The dataset (rpool/safe/srv/the-hive, disks/<host>.nix) is not subject to
 # the @blank rollback. The clone itself is a one-off user step:
@@ -53,12 +55,11 @@
     # `z`, not `d`: adjust the mountpoint's owner/mode, never create a dir
     # that would then block `git clone` into it.
     "z /srv/the-hive 0750 ${host.userName} hive -"
-    # One recursive ACL for the whole checkout (.git/ included, so either
-    # account can commit). Named-group entries so the files' own group
-    # (users, from the cloning account) does not matter. Before the clone the
-    # line is a no-op with a warning. This also covers .ren/ (rensa's direnv
-    # layout, written on every cd by whichever account) which used to need
-    # its own rule (2026-09-15).
-    "A /srv/the-hive - - - - d:group:hive:rwx,group:hive:rwx"
+    # Default ACL on the checkout root, inherited by everything created below
+    # (.git/ included, so either account can commit). Named-group entries so
+    # the files' own group (users, from the cloning account) does not matter.
+    # Before the clone the line is a no-op with a warning. This also covers
+    # .ren/ (rensa's direnv layout, written on every cd by whichever account).
+    "a+ /srv/the-hive - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 }

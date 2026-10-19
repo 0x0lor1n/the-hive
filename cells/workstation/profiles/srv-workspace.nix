@@ -20,7 +20,7 @@
     "d /srv/workspace          2770 ${host.userName} hive -"
     "d /srv/workspace/work     2770 ${host.userName} hive -"
     "d /srv/workspace/projects 2770 ${host.userName} hive -"
-    "A /srv/workspace - - - - d:group:hive:rwx,group:hive:rwx"
+    "a+ /srv/workspace - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 
   # Project .envrc files load without `direnv allow`. System-level for the
