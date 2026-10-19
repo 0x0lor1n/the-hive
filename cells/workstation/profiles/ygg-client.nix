@@ -32,6 +32,14 @@ in
       };
     };
 
+    # zsh completes ssh hosts from ~/.ssh/config and known_hosts, never from
+    # /etc/ssh/ssh_config; listing the aliases on the existing pins makes them
+    # completable. Verification still goes through HostKeyAlias.
+    programs.ssh.knownHosts = {
+      minas-tirith.hostNames = ["minas-tirith-ygg"];
+      imladris.hostNames = ["imladris-ygg"];
+    };
+
     programs.ssh.extraConfig = ''
       Host minas-tirith-ygg imladris-ygg
         User ${host.userName}
