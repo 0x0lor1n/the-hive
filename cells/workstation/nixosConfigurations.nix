@@ -120,6 +120,8 @@
     p.platform-baremetal
     p.gpu-intel
     p.laptop
+    # off-LAN ssh to the router over Yggdrasil (userspace, no inbound)
+    p.ygg-client
   ];
 
   # HP ZBook Firefly 16 G10 (Raptor Lake, iGPU only, TB4 dock): the same
