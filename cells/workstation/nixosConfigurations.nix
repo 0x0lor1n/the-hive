@@ -89,6 +89,8 @@
       p.browser-firefox
       # the three VPN tunnels as system units, secrets in /run/agenix
       p.vpn
+      # off-LAN ssh to the router over Yggdrasil, on demand via `vpn`
+      p.ygg-client
       # 3 generations, weekly nh clean
       p.maintenance
       # pxpipe system unit + /etc/hosts alias, shared by every session's Hermes
@@ -120,8 +122,6 @@
     p.platform-baremetal
     p.gpu-intel
     p.laptop
-    # off-LAN ssh to the router over Yggdrasil (userspace, no inbound)
-    p.ygg-client
   ];
 
   # HP ZBook Firefly 16 G10 (Raptor Lake, iGPU only, TB4 dock): the same

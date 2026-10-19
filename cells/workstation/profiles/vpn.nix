@@ -3,12 +3,13 @@
 # home-manager file in the world-readable store, and the tunnels are ordinary
 # systemd units the accounts start and stop over polkit:
 #
-#   o   wireguard  wg-quick-o.service    employer
-#   t   openvpn    openvpn-t.service     employer's client
-#   w   openvpn    openvpn-w.service     freelance client
+#   vpn-o  wireguard  wg-quick-o.service    employer
+#   vpn-t  openvpn    openvpn-t.service     employer's client
+#   vpn-w  openvpn    openvpn-w.service     freelance client
 #
 # Letters, not names: which organisation sits behind each lives only in the
-# encrypted halves (secrets/*.age, secrets/user-*.nix.age).
+# encrypted halves (secrets/*.age, secrets/user-*.nix.age). Other on-demand
+# tunnels join through hive.tunnels (yggdrasil: ygg-client.nix).
 #
 # All three belong to the Entra account (networkmanager group via himmelblau
 # local_groups, auth-entra.nix); wheel keeps them for the local account.
@@ -38,11 +39,7 @@
     rekeyFile = "${flakeRoot}/secrets/vpn/${name}.age";
     mode = "0400";
   };
-  units = {
-    o = "wg-quick-o.service";
-    t = "openvpn-t.service";
-    w = "openvpn-w.service";
-  };
+  units = config.hive.tunnels;
   vpn = pkgs.writeShellApplication {
     name = "vpn";
     runtimeInputs = [pkgs.systemd pkgs.coreutils];
@@ -58,18 +55,32 @@
         esac
       }
       case "''${1:-}" in
-        up)   [ $# = 2 ] || usage; systemctl start "$(unit "$2")" ;;
-        down) [ $# = 2 ] || usage; systemctl stop "$(unit "$2")" ;;
+        # Resolve first: usage() inside $(...) only leaves the subshell.
+        up)   [ $# = 2 ] || usage; u=$(unit "$2"); systemctl start "$u" ;;
+        down) [ $# = 2 ] || usage; u=$(unit "$2"); systemctl stop "$u" ;;
         status)
           for n in ${lib.concatStringsSep " " (lib.attrNames units)}; do
-            printf '%-3s %s\n' "$n" "$(systemctl is-active "$(unit "$n")")"
+            printf '%-10s %s\n' "$n" "$(systemctl is-active "$(unit "$n")")"
           done ;;
         *) usage ;;
       esac
     '';
   };
-in
-  lib.mkIf (!host.isVm) {
+in {
+  # name -> systemd unit. Everything that can be flipped from `vpn` / vpnmenu
+  # / the bar; other profiles register their own (ygg-client.nix).
+  options.hive.tunnels = lib.mkOption {
+    type = lib.types.attrsOf lib.types.str;
+    default = {};
+  };
+
+  config = lib.mkIf (!host.isVm) {
+    hive.tunnels = {
+      vpn-o = "wg-quick-o.service";
+      vpn-t = "openvpn-t.service";
+      vpn-w = "openvpn-w.service";
+    };
+
     environment.systemPackages = [vpn pkgs.wireguard-tools];
 
     age.secrets = {
@@ -131,4 +142,5 @@ in
         }
       });
     '';
-  }
+  };
+}

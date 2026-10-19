@@ -1,7 +1,8 @@
 # Off-LAN ssh to minas-tirith over Yggdrasil, and through it to the LAN hosts.
 # yggstack is userspace: no TUN, so the laptop gets no routable ygg address and
 # accepts nothing inbound. No key configured: a fresh node identity per start.
-# The router's address lives only in the encrypted globals.
+# The router's address lives only in the encrypted globals. Off by default:
+# `vpn up yggdrasil` / vpnmenu (vpn.nix), no peers contacted until then.
 {
   pkgs,
   lib,
@@ -18,10 +19,12 @@
     NodeInfoPrivacy = true;
   });
 in
-  lib.mkIf (router != null) {
+  # The VM has no user-ssh-key and no `vpn` to start it with.
+  lib.mkIf (router != null && !host.isVm) {
+    hive.tunnels.yggdrasil = "yggstack.service";
+
     systemd.services.yggstack = {
       description = "Yggdrasil userspace tunnel to minas-tirith ssh";
-      wantedBy = ["multi-user.target"];
       wants = ["network-online.target"];
       after = ["network-online.target"];
       serviceConfig = {

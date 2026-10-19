@@ -40,12 +40,17 @@
   '';
 
   # `vpn status` (profiles/vpn.nix) prints "<name> <active|inactive>"; the
-  # command is absent in the VM, hence the guard.
+  # command is absent in the VM, hence the guard. yggdrasil shows as a tree
+  # (nf-md-tree, an ash), the vpn-* by letter behind the shield.
   vpnStatus = pkgs.writeShellScript "bar-vpn" ''
     command -v vpn >/dev/null || exit 0
     up=$(vpn status | ${pkgs.gawk}/bin/awk '$2 == "active" {print $1}' | paste -sd, -)
     [ -n "$up" ] || exit 0
-    printf '{"text":"󰖂 %s","class":"active","tooltip":"vpn up: %s"}\n' "$up" "$up"
+    vpns=$(printf '%s' "$up" | tr , '\n' | grep -vx yggdrasil | sed 's/^vpn-//' | paste -sd, -) || true
+    text=""
+    [ -n "$vpns" ] && text="󰖂 $vpns"
+    case ",$up," in *,yggdrasil,*) text="''${text:+$text }󰔱" ;; esac
+    printf '{"text":"%s","class":"active","tooltip":"up: %s"}\n' "$text" "$up"
   '';
 
   # mako: dnd mode (invisible=1 in notify.nix) or the number of visible
