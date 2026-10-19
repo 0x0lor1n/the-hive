@@ -108,6 +108,10 @@ in
         "local/state" = legacy "/state";
         safe = container;
         "safe/persist" = legacy "/persist";
+        # Per-service state, one dataset each so it can move pools on its own
+        # (zfs send). Disko only creates these on install; on the live host
+        # `zfs create -o mountpoint=legacy <name>` once before deploying.
+        "safe/torrserver" = legacy "/var/lib/torrserver";
       };
     };
 
