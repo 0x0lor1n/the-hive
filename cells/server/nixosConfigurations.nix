@@ -127,6 +127,8 @@ in {
       p.platform-imladris
       p.atx-watchdog
       p.deploy-imladris
+      # streaming torrents to the TV boxes, LAN :8090
+      p.torrserver
     ];
   };
 }

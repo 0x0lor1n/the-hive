@@ -114,6 +114,13 @@ in {
       enable = true;
       externalInterface = wan;
       internalInterfaces = [lan];
+      # Inbound v4 peers for TorrServer on imladris (static lease .10). The
+      # module's `ct status dnat accept` lets them through forward.
+      forwardPorts = map (proto: {
+        inherit proto;
+        sourcePort = 42000;
+        destination = "192.168.10.10:42000";
+      }) ["tcp" "udp"];
     };
 
     # Else 22 opens on the WAN (public v6); br-lan is trusted, ygg0 opens it.
@@ -127,10 +134,13 @@ in {
       # nftables rpfilter ignores the rp_filter sysctls.
       checkReversePath = "loose";
 
-      # TorrServe on the Vontar: by port, its v6 privacy address rotates.
+      # TorrServe on the Vontar, TorrServer on imladris: inbound v6 peers. By
+      # port, the v6 privacy addresses rotate.
       extraForwardRules = ''
         iifname "${wan}" tcp dport 51413 accept comment "TorrServe BT peer port"
         iifname "${wan}" udp dport 51413 accept comment "TorrServe BT peer port (uTP/DHT)"
+        iifname "${wan}" tcp dport 42000 accept comment "imladris TorrServer peer port"
+        iifname "${wan}" udp dport 42000 accept comment "imladris TorrServer peer port (uTP/DHT)"
       '';
       # ONU management net.
       extraInputRules = ''iifname "${wan}" ip saddr 192.168.11.0/24 accept'';
