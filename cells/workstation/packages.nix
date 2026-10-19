@@ -242,6 +242,11 @@ in {
         # focusdir(): Ctrl+arrows move focus geometrically; skipped while
         # foot-tmux/foot-herdr is focused (focusdir_passthrough in config.h).
         ./packages/dwl/patches/focusdir.patch
+        # Undock crash: cleanupmon destroys the bar's layer surface, but its
+        # wlr_surface lives on with waybar's idle inhibitor and ->data still
+        # pointing at the freed scene tree; checkidleinhibitor then segfaults.
+        # Same fix upstream applied to toplevels in 4847f97.
+        ./packages/dwl/patches/layer-idle-inhibitor-uaf.patch
       ];
     postPatch =
       (old.postPatch or "")
