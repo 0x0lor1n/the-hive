@@ -134,11 +134,9 @@ in {
       # nftables rpfilter ignores the rp_filter sysctls.
       checkReversePath = "loose";
 
-      # TorrServe on the Vontar, TorrServer on imladris: inbound v6 peers. By
-      # port, the v6 privacy addresses rotate.
+      # TorrServer on imladris: inbound v6 peers. By port, the v6 privacy
+      # addresses rotate.
       extraForwardRules = ''
-        iifname "${wan}" tcp dport 51413 accept comment "TorrServe BT peer port"
-        iifname "${wan}" udp dport 51413 accept comment "TorrServe BT peer port (uTP/DHT)"
         iifname "${wan}" tcp dport 42000 accept comment "imladris TorrServer peer port"
         iifname "${wan}" udp dport 42000 accept comment "imladris TorrServer peer port (uTP/DHT)"
       '';
