@@ -128,6 +128,7 @@ in {
       p.storage-fast
       p.backup-warm
       p.atx-watchdog
+      p.monitoring-exporters
       p.deploy-imladris
       # streaming torrents to the TV boxes, LAN :8090
       p.torrserver
