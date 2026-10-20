@@ -142,6 +142,12 @@ in {
     enable = true;
     settings.auth = noAuth;
   };
+  # rutracker.org / .net sit behind a Cloudflare JS challenge (cf-mitigated:
+  # challenge, 403 on GET and POST). FlareSolverr runs a headless Chromium
+  # that solves it; Prowlarr is pointed at it via an Indexer Proxy
+  # (Settings -> Indexers -> + -> FlareSolverr, host http://127.0.0.1:8191,
+  # tag "cf") and the rutracker indexer gets the same tag. Localhost only.
+  services.flaresolverr.enable = true;
   # The module runs it as DynamicUser, which turns /var/lib/prowlarr into a
   # symlink to /var/lib/private — but it is a dataset mountpoint. Static user
   # instead; StateDirectory stays and chowns the root on every start.
