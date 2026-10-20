@@ -115,6 +115,34 @@ in
               quota = "50G"; # sqlite .kismet files: default recordsize
             };
           };
+        # Monitoring state (profiles/monitoring-server.nix): rebuildable from
+        # the exporters, so `logs` too. Disko only creates these on install; on
+        # the live host `zfs create -o mountpoint=legacy -o quota=... <name>`
+        # once before deploying (torrserver precedent on imladris).
+        "logs/prometheus" =
+          legacy "/var/lib/prometheus2"
+          // {
+            options = {
+              mountpoint = "legacy";
+              quota = "20G"; # 3 hosts, 15 s, 30 d ≈ 1.5 G; headroom for cardinality
+            };
+          };
+        "logs/grafana" =
+          legacy "/var/lib/grafana"
+          // {
+            options = {
+              mountpoint = "legacy";
+              quota = "5G";
+            };
+          };
+        "logs/ntfy-sh" =
+          legacy "/var/lib/ntfy-sh"
+          // {
+            options = {
+              mountpoint = "legacy";
+              quota = "2G";
+            };
+          };
       };
     };
   }

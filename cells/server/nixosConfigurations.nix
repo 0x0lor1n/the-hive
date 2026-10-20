@@ -111,6 +111,7 @@ in {
         p.layer-server-hardening
         p.platform-minas-tirith
         p.fiber-bypass
+        p.monitoring-server
         p.deploy-minas-tirith
       ];
   };
