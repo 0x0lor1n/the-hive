@@ -23,11 +23,14 @@
     if [ -z "$prev" ]; then
       # First boot ever or journal lost: nothing to judge.
       unclean=0
-    elif printf '%s\n' "$prev" | grep -q 'Reached target.*Shutdown'; then
+    elif grep -q 'Reached target.*Shutdown' <<<"$prev"; then
       unclean=0
     else
       unclean=1
     fi
+    # Don't rely on tmpfiles ordering: on a live switch tmpfiles-setup is not
+    # re-run, so the dir may not exist yet.
+    mkdir -p ${textfileDir}
     tmp=$(mktemp -p ${textfileDir})
     {
       echo '# HELP atx_watchdog_unclean_boot 1 if the previous boot ended without a clean shutdown.'
