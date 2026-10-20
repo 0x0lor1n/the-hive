@@ -1,0 +1,98 @@
+# Alert rules for the Prometheus on minas-tirith (profiles/monitoring-server.nix).
+# Checked by promtool at build time. `host` comes from the scrape job labels.
+groups:
+  - name: hive
+    rules:
+      - alert: HostDown
+        expr: up == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.job }} on {{ $labels.host }} ({{ $labels.instance }}) has not answered for 5 m"
+
+      - alert: OsgiliathUnreachable
+        expr: probe_success{job="probe-osgiliath"} == 0
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "osgiliath: ssh port unreachable from minas-tirith for 5 m"
+
+      # pdf/zfs_exporter has no capacity ratio; health 0 = ONLINE.
+      - alert: PoolCapacity80
+        expr: zfs_pool_allocated_bytes / zfs_pool_size_bytes > 0.80
+        for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.host }} pool {{ $labels.pool }} is {{ $value | humanizePercentage }} full"
+
+      - alert: PoolDegraded
+        expr: zfs_pool_health > 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.host }} pool {{ $labels.pool }} is not ONLINE (health={{ $value }})"
+
+      # IronWolfs idle at 41-49 C; above 50 means airflow, not a dying disk.
+      # smartctl_exporter skips spun-down disks, so no sample = no alert.
+      - alert: DiskTemp50
+        expr: smartctl_device_temperature{temperature_type="current"} > 50
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.device }} at {{ $value }} C for 10 m"
+
+      - alert: DiskSmartFailed
+        expr: smartctl_device_smart_status == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.device }}: SMART overall status FAILED"
+
+      - alert: DiskReallocating
+        expr: smartctl_device_attribute{attribute_id=~"5|197|198",attribute_value_type="raw"} > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} = {{ $value }}"
+
+      # Written by boot-marker (monitoring-exporters.nix) from the previous
+      # boot's journal; clears on the next clean boot.
+      - alert: ImladrisUncleanBoot
+        expr: atx_watchdog_unclean_boot == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "imladris came up without a clean shutdown (ATX watchdog or power loss)"
+
+      - alert: WarmBackupFailed
+        expr: node_systemd_unit_state{name="warm-backup.service",state="failed"} == 1
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "warm-backup.service failed on {{ $labels.host }}; journalctl -u warm-backup"
+
+      # Stamp from warm-backup's ExecStartPost; absent until the first run.
+      - alert: WarmBackupStale
+        expr: time() - warm_backup_last_success_seconds > 36 * 3600
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "last successful warm-backup on {{ $labels.host }} was {{ $value | humanizeDuration }} ago"
+
+      - alert: SystemdUnitFailed
+        expr: node_systemd_unit_state{state="failed",name!="warm-backup.service"} == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.host }}: {{ $labels.name }} is failed"
