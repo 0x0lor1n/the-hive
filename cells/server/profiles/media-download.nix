@@ -176,19 +176,26 @@ in {
   # dataset must be there first. Sonarr's module sets StateDirectory itself;
   # Radarr/Lidarr need it too, or the root-owned dataset root stays
   # unwritable and tmpfiles can't create `.config/<App>` (Permission denied).
+  # UMask 0002: imported files/folders stay group-writable for the admin and
+  # the other *arr (radarr/sonarr modules hard-set 0022, hence mkForce).
   systemd.services.radarr = {
     unitConfig.RequiresMountsFor = "/var/lib/radarr";
     serviceConfig = {
       StateDirectory = "radarr";
       StateDirectoryMode = "0750";
+      UMask = lib.mkForce "0002";
     };
   };
-  systemd.services.sonarr.unitConfig.RequiresMountsFor = "/var/lib/sonarr";
+  systemd.services.sonarr = {
+    unitConfig.RequiresMountsFor = "/var/lib/sonarr";
+    serviceConfig.UMask = lib.mkForce "0002";
+  };
   systemd.services.lidarr = {
     unitConfig.RequiresMountsFor = "/var/lib/lidarr";
     serviceConfig = {
       StateDirectory = "lidarr";
       StateDirectoryMode = "0750";
+      UMask = lib.mkForce "0002";
     };
   };
 
