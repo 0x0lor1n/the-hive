@@ -16,6 +16,9 @@ in {
     settings = {
       PrivateKeyPath = "/persist/var/lib/yggdrasil/private.pem";
       IfName = "ygg0";
+      # Default 65535 makes ygg fragment big TCP segments into many QUIC
+      # packets on the mobile path; Grafana over ygg was crawling.
+      IfMTU = 1280;
       # Don't answer nodeinfo with build/platform details.
       NodeInfoPrivacy = true;
       # Direct peering on the WAN's public v6. QUIC avoids TCP-over-TCP stalls.
