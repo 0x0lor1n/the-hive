@@ -4,14 +4,16 @@
 
 | Пул | vdev | Где физически | Роль |
 |-----|------|---------------|------|
-| `rpool` | mirror 2x 256 GB NVMe | ASM1182e, PCIe x1 | ОСь (есть). Остаток места не трогать |
-| `fast` | mirror 2x 1 TB NVMe (уже есть) | ASM2824, слоты 1–2 | ВМ, docker, проекты, attic целиком |
+| `rpool` | 1x 256 GB NVMe (PM9B1) | ASM2824 | ОСь (есть). Остаток места не трогать |
+| `fast` | raidz1 3x 1 TB NVMe, ~1.8 TB usable (есть) | ASM2824 | состояние сервисов (`fast/services/<svc>`), ВМ, docker, attic |
 | `tank` | raidz2 6x 6 TB | SATA платы | медиа, фото, PII, бэкапы |
 | `warm` → `cold` | 1x 18 TB (этап 1) → mirror 2x 18 TB во внешней коробке (этап 3) | SATA → ASM1166 | бэкап |
 
-Слоты 3–4 ASM2824 — пусто. Не SLOG (нет sync-нагрузки, нет PLP), не L2ARC (32 GB RAM хватает). Пригодятся, когда `fast` заполнится: `zpool add fast mirror C D` (stripe of mirrors) или `zpool replace` на 2 TB по одному.
+Все 4 слота ASM2824 заняты (ОС + 3x `fast`). Свободного M.2 под SLOG/L2ARC нет, и не нужно (нет sync-нагрузки, 32 GB RAM). Когда `fast` заполнится: `zpool replace` на 2 TB по одному с `autoexpand=on`.
 
-Отказ ASM1182e не ломает данные: rpool импортируется с дисков в любом другом слоте.
+`fast` создан руками на живом хосте, не через disko: disko на переустановке пересоздал бы (стёр) пул. Импорт — `boot.zfs.extraPools` в `cells/server/profiles/storage-fast.nix`.
+
+Отказ ASM2824 гасит и ОС, и `fast` разом; данные не теряются — диски переставляются в любой другой M.2/PCIe-адаптер и импортируются по by-id.
 
 ## Создание
 
@@ -19,7 +21,7 @@
 zpool create -o ashift=12 \
   -O compression=zstd -O atime=off -O xattr=sa -O acltype=posixacl \
   -O normalization=formD -O mountpoint=none \
-  fast mirror /dev/disk/by-id/nvme-1T-A /dev/disk/by-id/nvme-1T-B
+  fast raidz1 /dev/disk/by-id/nvme-1T-{A,B,C}
 
 zpool create -o ashift=12 \
   -O compression=zstd -O atime=off -O xattr=sa -O acltype=posixacl \
@@ -115,5 +117,5 @@ nix-store -qR --include-outputs "$drv" | attic push main --stdin
 
 ## Известные компромиссы
 
-- `fast` 1 TB делится между attic (≤300 GB), docker, ВМ и проектами. Следить за `zfs list -o space fast`; при 80% — вторая пара NVMe в слоты 3–4.
+- `fast` ~1.8 TB делится между сервисами, attic (≤300 GB), docker и ВМ. Следить за `zfs list -o space fast`; при 80% — замена дисков на 2 TB по одному (свободных слотов нет).
 - `tank` со spin-down: первое обращение после простоя ~10 с. Всё, что дёргают часто, живёт на `fast`.
