@@ -164,8 +164,13 @@ in {
         # generator: agenix's built-in ssh-ed25519 does not write a .pub. The private
         # key is the secret; the .pub is committed next to the .age in generated/.
         # User-owned: the fleet's servers authorise it (server/layer-users-admin).
+        # Read through hive like ssh-github: the Entra account uses the same
+        # system-wide `Host minas-tirith`/`imladris` entries (layer-users-local,
+        # ygg-client), which point at this path, and one key per workstation
+        # is still one key to revoke.
         user-ssh-key.owner = host.userName;
-        user-ssh-key.mode = "0600";
+        user-ssh-key.group = "hive";
+        user-ssh-key.mode = "0640";
         user-ssh-key.generator.script = {
           pkgs,
           lib,
