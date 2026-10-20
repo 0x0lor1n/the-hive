@@ -30,7 +30,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "max by (host) (up)",
+          "expr": "max by (host) (up{host!=\"osgiliath\"})",
           "legendFormat": "{{host}}"
         },
         {
@@ -303,12 +303,107 @@
       "options": {}
     },
     {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Reallocated / pending / uncorrectable sectors (SMART raw)",
+      "gridPos": {
+        "x": 0,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "smartctl_device_attribute{attribute_id=~\"5|197|198\",attribute_value_type=\"raw\"}",
+          "legendFormat": "{{host}} {{device}} {{attribute_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 12,
+      "type": "stat",
+      "title": "Disk power-on hours",
+      "gridPos": {
+        "x": 12,
+        "y": 28,
+        "w": 12,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "smartctl_device_power_on_seconds / 3600",
+          "legendFormat": "{{host}} {{device}} {{model_name}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "h",
+          "decimals": 0,
+          "color": {
+            "mode": "fixed",
+            "fixedColor": "blue"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ]
+        },
+        "colorMode": "none",
+        "graphMode": "none",
+        "textMode": "value_and_name"
+      }
+    },
+    {
       "id": 8,
       "type": "stat",
       "title": "warm-backup: time since last success",
       "gridPos": {
         "x": 0,
-        "y": 28,
+        "y": 36,
         "w": 8,
         "h": 5
       },
@@ -358,7 +453,7 @@
       "title": "Failed units",
       "gridPos": {
         "x": 8,
-        "y": 28,
+        "y": 36,
         "w": 8,
         "h": 5
       },
@@ -407,7 +502,7 @@
       "title": "Unclean boot",
       "gridPos": {
         "x": 16,
-        "y": 28,
+        "y": 36,
         "w": 8,
         "h": 5
       },

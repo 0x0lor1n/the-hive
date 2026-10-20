@@ -54,11 +54,10 @@ groups:
         annotations:
           summary: "{{ $labels.host }} {{ $labels.device }}: SMART overall status FAILED"
 
-      # 5 = Reallocated_Sector_Ct, 197 = Current_Pending_Sector,
-      # 198 = Offline_Uncorrectable. A handful is a disk that found a bad spot;
-      # hundreds is a disk on its way out.
+      # 5 = Reallocated_Sector_Ct, 198 = Offline_Uncorrectable. A handful is a
+      # disk that found a bad spot; hundreds is a disk on its way out.
       - alert: DiskReallocating
-        expr: smartctl_device_attribute{attribute_id=~"5|197|198",attribute_value_type="raw"} > 0 <= 100
+        expr: smartctl_device_attribute{attribute_id=~"5|198",attribute_value_type="raw"} > 0 <= 100
         for: 1m
         labels:
           severity: warning
@@ -66,12 +65,22 @@ groups:
           summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} = {{ $value }}"
 
       - alert: DiskReallocatingMany
-        expr: smartctl_device_attribute{attribute_id=~"5|197|198",attribute_value_type="raw"} > 100
+        expr: smartctl_device_attribute{attribute_id=~"5|198",attribute_value_type="raw"} > 100
         for: 1m
         labels:
           severity: critical
         annotations:
           summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} = {{ $value }} -- replace the disk"
+
+      # 197 = Current_Pending_Sector: sectors the firmware could NOT read and
+      # has not remapped yet. Even one means reads are failing right now and
+      # ZFS is about to see errors -- offline the disk, do not wait.
+      - alert: DiskPendingSectors
+        expr: smartctl_device_attribute{attribute_id="197",attribute_value_type="raw"} > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $value }} pending (unreadable) sectors -- zpool offline it now"
 
       # Alertmanager only notifies on state changes, so a counter that keeps
       # climbing is invisible after the first push. This one flaps on purpose:
