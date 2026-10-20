@@ -149,6 +149,14 @@ in {
         group_wait = "30s";
         group_interval = "5m";
         repeat_interval = "12h";
+        # A critical that is still firing is worth a nudge every hour; the
+        # 12 h default is for "yes, I know the pool is 80 % full".
+        routes = [
+          {
+            matchers = ["severity = critical"];
+            repeat_interval = "1h";
+          }
+        ];
       };
       receivers = [
         {
