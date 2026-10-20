@@ -19,6 +19,8 @@
   copies = {
     "tank/photos" = "${pool}/photos";
     "tank/archive" = "${pool}/archive";
+    # Service state (DBs, configs) on the NVMe pool: small, but the only copy.
+    "fast/services" = "${pool}/services";
   };
 
   syncoid = "${pkgs.sanoid}/bin/syncoid";
@@ -71,8 +73,20 @@ in {
         autosnap = true;
         autoprune = true;
       };
+      # Service state changes all day (DBs); hourly gives a 1h RPO.
+      keep-services = {
+        hourly = 24;
+        daily = 14;
+        monthly = 3;
+        autosnap = true;
+        autoprune = true;
+      };
     };
     datasets = {
+      "fast/services" = {
+        useTemplate = ["keep-services"];
+        recursive = true;
+      };
       "tank/photos" = {
         useTemplate = ["keep-long"];
         recursive = true;
