@@ -6,8 +6,8 @@ One flake for the fleet, on [rensa](https://gitlab.com/rensa-nix/). Ported from
 | host | role | hardware | runs |
 |---|---|---|---|
 | osgiliath | blog + radio | VPS, snowcore.io | nginx, [hisilome](https://github.com/0x0lor1n/hisilome): <https://hisilo.me>, liquidsoap + icecast |
-| minas-tirith | router | CWWK S8, Intel N305 | nftables WAN/LAN, fiber bypass, yggdrasil |
-| imladris | NAS | MSI B250M PRO-VD, Intel i5-6600T | TorrServer |
+| minas-tirith | router + monitoring | CWWK S8, Intel N305 | nftables WAN/LAN, fiber bypass, yggdrasil; prometheus, alertmanager, grafana, ntfy |
+| imladris | NAS | MSI B250M PRO-VD, Intel i5-6600T | ZFS `tank` (3x IronWolf raidz1) + `fast` (3x NVMe raidz1), sanoid + warm backup, ATX watchdog, TorrServer |
 | elster | workstation, work | HP ZBook Firefly 16 G10 | dwl desktop, Entra login |
 | penrose | workstation, home | Dell Latitude 5580 | under maintenance |
 
@@ -16,6 +16,28 @@ Storage: ZFS with native encryption and TPM-sealed unlock on the workstations
 and minas-tirith, plain ZFS on imladris (no TPM), btrfs with rollback on
 osgiliath. Workstations add Secure Boot (lanzaboote) and the CachyOS kernel.
 **sevastopol** is the retired QEMU rehearsal of the workstation config.
+
+## Monitoring
+
+Prometheus/Alertmanager/Grafana/ntfy on minas-tirith
+(`cells/server/profiles/monitoring-server.nix`); imladris exposes node,
+zfs and smartctl exporters to the LAN only (`monitoring-exporters.nix`),
+osgiliath is just probed on :22. Rules in `cells/server/monitoring/alerts.yml`,
+the one `hive` dashboard in `monitoring/dashboards/`. Alertmanager posts to
+ntfy via alertmanager-ntfy; the phone subscribes to topic `hive-alerts` over
+yggdrasil (ntfy and grafana listen on LAN + `ygg0`, nothing on the WAN).
+
+| | LAN | yggdrasil |
+|---|---|---|
+| grafana | `http://192.168.10.1:3000` | `http://[<ygg addr>]:3000` |
+| ntfy | `http://192.168.10.1:2586` | `http://[<ygg addr>]:2586` |
+
+Alerts: host down / osgiliath unreachable, pool > 80 % or degraded, disk
+> 50 °C, SMART failed / reallocated / pending sectors (critical when any
+pending or > 100 reallocated, plus a per-wave `...Now` alert while the count
+grows), imladris unclean boot (watchdog fired), warm backup failed or stale,
+any systemd unit failed. Secrets (grafana admin, ntfy users) are agenix-rekey
+generators -- `docs/secrets.md`.
 
 ## Docs
 
