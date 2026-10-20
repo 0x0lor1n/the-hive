@@ -305,11 +305,11 @@
     {
       "id": 11,
       "type": "timeseries",
-      "title": "Reallocated / pending / uncorrectable sectors (SMART raw)",
+      "title": "Reallocated sectors (SMART 5 raw)",
       "gridPos": {
         "x": 0,
         "y": 28,
-        "w": 12,
+        "w": 8,
         "h": 8
       },
       "datasource": {
@@ -319,7 +319,65 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "smartctl_device_attribute{attribute_id=~\"5|197|198\",attribute_value_type=\"raw\"}",
+          "expr": "smartctl_device_attribute{attribute_id=\"5\",attribute_value_type=\"raw\"}",
+          "legendFormat": "{{host}} {{device}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "decimals": 0,
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "sortBy": "Last *",
+          "sortDesc": true
+        },
+        "tooltip": {
+          "mode": "multi"
+        }
+      }
+    },
+    {
+      "id": 13,
+      "type": "timeseries",
+      "title": "Pending / offline-uncorrectable sectors (SMART 197/198 raw)",
+      "gridPos": {
+        "x": 8,
+        "y": 28,
+        "w": 8,
+        "h": 8
+      },
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "expr": "smartctl_device_attribute{attribute_id=~\"197|198\",attribute_value_type=\"raw\"}",
           "legendFormat": "{{host}} {{device}} {{attribute_name}}"
         }
       ],
@@ -346,8 +404,14 @@
       },
       "options": {
         "legend": {
-          "displayMode": "list",
-          "placement": "bottom"
+          "displayMode": "table",
+          "placement": "bottom",
+          "calcs": [
+            "lastNotNull",
+            "max"
+          ],
+          "sortBy": "Last *",
+          "sortDesc": true
         },
         "tooltip": {
           "mode": "multi"
@@ -359,9 +423,9 @@
       "type": "stat",
       "title": "Disk power-on hours",
       "gridPos": {
-        "x": 12,
+        "x": 16,
         "y": 28,
-        "w": 12,
+        "w": 8,
         "h": 8
       },
       "datasource": {

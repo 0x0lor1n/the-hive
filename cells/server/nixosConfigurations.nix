@@ -133,6 +133,8 @@ in {
       p.deploy-imladris
       # streaming torrents to the TV boxes, LAN :8090
       p.torrserver
+      # qbittorrent + Prowlarr/Radarr/Sonarr/Lidarr, web UIs LAN only
+      p.media-download
     ];
   };
 }
