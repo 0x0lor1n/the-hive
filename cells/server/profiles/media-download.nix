@@ -83,6 +83,12 @@ in {
         device = "tank/media/downloads";
         fsType = "zfs";
       };
+      # Sonarr's root folder. Created after the initial disko run:
+      #   zfs create -o mountpoint=legacy -o recordsize=1M tank/media/series
+      "/tank/media/series" = {
+        device = "tank/media/series";
+        fsType = "zfs";
+      };
     };
 
   users.groups.media.gid = mediaGid;
@@ -95,7 +101,7 @@ in {
   # non-root parent into a root-owned child ("unsafe path transition").
   systemd.tmpfiles.rules =
     ["z /tank/media 2775 root media -"]
-    ++ map (d: "z /tank/media/${d} 2775 - media -") ["films" "anime" "cartoons" "music"]
+    ++ map (d: "z /tank/media/${d} 2775 - media -") ["films" "series" "anime" "cartoons" "music"]
     ++ [
       "z ${downloads} 2775 qbittorrent media -"
       "d ${downloads}/complete 2775 qbittorrent media -"

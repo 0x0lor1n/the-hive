@@ -158,6 +158,14 @@ in
               recordsize = "1M";
             };
           };
+        "media/series" =
+          legacy "/tank/media/series"
+          // {
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M";
+            };
+          };
         "media/cartoons" =
           legacy "/tank/media/cartoons"
           // {
