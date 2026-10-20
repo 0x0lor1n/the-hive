@@ -54,13 +54,35 @@ groups:
         annotations:
           summary: "{{ $labels.host }} {{ $labels.device }}: SMART overall status FAILED"
 
+      # 5 = Reallocated_Sector_Ct, 197 = Current_Pending_Sector,
+      # 198 = Offline_Uncorrectable. A handful is a disk that found a bad spot;
+      # hundreds is a disk on its way out.
       - alert: DiskReallocating
-        expr: smartctl_device_attribute{attribute_id=~"5|197|198",attribute_value_type="raw"} > 0
+        expr: smartctl_device_attribute{attribute_id=~"5|197|198",attribute_value_type="raw"} > 0 <= 100
         for: 1m
         labels:
           severity: warning
         annotations:
           summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} = {{ $value }}"
+
+      - alert: DiskReallocatingMany
+        expr: smartctl_device_attribute{attribute_id=~"5|197|198",attribute_value_type="raw"} > 100
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} = {{ $value }} -- replace the disk"
+
+      # Alertmanager only notifies on state changes, so a counter that keeps
+      # climbing is invisible after the first push. This one flaps on purpose:
+      # fires while the count grew in the last 30 m, resolves when it stops,
+      # fires again on the next wave. Each wave = one notification.
+      - alert: DiskReallocatingNow
+        expr: increase(smartctl_device_attribute{attribute_id=~"5|197|198",attribute_value_type="raw"}[30m]) > 0
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} +{{ $value | printf \"%.0f\" }} in 30 m, still growing"
 
       # Written by boot-marker (monitoring-exporters.nix) from the previous
       # boot's journal; clears on the next clean boot.
