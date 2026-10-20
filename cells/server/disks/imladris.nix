@@ -120,6 +120,61 @@ in
       mode = "raidz";
       rootFsOptions = poolFsOptions;
       options.ashift = "12";
-      datasets.data = legacy "/tank";
+      # Disko only creates these on install; on the live host
+      # `zfs create -o mountpoint=legacy [-o ...] <name>` once before deploying.
+      datasets = {
+        data = legacy "/tank";
+        # Photos/video from camera and phone; Immich external library.
+        photos =
+          legacy "/tank/photos"
+          // {
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M";
+            };
+          };
+        # Cold data that must survive: sanoid snapshots, first into warm backup.
+        archive = container;
+        "archive/projects" = legacy "/tank/archive/projects";
+        "archive/games" = legacy "/tank/archive/games";
+        "archive/backups" = legacy "/tank/archive/backups";
+        "archive/archive" = legacy "/tank/archive/archive";
+        # Replaceable media; Jellyfin/Navidrome. Short snapshot retention,
+        # not sent to the warm backup.
+        media = container;
+        "media/anime" =
+          legacy "/tank/media/anime"
+          // {
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M";
+            };
+          };
+        "media/films" =
+          legacy "/tank/media/films"
+          // {
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M";
+            };
+          };
+        "media/cartoons" =
+          legacy "/tank/media/cartoons"
+          // {
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M";
+            };
+          };
+        "media/tutorials" =
+          legacy "/tank/media/tutorials"
+          // {
+            options = {
+              mountpoint = "legacy";
+              recordsize = "1M";
+            };
+          };
+        "media/music" = legacy "/tank/media/music";
+      };
     };
   }
