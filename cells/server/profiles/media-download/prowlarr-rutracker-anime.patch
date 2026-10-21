@@ -1,0 +1,100 @@
+diff --git a/src/NzbDrone.Core.Test/IndexerTests/RuTrackerTests/RuTrackerTitleParserFixture.cs b/src/NzbDrone.Core.Test/IndexerTests/RuTrackerTests/RuTrackerTitleParserFixture.cs
+new file mode 100644
+index 0000000..9e5be91
+--- /dev/null
++++ b/src/NzbDrone.Core.Test/IndexerTests/RuTrackerTests/RuTrackerTitleParserFixture.cs
+@@ -0,0 +1,25 @@
++using System.Collections.Generic;
++using FluentAssertions;
++using NUnit.Framework;
++using NzbDrone.Core.Indexers;
++using NzbDrone.Core.Indexers.Definitions;
++using NzbDrone.Core.Test.Framework;
++
++namespace NzbDrone.Core.Test.IndexerTests.RuTrackerTests
++{
++    [TestFixture]
++    public class RuTrackerTitleParserFixture : CoreTest<RuTrackerTitleParser>
++    {
++        [TestCase("Технолайз / Texhnolyze [TV] [22 из 22] [RUS(ext), JAP] [2003, BDRip]", "Texhnolyze [TV] S1E1-22 of 22 [RUS(ext), JAP] [2003, BDRip]")]
++        [TestCase("Психопаспорт (ТВ-2) / Psycho-Pass 2 [TV] [11 из 11] [RUS(ext), JAP] [2014, BDRemux] [1080p]", "(S2) / Psycho-Pass 2 [TV] S2E1-11 of 11 [RUS(ext), JAP] [2014, BDRemux] [1080p]")]
++        [TestCase("Технолайз / Texhnolyze [TV] [08 из 22] [RUS(ext), JAP] [2003, WEBRip]", "Texhnolyze [TV] S1E1-8 of 22 [RUS(ext), JAP] [2003, WEBRip]")]
++        [TestCase("Технолайз / Texhnolyze [TV] [1 из 22] [RUS(ext), JAP] [2003, WEBRip]", "Texhnolyze [TV] S1E1 of 22 [RUS(ext), JAP] [2003, WEBRip]")]
++        [TestCase("Технолайз / Texhnolyze [TV] [22+1 из 22+1] [RUS(ext), JAP] [2003, BDRip]", "Texhnolyze [TV] E22+1 of 22+1 [RUS(ext), JAP] [2003, BDRip]")]
++        public void should_parse_anime_episode_packs(string title, string expected)
++        {
++            var categories = new List<IndexerCategory> { NewznabStandardCategory.TVAnime };
++
++            Subject.Parse(title, categories).Should().Be(expected);
++        }
++    }
++}
+diff --git a/src/NzbDrone.Core/Indexers/Definitions/RuTracker.cs b/src/NzbDrone.Core/Indexers/Definitions/RuTracker.cs
+index 86ad314..2e5136d 100644
+--- a/src/NzbDrone.Core/Indexers/Definitions/RuTracker.cs
++++ b/src/NzbDrone.Core/Indexers/Definitions/RuTracker.cs
+@@ -1505,6 +1505,9 @@ private IndexerPageableRequestChain GetPageableRequests(string searchTerm, int[]
+         {
+             var pageableRequests = new IndexerPageableRequestChain();
+ 
++            // Anime titles ("Title [TV] [22 из 22]") carry neither "ТВ" nor "Сезон: N", so also search without them.
++            var seasons = season != 0 && searchTerm.IsNotNullOrWhiteSpace() ? new[] { season, 0 } : new[] { season };
++
+             if (categories is { Length: > 0 })
+             {
+                 var trackerCategories = _capabilities.Categories.MapTorznabCapsToTrackers(categories).Distinct().ToList();
+@@ -1512,12 +1515,18 @@ private IndexerPageableRequestChain GetPageableRequests(string searchTerm, int[]
+                 // RuTracker supports maximum 200 categories in one search
+                 foreach (var trackerCategoriesChunk in trackerCategories.Chunk(200))
+                 {
+-                    pageableRequests.Add(GetPagedRequests(searchTerm, trackerCategoriesChunk, season));
++                    foreach (var searchSeason in seasons)
++                    {
++                        pageableRequests.Add(GetPagedRequests(searchTerm, trackerCategoriesChunk, searchSeason));
++                    }
+                 }
+             }
+             else
+             {
+-                pageableRequests.Add(GetPagedRequests(searchTerm, null, season));
++                foreach (var searchSeason in seasons)
++                {
++                    pageableRequests.Add(GetPagedRequests(searchTerm, null, searchSeason));
++                }
+             }
+ 
+             return pageableRequests;
+@@ -1716,6 +1725,24 @@ public class RuTrackerTitleParser
+         private readonly Regex _tvTitleRusSeasonAnimeRegex = new(@"ТВ[-]*(?:(\d+))", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+         private readonly Regex _tvTitleRusEpisodeAnimeOfRegex = new(@"\[(\d+(\+\d+)?)\s+из\s+(\d+(\+\d+)?)\]", RegexOptions.Compiled | RegexOptions.IgnoreCase);
+ 
++        private static readonly Regex TvTitleSeasonTokenRegex = new(@"\bS(\d+)\b", RegexOptions.Compiled);
++
++        // "[N из M]" is episodes 1..N of M; the season comes from a preceding "ТВ-N", already rewritten to "SN".
++        private static string ReplaceAnimeEpisodesOf(Match match)
++        {
++            var seasonMatch = TvTitleSeasonTokenRegex.Match(match.Result("$`"));
++            var season = seasonMatch.Success ? seasonMatch.Groups[1].Value : "1";
++            var episodes = match.Groups[1].Value;
++            var total = match.Groups[3].Value;
++
++            if (match.Groups[2].Success || !int.TryParse(episodes, out var count))
++            {
++                return $"E{episodes} of {total}";
++            }
++
++            return count == 1 ? $"S{season}E1 of {total}" : $"S{season}E1-{count} of {total}";
++        }
++
+         public string Parse(string title,
+                             ICollection<IndexerCategory> categories,
+                             bool stripCyrillicLetters = true,
+@@ -1740,7 +1767,7 @@ public string Parse(string title,
+                 title = _tvTitleRusEpisodeOfRegex.Replace(title, "E$1 of $2");
+                 title = _tvTitleRusEpisodeRegex.Replace(title, "E$1");
+                 title = _tvTitleRusSeasonAnimeRegex.Replace(title, "S$1");
+-                title = _tvTitleRusEpisodeAnimeOfRegex.Replace(title, "E$1 of $3");
++                title = _tvTitleRusEpisodeAnimeOfRegex.Replace(title, ReplaceAnimeEpisodesOf);
+             }
+             else if (IsAnyMovieCategory(categories))
+             {

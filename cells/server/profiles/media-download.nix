@@ -160,6 +160,10 @@
     meta.mainProgram = "anilibria-torznab";
   };
   anilibriaPort = 9697;
+  # RuTracker anime season packs; drop once nixpkgs' Prowlarr includes it.
+  prowlarr = pkgs.prowlarr.overrideAttrs (old: {
+    patches = (old.patches or []) ++ [./media-download/prowlarr-rutracker-anime.patch];
+  });
   mediaKeys = ["rutracker" "kinozal" "jellyfin-admin" "jellyfin-tv"];
   mediaConfigure = pkgs.writeShellScriptBin "media-configure" ''
     export TRASH="''${TRASH:-${inputs.trash-guides}/docs/json}" LAN_IP="''${LAN_IP:-${lanIp}}"
@@ -243,6 +247,7 @@ in {
   # user wizard. API keys stay required for the cross-links (*arr <-> Prowlarr).
   services.prowlarr = {
     enable = true;
+    package = prowlarr;
     settings.auth = noAuth;
   };
   # rutracker.org / .net sit behind a Cloudflare JS challenge (cf-mitigated:

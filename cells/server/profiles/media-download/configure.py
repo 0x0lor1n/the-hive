@@ -481,7 +481,7 @@ def configure_prowlarr(apps):
         p.upsert_tested("indexer", "RuTracker.org", lambda s: s["implementation"] == "RuTracker",
                         {"baseUrl": "https://rutracker.org/", "username": rt["USERNAME"],
                          "password": rt["PASSWORD"], "russianLetters": True, "addRussianToTitle": True,
-                         "useMagnetLinks": False},
+                         "useMagnetLinks": False, "moveAllTagsToEndOfReleaseTitle": True},
                         {"tags": [cf], "enable": True, "priority": 25, "appProfileId": 1})
     else:
         log("  -- no rutracker credential, skipped")
