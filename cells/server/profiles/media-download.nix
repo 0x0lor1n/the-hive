@@ -49,6 +49,66 @@
   };
   # Jellyfin client auto-discovery (UDP broadcast from the apps).
   jellyfinDiscovery = 7359;
+  # Jellyfin transcoder config, written over config/encoding.xml at every start.
+  # VAAPI on the i5-6600T iGPU (Gen9): HW decode h264/hevc8/mpeg2/vc1/vp8 + HW
+  # h264 encode; no 10-bit decode, no vp9/av1, no tone-mapping (needs OpenCL
+  # which was crashing the QSV path -> "Unable to find a valid media source").
+  jellyfinEncodingXml = pkgs.writeText "jellyfin-encoding.xml" ''
+    <?xml version="1.0" encoding="utf-8"?>
+    <EncodingOptions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+      <EncodingThreadCount>-1</EncodingThreadCount>
+      <EnableFallbackFont>false</EnableFallbackFont>
+      <EnableAudioVbr>false</EnableAudioVbr>
+      <DownMixAudioBoost>2</DownMixAudioBoost>
+      <DownMixStereoAlgorithm>None</DownMixStereoAlgorithm>
+      <MaxMuxingQueueSize>2048</MaxMuxingQueueSize>
+      <EnableThrottling>false</EnableThrottling>
+      <ThrottleDelaySeconds>180</ThrottleDelaySeconds>
+      <EnableSegmentDeletion>false</EnableSegmentDeletion>
+      <SegmentKeepSeconds>720</SegmentKeepSeconds>
+      <HardwareAccelerationType>vaapi</HardwareAccelerationType>
+      <VaapiDevice>/dev/dri/renderD128</VaapiDevice>
+      <QsvDevice />
+      <EnableTonemapping>false</EnableTonemapping>
+      <EnableVppTonemapping>false</EnableVppTonemapping>
+      <EnableVideoToolboxTonemapping>false</EnableVideoToolboxTonemapping>
+      <TonemappingAlgorithm>bt2390</TonemappingAlgorithm>
+      <TonemappingMode>auto</TonemappingMode>
+      <TonemappingRange>auto</TonemappingRange>
+      <TonemappingDesat>0</TonemappingDesat>
+      <TonemappingPeak>100</TonemappingPeak>
+      <TonemappingParam>0</TonemappingParam>
+      <VppTonemappingBrightness>16</VppTonemappingBrightness>
+      <VppTonemappingContrast>1</VppTonemappingContrast>
+      <H264Crf>23</H264Crf>
+      <H265Crf>28</H265Crf>
+      <EncoderPreset xsi:nil="true" />
+      <DeinterlaceDoubleRate>false</DeinterlaceDoubleRate>
+      <DeinterlaceMethod>yadif</DeinterlaceMethod>
+      <EnableDecodingColorDepth10Hevc>false</EnableDecodingColorDepth10Hevc>
+      <EnableDecodingColorDepth10Vp9>false</EnableDecodingColorDepth10Vp9>
+      <EnableDecodingColorDepth10HevcRext>false</EnableDecodingColorDepth10HevcRext>
+      <EnableDecodingColorDepth12HevcRext>false</EnableDecodingColorDepth12HevcRext>
+      <EnableEnhancedNvdecDecoder>false</EnableEnhancedNvdecDecoder>
+      <PreferSystemNativeHwDecoder>true</PreferSystemNativeHwDecoder>
+      <EnableIntelLowPowerH264HwEncoder>false</EnableIntelLowPowerH264HwEncoder>
+      <EnableIntelLowPowerHevcHwEncoder>false</EnableIntelLowPowerHevcHwEncoder>
+      <EnableHardwareEncoding>true</EnableHardwareEncoding>
+      <AllowHevcEncoding>false</AllowHevcEncoding>
+      <AllowAv1Encoding>false</AllowAv1Encoding>
+      <EnableSubtitleExtraction>true</EnableSubtitleExtraction>
+      <HardwareDecodingCodecs>
+        <string>h264</string>
+        <string>hevc</string>
+        <string>mpeg2video</string>
+        <string>vc1</string>
+        <string>vp8</string>
+      </HardwareDecodingCodecs>
+      <AllowOnDemandMetadataBasedKeyframeExtractionForExtensions>
+        <string>mkv</string>
+      </AllowOnDemandMetadataBasedKeyframeExtractionForExtensions>
+    </EncodingOptions>
+  '';
   svcs = builtins.attrNames webPorts;
   lanRule = port: "iptables -A nixos-fw -p tcp -s ${lan} --dport ${toString port} -j nixos-fw-accept";
   lanUnrule = port: "iptables -D nixos-fw -p tcp -s ${lan} --dport ${toString port} -j nixos-fw-accept || true";
@@ -229,12 +289,19 @@ in {
       StateDirectoryMode = "0750";
       UMask = lib.mkForce "0002";
     };
+    # encoding.xml is owned by nix: Dashboard -> Playback -> Transcoding edits
+    # are overwritten on every (re)start. Change it here, redeploy.
+    preStart = ''
+      install -m 0640 ${jellyfinEncodingXml} /var/lib/jellyfin/config/encoding.xml
+    '';
   };
-  # Intel QSV (i5-6600T, Skylake) for transcoding; enable in UI:
-  # Dashboard -> Playback -> Transcoding -> Intel QuickSync (QSV), /dev/dri/renderD128.
+  # Intel VAAPI (i5-6600T, Skylake/Gen9) for transcoding. Not QSV: jellyfin-ffmpeg
+  # 7.x drives QSV via libvpl whose runtime (vpl-gpu-rt) is Gen12+ only; Gen9 would
+  # need the deprecated intel-media-sdk, and QSV buys nothing over VAAPI here
+  # (no HW HEVC 10-bit decode on Skylake anyway).
   hardware.graphics = {
     enable = true;
-    extraPackages = with pkgs; [intel-media-driver libva-vdpau-driver intel-compute-runtime];
+    extraPackages = with pkgs; [intel-media-driver intel-compute-runtime];
   };
   users.users.jellyfin.extraGroups = ["render" "video"];
 

@@ -3,7 +3,7 @@
 Idempotent: CFs matched by name (update), profiles matched by name (update)."""
 import json, glob, re, sys, urllib.request, urllib.error
 
-TRASH = sys.argv[1] if len(sys.argv) > 1 and sys.argv[1].startswith("/") else "/tmp/trash/docs/json"  # path to TRaSH-Guides/docs/json
+TRASH = "/tmp/trash/docs/json"
 APPS = {
     "sonarr": {"url": "http://127.0.0.1:18989", "profile_lang": None},
     "radarr": {"url": "http://127.0.0.1:17878"},
