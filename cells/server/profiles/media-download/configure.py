@@ -359,6 +359,11 @@ def trash_profiles(app):
 
 # ---- per-app configuration --------------------------------------------------
 def jellyfin_notification(app, jf_key, flags):
+    # No jellyfin-admin credential (reboot wiped /run/credstore): no key to
+    # push, and the *arr reject an empty one. Keep whatever is already set.
+    if not jf_key:
+        log("  -- no jellyfin api key: notification skipped")
+        return
     app.upsert("notification", "Jellyfin", lambda s: s["implementation"] == "MediaBrowser",
                {"host": "127.0.0.1", "port": PORTS["jellyfin"], "useSsl": False, "apiKey": jf_key,
                 "notify": False, "updateLibrary": True},
