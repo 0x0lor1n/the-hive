@@ -128,6 +128,7 @@ in {
       p.layer-users-admin
       p.layer-server-hardening
       p.platform-imladris
+      p.net-imladris
       p.storage-fast
       p.backup-warm
       p.atx-watchdog
