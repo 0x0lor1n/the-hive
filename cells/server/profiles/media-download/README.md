@@ -15,7 +15,7 @@ Nothing here is done in a web UI anymore. If a UI change is wanted, put it in
 | app | what |
 |---|---|
 | Jellyfin | startup wizard (ru/RU), libraries Фильмы/Сериалы/Аниме/Мультфильмы/Музыка, metrics off, viewer user (no admin, no delete, RU audio+subs), `arr-stack` API key |
-| qbittorrent | categories `tv`/`movies`/`music` → `/tank/media/downloads/complete/<cat>` (paths/port/LAN auth bypass are the nix seed) |
+| qbittorrent | share limit: stop at ratio 0 (no seeding); categories `tv`/`movies`/`music` → `/tank/media/downloads/complete/<cat>` (paths/port/LAN auth bypass are the nix seed) |
 | Sonarr | root `/tank/media/series`, qBittorrent client (cat `tv`), no rename, 755 folders, Jellyfin notification, tag `anime`, TRaSH CFs + `WEB-1080p RU` / `Anime RU` |
 | Radarr | root `/tank/media/films`, client (cat `movies`), no rename, Jellyfin notification, TRaSH CFs + `UHD Bluray + WEB RU` / `HD Bluray + WEB RU` / `Anime RU` |
 | Lidarr | root `/tank/media/music`, client (cat `music`), profile `FLAC > MP3-320` (cutoff Lossless), metadata Album+EP, track naming, cue/log/covers kept |

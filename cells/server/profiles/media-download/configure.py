@@ -509,6 +509,15 @@ def configure_qbittorrent():
             urllib.request.urlopen(urllib.request.Request(f"{base}/torrents/editCategory", data=form, headers=hdr))
             log(f"  ~ category {c} -> {path}")
 
+    # No seeding: stop the torrent the moment it completes (ratio 0, action
+    # Stop). The *arr import from a stopped torrent, then remove it.
+    want = {"max_ratio_enabled": True, "max_ratio": 0, "max_ratio_act": 0}
+    prefs = http("GET", f"{base}/app/preferences")
+    if any(prefs.get(k) != v for k, v in want.items()):
+        form = urllib.parse.urlencode({"json": json.dumps(want)}).encode()
+        urllib.request.urlopen(urllib.request.Request(f"{base}/app/setPreferences", data=form, headers=hdr))
+        log("  ~ share limit: stop at ratio 0")
+
 
 # ---- Jellyfin ----------------------------------------------------------------
 class Jellyfin:
