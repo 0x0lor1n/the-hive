@@ -41,6 +41,49 @@
   ntfyUser = "alertmanager";
   topic = "hive-alerts";
 
+  # Up/down per box on the LAN; vontar is a DHCP lease (.103), not static.
+  icmpTargets = {
+    imladris = imladris;
+    vontar = "192.168.10.103";
+    asus-ap = "192.168.10.2";
+  };
+  # User-facing web UIs, one row each on the dashboard. flaresolverr and
+  # anilibria-torznab listen on imladris loopback only: their status comes
+  # from node_exporter's systemd collector, not from here.
+  httpServices = {
+    jellyfin = "http://${imladris}:8096/health";
+    torrserver = "http://${imladris}:8090/";
+    qbittorrent = "http://${imladris}:8080/";
+    prowlarr = "http://${imladris}:9696/";
+    radarr = "http://${imladris}:7878/";
+    sonarr = "http://${imladris}:8989/";
+    lidarr = "http://${imladris}:8686/";
+    grafana = "http://192.168.10.1:${toString grafanaPort}/api/health";
+    ntfy = "http://192.168.10.1:${toString ntfyPort}/v1/health";
+  };
+  hostOf = url:
+    if lib.hasPrefix "http://${imladris}:" url
+    then "imladris"
+    else "minas-tirith";
+
+  # Blackbox jobs: the target becomes ?target=, the scrape goes to blackbox.
+  probeJob = name: module: staticConfigs: {
+    job_name = name;
+    metrics_path = "/probe";
+    params.module = [module];
+    static_configs = staticConfigs;
+    relabel_configs = [
+      {
+        source_labels = ["__address__"];
+        target_label = "__param_target";
+      }
+      {
+        target_label = "__address__";
+        replacement = "127.0.0.1:9115";
+      }
+    ];
+  };
+
   passwordOf = {
     decrypt,
     deps,
@@ -205,9 +248,24 @@ in {
         enable = true;
         listenAddress = "127.0.0.1";
         configFile = pkgs.writeText "blackbox.yml" (builtins.toJSON {
-          modules.tcp_connect = {
-            prober = "tcp";
-            timeout = "5s";
+          modules = {
+            tcp_connect = {
+              prober = "tcp";
+              timeout = "5s";
+            };
+            icmp = {
+              prober = "icmp";
+              timeout = "5s";
+              icmp.preferred_ip_protocol = "ip4";
+            };
+            http_2xx = {
+              prober = "http";
+              timeout = "5s";
+              http = {
+                preferred_ip_protocol = "ip4";
+                follow_redirects = true;
+              };
+            };
           };
         });
       };
@@ -229,28 +287,27 @@ in {
       (job "smartctl" "imladris" ["${imladris}:9633"])
       (job "node" "minas-tirith" ["127.0.0.1:9100"])
       (job "zfs" "minas-tirith" ["127.0.0.1:9134"])
-      {
-        # No exporter on the public VPS: is ssh reachable from here.
-        job_name = "probe-osgiliath";
-        metrics_path = "/probe";
-        params.module = ["tcp_connect"];
-        static_configs = [
-          {
-            targets = ["${osgiliath}:22"];
-            labels.host = "osgiliath";
-          }
-        ];
-        relabel_configs = [
-          {
-            source_labels = ["__address__"];
-            target_label = "__param_target";
-          }
-          {
-            target_label = "__address__";
-            replacement = "127.0.0.1:9115";
-          }
-        ];
-      }
+      # No exporter on the public VPS: is ssh reachable from here.
+      (probeJob "probe-osgiliath" "tcp_connect" [
+        {
+          targets = ["${osgiliath}:22"];
+          labels.host = "osgiliath";
+        }
+      ])
+      (probeJob "icmp-lan" "icmp" (lib.mapAttrsToList (host: ip: {
+          targets = [ip];
+          labels.host = host;
+        })
+        icmpTargets))
+      (probeJob "http-services" "http_2xx" (lib.mapAttrsToList (service: url: {
+          targets = [url];
+          labels = {
+            inherit service url;
+            host = hostOf url;
+            tier = "main";
+          };
+        })
+        httpServices))
     ];
   };
   environment.persistence."/state".directories = ["/var/lib/node_exporter"];

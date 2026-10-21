@@ -76,6 +76,12 @@ in {
     };
   };
 
+  # Target of minas-tirith's hourly iperf3-probe (monitoring-probes.nix).
+  services.iperf3 = {
+    enable = true;
+    openFirewall = true;
+  };
+
   environment.persistence."/state".directories = ["/var/lib/node_exporter"];
   systemd.tmpfiles.rules = ["d ${textfileDir} 0755 root root -"];
 

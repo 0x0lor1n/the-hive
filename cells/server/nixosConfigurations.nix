@@ -113,6 +113,7 @@ in {
         p.fiber-bypass
         p.monitoring-server
         p.backup-push
+        p.monitoring-probes
         # phone -> Jellyfin on imladris over ygg0 (TCP relay, :8096)
         p.jellyfin-ygg
         p.deploy-minas-tirith
