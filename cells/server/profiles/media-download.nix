@@ -1,12 +1,12 @@
 # Download side of the media stack: qbittorrent-nox + Prowlarr (indexers)
-# + Radarr/Sonarr/Lidarr (films/series/music). Web UIs are LAN only; the
+# + Radarr/Sonarr/Lidarr (films/series/music) + Jellyfin (playback). Web UIs are LAN only; the
 # torrent peer port is open to the world and minas-tirith forwards it here
 # (net-router-wan.nix, next to TorrServer's 42000).
 #
 # State: one dataset per service on `fast` (snapshotted hourly, copied to
 # warm1). The user creates them once on the live host BEFORE the deploy:
 #
-#   for s in qbittorrent prowlarr radarr sonarr lidarr; do
+#   for s in qbittorrent prowlarr radarr sonarr lidarr jellyfin; do
 #     sudo zfs create -o mountpoint=legacy fast/services/$s; done
 #   sudo zfs create -o mountpoint=legacy -o recordsize=1M tank/media/downloads
 #
@@ -45,10 +45,15 @@
     radarr = 7878;
     sonarr = 8989;
     lidarr = 8686;
+    jellyfin = 8096;
   };
+  # Jellyfin client auto-discovery (UDP broadcast from the apps).
+  jellyfinDiscovery = 7359;
   svcs = builtins.attrNames webPorts;
   lanRule = port: "iptables -A nixos-fw -p tcp -s ${lan} --dport ${toString port} -j nixos-fw-accept";
   lanUnrule = port: "iptables -D nixos-fw -p tcp -s ${lan} --dport ${toString port} -j nixos-fw-accept || true";
+  lanRuleUdp = port: "iptables -A nixos-fw -p udp -s ${lan} --dport ${toString port} -j nixos-fw-accept";
+  lanUnruleUdp = port: "iptables -D nixos-fw -p udp -s ${lan} --dport ${toString port} -j nixos-fw-accept || true";
 
   noAuth = {
     method = "External";
@@ -106,7 +111,9 @@ in {
       "z ${downloads} 2775 qbittorrent media -"
       "d ${downloads}/complete 2775 qbittorrent media -"
       "d ${downloads}/incomplete 2775 qbittorrent media -"
-    ];
+    ]
+    # qbittorrent categories (tv/movies/music) -> per-*arr subdirs under complete/
+    ++ map (c: "d ${downloads}/complete/${c} 2775 qbittorrent media -") ["tv" "movies" "music"];
 
   # ---- qbittorrent --------------------------------------------------------
   services.qbittorrent = {
@@ -205,13 +212,45 @@ in {
     };
   };
 
+  # ---- jellyfin -----------------------------------------------------------
+  # Media server over the same /tank/media library the *arr stack fills.
+  # Libraries (films/series/anime/cartoons/music) are added in the web UI.
+  # State on fast/services/jellyfin (same pattern as the *arr):
+  #   zfs create -o mountpoint=legacy fast/services/jellyfin
+  services.jellyfin = {
+    enable = true;
+    group = "media";
+    openFirewall = false;
+  };
+  systemd.services.jellyfin = {
+    unitConfig.RequiresMountsFor = ["/var/lib/jellyfin" "/tank/media/series"];
+    serviceConfig = {
+      StateDirectory = "jellyfin";
+      StateDirectoryMode = "0750";
+      UMask = lib.mkForce "0002";
+    };
+  };
+  # Intel QSV (i5-6600T, Skylake) for transcoding; enable in UI:
+  # Dashboard -> Playback -> Transcoding -> Intel QuickSync (QSV), /dev/dri/renderD128.
+  hardware.graphics = {
+    enable = true;
+    extraPackages = with pkgs; [intel-media-driver libva-vdpau-driver intel-compute-runtime];
+  };
+  users.users.jellyfin.extraGroups = ["render" "video"];
+
   # ---- firewall -----------------------------------------------------------
   networking.firewall = {
     # Torrent peers from anywhere; minas-tirith forwards peerPort here.
     allowedTCPPorts = [peerPort];
     allowedUDPPorts = [peerPort];
     # Web UIs: the LAN only.
-    extraCommands = lib.concatMapStringsSep "\n" lanRule (builtins.attrValues webPorts);
-    extraStopCommands = lib.concatMapStringsSep "\n" lanUnrule (builtins.attrValues webPorts);
+    extraCommands =
+      lib.concatMapStringsSep "\n" lanRule (builtins.attrValues webPorts)
+      + "\n"
+      + lanRuleUdp jellyfinDiscovery;
+    extraStopCommands =
+      lib.concatMapStringsSep "\n" lanUnrule (builtins.attrValues webPorts)
+      + "\n"
+      + lanUnruleUdp jellyfinDiscovery;
   };
 }
