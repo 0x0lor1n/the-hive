@@ -11,8 +11,9 @@
   router.ports = {
     wan = "enp1s0f0"; # SFP+ #1, WAS-110 ONU stick
     lan = [
-      "enp3s0" # ETH1, Asus AP
-      "enp2s0" # ETH2, Vontar X5
+      "enp2s0" # ETH2, Asus AP (elster, Pixel, ... behind it)
+      "enp3s0" # ETH1, Vontar X5 direct (fdb 2026-10: 00:ea:25:…, adb :5555)
+      "enp1s0f1" # SFP+ #2, DAC to imladris enp7s0
     ];
   };
 
