@@ -27,7 +27,7 @@ from typing import Any
 
 TRASH = os.environ.get("TRASH", "/tmp/trash/docs/json")
 LAN_IP = os.environ.get("LAN_IP", "192.168.10.10")
-PORTS = {"prowlarr": 9696, "radarr": 7878, "sonarr": 8989, "lidarr": 8686, "jellyfin": 8096, "qbittorrent": 8080}
+PORTS = {"prowlarr": 9696, "anilibria": 9697, "radarr": 7878, "sonarr": 8989, "lidarr": 8686, "jellyfin": 8096, "qbittorrent": 8080}
 FLARESOLVERR = "http://127.0.0.1:8191"
 LIBRARY = {"series": "/tank/media/series", "films": "/tank/media/films", "music": "/tank/media/music",
            "anime": "/tank/media/anime"}
@@ -479,6 +479,18 @@ def configure_prowlarr(apps):
                     {"enable": True, "priority": 25, "appProfileId": 1})
     p.upsert_tested("indexer", "Anime Tosho", cardigann("animetosho-xyz"),
                     {}, {"enable": True, "priority": 25, "appProfileId": 1})
+    # AniLiberty via the local anilibria-torznab bridge (media-download.nix).
+    # RU dub, 1080p WEB-DL; titles carry RUS so the RU Audio CF scores them.
+    # Priority 10 (lower = preferred) so it wins ties against raw Nyaa.
+    al = credential("anilibria")
+    if al.get("API_KEY"):
+        p.upsert_tested("indexer", "AniLiberty",
+                        lambda s: s["implementation"] == "Torznab" and s["name"] == "Generic Torznab",
+                        {"baseUrl": f"http://127.0.0.1:{PORTS['anilibria']}", "apiPath": "/api",
+                         "apiKey": al["API_KEY"], "torrentBaseSettings.preferMagnetUrl": True},
+                        {"enable": True, "priority": 10, "appProfileId": 1})
+    else:
+        log("  -- no anilibria api key (bridge not up yet?), skipped")
 
     # Apps: full sync. RuTor returns no categories, so 8000 (Other) is synced too.
     tv = [5000, 5010, 5020, 5030, 5040, 5045, 5050, 5060, 5070, 5080, 5090, 8000]

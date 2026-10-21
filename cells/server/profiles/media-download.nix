@@ -138,6 +138,28 @@
   qbitConf = "/var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf";
 
   # In-app settings pusher (see the media-configure unit below).
+  # AniLiberty (anilibria.top) has no Torznab/RSS search; its API v1 separates
+  # release search from torrent lookup and Prowlarr has no native definition
+  # yet (upstream PR #2730). This Go bridge fans that out into a Generic
+  # Torznab endpoint (categories 5000/5070, titles "<label> SxxEyy RUS / <rus>
+  # / <orig>" — Sonarr parses them, RUS feeds the RU Audio CF). Stdlib only.
+  anilibriaTorznab = pkgs.buildGoModule {
+    pname = "anilibria-torznab";
+    version = "1.0.3";
+    src = pkgs.fetchFromGitHub {
+      owner = "Zenderg";
+      repo = "anilibria-torznab";
+      rev = "8fab6dddbd54d5a60766009b6bc61a792c1660b1";
+      hash = "sha256-s6UpWf8g7bq15z6ODAyYmHDPaYpALePKZBoPfHFn5Go=";
+    };
+    vendorHash = null;
+    subPackages = ["cmd/server"];
+    env.CGO_ENABLED = 0;
+    ldflags = ["-s" "-w" "-X main.version=1.0.3"];
+    postInstall = "mv $out/bin/server $out/bin/anilibria-torznab";
+    meta.mainProgram = "anilibria-torznab";
+  };
+  anilibriaPort = 9697;
   mediaKeys = ["rutracker" "kinozal" "jellyfin-admin" "jellyfin-tv"];
   mediaConfigure = pkgs.writeShellScriptBin "media-configure" ''
     export TRASH="''${TRASH:-${inputs.trash-guides}/docs/json}" LAN_IP="''${LAN_IP:-${lanIp}}"
@@ -229,6 +251,38 @@ in {
   # (Settings -> Indexers -> + -> FlareSolverr, host http://127.0.0.1:8191,
   # tag "cf") and the rutracker indexer gets the same tag. Localhost only.
   services.flaresolverr.enable = true;
+  # AniLiberty -> Torznab bridge (see anilibriaTorznab above). Localhost only;
+  # Prowlarr talks to it as a Generic Torznab indexer with a per-host API key
+  # generated once into its state dir. media-configure reads the same file
+  # (ImportCredential media-anilibria) to register the indexer.
+  systemd.services.anilibria-torznab = {
+    description = "AniLiberty -> Torznab bridge for Prowlarr";
+    wantedBy = ["multi-user.target"];
+    after = ["network-online.target"];
+    wants = ["network-online.target"];
+    environment = {
+      LISTEN_ADDR = "127.0.0.1:${toString anilibriaPort}";
+      REQUEST_INTERVAL = "1s";
+      LOG_LEVEL = "info";
+    };
+    script = ''
+      # KEY=VALUE so media-configure's credential() reads the same file.
+      [ -s api-key ] || (umask 077; printf 'API_KEY=%s\n' "$(tr -dc 'a-f0-9' </dev/urandom | head -c 48)" > api-key)
+      set -a; . ./api-key; set +a
+      exec ${lib.getExe anilibriaTorznab}
+    '';
+    serviceConfig = {
+      DynamicUser = true;
+      StateDirectory = "anilibria-torznab";
+      WorkingDirectory = "/var/lib/anilibria-torznab";
+      Restart = "on-failure";
+      RestartSec = 5;
+      NoNewPrivileges = true;
+      ProtectSystem = "strict";
+      ProtectHome = true;
+      PrivateTmp = true;
+    };
+  };
   # The module runs it as DynamicUser, which turns /var/lib/prowlarr into a
   # symlink to /var/lib/private — but it is a dataset mountpoint. Static user
   # instead; StateDirectory stays and chowns the root on every start.
@@ -335,8 +389,8 @@ in {
   systemd.services.media-configure = {
     description = "media stack in-app settings (idempotent)";
     wantedBy = ["multi-user.target"];
-    after = ["qbittorrent.service" "prowlarr.service" "radarr.service" "sonarr.service" "lidarr.service" "jellyfin.service" "flaresolverr.service"];
-    wants = ["qbittorrent.service" "prowlarr.service" "radarr.service" "sonarr.service" "lidarr.service" "jellyfin.service"];
+    after = ["qbittorrent.service" "prowlarr.service" "radarr.service" "sonarr.service" "lidarr.service" "jellyfin.service" "flaresolverr.service" "anilibria-torznab.service"];
+    wants = ["qbittorrent.service" "prowlarr.service" "radarr.service" "sonarr.service" "lidarr.service" "jellyfin.service" "anilibria-torznab.service"];
     # Re-run when the script, the TRaSH pin or the service closure changes.
     restartTriggers = [mediaConfigure inputs.trash-guides.outPath];
     environment = {
@@ -351,6 +405,8 @@ in {
       # script, not fatal for the unit. The manager reads /run/credstore as
       # root; the DynamicUser only sees $CREDENTIALS_DIRECTORY.
       ImportCredential = "media-*";
+      # The bridge's self-generated key lives in its state dir, not credstore.
+      LoadCredential = "media-anilibria:/var/lib/anilibria-torznab/api-key";
       ExecStart = "${mediaConfigure}/bin/media-configure";
       TimeoutStartSec = "20min";
     };
