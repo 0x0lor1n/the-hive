@@ -389,6 +389,15 @@ def configure_sonarr(jf_key):
                                       "onEpisodeFileDelete"])
     s.tag("anime")
     trash_profiles(s)
+    # Everything is fetched as season packs. Series type "anime" exists for
+    # per-episode absolute numbering and makes a season search fan out per
+    # episode (Texhnolyze: 380 Prowlarr queries, 4.5 min); "standard" is one
+    # query per indexer (9 s) and parses the same E1-22 / S01 packs.
+    for sr in s("GET", "/series"):
+        if sr["seriesType"] != "standard":
+            sr["seriesType"] = "standard"
+            s("PUT", f"/series/{sr['id']}", sr)
+            log(f"  = series {sr['title']}: standard")
     return s
 
 
@@ -510,13 +519,40 @@ def configure_prowlarr(apps):
     movies = [2000, 2010, 2020, 2030, 2040, 2045, 2050, 2060, 2070, 2080, 2090, 8000]
     audio = [3000, 3010, 3020, 3030, 3040, 3050, 3060]
     me = f"http://127.0.0.1:{PORTS['prowlarr']}"
-    for impl, cats, extra in (("Sonarr", tv, {"animeSyncCategories": [5070], "syncAnimeStandardFormatSearch": True}),
-                              ("Radarr", movies, {}), ("Lidarr", audio, {})):
+    # Sonarr is addOnly: Prowlarr adds new indexers but does not overwrite
+    # them, so tune_sonarr_indexers() below owns the per-indexer anime flags.
+    for impl, cats, level, extra in (
+            ("Sonarr", tv, "addOnly", {"animeSyncCategories": [5070], "syncAnimeStandardFormatSearch": False}),
+            ("Radarr", movies, "fullSync", {}), ("Lidarr", audio, "fullSync", {})):
         a = apps[impl.lower()]
         p.upsert_tested("applications", impl, lambda s, i=impl: s["implementation"] == i,
                         {"prowlarrUrl": me, "baseUrl": a.base, "apiKey": a.key, "syncCategories": cats, **extra},
-                        {"syncLevel": "fullSync", "enable": True})
+                        {"syncLevel": level, "enable": True})
+    p("POST", "/command", {"name": "ApplicationIndexerSync"})
     return p
+
+
+# Sonarr indexers synced from Prowlarr. A season search on an anime series
+# fans out per episode; the "standard format" duplicate doubled it and
+# Kinozal has nothing for anime -- 380 queries / 4.5 min on Texhnolyze.
+NO_ANIME_INDEXERS = {"Kinozal"}
+
+
+def tune_sonarr_indexers(s, p):
+    log("== sonarr indexers")
+    want = {f"{i['name']} (Prowlarr)" for i in p("GET", "/indexer") if i.get("enable")}
+    wait_for("prowlarr -> sonarr sync", lambda: want <= {i["name"] for i in s("GET", "/indexer")} or None)
+    for i in s("GET", "/indexer"):
+        f = {x["name"]: x for x in i["fields"]}
+        anime = [] if i["name"].replace(" (Prowlarr)", "") in NO_ANIME_INDEXERS else [5070]
+        changes = {"animeStandardFormatSearch": False, "animeCategories": anime}
+        if all(f[k]["value"] == v for k, v in changes.items() if k in f):
+            continue
+        for k, v in changes.items():
+            if k in f:
+                f[k]["value"] = v
+        s("PUT", f"/indexer/{i['id']}", i)
+        log(f"  = {i['name']}: anime={'off' if not anime else 'on'}, stdFormat=off")
 
 
 def configure_qbittorrent():
@@ -682,7 +718,8 @@ def main(argv):
         "radarr": configure_radarr(jf_key),
         "lidarr": configure_lidarr(jf_key),
     }
-    configure_prowlarr(apps)
+    p = configure_prowlarr(apps)
+    tune_sonarr_indexers(apps["sonarr"], p)
     log("done")
 
 
