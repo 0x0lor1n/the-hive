@@ -468,7 +468,9 @@ def configure_prowlarr(apps):
     log("== prowlarr")
     p = Arr("prowlarr", "v1")
     cf = p.tag("cf")
-    p.upsert("indexerproxy", "FlareSolverr", lambda s: s["implementation"] == "FlareSolverr",
+    # Saving runs a test through FlareSolverr's Chromium, which times out
+    # while it is still cold after a deploy restart.
+    p.upsert_tested("indexerproxy", "FlareSolverr", lambda s: s["implementation"] == "FlareSolverr",
              {"host": FLARESOLVERR, "requestTimeout": 60}, {"tags": [cf]})
 
     def cardigann(definition):
