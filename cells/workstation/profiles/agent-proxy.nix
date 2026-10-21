@@ -43,7 +43,15 @@
   };
   pinned =
     lib.mapAttrs' (k: lib.nameValuePair "model.${k}") model
-    // {"display.skin" = "kanagawa";};
+    // {
+      "display.skin" = "kanagawa";
+      # Context compaction rewrites the whole conversation into a summary;
+      # haiku (hermes' default aux model) drops decisions and exact values.
+      # Opus on a long context is slow, hence the timeout.
+      "auxiliary.compression.provider" = "anthropic";
+      "auxiliary.compression.model" = "claude-opus-5-5";
+      "auxiliary.compression.timeout" = "300";
+    };
   # Missing keys inherit hermes' gold default skin (skin_engine.py:831), so
   # every key it reads is set. Unreachable: diff line bgs are derived from
   # ui_error/ui_ok (agent/display.py:74-82), not winterRed/winterGreen.
