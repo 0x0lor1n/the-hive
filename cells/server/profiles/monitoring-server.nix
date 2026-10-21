@@ -270,6 +270,9 @@ in {
         check_for_updates = false;
       };
       users.allow_sign_up = false;
+      # Servers run UTC and so does every journal line; Grafana defaults to
+      # the browser's zone, which makes panels disagree with journalctl.
+      date_formats.default_timezone = "utc";
     };
     provision = {
       enable = true;
