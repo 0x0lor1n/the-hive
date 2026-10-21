@@ -5,7 +5,7 @@
 # boot-marker: the ATX watchdog has no journal hook, so a oneshot on every
 # boot looks at the previous journal for "Reached target Shutdown" and writes
 # the verdict into node_exporter's textfile dir. The dir is persisted in
-# /state so the warm-backup stamp survives a reboot (the boot marker is
+# /state so the backup stamps survive a reboot (the boot marker is
 # rewritten every boot regardless).
 {
   inputs,
@@ -93,16 +93,4 @@ in {
       ExecStart = bootMarker;
     };
   };
-
-  # warm-backup success stamp for WarmBackupFailed (last success > 36 h).
-  systemd.services.warm-backup.serviceConfig.ExecStartPost = pkgs.writeShellScript "warm-backup-stamp" ''
-    tmp=$(mktemp -p ${textfileDir})
-    {
-      echo '# HELP warm_backup_last_success_seconds Unix time of the last successful warm-backup run.'
-      echo '# TYPE warm_backup_last_success_seconds gauge'
-      echo "warm_backup_last_success_seconds $(date +%s)"
-    } >"$tmp"
-    chmod 0644 "$tmp"
-    mv "$tmp" ${textfileDir}/warm-backup.prom
-  '';
 }

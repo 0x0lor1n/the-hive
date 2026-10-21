@@ -189,7 +189,12 @@ in {
       node = {
         enable = true;
         listenAddress = "127.0.0.1";
-        enabledCollectors = ["systemd"];
+        enabledCollectors = [
+          "systemd"
+          "textfile"
+        ];
+        # hot-backup stamp (backup-push.nix); persisted so it survives a reboot.
+        extraFlags = ["--collector.textfile.directory=/var/lib/node_exporter/textfile"];
       };
       zfs = {
         enable = true;
@@ -248,6 +253,9 @@ in {
       }
     ];
   };
+  environment.persistence."/state".directories = ["/var/lib/node_exporter"];
+  systemd.tmpfiles.rules = ["d /var/lib/node_exporter/textfile 0755 root root -"];
+
   # Module sets StateDirectory=prometheus2 (0700): chowns the dataset root.
   systemd.services.prometheus.unitConfig.RequiresMountsFor = "/var/lib/prometheus2";
 

@@ -111,9 +111,9 @@ groups:
         annotations:
           summary: "warm-backup.service failed on {{ $labels.host }}; journalctl -u warm-backup"
 
-      # Stamp from warm-backup's ExecStartPost; absent until the first run.
+      # Stamp written at the end of warm-backup's run; absent until the first.
       - alert: WarmBackupStale
-        expr: time() - warm_backup_last_success_seconds > 36 * 3600
+        expr: time() - backup_last_success_seconds{tier="warm"} > 36 * 3600
         for: 1m
         labels:
           severity: critical

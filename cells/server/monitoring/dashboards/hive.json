@@ -478,7 +478,7 @@
       "targets": [
         {
           "refId": "A",
-          "expr": "time() - warm_backup_last_success_seconds",
+          "expr": "time() - backup_last_success_seconds{tier=\"warm\"}",
           "legendFormat": "{{host}}"
         }
       ],
