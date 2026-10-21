@@ -167,7 +167,7 @@
     # then show its log.
     if [ -z "''${CREDENTIALS_DIRECTORY:-}" ] && [ "''${1:-}" != search ]; then
       systemctl restart media-configure.service
-      exec journalctl -u media-configure.service --no-pager -o cat --since -20min
+      exec journalctl --no-pager -o cat _SYSTEMD_INVOCATION_ID="$(systemctl show -p InvocationID --value media-configure.service)"
     fi
     exec ${pkgs.python3}/bin/python3 ${./media-download/configure.py} "$@"
   '';
