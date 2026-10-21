@@ -36,6 +36,7 @@
   ...
 }: let
   lan = "192.168.10.0/24";
+  lanIp = "192.168.10.10";
   mediaGid = 950;
   peerPort = 42001;
   downloads = "/tank/media/downloads";
@@ -135,6 +136,19 @@
     WebUI\AuthSubnetWhitelist=${lan}
   '';
   qbitConf = "/var/lib/qbittorrent/qBittorrent/config/qBittorrent.conf";
+
+  # In-app settings pusher (see the media-configure unit below).
+  mediaKeys = ["rutracker" "kinozal" "jellyfin-admin" "jellyfin-tv"];
+  mediaConfigure = pkgs.writeShellScriptBin "media-configure" ''
+    export TRASH="''${TRASH:-${inputs.trash-guides}/docs/json}" LAN_IP="''${LAN_IP:-${lanIp}}"
+    # By hand (no systemd credentials): run inside the unit's sandbox instead,
+    # then show its log.
+    if [ -z "''${CREDENTIALS_DIRECTORY:-}" ] && [ "''${1:-}" != search ]; then
+      systemctl restart media-configure.service
+      exec journalctl -u media-configure.service --no-pager -o cat --since -20min
+    fi
+    exec ${pkgs.python3}/bin/python3 ${./media-download/configure.py} "$@"
+  '';
 in {
   fileSystems =
     lib.listToAttrs (map (s:
@@ -304,6 +318,60 @@ in {
     extraPackages = with pkgs; [intel-media-driver intel-compute-runtime];
   };
   users.users.jellyfin.extraGroups = ["render" "video"];
+
+  # ---- in-app settings ----------------------------------------------------
+  # What the *arr/Prowlarr/qbittorrent/Jellyfin keep in their own SQLite/XML:
+  # root folders, download client, qbittorrent categories, Prowlarr indexers
+  # + proxies + app links, TRaSH custom formats and the RU quality profiles,
+  # Jellyfin wizard/libraries/users. media-download/configure.py pushes it
+  # all over the local APIs, idempotently; it runs after every deploy and by
+  # hand as `media-configure`. Tracker logins and the Jellyfin passwords are
+  # colmena deployment.keys (secrets/imladris/*.age, decrypted with this
+  # workstation's TPM identity at deploy time, never in the store).
+  #
+  #   agenix-style edit:  rage -d -i secrets/$(uname -n)-nix-rage.pub secrets/imladris/rutracker.age
+  #   format:             USERNAME=...\nPASSWORD=...   (one file per credential)
+  # ---------------------------------------------------------------------------
+  systemd.services.media-configure = {
+    description = "media stack in-app settings (idempotent)";
+    wantedBy = ["multi-user.target"];
+    after = ["qbittorrent.service" "prowlarr.service" "radarr.service" "sonarr.service" "lidarr.service" "jellyfin.service" "flaresolverr.service"];
+    wants = ["qbittorrent.service" "prowlarr.service" "radarr.service" "sonarr.service" "lidarr.service" "jellyfin.service"];
+    # Re-run when the script, the TRaSH pin or the service closure changes.
+    restartTriggers = [mediaConfigure inputs.trash-guides.outPath];
+    environment = {
+      TRASH = "${inputs.trash-guides}/docs/json";
+      LAN_IP = lanIp;
+    };
+    serviceConfig = {
+      Type = "oneshot";
+      DynamicUser = true;
+      # ImportCredential (not LoadCredential): a key missing on the host
+      # (deploy without secrets, reboot — /run is tmpfs) is skipped by the
+      # script, not fatal for the unit. The manager reads /run/credstore as
+      # root; the DynamicUser only sees $CREDENTIALS_DIRECTORY.
+      ImportCredential = "media-*";
+      ExecStart = "${mediaConfigure}/bin/media-configure";
+      TimeoutStartSec = "20min";
+    };
+  };
+  environment.systemPackages = [mediaConfigure];
+
+  deployment.keys = lib.listToAttrs (map (k:
+    lib.nameValuePair "media-${k}" {
+      keyCommand = [
+        "bash"
+        "-c"
+        ''exec rage -d -i "${inputs.self}/secrets/$(uname -n)-nix-rage.pub" "$0"''
+        "${inputs.self}/secrets/imladris/${k}.age"
+      ];
+      destDir = "/run/credstore";
+      user = "root";
+      group = "root";
+      permissions = "0400";
+      uploadAt = "pre-activation";
+    })
+  mediaKeys);
 
   # ---- firewall -----------------------------------------------------------
   networking.firewall = {

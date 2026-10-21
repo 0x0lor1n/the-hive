@@ -10,6 +10,11 @@
     # NAS power button/watchdog (profiles/atx-watchdog.nix); module only.
     atx-watchdog.url = "github:0x0lor1n/atx-watchdog/908c11486eafe5710e8c2129ce5d4a812ed21f69";
     atx-watchdog.inputs.nixpkgs.follows = "nixpkgs";
+    # TRaSH custom formats + quality profiles for Sonarr/Radarr
+    # (profiles/media-download.nix feeds docs/json to media-configure). Plain
+    # source, pinned by rev: a bump re-applies every CF on the next deploy.
+    trash-guides.url = "github:TRaSH-Guides/Guides/529bd9c29eb41f38e36c14c41a137f4d5d824c99";
+    trash-guides.flake = false;
 
     # agenix for ZFS hosts; pins match cells/workstation, else a second copy.
     nixpkgs.url = "github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9";
