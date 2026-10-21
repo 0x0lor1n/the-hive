@@ -13,9 +13,9 @@
 # and once after the deploy (tmpfiles below fixes only the dataset roots,
 # the existing library tree is uid 1000:users from the NTFS migration):
 #
-#   cd /tank/media && sudo chgrp -R media films anime cartoons music \
-#     && sudo find films anime cartoons music -type d -exec chmod 2775 {} + \
-#     && sudo find films anime cartoons music -type f -exec chmod 664 {} +
+#   cd /tank/media && sudo chgrp -R media films anime music \
+#     && sudo find films anime music -type d -exec chmod 2775 {} + \
+#     && sudo find films anime music -type f -exec chmod 664 {} +
 #
 # Files: everything in /tank/media/* is group `media` (fixed gid 950, setgid
 # dirs, group-writable) so the *arr can move what qbittorrent wrote. The
@@ -180,7 +180,7 @@ in {
   # non-root parent into a root-owned child ("unsafe path transition").
   systemd.tmpfiles.rules =
     ["z /tank/media 2775 root media -"]
-    ++ map (d: "z /tank/media/${d} 2775 - media -") ["films" "series" "anime" "cartoons" "music"]
+    ++ map (d: "z /tank/media/${d} 2775 - media -") ["films" "series" "anime" "music"]
     ++ [
       "z ${downloads} 2775 qbittorrent media -"
       "d ${downloads}/complete 2775 qbittorrent media -"
@@ -288,7 +288,7 @@ in {
 
   # ---- jellyfin -----------------------------------------------------------
   # Media server over the same /tank/media library the *arr stack fills.
-  # Libraries (films/series/anime/cartoons/music) are added in the web UI.
+  # Libraries (films/series/anime/music) are added in the web UI.
   # State on fast/services/jellyfin (same pattern as the *arr):
   #   zfs create -o mountpoint=legacy fast/services/jellyfin
   services.jellyfin = {

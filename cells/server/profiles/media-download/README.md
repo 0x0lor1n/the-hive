@@ -24,9 +24,12 @@ Nothing here is done in a web UI anymore. If a UI change is wanted, put it in
 TRaSH data comes from the `trash-guides` flake input (`cells/server/flake.nix`,
 pinned by rev). Own additions: the `RU Audio` custom format (+2500, parsed
 Russian OR dub keywords, NOT sub-only), `Dubs Only` neutralised, x265 softened.
-Anime and cartoons are not separate roots: anime series go to Sonarr with the
-`Anime RU` profile, cartoons to Radarr. `/tank/media/anime` and `/cartoons`
-are the legacy NTFS trees, read by Jellyfin only.
+Anime is a second Sonarr root (`/tank/media/anime`, `Anime RU` profile,
+series type `anime`); the legacy trees were renamed to `Series (Year)/Season
+01/Series S01Exx.mkv` with external `.ru.mka`/`.ru.ass` next to the video
+(2026-10-21, log in `/tank/media/anime/.rename-log.tsv`). Cartoons are not a
+separate library any more: feature films live in `films`, episodic ones in
+`series`; the `Мультфильмы` Jellyfin library is removed by `configure.py`.
 
 ## Secrets
 

@@ -30,7 +30,7 @@ LAN_IP = os.environ.get("LAN_IP", "192.168.10.10")
 PORTS = {"prowlarr": 9696, "radarr": 7878, "sonarr": 8989, "lidarr": 8686, "jellyfin": 8096, "qbittorrent": 8080}
 FLARESOLVERR = "http://127.0.0.1:8191"
 LIBRARY = {"series": "/tank/media/series", "films": "/tank/media/films", "music": "/tank/media/music",
-           "anime": "/tank/media/anime", "cartoons": "/tank/media/cartoons"}
+           "anime": "/tank/media/anime"}
 DOWNLOADS = "/tank/media/downloads/complete"
 READY_TIMEOUT = 300
 
@@ -516,9 +516,10 @@ class Jellyfin:
         ("Фильмы", "movies", LIBRARY["films"]),
         ("Сериалы", "tvshows", LIBRARY["series"]),
         ("Аниме", "tvshows", LIBRARY["anime"]),
-        ("Мультфильмы", "movies", LIBRARY["cartoons"]),
         ("Музыка", "music", LIBRARY["music"]),
     ]
+    # libraries that used to exist and must go (cartoons folded into films/series)
+    RETIRED = ["Мультфильмы"]
 
     def __init__(self):
         self.base = f"http://127.0.0.1:{PORTS['jellyfin']}"
@@ -559,6 +560,11 @@ def configure_jellyfin():
     jf.token = jf.login(admin["USERNAME"], admin["PASSWORD"])
 
     existing = {v["Name"]: v for v in jf("GET", "/Library/VirtualFolders")}
+    for name in jf.RETIRED:
+        if name in existing:
+            q = urllib.parse.urlencode({"name": name, "refreshLibrary": "true"})
+            jf("DELETE", f"/Library/VirtualFolders?{q}", raw=True)
+            log(f"  - library {name}")
     for name, typ, path in jf.LIBS:
         if name in existing:
             continue

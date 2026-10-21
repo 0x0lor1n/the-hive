@@ -166,14 +166,8 @@ in
               recordsize = "1M";
             };
           };
-        "media/cartoons" =
-          legacy "/tank/media/cartoons"
-          // {
-            options = {
-              mountpoint = "legacy";
-              recordsize = "1M";
-            };
-          };
+        # media/cartoons was folded into films/series (2026-10-21): the
+        # dataset is destroyed on the host, do not recreate it.
         "media/tutorials" =
           legacy "/tank/media/tutorials"
           // {
