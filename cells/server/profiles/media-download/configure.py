@@ -218,8 +218,21 @@ PROFILES = {
             "cfs": COMMON_NEG + ["Repack/Proper", "Repack2", "Repack3", "Remux Tier 01", "Remux Tier 02"]
                    + ANIME_TIERS + ANIME_EXTRA + ["RU Audio"],
             "qualities": ["Bluray-1080p Remux", "Bluray-1080p", "WEB 1080p", "Bluray-720p", "WEB 720p",
-                          "HDTV-1080p"],
+                          "HDTV-1080p",
+                          # pre-BD era titles (Texhnolyze, Lain): AniLiberty's "DVDRip 1080p"
+                          # upscales parse as DVD; lowest allowed, any WEB/BD upgrades over it.
+                          "DVD"],
             "cutoff": "Bluray-1080p",
+        },
+        # Native-4K titles only (Netflix originals: Edgerunners, Devilman Crybaby...).
+        # Assign per series; default stays Anime RU because most "2160p" anime is upscale.
+        "Anime UHD RU": {
+            "base": "anime-remux-1080p.json",
+            "cfs": COMMON_NEG + COMMON_POS + ["Remux Tier 01", "Remux Tier 02"]
+                   + ANIME_TIERS + ANIME_EXTRA + ["RU Audio"],
+            "qualities": ["Bluray-2160p Remux", "Bluray-2160p", "WEB 2160p",
+                          "Bluray-1080p Remux", "Bluray-1080p", "WEB 1080p"],
+            "cutoff": "WEB 2160p",
         },
     },
     "radarr": {
