@@ -265,9 +265,15 @@ in {
       REQUEST_INTERVAL = "1s";
       LOG_LEVEL = "info";
     };
-    script = ''
+    # preStart, not script: Type=simple is "started" the moment the main
+    # process is spawned, and media-configure (after=, LoadCredential of
+    # this file) raced in before the key existed -> 243/CREDENTIALS.
+    # ExecStartPre completes before the unit counts as active.
+    preStart = ''
       # KEY=VALUE so media-configure's credential() reads the same file.
-      [ -s api-key ] || (umask 077; printf 'API_KEY=%s\n' "$(tr -dc 'a-f0-9' </dev/urandom | head -c 48)" > api-key)
+      [ -s api-key ] || (umask 077; printf 'API_KEY=%s\n' "$(od -An -N24 -tx1 /dev/urandom | tr -d ' \n')" > api-key)
+    '';
+    script = ''
       set -a; . ./api-key; set +a
       exec ${lib.getExe anilibriaTorznab}
     '';
