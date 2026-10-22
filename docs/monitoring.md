@@ -56,7 +56,6 @@ tag, which gives the cross-links in the header.
 | `imladris` | HDD temperatures and SMART 5/197/198 (with a "growing in 24 h" column), power-on hours, SMART status; NVMe temperatures; RAM/ARC/load/CPU temp; NIC throughput; pool, dataset and filesystem space. |
 | `minas-tirith` | NVMe, CPU, DIMM, ONU CPU and SFP temperatures; ONU RX power and reachability; load, RAM, free space, `rpool/logs/*` vs quota; per-port traffic. |
 | `city` | The same state drawn as a neon city (unsigned plugin `neon-city-panel`, built from git and recoloured from the palette in `monitoring-server.nix`). |
-| `dump` | Graphs that did not earn a place elsewhere (30 d of speed tests). |
 
 ## Textfile metrics
 

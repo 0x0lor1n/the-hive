@@ -988,23 +988,8 @@ def city():
                      "= its load). Colour = status, speed = CPU, silos = pool fill.")
 
 
-
-# ---------------------------------------------------------------- dump ----
-# Graphs of doubtful use, kept out of the home dashboard but not lost.
-def dump():
-    speed = "net_speed_bits_per_second"
-    return dashboard("dump", "dump", [
-        row("LAN", [
-            ts("Speed tests, 30 d", 24, 9, [target(speed, "{{peer}} {{direction}}")], unit="bps",
-               min_=0, timeFrom="30d", legend_table=True, line_steps=True,
-               description="Daily net-speed-probe (monitoring-probes.nix); a flat line "
-                           "between runs is the last result held."),
-        ]),
-    ], "Graphs of doubtful use, moved off the home dashboard.")
-
-
 DASHBOARDS = {"hive.json": hive, "imladris.json": imladris, "minas-tirith.json": minas_tirith,
-              "city.json": city, "dump.json": dump}
+              "city.json": city}
 
 
 def render(fn):
