@@ -237,13 +237,18 @@ PROFILES = {
         },
     },
     "radarr": {
+        # Remux-2160p on top: grab an encode/WEB first if that is all there is,
+        # upgrade to the remux when one appears (cutoff). Quality outranks CF
+        # score, so a remux beats an encode even without RU Audio; on the RU
+        # trackers we search, remuxes carry the RU tracks anyway.
         "UHD Bluray + WEB RU": {
             "base": "uhd-bluray-web.json",
             "cfs": COMMON_NEG + COMMON_POS + ["3D", "Generated Dynamic HDR", "Line/Mic Dubbed",
+                                              "Remux Tier 01", "Remux Tier 02", "Remux Tier 03",
                                               "UHD Bluray Tier 01", "UHD Bluray Tier 02", "UHD Bluray Tier 03",
                                               "WEB Tier 01", "WEB Tier 02", "WEB Tier 03", "RU Audio"],
-            "qualities": ["Bluray-2160p", "WEB 2160p", "Bluray-1080p", "WEB 1080p"],
-            "cutoff": "Bluray-2160p",
+            "qualities": ["Remux-2160p", "Bluray-2160p", "WEB 2160p", "Bluray-1080p", "WEB 1080p"],
+            "cutoff": "Remux-2160p",
         },
         "HD Bluray + WEB RU": {
             "base": "hd-bluray-web.json",
@@ -580,14 +585,15 @@ def configure_qbittorrent():
 
     # No seeding: stop the torrent the moment it completes (ratio 0, action
     # Stop). The *arr import from a stopped torrent, then remove it.
-    # Incomplete files live on fast (NVMe), see media-download.nix.
+    # Incomplete files live on fast (NVMe), see media-download.nix; save_path
+    # on tank is what makes qbit move them off fast on completion.
     want = {"max_ratio_enabled": True, "max_ratio": 0, "max_ratio_act": 0,
-            "temp_path_enabled": True, "temp_path": INCOMPLETE}
+            "temp_path_enabled": True, "temp_path": INCOMPLETE, "save_path": DOWNLOADS}
     prefs = http("GET", f"{base}/app/preferences")
     if any(prefs.get(k) != v for k, v in want.items()):
         form = urllib.parse.urlencode({"json": json.dumps(want)}).encode()
         urllib.request.urlopen(urllib.request.Request(f"{base}/app/setPreferences", data=form, headers=hdr))
-        log(f"  ~ share limit: stop at ratio 0; incomplete -> {INCOMPLETE}")
+        log(f"  ~ share limit: stop at ratio 0; incomplete -> {INCOMPLETE}, save -> {DOWNLOADS}")
 
 
 # ---- Jellyfin ----------------------------------------------------------------
