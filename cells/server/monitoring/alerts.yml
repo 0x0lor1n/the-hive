@@ -43,7 +43,7 @@ groups:
       # Real exporters only: for blackbox jobs `up` is the blackbox exporter
       # itself, whatever the target's host label says (BlackboxDown below).
       # `unless` host-down: Alertmanager inhibits while HostDown fires, but
-      # the 3 m pending would carry over and fire the moment the host is
+      # the pending `for` would carry over and fire the moment the host is
       # back, before the exporters start. This restarts the clock instead.
       # Same for all exporters of a host down at once: HostUnresponsive.
       - alert: ExporterDown
@@ -51,11 +51,11 @@ groups:
           up{job!~"icmp-lan|http-services|probe-osgiliath"} == 0
             unless on(host) probe_success{job="icmp-lan"} == 0
             unless on(host) max by(host) (up{job!~"icmp-lan|http-services|probe-osgiliath"}) == 0
-        for: 3m
+        for: 1m
         labels:
           severity: warning
         annotations:
-          summary: "{{ $labels.job }} ({{ $labels.instance }}) has not answered for 3 m"
+          summary: "{{ $labels.job }} ({{ $labels.instance }}) has not answered for 1 m"
 
       # Blackbox down = every probe_success vanishes and HostDown/ServiceDown
       # go silent with it. One alert for all three jobs.
@@ -94,7 +94,7 @@ groups:
           probe_success{job="http-services",tier="main"} == 0
             unless on(host) probe_success{job="icmp-lan"} == 0
             unless on(host) max by(host) (up{job!~"icmp-lan|http-services|probe-osgiliath"}) == 0
-        for: 3m
+        for: 2m
         labels:
           severity: warning
         annotations:

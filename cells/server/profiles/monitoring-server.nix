@@ -369,7 +369,7 @@ in {
       route = {
         receiver = "ntfy";
         group_by = ["alertname" "host"];
-        group_wait = "30s";
+        group_wait = "10s";
         # Resolves wait for the next group tick: 5m made "fixed" arrive up to
         # 5 min after the fact. Groups are alertname x host, small enough.
         group_interval = "1m";
