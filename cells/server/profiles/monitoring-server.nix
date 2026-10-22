@@ -84,6 +84,186 @@
     ];
   };
 
+  # 3D "city" panel (dashboards/build.py → city.json). Not on grafana.com;
+  # unsigned, hence allow_loading_unsigned_plugins. Built from git main, not
+  # the v1.1.0 release zip: the release only matches field.name, so columns
+  # renamed by the organize transformation (config.displayName) are never
+  # found and every building renders offline. Fixed upstream in ed78c95
+  # (2026-08-24), no release cut since. Pinned commit also needs Grafana
+  # >= 13.1.4 (plugin.json grafanaDependency). The bundle makes no requests
+  # of its own (no fetch/XHR/backendSrv) -- re-check on every bump, it runs
+  # with the viewer's Grafana session.
+  neonCityPanel = let
+    # Tweaks with no panel option:
+    # - light cycles only, no floating "data packet" orbs;
+    # - at a dead end (the 1G spurs) generateRandomPath backtracks without
+    #   recording the cells it steps over, so the cycle cut straight through
+    #   buildings to the next waypoint; record them, it U-turns on the road;
+    # - a trail ribbon joins its newest point to the next one, so when a
+    #   cycle jumps (new path from a random cell every ~5 s, a long frame)
+    #   it drew a streak across the map; restart the trail on jumps > half a
+    #   cell (a normal per-frame step is < 0.1).
+    sourcePatches =
+      ''
+        substituteInPlace src/engine/traffic/TrafficConfig.ts \
+          --replace-fail "lightCycleRatio: 0.6," "lightCycleRatio: 1,"
+        substituteInPlace src/engine/traffic/PathGenerator.ts \
+          --replace-fail "          current = escapeCell;" "          path.push(escapeCell); current = escapeCell;"
+        substituteInPlace src/engine/traffic/TrailSystem.ts \
+          --replace-fail "addPoint(position: THREE.Vector3, direction: THREE.Vector3): void {" \
+            "addPoint(position: THREE.Vector3, direction: THREE.Vector3): void { if (this.count > 0 && this.points[this.head].position.distanceTo(position) > 0.5) { this.count = 0; }"
+      ''
+      + recolor;
+
+    # Repaint the panel in the repo theme (cells/common/theme.nix). It has no
+    # palette option; ~80 colours are literals across prefabs, shaders and the
+    # tooltip CSS, as 0xRRGGBB / #RRGGBB(AA) / rgba(r, g, b / vec3(r, g, b.
+    # Neon -> brightest Kanagawa hue of the same role; bodies/ground -> sumiInk.
+    # Greys, black and white stay. The build fails if a mapped neon survives.
+    k = inputs.cells.common.theme.colors;
+    toTheme = with k; {
+      # cyan: roads, edges, trails, holograms
+      "00ffff" = springBlue;
+      "00e5ff" = springBlue;
+      "66ffff" = lightBlue;
+      "88ffff" = lightBlue;
+      "aaffff" = lightBlue;
+      "4fc3f7" = crystalBlue;
+      "00aaff" = crystalBlue;
+      "0088ff" = crystalBlue;
+      "44aaff" = crystalBlue;
+      "4488ff" = crystalBlue;
+      "448aff" = crystalBlue;
+      "2979ff" = crystalBlue;
+      "88aaff" = crystalBlue;
+      # magenta / violet
+      "ff00ff" = sakuraPink;
+      "ff66cc" = sakuraPink;
+      "ff0088" = sakuraPink;
+      "ff4081" = sakuraPink;
+      "ff0080" = sakuraPink;
+      "ff00c8" = sakuraPink;
+      "e040fb" = oniViolet;
+      "ea80fc" = oniViolet2;
+      "ce93d8" = oniViolet2;
+      "aa00ff" = oniViolet;
+      "7c4dff" = oniViolet;
+      # status: online / warning / critical
+      "00ff88" = springGreen;
+      "00e676" = springGreen;
+      "00ffaa" = springGreen;
+      "33ff66" = springGreen;
+      "aeea00" = springGreen;
+      "ffaa00" = roninYellow;
+      "ffab00" = roninYellow;
+      "ff8800" = surimiOrange;
+      "ff6600" = surimiOrange;
+      "cc6600" = surimiOrange;
+      "ff6400" = surimiOrange;
+      "ffd700" = carpYellow;
+      "ffd740" = carpYellow;
+      "ffdd00" = carpYellow;
+      "ffcc44" = carpYellow;
+      "ffff00" = carpYellow;
+      "ffffcc" = carpYellow;
+      "ff4444" = peachRed;
+      "ff4041" = peachRed;
+      "ff4400" = peachRed;
+      "ff6666" = waveRed;
+      "ff8888" = waveRed;
+      "ff0000" = samuraiRed;
+      "ff3232" = peachRed;
+      "ff6464" = waveRed;
+      "640000" = winterRed;
+      "cc2222" = autumnRed;
+      "331a00" = winterYellow;
+      "330000" = winterRed;
+      "0d0800" = winterYellow;
+      "0d0004" = winterRed;
+      # offline, bodies, ground
+      "666688" = sumiInk6;
+      "666680" = sumiInk6;
+      "e0e0e0" = fujiWhite;
+      "1a1a2e" = sumiInk3;
+      "1a1a2a" = sumiInk3;
+      "0a0a12" = sumiInk0;
+      "0a0a1a" = sumiInk0;
+      "050510" = sumiInk0;
+      "111122" = sumiInk1;
+      "222233" = sumiInk4;
+      "2a2a4a" = sumiInk5;
+      "333344" = sumiInk5;
+      "001a33" = waveBlue1;
+      "000a28" = waveBlue1;
+      "000d1a" = sumiInk0;
+      "001428" = waveBlue1;
+      "c8e6ff" = lightBlue;
+      "334455" = waveBlue1;
+      "445566" = waveBlue2;
+      "556677" = dragonBlue;
+      "667788" = dragonBlue;
+      "8899aa" = springViolet1;
+      "8899bb" = springViolet1;
+      "aabbcc" = oniViolet2;
+    };
+    rgbOf = hex: map (i: (builtins.fromTOML "v = 0x${builtins.substring i 2 hex}").v) [0 2 4];
+    csv = sep: hex: lib.concatMapStringsSep sep toString (rgbOf hex);
+    glsl = hex: lib.concatMapStringsSep ", " (c: toString (c / 255.0)) (rgbOf hex);
+    sedRules = lib.concatStrings (lib.mapAttrsToList (from: to: ''
+        s/0x${from}\b/0x${to}/Ig
+        s/#${from}/#${to}/Ig
+        s/rgba\?(${csv ", *" from}\b/rgba(${csv ", " to}/g
+      '')
+      toTheme);
+    recolor = ''
+      cat > recolor.sed <<'EOF'
+      ${sedRules}
+      s/vec3(1\.0, 0\.0, 1\.0)/vec3(${glsl k.sakuraPink})/g
+      s/vec3(0\.08, 0\.08, 0\.12)/vec3(${glsl k.sumiInk1})/g
+      EOF
+      find src -type f \( -name '*.ts' -o -name '*.tsx' -o -name '*.css' \) \
+        -not -path '*__mocks__*' -exec sed -i -f recolor.sed {} +
+      if grep -rniE '(0x|#)(00ffff|ff00ff|00ff88|ffaa00|ff4444)' src --include='*.ts' --include='*.tsx' \
+        | grep -v '__mocks__\|\.test\.'; then
+        echo "recolor: neon left over" >&2; exit 1
+      fi
+    '';
+    # Grafana busts its browser cache for plugin assets with ?_cache=<plugin.json
+    # version>, served max-age=3600: a rebuild that keeps "1.1.1" is invisible
+    # to browsers that already loaded it. Tag the version with the patch set.
+    patchTag = builtins.substring 0 8 (builtins.hashString "sha256" sourcePatches);
+  in
+    pkgs.buildNpmPackage {
+      pname = "whooktown-neoncity-panel";
+      version = "1.1.1-unstable-2026-09-07";
+      src = pkgs.fetchFromGitHub {
+        owner = "fredericalix";
+        repo = "grafana-neon-city-panel";
+        rev = "8c5fff0d784caeb0645fc5c05e581e9cff507788";
+        hash = "sha256-SI7hvy7nNH27HcaQMdMeq3GPPtjfw9D2LPXWqbKftws=";
+      };
+      npmDepsHash = "sha256-B/kh43x51Xxw2yLn9PU2x1czHEwzNOgO2EOo4lKb+Jo=";
+      nodejs = pkgs.nodejs_22;
+      # playwright/@swc pull browser/native binaries we don't need for a build.
+      npmFlags = ["--ignore-scripts"];
+      makeCacheWritable = true; # npm ci writes to the cache for the git dep below
+      forceGitDeps = true; # @grafana/ui pulls react-data-grid from git; npm wants its devDeps (biome) to "prepare" it, which aren't in the lock
+      env.PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD = "1";
+      postPatch =
+        sourcePatches
+        + ''
+          substituteInPlace package.json \
+            --replace-fail '"version": "1.1.1",' '"version": "1.1.1-${patchTag}",'
+        '';
+      npmBuildScript = "build";
+      installPhase = ''
+        runHook preInstall
+        cp -r dist $out
+        runHook postInstall
+      '';
+      doCheck = false;
+    };
+
   passwordOf = {
     decrypt,
     deps,
@@ -319,7 +499,10 @@ in {
   # ---- grafana ----------------------------------------------------------
   services.grafana = {
     enable = true;
+    # Plugins come from the store only; nothing is installed from the UI.
+    declarativePlugins = [neonCityPanel];
     settings = {
+      plugins.allow_loading_unsigned_plugins = neonCityPanel.pname;
       server = {
         http_addr = "0.0.0.0";
         http_port = grafanaPort;

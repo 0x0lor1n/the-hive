@@ -261,6 +261,11 @@ def layout(rows):
         return placed, y + band
 
     for r in rows:
+        if r["title"] is None:
+            # Bare panels, no row header (a single-panel dashboard).
+            placed, y = place(r["panels"], y)
+            out.extend(placed)
+            continue
         head = {"id": pid, "type": "row", "title": r["title"],
                 "collapsed": r["collapsed"],
                 "gridPos": {"x": 0, "y": y, "w": 24, "h": 1}}
@@ -791,6 +796,199 @@ def minas_tirith():
     ], "Router: thermal, ONU stick, system, per-port traffic.")
 
 
+# ---------------------------------------------------------------- city ----
+# Two host blocks joined by the 10G DAC "highway"; each block is ringed by
+# the services that run on it, imladris also by its pools. Thin 1G spurs lead
+# from the router block to the AP and the Vontar box. Status (colour) is 1 / 0.5 / 0
+# (whooktown-neoncity-panel: value ≥ 1 online, ≥ 0.5 warning, else critical),
+# a missing sample (NaN) is "offline".
+
+def city():
+    def named(expr, name_from=None, name=None, **labels):
+        """Collapse to one series per building, labelled `name` (+ static labels)."""
+        src, rx, repl = ("", "", name) if name is not None else (name_from, "(.*)", "$1")
+        out = f'max by (name) (label_replace({expr}, "name", "{repl}", "{src}", "{rx}"))'
+        for k, v in labels.items():
+            out = f'label_replace({out}, "{k}", "{v}", "", "")'
+        return out
+
+    def grade(x, ok, warn, lower_is_better=True):
+        """1 / 0.5 / 0 by two cut-offs."""
+        op = "<" if lower_is_better else ">"
+        return f"(0.5 * ({x} {op} bool {warn}) + 0.5 * ({x} {op} bool {ok}))"
+
+    def busy(host):
+        return f'100 * (1 - avg(rate(node_cpu_seconds_total{{host="{host}",mode="idle"}}[5m])))'
+
+    def ram(host):
+        return (f'100 * (1 - node_memory_MemAvailable_bytes{{host="{host}"}} '
+                f'/ node_memory_MemTotal_bytes{{host="{host}"}})')
+
+    hosts = ("imladris", "minas-tirith")
+    def pools(expr):
+        """imladris tank / fast, renamed to the building names hot-slow / hot-fast."""
+        return ('label_replace(label_replace(' + expr + ', "pool", "hot-slow", "pool", "tank"), '
+                '"pool", "hot-fast", "pool", "fast")')
+
+    imladris_pools = pools('zfs_pool_health{host="imladris",pool=~"tank|fast"}')
+    warm = "warm_pool_free_bytes / warm_pool_size_bytes"
+    # The textfile stamp survives unplugging; multiply by the physical disk
+    # (BarraCuda ZR15YL21): absent -> scalar() is NaN -> the silo goes dark.
+    warm_present = 'scalar(count(node_disk_info{host="imladris",serial="ZR15YL21"}))'
+
+    # (name, type, x, z, facade label). Two blocks stacked along z, the 10G
+    # highway between them. As the user looks at it (router block on top):
+    # +z = up, +x = left. Each host is ringed by its services; imladris has
+    # its pools along the bottom, the router its 1G spurs on the left.
+    zi, zm = -9, 9            # host centres (x = 0)
+    slots = [
+        ("imladris", "tower_a", 0, zi, "NAS"),
+        ("qbittorrent", "led_facade", 8, zi + 4, None),
+        ("radarr", "display_a", 4, zi + 4, "RADARR"),
+        ("lidarr", "display_a", 0, zi + 4, "LIDARR"),
+        ("sonarr", "display_a", -4, zi + 4, "SONARR"),
+        ("torrserver", "led_facade", -8, zi + 4, None),
+        ("jellyfin", "pyramid", 5, zi, None),
+        ("prowlarr", "display_a", -5, zi, "PROWLARR"),
+        ("hot-fast", "farm_silo", 4, zi - 4, None),
+        ("hot-slow", "farm_silo", 0, zi - 4, None),
+        ("warm", "farm_silo", -4, zi - 4, None),
+        ("minas-tirith", "tower_a", 0, zm, "ROUTER"),
+        ("alertmanager", "display_a", 3, zm + 4, "ALERTS"),
+        ("prometheus", "farm_silo", -3, zm + 4, None),
+        ("grafana", "tower_b", 3, zm - 4, "GRAFANA"),
+        ("ntfy", "tower_b", -3, zm - 4, "NTFY"),
+        ("vontar", "pyramid", 9, zm + 3, None),
+        ("asus-ap", "windmill", 9, zm - 3, None),
+    ]
+
+    # text1 is not just the tooltip "Info": towers and displays paint it over
+    # their facade label (text2/text3 add lines under it). So a labelled
+    # building gets its label as text1; the rest get a tooltip description.
+    facade = {n: label for n, _, _, _, label in slots if label}
+    info = {
+        "asus-ap": ("Wi-Fi AP", "1G · ETH2"),
+        "prometheus": ("metrics", "fill = TSDB volume used %"),
+        "vontar": ("Vontar X5 · TV box", "1G · ETH1"),
+        "jellyfin": ("media server", "via ygg proxy on minas-tirith"),
+        "torrserver": ("streaming", None),
+        "qbittorrent": ("downloads", None),
+        "hot-slow": ("HDD pool tank", "fill = allocated %"),
+        "hot-fast": ("NVMe pool fast", "fill = allocated %"),
+        "warm": ("warm backup disk warm1", "dark = not plugged in"),
+    }
+    assert not facade.keys() & info.keys()
+
+    def desc(name):
+        if name in facade:
+            return {"text1": facade[name]}
+        t1, t2 = info[name]
+        return {k: v for k, v in (("text1", t1), ("text2", t2)) if v}
+
+    status = " or ".join(
+        [named('probe_success{job="icmp-lan"}', "host"),  # imladris, asus-ap, vontar
+         named('up{job="node-minas-tirith"}', name="minas-tirith"),
+         named('probe_success{job="http-services"}', "service"),
+         named('node_systemd_unit_state{host="minas-tirith",name="prometheus.service",state="active"}',
+               name="prometheus"),
+         named('node_systemd_unit_state{host="minas-tirith",name="alertmanager.service",state="active"}',
+               name="alertmanager"),
+         named(f"1 - clamp_max({imladris_pools}, 1)", "pool"),
+         named(f"{grade(warm, 0.2, 0.1, lower_is_better=False)} * {warm_present}", name="warm")])
+    # Static texts ride along as labels on a 0-valued series that is merged
+    # into the same row by name.
+    text = " or ".join(named("vector(0)", name=n, **desc(n)) for n in sorted(facade | info))
+
+    # Activity (slow / normal / fast) = CPU busy, so a loaded host visibly
+    # speeds up; the same series carries the CPU % for the tooltip.
+    def with_activity(expr):
+        return " or ".join([
+            named(f"({expr}) > 60", name_from="name", activity="fast"),
+            named(f"({expr}) > 15 <= 60", name_from="name", activity="normal"),
+            named(f"({expr}) <= 15", name_from="name", activity="slow")])
+
+    cpu = with_activity(" or ".join(named(busy(h), name=h) for h in hosts))
+    mem = " or ".join(named(ram(h), name=h) for h in hosts)
+    fill = " or ".join([
+        named(pools('100 * zfs_pool_allocated_bytes{host="imladris",pool=~"tank|fast"} '
+                    '/ zfs_pool_size_bytes{host="imladris",pool=~"tank|fast"}'), "pool"),
+        named(f"100 * (1 - ({warm}))", name="warm"),
+        named('100 * (1 - node_filesystem_avail_bytes{host="minas-tirith",mountpoint="/var/lib/prometheus2"} '
+              '/ node_filesystem_size_bytes{host="minas-tirith",mountpoint="/var/lib/prometheus2"})',
+              name="prometheus")])
+    # Traffic on the roads = DAC load. A floor of 15 keeps a few cycles
+    # moving on an idle LAN; 1 Gbit/s over the DAC saturates the streets.
+    # The column is read from its last row, so every row carries the value.
+    dac = ('max(rate(node_network_receive_bytes_total{host="minas-tirith",device="enp1s0f1"}[1m]) '
+           'or rate(node_network_transmit_bytes_total{host="minas-tirith",device="enp1s0f1"}[1m])) * 8')
+    traffic = f"0 * ({status}) + scalar(clamp_max(15 + 85 * {dac} / 1e9, 100))"
+
+    columns = [("value", status), ("cpu", cpu), ("ram", mem), ("fill", fill),
+               ("info", text), ("traffic", traffic)]
+    tgts = [target(e, ref=chr(ord("A") + i), instant=True, table=True)
+            for i, (_, e) in enumerate(columns)]
+    rename = {f"Value #{t['refId']}": col for t, (col, _) in zip(tgts, columns)}
+    info_ref = tgts[[c for c, _ in columns].index("info")]["refId"]   # labels only
+
+    buildings = []
+    for name, kind, x, z, label in slots:
+        b = {"id": name, "name": name, "type": kind, "x": x, "z": z, "rotation": 0}
+        if label:
+            b["defaultText"] = label
+        buildings.append(b)
+
+    # Roads: a ring around each block (the router's is narrower), a 3-lane
+    # 10G highway joining the two rings at x=0, and 1-lane 1G spurs from the
+    # router ring to the AP / Vontar.
+    rz = 6                                         # ring half-depth
+    rings = ((zi, 10), (zm, 6))                    # (centre z, half-width)
+    x0, z0, width, depth = -10, -15, 21, 31
+    cells = set()
+    for cz, rx in rings:
+        for x in range(-rx, rx + 1):
+            cells.update({(x, cz - rz), (x, cz + rz)})
+        for z in range(cz - rz, cz + rz + 1):
+            cells.update({(-rx, z), (rx, z)})
+    for z in range(zi + rz, zm - rz + 1):          # 10G highway
+        cells.update({(-1, z), (0, z), (1, z)})
+    for x in range(rings[1][1], 9):                # 1G spurs, end next to the box
+        cells.update({(x, zm - 3), (x, zm + 3)})
+    roads = ["".join("1" if (x0 + i, z0 + j) in cells else "0" for i in range(width))
+             for j in range(depth)]
+
+    # The only panel: no row, no title. h=46 = two 1080p screens (23 rows =
+    # 866 px fit under Grafana's top bar); the page scrolls.
+    panel_ = panel("whooktown-neoncity-panel", "", 24, 46, tgts,
+                   options={
+                       "nameField": "name",
+                       "statusField": "status",
+                       "valueField": "value",
+                       "thresholds": {"online": 1, "warning": 0.5, "critical": 0},
+                       "trafficDensityField": "traffic",
+                       "trafficSpeedField": "",
+                       "enableTraffic": True,
+                       "enableInteraction": True,
+                       "showLabels": True,
+                       "layout": {"gridSize": 2, "buildings": buildings, "roads": roads,
+                                  "roadOrigin": {"x": x0, "z": z0}},
+                   },
+                   transformations=[
+                       {"id": "filterFieldsByName",
+                        "options": {"exclude": {"pattern": "^(__name__|Time)$"}}},
+                       {"id": "merge", "options": {}},
+                       {"id": "organize", "options": {"excludeByName": {f"Value #{info_ref}": True},
+                                                      "indexByName": {},
+                                                      "renameByName": rename}},
+                   ])
+    return dashboard("city", "hive city", [row(None, [panel_])],
+                     "The hive as a neon city. One block = imladris (NAS) with its "
+                     "services and pools (hot-fast = fast, hot-slow = tank, warm = warm1), "
+                     "the other = minas-tirith (router) with its services and the 1G spurs "
+                     "to the AP and the Vontar box; the 3-lane highway = 10G DAC (traffic "
+                     "= its load). Colour = status, speed = CPU, silos = pool fill.")
+
+
+
 # ---------------------------------------------------------------- dump ----
 # Graphs of doubtful use, kept out of the home dashboard but not lost.
 def dump():
@@ -806,7 +1004,7 @@ def dump():
 
 
 DASHBOARDS = {"hive.json": hive, "imladris.json": imladris, "minas-tirith.json": minas_tirith,
-              "dump.json": dump}
+              "city.json": city, "dump.json": dump}
 
 
 def render(fn):

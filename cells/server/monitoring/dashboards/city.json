@@ -1,0 +1,376 @@
+{
+  "uid": "city",
+  "title": "hive city",
+  "description": "The hive as a neon city. One block = imladris (NAS) with its services and pools (hot-fast = fast, hot-slow = tank, warm = warm1), the other = minas-tirith (router) with its services and the 1G spurs to the AP and the Vontar box; the 3-lane highway = 10G DAC (traffic = its load). Colour = status, speed = CPU, silos = pool fill.",
+  "tags": [
+    "hive"
+  ],
+  "timezone": "utc",
+  "schemaVersion": 42,
+  "version": 1,
+  "editable": false,
+  "graphTooltip": 1,
+  "refresh": "30s",
+  "time": {
+    "from": "now-24h",
+    "to": "now"
+  },
+  "links": [
+    {
+      "type": "dashboards",
+      "tags": [
+        "hive"
+      ],
+      "asDropdown": false,
+      "includeVars": false,
+      "keepTime": true,
+      "title": "hive",
+      "targetBlank": false,
+      "icon": "external link",
+      "tooltip": "",
+      "url": ""
+    }
+  ],
+  "panels": [
+    {
+      "id": 1,
+      "type": "whooktown-neoncity-panel",
+      "title": "",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (name) (label_replace(probe_success{job=\"icmp-lan\"}, \"name\", \"$1\", \"host\", \"(.*)\")) or max by (name) (label_replace(up{job=\"node-minas-tirith\"}, \"name\", \"minas-tirith\", \"\", \"\")) or max by (name) (label_replace(probe_success{job=\"http-services\"}, \"name\", \"$1\", \"service\", \"(.*)\")) or max by (name) (label_replace(node_systemd_unit_state{host=\"minas-tirith\",name=\"prometheus.service\",state=\"active\"}, \"name\", \"prometheus\", \"\", \"\")) or max by (name) (label_replace(node_systemd_unit_state{host=\"minas-tirith\",name=\"alertmanager.service\",state=\"active\"}, \"name\", \"alertmanager\", \"\", \"\")) or max by (name) (label_replace(1 - clamp_max(label_replace(label_replace(zfs_pool_health{host=\"imladris\",pool=~\"tank|fast\"}, \"pool\", \"hot-slow\", \"pool\", \"tank\"), \"pool\", \"hot-fast\", \"pool\", \"fast\"), 1), \"name\", \"$1\", \"pool\", \"(.*)\")) or max by (name) (label_replace((0.5 * (warm_pool_free_bytes / warm_pool_size_bytes > bool 0.1) + 0.5 * (warm_pool_free_bytes / warm_pool_size_bytes > bool 0.2)) * scalar(count(node_disk_info{host=\"imladris\",serial=\"ZR15YL21\"})), \"name\", \"warm\", \"\", \"\"))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "B",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(max by (name) (label_replace((max by (name) (label_replace(100 * (1 - avg(rate(node_cpu_seconds_total{host=\"imladris\",mode=\"idle\"}[5m]))), \"name\", \"imladris\", \"\", \"\")) or max by (name) (label_replace(100 * (1 - avg(rate(node_cpu_seconds_total{host=\"minas-tirith\",mode=\"idle\"}[5m]))), \"name\", \"minas-tirith\", \"\", \"\"))) > 60, \"name\", \"$1\", \"name\", \"(.*)\")), \"activity\", \"fast\", \"\", \"\") or label_replace(max by (name) (label_replace((max by (name) (label_replace(100 * (1 - avg(rate(node_cpu_seconds_total{host=\"imladris\",mode=\"idle\"}[5m]))), \"name\", \"imladris\", \"\", \"\")) or max by (name) (label_replace(100 * (1 - avg(rate(node_cpu_seconds_total{host=\"minas-tirith\",mode=\"idle\"}[5m]))), \"name\", \"minas-tirith\", \"\", \"\"))) > 15 <= 60, \"name\", \"$1\", \"name\", \"(.*)\")), \"activity\", \"normal\", \"\", \"\") or label_replace(max by (name) (label_replace((max by (name) (label_replace(100 * (1 - avg(rate(node_cpu_seconds_total{host=\"imladris\",mode=\"idle\"}[5m]))), \"name\", \"imladris\", \"\", \"\")) or max by (name) (label_replace(100 * (1 - avg(rate(node_cpu_seconds_total{host=\"minas-tirith\",mode=\"idle\"}[5m]))), \"name\", \"minas-tirith\", \"\", \"\"))) <= 15, \"name\", \"$1\", \"name\", \"(.*)\")), \"activity\", \"slow\", \"\", \"\")",
+          "legendFormat": "",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (name) (label_replace(100 * (1 - node_memory_MemAvailable_bytes{host=\"imladris\"} / node_memory_MemTotal_bytes{host=\"imladris\"}), \"name\", \"imladris\", \"\", \"\")) or max by (name) (label_replace(100 * (1 - node_memory_MemAvailable_bytes{host=\"minas-tirith\"} / node_memory_MemTotal_bytes{host=\"minas-tirith\"}), \"name\", \"minas-tirith\", \"\", \"\"))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "D",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "max by (name) (label_replace(label_replace(label_replace(100 * zfs_pool_allocated_bytes{host=\"imladris\",pool=~\"tank|fast\"} / zfs_pool_size_bytes{host=\"imladris\",pool=~\"tank|fast\"}, \"pool\", \"hot-slow\", \"pool\", \"tank\"), \"pool\", \"hot-fast\", \"pool\", \"fast\"), \"name\", \"$1\", \"pool\", \"(.*)\")) or max by (name) (label_replace(100 * (1 - (warm_pool_free_bytes / warm_pool_size_bytes)), \"name\", \"warm\", \"\", \"\")) or max by (name) (label_replace(100 * (1 - node_filesystem_avail_bytes{host=\"minas-tirith\",mountpoint=\"/var/lib/prometheus2\"} / node_filesystem_size_bytes{host=\"minas-tirith\",mountpoint=\"/var/lib/prometheus2\"}), \"name\", \"prometheus\", \"\", \"\"))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "E",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "label_replace(max by (name) (label_replace(vector(0), \"name\", \"alertmanager\", \"\", \"\")), \"text1\", \"ALERTS\", \"\", \"\") or label_replace(label_replace(max by (name) (label_replace(vector(0), \"name\", \"asus-ap\", \"\", \"\")), \"text1\", \"Wi-Fi AP\", \"\", \"\"), \"text2\", \"1G · ETH2\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"grafana\", \"\", \"\")), \"text1\", \"GRAFANA\", \"\", \"\") or label_replace(label_replace(max by (name) (label_replace(vector(0), \"name\", \"hot-fast\", \"\", \"\")), \"text1\", \"NVMe pool fast\", \"\", \"\"), \"text2\", \"fill = allocated %\", \"\", \"\") or label_replace(label_replace(max by (name) (label_replace(vector(0), \"name\", \"hot-slow\", \"\", \"\")), \"text1\", \"HDD pool tank\", \"\", \"\"), \"text2\", \"fill = allocated %\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"imladris\", \"\", \"\")), \"text1\", \"NAS\", \"\", \"\") or label_replace(label_replace(max by (name) (label_replace(vector(0), \"name\", \"jellyfin\", \"\", \"\")), \"text1\", \"media server\", \"\", \"\"), \"text2\", \"via ygg proxy on minas-tirith\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"lidarr\", \"\", \"\")), \"text1\", \"LIDARR\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"minas-tirith\", \"\", \"\")), \"text1\", \"ROUTER\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"ntfy\", \"\", \"\")), \"text1\", \"NTFY\", \"\", \"\") or label_replace(label_replace(max by (name) (label_replace(vector(0), \"name\", \"prometheus\", \"\", \"\")), \"text1\", \"metrics\", \"\", \"\"), \"text2\", \"fill = TSDB volume used %\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"prowlarr\", \"\", \"\")), \"text1\", \"PROWLARR\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"qbittorrent\", \"\", \"\")), \"text1\", \"downloads\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"radarr\", \"\", \"\")), \"text1\", \"RADARR\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"sonarr\", \"\", \"\")), \"text1\", \"SONARR\", \"\", \"\") or label_replace(max by (name) (label_replace(vector(0), \"name\", \"torrserver\", \"\", \"\")), \"text1\", \"streaming\", \"\", \"\") or label_replace(label_replace(max by (name) (label_replace(vector(0), \"name\", \"vontar\", \"\", \"\")), \"text1\", \"Vontar X5 · TV box\", \"\", \"\"), \"text2\", \"1G · ETH1\", \"\", \"\") or label_replace(label_replace(max by (name) (label_replace(vector(0), \"name\", \"warm\", \"\", \"\")), \"text1\", \"warm backup disk warm1\", \"\", \"\"), \"text2\", \"dark = not plugged in\", \"\", \"\")",
+          "legendFormat": "",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        },
+        {
+          "refId": "F",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "0 * (max by (name) (label_replace(probe_success{job=\"icmp-lan\"}, \"name\", \"$1\", \"host\", \"(.*)\")) or max by (name) (label_replace(up{job=\"node-minas-tirith\"}, \"name\", \"minas-tirith\", \"\", \"\")) or max by (name) (label_replace(probe_success{job=\"http-services\"}, \"name\", \"$1\", \"service\", \"(.*)\")) or max by (name) (label_replace(node_systemd_unit_state{host=\"minas-tirith\",name=\"prometheus.service\",state=\"active\"}, \"name\", \"prometheus\", \"\", \"\")) or max by (name) (label_replace(node_systemd_unit_state{host=\"minas-tirith\",name=\"alertmanager.service\",state=\"active\"}, \"name\", \"alertmanager\", \"\", \"\")) or max by (name) (label_replace(1 - clamp_max(label_replace(label_replace(zfs_pool_health{host=\"imladris\",pool=~\"tank|fast\"}, \"pool\", \"hot-slow\", \"pool\", \"tank\"), \"pool\", \"hot-fast\", \"pool\", \"fast\"), 1), \"name\", \"$1\", \"pool\", \"(.*)\")) or max by (name) (label_replace((0.5 * (warm_pool_free_bytes / warm_pool_size_bytes > bool 0.1) + 0.5 * (warm_pool_free_bytes / warm_pool_size_bytes > bool 0.2)) * scalar(count(node_disk_info{host=\"imladris\",serial=\"ZR15YL21\"})), \"name\", \"warm\", \"\", \"\"))) + scalar(clamp_max(15 + 85 * max(rate(node_network_receive_bytes_total{host=\"minas-tirith\",device=\"enp1s0f1\"}[1m]) or rate(node_network_transmit_bytes_total{host=\"minas-tirith\",device=\"enp1s0f1\"}[1m])) * 8 / 1e9, 100))",
+          "legendFormat": "",
+          "instant": true,
+          "range": false,
+          "format": "table"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {
+        "nameField": "name",
+        "statusField": "status",
+        "valueField": "value",
+        "thresholds": {
+          "online": 1,
+          "warning": 0.5,
+          "critical": 0
+        },
+        "trafficDensityField": "traffic",
+        "trafficSpeedField": "",
+        "enableTraffic": true,
+        "enableInteraction": true,
+        "showLabels": true,
+        "layout": {
+          "gridSize": 2,
+          "buildings": [
+            {
+              "id": "imladris",
+              "name": "imladris",
+              "type": "tower_a",
+              "x": 0,
+              "z": -9,
+              "rotation": 0,
+              "defaultText": "NAS"
+            },
+            {
+              "id": "qbittorrent",
+              "name": "qbittorrent",
+              "type": "led_facade",
+              "x": 8,
+              "z": -5,
+              "rotation": 0
+            },
+            {
+              "id": "radarr",
+              "name": "radarr",
+              "type": "display_a",
+              "x": 4,
+              "z": -5,
+              "rotation": 0,
+              "defaultText": "RADARR"
+            },
+            {
+              "id": "lidarr",
+              "name": "lidarr",
+              "type": "display_a",
+              "x": 0,
+              "z": -5,
+              "rotation": 0,
+              "defaultText": "LIDARR"
+            },
+            {
+              "id": "sonarr",
+              "name": "sonarr",
+              "type": "display_a",
+              "x": -4,
+              "z": -5,
+              "rotation": 0,
+              "defaultText": "SONARR"
+            },
+            {
+              "id": "torrserver",
+              "name": "torrserver",
+              "type": "led_facade",
+              "x": -8,
+              "z": -5,
+              "rotation": 0
+            },
+            {
+              "id": "jellyfin",
+              "name": "jellyfin",
+              "type": "pyramid",
+              "x": 5,
+              "z": -9,
+              "rotation": 0
+            },
+            {
+              "id": "prowlarr",
+              "name": "prowlarr",
+              "type": "display_a",
+              "x": -5,
+              "z": -9,
+              "rotation": 0,
+              "defaultText": "PROWLARR"
+            },
+            {
+              "id": "hot-fast",
+              "name": "hot-fast",
+              "type": "farm_silo",
+              "x": 4,
+              "z": -13,
+              "rotation": 0
+            },
+            {
+              "id": "hot-slow",
+              "name": "hot-slow",
+              "type": "farm_silo",
+              "x": 0,
+              "z": -13,
+              "rotation": 0
+            },
+            {
+              "id": "warm",
+              "name": "warm",
+              "type": "farm_silo",
+              "x": -4,
+              "z": -13,
+              "rotation": 0
+            },
+            {
+              "id": "minas-tirith",
+              "name": "minas-tirith",
+              "type": "tower_a",
+              "x": 0,
+              "z": 9,
+              "rotation": 0,
+              "defaultText": "ROUTER"
+            },
+            {
+              "id": "alertmanager",
+              "name": "alertmanager",
+              "type": "display_a",
+              "x": 3,
+              "z": 13,
+              "rotation": 0,
+              "defaultText": "ALERTS"
+            },
+            {
+              "id": "prometheus",
+              "name": "prometheus",
+              "type": "farm_silo",
+              "x": -3,
+              "z": 13,
+              "rotation": 0
+            },
+            {
+              "id": "grafana",
+              "name": "grafana",
+              "type": "tower_b",
+              "x": 3,
+              "z": 5,
+              "rotation": 0,
+              "defaultText": "GRAFANA"
+            },
+            {
+              "id": "ntfy",
+              "name": "ntfy",
+              "type": "tower_b",
+              "x": -3,
+              "z": 5,
+              "rotation": 0,
+              "defaultText": "NTFY"
+            },
+            {
+              "id": "vontar",
+              "name": "vontar",
+              "type": "pyramid",
+              "x": 9,
+              "z": 12,
+              "rotation": 0
+            },
+            {
+              "id": "asus-ap",
+              "name": "asus-ap",
+              "type": "windmill",
+              "x": 9,
+              "z": 6,
+              "rotation": 0
+            }
+          ],
+          "roads": [
+            "111111111111111111111",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "100000000000000000001",
+            "111111111111111111111",
+            "000000000111000000000",
+            "000000000111000000000",
+            "000000000111000000000",
+            "000000000111000000000",
+            "000000000111000000000",
+            "000011111111111110000",
+            "000010000000000010000",
+            "000010000000000010000",
+            "000010000000000011100",
+            "000010000000000010000",
+            "000010000000000010000",
+            "000010000000000010000",
+            "000010000000000010000",
+            "000010000000000010000",
+            "000010000000000011100",
+            "000010000000000010000",
+            "000010000000000010000",
+            "000011111111111110000"
+          ],
+          "roadOrigin": {
+            "x": -10,
+            "z": -15
+          }
+        }
+      },
+      "transformations": [
+        {
+          "id": "filterFieldsByName",
+          "options": {
+            "exclude": {
+              "pattern": "^(__name__|Time)$"
+            }
+          }
+        },
+        {
+          "id": "merge",
+          "options": {}
+        },
+        {
+          "id": "organize",
+          "options": {
+            "excludeByName": {
+              "Value #E": true
+            },
+            "indexByName": {},
+            "renameByName": {
+              "Value #A": "value",
+              "Value #B": "cpu",
+              "Value #C": "ram",
+              "Value #D": "fill",
+              "Value #E": "info",
+              "Value #F": "traffic"
+            }
+          }
+        }
+      ],
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 46
+      }
+    }
+  ],
+  "templating": {
+    "list": []
+  },
+  "annotations": {
+    "list": []
+  }
+}
