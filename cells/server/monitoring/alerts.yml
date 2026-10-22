@@ -19,6 +19,19 @@ groups:
         annotations:
           summary: "{{ $labels.host }} does not answer ping for 2 m"
 
+      # Pings but every exporter is silent: kernel up, userspace not. The
+      # 2026-10-22 reboot hung on a ZFS key prompt exactly so: no HostDown,
+      # 3 ExporterDown + 7 ServiceDown pushes instead of one.
+      - alert: HostUnresponsive
+        expr: |
+          max by(host) (up{job!~"icmp-lan|http-services|probe-osgiliath"}) == 0
+            and on(host) probe_success{job="icmp-lan"} == 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.host }} answers ping, but none of its exporters for 5 m (boot stuck?)"
+
       - alert: OsgiliathUnreachable
         expr: probe_success{job="probe-osgiliath"} == 0
         for: 5m
@@ -32,10 +45,12 @@ groups:
       # `unless` host-down: Alertmanager inhibits while HostDown fires, but
       # the 5 m pending would carry over and fire the moment the host is
       # back, before the exporters start. This restarts the clock instead.
+      # Same for all exporters of a host down at once: HostUnresponsive.
       - alert: ExporterDown
         expr: |
           up{job!~"icmp-lan|http-services|probe-osgiliath"} == 0
             unless on(host) probe_success{job="icmp-lan"} == 0
+            unless on(host) max by(host) (up{job!~"icmp-lan|http-services|probe-osgiliath"}) == 0
         for: 5m
         labels:
           severity: warning
@@ -78,6 +93,7 @@ groups:
         expr: |
           probe_success{job="http-services",tier="main"} == 0
             unless on(host) probe_success{job="icmp-lan"} == 0
+            unless on(host) max by(host) (up{job!~"icmp-lan|http-services|probe-osgiliath"}) == 0
         for: 5m
         labels:
           severity: warning

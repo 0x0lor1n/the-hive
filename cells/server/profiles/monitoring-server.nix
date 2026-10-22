@@ -397,7 +397,7 @@ in {
       # both sides; the scrape/probe job labels give it.
       inhibit_rules = [
         {
-          source_matchers = ["alertname = HostDown"];
+          source_matchers = ["alertname =~ HostDown|HostUnresponsive"];
           target_matchers = ["alertname =~ ExporterDown|ServiceDown|BackupStale|SnapshotStale|SystemdUnitFailed"];
           equal = ["host"];
         }
