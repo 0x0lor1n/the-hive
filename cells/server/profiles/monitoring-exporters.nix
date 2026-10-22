@@ -76,7 +76,7 @@ in {
     };
   };
 
-  # Target of minas-tirith's hourly iperf3-probe (monitoring-probes.nix).
+  # Target of minas-tirith's daily net-speed-probe (monitoring-probes.nix).
   services.iperf3 = {
     enable = true;
     openFirewall = true;

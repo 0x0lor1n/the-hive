@@ -79,15 +79,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#ff9e3b",
                 "value": 55
               },
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": 65
               }
             ]
@@ -230,11 +230,11 @@
                   "mode": "absolute",
                   "steps": [
                     {
-                      "color": "green",
+                      "color": "#98bb6c",
                       "value": null
                     },
                     {
-                      "color": "red",
+                      "color": "#c34043",
                       "value": 1
                     }
                   ]
@@ -266,6 +266,14 @@
       },
       "transformations": [
         {
+          "id": "filterFieldsByName",
+          "options": {
+            "exclude": {
+              "pattern": "^(Time|__name__)$"
+            }
+          }
+        },
+        {
           "id": "merge",
           "options": {}
         },
@@ -290,8 +298,8 @@
             },
             "indexByName": {
               "device": 0,
-              "reallocated": 1,
-              "Δ 24 h": 2
+              "Value #A": 1,
+              "Value #B": 2
             }
           }
         }
@@ -336,11 +344,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": null
               },
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": 1
               }
             ]
@@ -396,7 +404,7 @@
           "decimals": 0,
           "color": {
             "mode": "fixed",
-            "fixedColor": "blue"
+            "fixedColor": "#7fb4ca"
           }
         },
         "overrides": []
@@ -446,11 +454,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": null
               },
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": 1
               }
             ]
@@ -461,12 +469,12 @@
               "options": {
                 "0": {
                   "text": "FAILED",
-                  "color": "red",
+                  "color": "#c34043",
                   "index": 0
                 },
                 "1": {
                   "text": "PASSED",
-                  "color": "green",
+                  "color": "#98bb6c",
                   "index": 1
                 }
               }
@@ -542,15 +550,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#ff9e3b",
                 "value": 70
               },
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": 82
               }
             ]
@@ -608,15 +616,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#ff9e3b",
                 "value": 70
               },
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": 82
               }
             ]
@@ -685,15 +693,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#ff9e3b",
                 "value": 0.85
               },
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": 0.95
               }
             ]
@@ -744,15 +752,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#ff9e3b",
                 "value": 0.8
               },
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": 1.5
               }
             ]
@@ -806,15 +814,15 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": null
               },
               {
-                "color": "orange",
+                "color": "#ff9e3b",
                 "value": 80
               },
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": 95
               }
             ]
@@ -866,7 +874,7 @@
           "unit": "bytes",
           "color": {
             "mode": "fixed",
-            "fixedColor": "blue"
+            "fixedColor": "#7fb4ca"
           }
         },
         "overrides": []
@@ -915,7 +923,7 @@
           "unit": "bytes",
           "color": {
             "mode": "fixed",
-            "fixedColor": "blue"
+            "fixedColor": "#7fb4ca"
           }
         },
         "overrides": []
@@ -1090,8 +1098,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "zfs_pool_free_bytes{host=\"imladris\"}",
-          "legendFormat": "{{pool}}"
+          "expr": "zfs_dataset_available_bytes{host=\"imladris\",name=~\"tank|fast|rpool\"}",
+          "legendFormat": "{{name}}"
         }
       ],
       "fieldConfig": {
@@ -1102,7 +1110,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "#7fb4ca",
                 "value": null
               }
             ]
@@ -1159,7 +1167,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "#7fb4ca",
                 "value": null
               }
             ]
@@ -1216,7 +1224,7 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "blue",
+                "color": "#7fb4ca",
                 "value": null
               }
             ]
@@ -1261,8 +1269,8 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "zfs_pool_allocated_bytes{host=\"imladris\"} / zfs_pool_size_bytes{host=\"imladris\"}",
-          "legendFormat": "{{pool}}"
+          "expr": "zfs_dataset_used_bytes{host=\"imladris\",name=~\"tank|fast|rpool\"} / (zfs_dataset_used_bytes{host=\"imladris\",name=~\"tank|fast|rpool\"} + zfs_dataset_available_bytes{host=\"imladris\",name=~\"tank|fast|rpool\"})",
+          "legendFormat": "{{name}}"
         }
       ],
       "fieldConfig": {
@@ -1282,11 +1290,11 @@
             "mode": "absolute",
             "steps": [
               {
-                "color": "green",
+                "color": "#98bb6c",
                 "value": null
               },
               {
-                "color": "red",
+                "color": "#c34043",
                 "value": 0.8
               }
             ]
