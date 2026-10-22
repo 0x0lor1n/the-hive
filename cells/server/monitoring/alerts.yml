@@ -78,6 +78,19 @@ groups:
         annotations:
           summary: "imladris came up without a clean shutdown (ATX watchdog or power loss)"
 
+      # Any reboot, planned or not: uptime from the host's own clock (no
+      # skew vs Prometheus). Covers minas-tirith too, which HostDown cannot
+      # (Prometheus dies with it). One push, no resolved (route in
+      # monitoring-server.nix); ImladrisUncleanBoot replaces it when unclean.
+      - alert: HostRebooted
+        expr: node_time_seconds - node_boot_time_seconds < 900
+        # 2m: ImladrisUncleanBoot (for 1m) must be firing first to inhibit.
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.host }} rebooted, up for {{ $value | humanizeDuration }}"
+
       - alert: SystemdUnitFailed
         expr: node_systemd_unit_state{state="failed",name!~"(warm|hot)-backup.service"} == 1
         for: 10m

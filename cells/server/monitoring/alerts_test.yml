@@ -192,6 +192,32 @@ tests:
         alertname: HostUnresponsive
         exp_alerts: []
 
+  # Reboot: node_time - boot_time drops to ~0 and climbs; HostRebooted
+  # pending 2 m, fires, gone at 15 min uptime. Long uptime stays silent.
+  - interval: 1m
+    input_series:
+      - series: 'node_boot_time_seconds{job="node-imladris",host="imladris"}'
+        values: '0x4 100280x30'
+      - series: 'node_time_seconds{job="node-imladris",host="imladris"}'
+        values: '100000+60x34'
+      - series: 'node_boot_time_seconds{job="node-minas-tirith",host="minas-tirith"}'
+        values: '0x34'
+      - series: 'node_time_seconds{job="node-minas-tirith",host="minas-tirith"}'
+        values: '100000+60x34'
+    alert_rule_test:
+      - eval_time: 4m
+        alertname: HostRebooted
+        exp_alerts: []
+      - eval_time: 7m
+        alertname: HostRebooted
+        exp_alerts:
+          - exp_labels: {severity: warning, job: node-imladris, host: imladris}
+            exp_annotations:
+              summary: "imladris rebooted, up for 2m 20s"
+      - eval_time: 20m
+        alertname: HostRebooted
+        exp_alerts: []
+
   # A service dead on a live host still pushes.
   - interval: 1m
     input_series:

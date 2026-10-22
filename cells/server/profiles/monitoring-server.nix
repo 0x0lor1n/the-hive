@@ -388,6 +388,12 @@ in {
             matchers = ["alertname = DiskReallocatingGrowing"];
             repeat_interval = "12h";
           }
+          # An event, not a state: "rebooted" then "resolved" 15 min later
+          # is one push too many.
+          {
+            matchers = ["alertname = HostRebooted"];
+            receiver = "ntfy-no-resolve";
+          }
           {
             matchers = ["severity = critical"];
             repeat_interval = "1h";
@@ -409,9 +415,24 @@ in {
           target_matchers = ["severity = warning"];
           equal = ["alertname" "host" "device" "chip"];
         }
+        # An unclean boot says more than "rebooted".
+        {
+          source_matchers = ["alertname = ImladrisUncleanBoot"];
+          target_matchers = ["alertname = HostRebooted"];
+          equal = ["host"];
+        }
       ];
       receivers = [
         {name = "null";}
+        {
+          name = "ntfy-no-resolve";
+          webhook_configs = [
+            {
+              url = "http://127.0.0.1:${toString bridgePort}/hook";
+              send_resolved = false;
+            }
+          ];
+        }
         {
           name = "ntfy";
           webhook_configs = [
