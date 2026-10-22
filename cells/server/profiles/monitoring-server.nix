@@ -370,7 +370,9 @@ in {
         receiver = "ntfy";
         group_by = ["alertname" "host"];
         group_wait = "30s";
-        group_interval = "5m";
+        # Resolves wait for the next group tick: 5m made "fixed" arrive up to
+        # 5 min after the fact. Groups are alertname x host, small enough.
+        group_interval = "1m";
         repeat_interval = "12h";
         # A critical that is still firing is worth a nudge every hour; the
         # 12 h default is for "yes, I know the pool is 80 % full".
@@ -527,11 +529,23 @@ in {
         httpServices))
     ];
   };
-  environment.persistence."/state".directories = ["/var/lib/node_exporter"];
-  systemd.tmpfiles.rules = ["d /var/lib/node_exporter/textfile 0755 root root -"];
+  environment.persistence."/state".directories = [
+    "/var/lib/node_exporter"
+    # nflog + silences (DynamicUser -> private/). On the blank root every
+    # router boot forgot which alerts had been pushed: no resolved for them,
+    # every active alert pushed again, silences gone.
+    "/var/lib/private/alertmanager"
+  ];
+  systemd.tmpfiles.rules = [
+    "d /var/lib/node_exporter/textfile 0755 root root -"
+    # impermanence creates bind parents 0755; DynamicUser wants private/ 0700.
+    "z /var/lib/private 0700 root root -"
+    "z /state/var/lib/private 0700 root root -"
+  ];
 
   # Module sets StateDirectory=prometheus2 (0700): chowns the dataset root.
   systemd.services.prometheus.unitConfig.RequiresMountsFor = "/var/lib/prometheus2";
+  systemd.services.alertmanager.unitConfig.RequiresMountsFor = "/var/lib/private/alertmanager";
 
   # ---- grafana ----------------------------------------------------------
   services.grafana = {

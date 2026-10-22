@@ -187,7 +187,7 @@ tests:
         exp_alerts:
           - exp_labels: {severity: warning, job: node-imladris, host: imladris}
             exp_annotations:
-              summary: "node-imladris () has not answered for 5 m"
+              summary: "node-imladris () has not answered for 3 m"
       - eval_time: 7m
         alertname: HostUnresponsive
         exp_alerts: []
