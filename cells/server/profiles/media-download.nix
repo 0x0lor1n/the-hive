@@ -9,6 +9,12 @@
 #   for s in qbittorrent prowlarr radarr sonarr lidarr jellyfin; do
 #     sudo zfs create -o mountpoint=legacy fast/services/$s; done
 #   sudo zfs create -o mountpoint=legacy -o recordsize=1M tank/media/downloads
+#   sudo zfs create -o mountpoint=legacy -o recordsize=1M -o quota=500G fast/downloads
+#
+# fast/downloads holds qbittorrent's incomplete files (NVMe takes the random
+# piece writes; completion moves them to tank = copy+delete across pools).
+# It is a sibling of fast/services on purpose: no hourly snapshots and no
+# warm copy of half-downloaded files.
 #
 # and once after the deploy (tmpfiles below fixes only the dataset roots,
 # the existing library tree is uid 1000:users from the NTFS migration):
@@ -40,6 +46,7 @@
   mediaGid = 950;
   peerPort = 42001;
   downloads = "/tank/media/downloads";
+  incomplete = "/fast/downloads";
   webPorts = {
     qbittorrent = 8080;
     prowlarr = 9696;
@@ -127,7 +134,7 @@
 
     [BitTorrent]
     Session\DefaultSavePath=${downloads}/complete
-    Session\TempPath=${downloads}/incomplete
+    Session\TempPath=${incomplete}/incomplete
     Session\TempPathEnabled=true
 
     [Preferences]
@@ -188,6 +195,10 @@ in {
         device = "tank/media/downloads";
         fsType = "zfs";
       };
+      ${incomplete} = {
+        device = "fast/downloads";
+        fsType = "zfs";
+      };
       # Sonarr's root folder. Created after the initial disko run:
       #   zfs create -o mountpoint=legacy -o recordsize=1M tank/media/series
       "/tank/media/series" = {
@@ -210,7 +221,8 @@ in {
     ++ [
       "z ${downloads} 2775 qbittorrent media -"
       "d ${downloads}/complete 2775 qbittorrent media -"
-      "d ${downloads}/incomplete 2775 qbittorrent media -"
+      "z ${incomplete} 2775 qbittorrent media -"
+      "d ${incomplete}/incomplete 2775 qbittorrent media -"
     ]
     # qbittorrent categories (tv/movies/music) -> per-*arr subdirs under complete/
     ++ map (c: "d ${downloads}/complete/${c} 2775 qbittorrent media -") ["tv" "movies" "music"];
@@ -224,7 +236,7 @@ in {
     torrentingPort = peerPort;
   };
   systemd.services.qbittorrent = {
-    unitConfig.RequiresMountsFor = ["/var/lib/qbittorrent" downloads];
+    unitConfig.RequiresMountsFor = ["/var/lib/qbittorrent" downloads incomplete];
     serviceConfig = {
       # Chowns the root-owned dataset root on every start, after the mount.
       StateDirectory = "qbittorrent";

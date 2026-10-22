@@ -680,13 +680,17 @@ def imladris():
     # Usable space (root dataset), not zpool's raw size/free with parity.
     pool_used = f'zfs_dataset_used_bytes{{{h},name=~"tank|fast|rpool"}}'
     pool_avail = f'zfs_dataset_available_bytes{{{h},name=~"tank|fast|rpool"}}'
+    dl = f'{{{h},name="fast/downloads"}}'
     space = [
-        bargauge("Pool free", 8, 8, [target(pool_avail, "{{name}}")],
+        bargauge("Pool free", 6, 8, [target(pool_avail, "{{name}}")],
                  "bytes", thresholds("blue")),
-        bargauge("Dataset used", 8, 8, [target(
-            f'zfs_dataset_used_bytes{{{h},name=~"tank/(photos|archive|media|backups)|fast/services"}}',
+        bargauge("Dataset used", 6, 8, [target(
+            f'zfs_dataset_used_bytes{{{h},name=~"tank/(photos|archive|media|backups)|fast/(services|downloads)"}}',
             "{{name}}")], "bytes", thresholds("blue")),
-        bargauge("Filesystem free", 8, 8, [target(
+        gauge("Incomplete downloads", 6, 8, [target(
+            f"zfs_dataset_used_bytes{dl} / (zfs_dataset_quota_bytes{dl} > 0)")],
+              "percentunit", thresholds("green", 0.75, "orange", 0.9, "red")),
+        bargauge("Filesystem free", 6, 8, [target(
             f'node_filesystem_avail_bytes{{{h},mountpoint=~"/|/boot"}}', "{{mountpoint}}")],
                  "bytes", thresholds("blue")),
         ts("Pool used", 24, 8, [target(

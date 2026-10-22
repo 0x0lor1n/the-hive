@@ -32,6 +32,7 @@ FLARESOLVERR = "http://127.0.0.1:8191"
 LIBRARY = {"series": "/tank/media/series", "films": "/tank/media/films", "music": "/tank/media/music",
            "anime": "/tank/media/anime"}
 DOWNLOADS = "/tank/media/downloads/complete"
+INCOMPLETE = "/fast/downloads/incomplete"
 READY_TIMEOUT = 300
 
 
@@ -579,12 +580,14 @@ def configure_qbittorrent():
 
     # No seeding: stop the torrent the moment it completes (ratio 0, action
     # Stop). The *arr import from a stopped torrent, then remove it.
-    want = {"max_ratio_enabled": True, "max_ratio": 0, "max_ratio_act": 0}
+    # Incomplete files live on fast (NVMe), see media-download.nix.
+    want = {"max_ratio_enabled": True, "max_ratio": 0, "max_ratio_act": 0,
+            "temp_path_enabled": True, "temp_path": INCOMPLETE}
     prefs = http("GET", f"{base}/app/preferences")
     if any(prefs.get(k) != v for k, v in want.items()):
         form = urllib.parse.urlencode({"json": json.dumps(want)}).encode()
         urllib.request.urlopen(urllib.request.Request(f"{base}/app/setPreferences", data=form, headers=hdr))
-        log("  ~ share limit: stop at ratio 0")
+        log(f"  ~ share limit: stop at ratio 0; incomplete -> {INCOMPLETE}")
 
 
 # ---- Jellyfin ----------------------------------------------------------------

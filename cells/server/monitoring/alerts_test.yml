@@ -262,3 +262,26 @@ tests:
           - exp_labels: {severity: critical, tier: warm, host: imladris}
             exp_annotations:
               summary: "last successful warm backup on imladris was 1d 13h 0m 0s ago"
+
+  # fast/downloads at 95 % of a 500G quota for 30m -> one warning; the same
+  # bytes without a quota (0) stay silent.
+  - interval: 1m
+    input_series:
+      - series: 'zfs_dataset_used_bytes{name="fast/downloads",pool="fast",type="filesystem",host="imladris"}'
+        values: '475000000000x60'
+      - series: 'zfs_dataset_quota_bytes{name="fast/downloads",pool="fast",type="filesystem",host="imladris"}'
+        values: '500000000000x60'
+      - series: 'zfs_dataset_used_bytes{name="fast/downloads",pool="fast",type="filesystem",host="other"}'
+        values: '475000000000x60'
+      - series: 'zfs_dataset_quota_bytes{name="fast/downloads",pool="fast",type="filesystem",host="other"}'
+        values: '0x60'
+    alert_rule_test:
+      - eval_time: 20m
+        alertname: DownloadsTempFull
+        exp_alerts: []
+      - eval_time: 40m
+        alertname: DownloadsTempFull
+        exp_alerts:
+          - exp_labels: {severity: warning, name: fast/downloads, pool: fast, type: filesystem, host: imladris}
+            exp_annotations:
+              summary: "imladris fast/downloads (incomplete torrents) is 95% of quota"

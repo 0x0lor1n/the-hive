@@ -1136,7 +1136,7 @@
       "gridPos": {
         "x": 0,
         "y": 49,
-        "w": 8,
+        "w": 6,
         "h": 8
       }
     },
@@ -1155,7 +1155,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "zfs_dataset_used_bytes{host=\"imladris\",name=~\"tank/(photos|archive|media|backups)|fast/services\"}",
+          "expr": "zfs_dataset_used_bytes{host=\"imladris\",name=~\"tank/(photos|archive|media|backups)|fast/(services|downloads)\"}",
           "legendFormat": "{{name}}"
         }
       ],
@@ -1191,14 +1191,75 @@
         }
       },
       "gridPos": {
-        "x": 8,
+        "x": 6,
         "y": 49,
-        "w": 8,
+        "w": 6,
         "h": 8
       }
     },
     {
       "id": 23,
+      "type": "gauge",
+      "title": "Incomplete downloads",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "zfs_dataset_used_bytes{host=\"imladris\",name=\"fast/downloads\"} / (zfs_dataset_quota_bytes{host=\"imladris\",name=\"fast/downloads\"} > 0)",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "min": 0,
+          "max": 1,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#98bb6c",
+                "value": null
+              },
+              {
+                "color": "#ff9e3b",
+                "value": 0.75
+              },
+              {
+                "color": "#c34043",
+                "value": 0.9
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showThresholdMarkers": true
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 49,
+        "w": 6,
+        "h": 8
+      }
+    },
+    {
+      "id": 24,
       "type": "bargauge",
       "title": "Filesystem free",
       "datasource": {
@@ -1248,14 +1309,14 @@
         }
       },
       "gridPos": {
-        "x": 16,
+        "x": 18,
         "y": 49,
-        "w": 8,
+        "w": 6,
         "h": 8
       }
     },
     {
-      "id": 24,
+      "id": 25,
       "type": "timeseries",
       "title": "Pool used",
       "datasource": {

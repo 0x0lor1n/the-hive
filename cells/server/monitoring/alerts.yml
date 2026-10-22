@@ -132,6 +132,19 @@ groups:
         annotations:
           summary: "{{ $labels.host }} pool {{ $labels.pool }} is not ONLINE (health={{ $value }})"
 
+      # qbittorrent's incomplete dir (fast/downloads, quota 500G). Full =
+      # downloads stall; also what a move to tank that keeps failing looks
+      # like after a while. No quota -> no alert.
+      - alert: DownloadsTempFull
+        expr: |
+          zfs_dataset_used_bytes{name="fast/downloads"}
+            / (zfs_dataset_quota_bytes{name="fast/downloads"} > 0) > 0.9
+        for: 30m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.host }} fast/downloads (incomplete torrents) is {{ $value | humanizePercentage }} of quota"
+
   - name: disks
     rules:
       # IronWolf/Barracuda operating max is 65 C. sdc/sdd idle at 53-56 in

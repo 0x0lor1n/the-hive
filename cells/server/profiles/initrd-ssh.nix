@@ -10,7 +10,9 @@
 }: let
   br = config.router.lanBridge;
 in {
-  boot.initrd.availableKernelModules = ["igc" "bridge"];
+  # ixgbe: the DAC port to imladris is a bridge member too. Its
+  # allow_unsupported_sfp option reaches initrd via modprobe.d/nixos.conf.
+  boot.initrd.availableKernelModules = ["igc" "ixgbe" "bridge"];
 
   boot.initrd.network = {
     enable = true;

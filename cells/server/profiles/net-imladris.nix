@@ -5,7 +5,9 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: {pkgs, ...}: {
+  environment.systemPackages = [pkgs.ethtool];
+
   networking.useNetworkd = true;
   networking.useDHCP = false;
 
