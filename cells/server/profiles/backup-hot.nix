@@ -71,6 +71,11 @@
       | write_prom snapshot-age
   '';
 in {
+  # The router's copies arrive raw with keylocation=prompt and no key here;
+  # the default would make zfs-import-tank wait on the console for them
+  # forever and hold the whole boot. Nothing on imladris is encrypted.
+  boot.zfs.requestEncryptionCredentials = false;
+
   users.users.backup = {
     isSystemUser = true;
     group = "backup";
