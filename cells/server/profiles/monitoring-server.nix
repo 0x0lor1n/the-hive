@@ -374,14 +374,42 @@ in {
         repeat_interval = "12h";
         # A critical that is still firing is worth a nudge every hour; the
         # 12 h default is for "yes, I know the pool is 80 % full".
+        # DiskReallocatingGrowing fires for the 6 h after each growth step
+        # by design (alerts.yml): one push per wave, no hourly repeats.
+        # info = dashboard only.
         routes = [
+          {
+            matchers = ["severity = info"];
+            receiver = "null";
+          }
+          {
+            matchers = ["alertname = DiskReallocatingGrowing"];
+            repeat_interval = "12h";
+          }
           {
             matchers = ["severity = critical"];
             repeat_interval = "1h";
           }
         ];
       };
+      # A host that is down takes its scrapes, services, backups and
+      # snapshot stamps with it: HostDown is the one push. Needs `host` on
+      # both sides; the scrape/probe job labels give it.
+      inhibit_rules = [
+        {
+          source_matchers = ["alertname = HostDown"];
+          target_matchers = ["alertname =~ ExporterDown|ServiceDown|BackupStale|SnapshotStale|SystemdUnitFailed"];
+          equal = ["host"];
+        }
+        # Critical temperature replaces the warning for the same sensor.
+        {
+          source_matchers = ["severity = critical"];
+          target_matchers = ["severity = warning"];
+          equal = ["alertname" "host" "device" "chip"];
+        }
+      ];
       receivers = [
+        {name = "null";}
         {
           name = "ntfy";
           webhook_configs = [
@@ -405,7 +433,16 @@ in {
       scrape_interval = "15s";
       evaluation_interval = "15s";
     };
-    ruleFiles = [../monitoring/alerts.yml];
+    # Unit tests (alerts_test.yml) run at build time: a rule change that
+    # breaks them does not reach the router.
+    ruleFiles = [
+      (pkgs.runCommand "alerts.yml" {nativeBuildInputs = [pkgs.prometheus.cli];} ''
+        cp ${../monitoring/alerts.yml} alerts.yml
+        cp ${../monitoring/alerts_test.yml} alerts_test.yml
+        promtool test rules alerts_test.yml
+        cp alerts.yml $out
+      '')
+    ];
     alertmanagers = [{static_configs = [{targets = ["127.0.0.1:${toString amPort}"];}];}];
 
     exporters = {

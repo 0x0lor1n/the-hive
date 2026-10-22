@@ -1,0 +1,182 @@
+# promtool test rules cells/server/monitoring/alerts_test.yml
+# The rules that cannot be induced on live hardware (sector growth, disk
+# heat) and the ones whose point is NOT firing.
+rule_files:
+  - alerts.yml
+
+evaluation_interval: 1m
+
+tests:
+  # sdd's real history: flat 1152 -> only the info baseline, never a push.
+  # +8 at 7h01 -> Growing fires at once, holds while the 6 h window still
+  # sees the step, gone at 13 h.
+  - interval: 1m
+    input_series:
+      - series: 'smartctl_device_attribute{attribute_id="5",attribute_name="Reallocated_Sector_Ct",attribute_value_type="raw",device="sdd",host="imladris"}'
+        values: '1152x420 1160x420'
+      - series: 'smartctl_device_attribute{attribute_id="5",attribute_name="Reallocated_Sector_Ct",attribute_value_type="raw",device="sda",host="imladris"}'
+        values: '0x840'
+    alert_rule_test:
+      - eval_time: 6h
+        alertname: DiskReallocatingGrowing
+        exp_alerts: []
+      - eval_time: 6h
+        alertname: DiskReallocatedBaseline
+        exp_alerts:
+          - exp_labels: {severity: info, alertname: DiskReallocatedBaseline, attribute_id: "5", attribute_name: Reallocated_Sector_Ct, attribute_value_type: raw, device: sdd, host: imladris}
+            exp_annotations:
+              summary: "imladris sdd: Reallocated_Sector_Ct = 1152 (not growing)"
+      - eval_time: 7h5m
+        alertname: DiskReallocatingGrowing
+        exp_alerts:
+          - exp_labels: {severity: critical, attribute_id: "5", attribute_name: Reallocated_Sector_Ct, attribute_value_type: raw, device: sdd, host: imladris}
+            exp_annotations:
+              summary: "imladris sdd: Reallocated_Sector_Ct +8 in 6 h, still growing"
+      - eval_time: 12h55m
+        alertname: DiskReallocatingGrowing
+        exp_alerts:
+          - exp_labels: {severity: critical, attribute_id: "5", attribute_name: Reallocated_Sector_Ct, attribute_value_type: raw, device: sdd, host: imladris}
+            exp_annotations:
+              summary: "imladris sdd: Reallocated_Sector_Ct +8 in 6 h, still growing"
+      - eval_time: 13h5m
+        alertname: DiskReallocatingGrowing
+        exp_alerts: []
+
+  # Reboot: smartctl_exporter gone for 10 min, same count after. The old
+  # increase()-based rule pushed DiskReallocatingNow on exactly this.
+  - interval: 1m
+    input_series:
+      - series: 'smartctl_device_attribute{attribute_id="5",attribute_value_type="raw",device="sdd",host="imladris"}'
+        values: '1152x60 _x10 1152x60'
+    alert_rule_test:
+      - eval_time: 75m
+        alertname: DiskReallocatingGrowing
+        exp_alerts: []
+
+  # sdd walks 56/54/55 around the warn line: one alert for the whole walk.
+  - interval: 1m
+    input_series:
+      - series: 'smartctl_device_temperature{temperature_type="current",device="sdd",host="imladris"}'
+        values: '56x14 54x4 55x14 54x4 56x4 53x90'
+    alert_rule_test:
+      - eval_time: 5m
+        alertname: HddTempHigh
+        exp_alerts: []
+      - eval_time: 30m
+        alertname: HddTempHigh
+        exp_alerts:
+          - exp_labels: {severity: warning, temperature_type: current, device: sdd, host: imladris}
+            exp_annotations:
+              summary: "imladris sdd at 55 C (warn 55, max 65)"
+      - eval_time: 1h20m
+        alertname: HddTempHigh
+        exp_alerts:
+          - exp_labels: {severity: warning, temperature_type: current, device: sdd, host: imladris}
+            exp_annotations:
+              summary: "imladris sdd at 56 C (warn 55, max 65)"
+      - eval_time: 1h45m
+        alertname: HddTempHigh
+        exp_alerts: []
+
+  - interval: 1m
+    input_series:
+      - series: 'smartctl_device_temperature{temperature_type="current",device="sdc",host="imladris"}'
+        values: '66x10'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: HddTempHigh
+        exp_alerts:
+          - exp_labels: {severity: critical, temperature_type: current, device: sdc, host: imladris}
+            exp_annotations:
+              summary: "imladris sdc at 66 C: at the rated maximum"
+
+  # imladris off the network: one HostDown, nothing from the exporter scrapes
+  # (they are not HostDown, and Alertmanager inhibits ExporterDown anyway).
+  - interval: 1m
+    input_series:
+      - series: 'probe_success{job="icmp-lan",host="imladris"}'
+        values: '1 0x10'
+      - series: 'up{job="icmp-lan",host="imladris"}'
+        values: '1x10'
+    alert_rule_test:
+      - eval_time: 2m
+        alertname: HostDown
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: HostDown
+        exp_alerts:
+          - exp_labels: {severity: critical, job: icmp-lan, host: imladris}
+            exp_annotations:
+              summary: "imladris does not answer ping for 2 m"
+      - eval_time: 10m
+        alertname: BlackboxDown
+        exp_alerts: []
+
+  # Reboot: ping gone 6 min, jellyfin back 3 min after ping. No ServiceDown
+  # at any point, though its probe failed for 9 min straight.
+  - interval: 1m
+    input_series:
+      - series: 'probe_success{job="icmp-lan",host="imladris"}'
+        values: '1 0x5 1x30'
+      - series: 'probe_success{job="http-services",tier="main",service="jellyfin",host="imladris",url="u"}'
+        values: '1 0x8 1x27'
+      - series: 'up{job="node-imladris",host="imladris"}'
+        values: '1 0x6 1x29'
+    alert_rule_test:
+      - eval_time: 9m
+        alertname: ServiceDown
+        exp_alerts: []
+      - eval_time: 9m
+        alertname: ExporterDown
+        exp_alerts: []
+      - eval_time: 4m
+        alertname: HostDown
+        exp_alerts:
+          - exp_labels: {severity: critical, job: icmp-lan, host: imladris}
+            exp_annotations:
+              summary: "imladris does not answer ping for 2 m"
+
+  # A service dead on a live host still pushes.
+  - interval: 1m
+    input_series:
+      - series: 'probe_success{job="icmp-lan",host="imladris"}'
+        values: '1x10'
+      - series: 'probe_success{job="http-services",tier="main",service="radarr",host="imladris",url="u"}'
+        values: '0x10'
+    alert_rule_test:
+      - eval_time: 6m
+        alertname: ServiceDown
+        exp_alerts:
+          - exp_labels: {severity: warning, job: http-services, tier: main, service: radarr, host: imladris, url: u}
+            exp_annotations:
+              summary: "radarr on imladris not answering (u)"
+
+  # Received copies lag by design; sources and the containers above them count.
+  - interval: 1m
+    input_series:
+      - series: 'zfs_snapshot_latest_seconds{dataset="tank/backups/minas-tirith/safe",host="imladris"}'
+        values: '0x1800'
+      - series: 'zfs_snapshot_latest_seconds{dataset="tank/photos",host="imladris"}'
+        values: '0x1800'
+    alert_rule_test:
+      - eval_time: 27h
+        alertname: SnapshotStale
+        exp_alerts:
+          - exp_labels: {severity: warning, dataset: tank/photos, host: imladris}
+            exp_annotations:
+              summary: "imladris tank/photos: newest snapshot is 1d 3h 0m 0s old"
+
+  - interval: 1m
+    input_series:
+      - series: 'backup_last_success_seconds{tier="warm",host="imladris"}'
+        values: '0x2400'
+    alert_rule_test:
+      - eval_time: 35h
+        alertname: BackupStale
+        exp_alerts: []
+      - eval_time: 37h
+        alertname: BackupStale
+        exp_alerts:
+          - exp_labels: {severity: critical, tier: warm, host: imladris}
+            exp_annotations:
+              summary: "last successful warm backup on imladris was 1d 13h 0m 0s ago"

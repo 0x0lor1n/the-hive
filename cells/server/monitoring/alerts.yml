@@ -1,15 +1,23 @@
 # Alert rules for the Prometheus on minas-tirith (profiles/monitoring-server.nix).
-# Checked by promtool at build time. `host` comes from the scrape job labels.
+# Checked by promtool at build time; unit tests in alerts_test.yml:
+#   promtool test rules cells/server/monitoring/alerts_test.yml
+# `host` comes from the scrape job labels; Alertmanager inhibits per-host
+# alerts while HostDown fires for that host, so every rule carries it.
+#
+# Severity: critical = ntfy high, warning = ntfy default, info = dashboard
+# only (Alertmanager routes it to the null receiver).
 groups:
-  - name: hive
+  - name: hosts
     rules:
+      # ICMP, not `up`: three exporters on imladris used to be three pushes,
+      # and an exporter restart looked like a dead host.
       - alert: HostDown
-        expr: up == 0
-        for: 5m
+        expr: probe_success{job="icmp-lan"} == 0
+        for: 2m
         labels:
           severity: critical
         annotations:
-          summary: "{{ $labels.job }} on {{ $labels.host }} ({{ $labels.instance }}) has not answered for 5 m"
+          summary: "{{ $labels.host }} does not answer ping for 2 m"
 
       - alert: OsgiliathUnreachable
         expr: probe_success{job="probe-osgiliath"} == 0
@@ -19,7 +27,66 @@ groups:
         annotations:
           summary: "osgiliath: ssh port unreachable from minas-tirith for 5 m"
 
-      # pdf/zfs_exporter has no capacity ratio; health 0 = ONLINE.
+      # Real exporters only: for blackbox jobs `up` is the blackbox exporter
+      # itself, whatever the target's host label says (BlackboxDown below).
+      # `unless` host-down: Alertmanager inhibits while HostDown fires, but
+      # the 5 m pending would carry over and fire the moment the host is
+      # back, before the exporters start. This restarts the clock instead.
+      - alert: ExporterDown
+        expr: |
+          up{job!~"icmp-lan|http-services|probe-osgiliath"} == 0
+            unless on(host) probe_success{job="icmp-lan"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.job }} ({{ $labels.instance }}) has not answered for 5 m"
+
+      # Blackbox down = every probe_success vanishes and HostDown/ServiceDown
+      # go silent with it. One alert for all three jobs.
+      - alert: BlackboxDown
+        expr: min(up{job=~"icmp-lan|http-services|probe-osgiliath"}) == 0
+        for: 5m
+        labels:
+          severity: warning
+          host: minas-tirith
+        annotations:
+          summary: "blackbox exporter not answering: host and service probes are blind"
+
+      # Written by boot-marker (monitoring-exporters.nix) from the previous
+      # boot's journal; clears on the next clean boot.
+      - alert: ImladrisUncleanBoot
+        expr: atx_watchdog_unclean_boot == 1
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "imladris came up without a clean shutdown (ATX watchdog or power loss)"
+
+      - alert: SystemdUnitFailed
+        expr: node_systemd_unit_state{state="failed",name!~"(warm|hot)-backup.service"} == 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.host }}: {{ $labels.name }} is failed"
+
+  - name: services
+    rules:
+      # Same `unless` as ExporterDown: jellyfin takes a minute after boot.
+      - alert: ServiceDown
+        expr: |
+          probe_success{job="http-services",tier="main"} == 0
+            unless on(host) probe_success{job="icmp-lan"} == 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.service }} on {{ $labels.host }} not answering ({{ $labels.url }})"
+
+  - name: pools
+    rules:
+      # zfs_exporter has no capacity ratio; health 0 = ONLINE.
       - alert: PoolCapacity80
         expr: zfs_pool_allocated_bytes / zfs_pool_size_bytes > 0.80
         for: 1h
@@ -36,15 +103,48 @@ groups:
         annotations:
           summary: "{{ $labels.host }} pool {{ $labels.pool }} is not ONLINE (health={{ $value }})"
 
-      # IronWolfs idle at 41-49 C; above 50 means airflow, not a dying disk.
-      # smartctl_exporter skips spun-down disks, so no sample = no alert.
-      - alert: DiskTemp50
-        expr: smartctl_device_temperature{temperature_type="current"} > 50
+  - name: disks
+    rules:
+      # IronWolf/Barracuda operating max is 65 C. sdc/sdd idle at 53-56 in
+      # this case and cross 55 about once a day, walking 54/55/54:
+      # keep_firing_for holds the alert through the walk, one push per
+      # episode. smartctl_exporter skips spun-down disks: no sample, no alert.
+      - alert: HddTempHigh
+        expr: smartctl_device_temperature{temperature_type="current",device=~"sd.*"} >= 55
         for: 10m
+        keep_firing_for: 1h
         labels:
           severity: warning
         annotations:
-          summary: "{{ $labels.host }} {{ $labels.device }} at {{ $value }} C for 10 m"
+          summary: "{{ $labels.host }} {{ $labels.device }} at {{ $value }} C (warn 55, max 65)"
+
+      - alert: HddTempHigh
+        expr: smartctl_device_temperature{temperature_type="current",device=~"sd.*"} >= 65
+        for: 2m
+        keep_firing_for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.device }} at {{ $value }} C: at the rated maximum"
+
+      # temp1 = composite; Samsung NVMe spec max is 82 C.
+      - alert: NvmeTempHigh
+        expr: node_hwmon_temp_celsius{chip=~"nvme.*",sensor="temp1"} >= 70
+        for: 10m
+        keep_firing_for: 1h
+        labels:
+          severity: warning
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.chip }} at {{ $value }} C (warn 70, max 82)"
+
+      - alert: NvmeTempHigh
+        expr: node_hwmon_temp_celsius{chip=~"nvme.*",sensor="temp1"} >= 82
+        for: 2m
+        keep_firing_for: 30m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.chip }} at {{ $value }} C: throttling range"
 
       - alert: DiskSmartFailed
         expr: smartctl_device_smart_status == 0
@@ -53,24 +153,6 @@ groups:
           severity: critical
         annotations:
           summary: "{{ $labels.host }} {{ $labels.device }}: SMART overall status FAILED"
-
-      # 5 = Reallocated_Sector_Ct, 198 = Offline_Uncorrectable. A handful is a
-      # disk that found a bad spot; hundreds is a disk on its way out.
-      - alert: DiskReallocating
-        expr: smartctl_device_attribute{attribute_id=~"5|198",attribute_value_type="raw"} > 0 <= 100
-        for: 1m
-        labels:
-          severity: warning
-        annotations:
-          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} = {{ $value }}"
-
-      - alert: DiskReallocatingMany
-        expr: smartctl_device_attribute{attribute_id=~"5|198",attribute_value_type="raw"} > 100
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} = {{ $value }} -- replace the disk"
 
       # 197 = Current_Pending_Sector: sectors the firmware could NOT read and
       # has not remapped yet. Even one means reads are failing right now and
@@ -82,48 +164,127 @@ groups:
         annotations:
           summary: "{{ $labels.host }} {{ $labels.device }}: {{ $value }} pending (unreadable) sectors -- zpool offline it now"
 
-      # Alertmanager only notifies on state changes, so a counter that keeps
-      # climbing is invisible after the first push. This one flaps on purpose:
-      # fires while the count grew in the last 30 m, resolves when it stops,
-      # fires again on the next wave. Each wave = one notification.
-      - alert: DiskReallocatingNow
-        expr: increase(smartctl_device_attribute{attribute_id=~"5|197|198",attribute_value_type="raw"}[30m]) > 0
+      # 5 = Reallocated_Sector_Ct, 198 = Offline_Uncorrectable. A count that
+      # stands still is history (sdd: 184 -> 1144 on 2026-10-20 evening,
+      # 1152 since 2026-10-21) and stays on the dashboard; growth is news.
+      # max - min, not increase(): the attribute is a gauge, and increase()
+      # extrapolates and reads a dip across a reboot as a counter reset.
+      # Fires while the count moved in the last 6 h: one push per growth
+      # wave, resolved 6 h after it stops.
+      - alert: DiskReallocatingGrowing
+        expr: |
+          max_over_time(smartctl_device_attribute{attribute_id=~"5|198",attribute_value_type="raw"}[6h])
+            - min_over_time(smartctl_device_attribute{attribute_id=~"5|198",attribute_value_type="raw"}[6h]) > 0
         labels:
           severity: critical
         annotations:
-          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} +{{ $value | printf \"%.0f\" }} in 30 m, still growing"
+          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} +{{ $value }} in 6 h, still growing"
 
-      # Written by boot-marker (monitoring-exporters.nix) from the previous
-      # boot's journal; clears on the next clean boot.
-      - alert: ImladrisUncleanBoot
-        expr: atx_watchdog_unclean_boot == 1
+      - alert: DiskReallocatedBaseline
+        expr: smartctl_device_attribute{attribute_id=~"5|198",attribute_value_type="raw"} > 0
+        labels:
+          severity: info
+        annotations:
+          summary: "{{ $labels.host }} {{ $labels.device }}: {{ $labels.attribute_name }} = {{ $value }} (not growing)"
+
+  - name: backups
+    rules:
+      - alert: BackupFailed
+        expr: node_systemd_unit_state{name=~"(warm|hot)-backup.service",state="failed"} == 1
         for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "{{ $labels.name }} failed on {{ $labels.host }}; journalctl -u {{ $labels.name }}"
+
+      # Stamps written at the end of each run (backup-hot/-push/-warm.nix);
+      # all three run nightly, 36 h = one missed night plus slack.
+      - alert: BackupStale
+        expr: time() - backup_last_success_seconds > 36 * 3600
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "last successful {{ $labels.tier }} backup on {{ $labels.host }} was {{ $value | humanizeDuration }} ago"
+
+      # Newest sanoid snapshot per dataset (snapshot-age, backup-hot.nix).
+      # Received copies under tank/backups/<host>/ lag their source by a day
+      # by design and are BackupStale's job; the empty containers there get
+      # a daily keep-short snapshot of their own and stay in.
+      - alert: SnapshotStale
+        expr: time() - zfs_snapshot_latest_seconds{dataset!~"tank/backups/[^/]+/.+"} > 26 * 3600
+        for: 15m
         labels:
           severity: warning
         annotations:
-          summary: "imladris came up without a clean shutdown (ATX watchdog or power loss)"
+          summary: "{{ $labels.host }} {{ $labels.dataset }}: newest snapshot is {{ $value | humanizeDuration }} old"
 
-      - alert: WarmBackupFailed
-        expr: node_systemd_unit_state{name="warm-backup.service",state="failed"} == 1
-        for: 1m
+  - name: network
+    rules:
+      # Daily net-speed-probe (monitoring-probes.nix). The series holds the
+      # last good result, so this fires once per bad day, not per scrape.
+      # Healthy: DAC to imladris 9.41 G, Vontar 1G port 0.94 G.
+      - alert: LanSlow
+        expr: |
+          net_speed_bits_per_second{peer="imladris"} < 5e9
+            or net_speed_bits_per_second{peer="vontar"} < 5e8
+        for: 5m
         labels:
-          severity: critical
+          severity: warning
         annotations:
-          summary: "warm-backup.service failed on {{ $labels.host }}; journalctl -u warm-backup"
+          summary: "minas-tirith -> {{ $labels.peer }} {{ $labels.direction }} {{ $value | humanize }}bit/s (cable or NIC)"
 
-      # Stamp written at the end of warm-backup's run; absent until the first.
-      - alert: WarmBackupStale
-        expr: time() - backup_last_success_seconds{tier="warm"} > 36 * 3600
-        for: 1m
+      # Ookla to Lausanne swings with the far end; dashboard only.
+      - alert: WanSlow
+        expr: net_speed_bits_per_second{peer="salt",direction="download"} < 2e9
         labels:
-          severity: critical
+          severity: info
         annotations:
-          summary: "last successful warm-backup on {{ $labels.host }} was {{ $value | humanizeDuration }} ago"
+          summary: "WAN download {{ $value | humanize }}bit/s (normal ~8 G)"
 
-      - alert: SystemdUnitFailed
-        expr: node_systemd_unit_state{state="failed",name!="warm-backup.service"} == 1
+      - alert: NetSpeedProbeStale
+        expr: time() - net_speed_timestamp_seconds > 2 * 86400
+        labels:
+          severity: info
+        annotations:
+          summary: "no good speed test to {{ $labels.peer }} for {{ $value | humanizeDuration }}"
+
+      # ONU stick (onu-temps, monitoring-probes.nix). Baseline 2026-10-21/22,
+      # 4170 samples over ~70 h: CPU 70.7-72.1 C, SFP 60.0-67.0 C. It runs
+      # hot at idle; threshold = baseline max + 8 C.
+      - alert: OnuHot
+        expr: onu_cpu_temp_celsius >= 80
+        for: 10m
+        keep_firing_for: 1h
+        labels:
+          severity: warning
+          sensor: cpu
+        annotations:
+          summary: "ONU CPU at {{ $value }} C (idle 72)"
+
+      - alert: OnuHot
+        expr: onu_sfp_temp_celsius >= 75
+        for: 10m
+        keep_firing_for: 1h
+        labels:
+          severity: warning
+          sensor: sfp
+        annotations:
+          summary: "ONU SFP at {{ $value }} C (idle 65)"
+
+      # Same limit as salt-status (red below -28 dBm); normal -14.8.
+      - alert: OnuSignalLow
+        expr: onu_rx_power_dbm < -27
         for: 10m
         labels:
           severity: warning
         annotations:
-          summary: "{{ $labels.host }}: {{ $labels.name }} is failed"
+          summary: "ONU RX power {{ $value }} dBm (normal -14.8)"
+
+      - alert: OnuUnreachable
+        expr: onu_reachable == 0
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "ONU stick at 192.168.11.1 not answering ssh for 10 m"
