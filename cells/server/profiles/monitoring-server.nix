@@ -58,6 +58,7 @@
     radarr = "http://${imladris}:7878/";
     sonarr = "http://${imladris}:8989/";
     lidarr = "http://${imladris}:8686/";
+    immich = "http://${imladris}:2283/api/server/ping";
     grafana = "http://192.168.10.1:${toString grafanaPort}/api/health";
     ntfy = "http://192.168.10.1:${toString ntfyPort}/v1/health";
   };

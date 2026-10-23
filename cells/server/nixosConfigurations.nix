@@ -141,6 +141,8 @@ in {
       p.torrserver
       # qbittorrent + Prowlarr/Radarr/Sonarr/Lidarr, web UIs LAN only
       p.media-download
+      # Immich, web UI LAN only (:2283)
+      p.photos-immich
     ];
   };
 }
