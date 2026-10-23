@@ -587,13 +587,18 @@ def configure_qbittorrent():
     # Stop). The *arr import from a stopped torrent, then remove it.
     # Incomplete files live on fast (NVMe), see media-download.nix; save_path
     # on tank is what makes qbit move them off fast on completion.
+    # qbit neither checks free space on temp_path nor preallocates, so a batch
+    # of UHD remuxes run in parallel fills the 1T quota and errors them all.
+    # Queueing caps how many grow there at once; slow torrents still count,
+    # or stalled ones would let more start.
     want = {"max_ratio_enabled": True, "max_ratio": 0, "max_ratio_act": 0,
-            "temp_path_enabled": True, "temp_path": INCOMPLETE, "save_path": DOWNLOADS}
+            "temp_path_enabled": True, "temp_path": INCOMPLETE, "save_path": DOWNLOADS,
+            "queueing_enabled": True, "max_active_downloads": 10, "dont_count_slow_torrents": False}
     prefs = http("GET", f"{base}/app/preferences")
     if any(prefs.get(k) != v for k, v in want.items()):
         form = urllib.parse.urlencode({"json": json.dumps(want)}).encode()
         urllib.request.urlopen(urllib.request.Request(f"{base}/app/setPreferences", data=form, headers=hdr))
-        log(f"  ~ share limit: stop at ratio 0; incomplete -> {INCOMPLETE}, save -> {DOWNLOADS}")
+        log(f"  ~ share limit: stop at ratio 0; incomplete -> {INCOMPLETE}, save -> {DOWNLOADS}, 10 active downloads")
 
 
 # ---- Jellyfin ----------------------------------------------------------------

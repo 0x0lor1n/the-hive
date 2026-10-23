@@ -9,7 +9,7 @@
 #   for s in qbittorrent prowlarr radarr sonarr lidarr jellyfin; do
 #     sudo zfs create -o mountpoint=legacy fast/services/$s; done
 #   sudo zfs create -o mountpoint=legacy -o recordsize=1M tank/media/downloads
-#   sudo zfs create -o mountpoint=legacy -o recordsize=1M -o quota=500G fast/downloads
+#   sudo zfs create -o mountpoint=legacy -o recordsize=1M -o quota=1T fast/downloads
 #
 # fast/downloads holds qbittorrent's incomplete files (NVMe takes the random
 # piece writes; completion moves them to tank = copy+delete across pools).

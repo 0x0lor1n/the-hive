@@ -132,7 +132,7 @@ groups:
         annotations:
           summary: "{{ $labels.host }} pool {{ $labels.pool }} is not ONLINE (health={{ $value }})"
 
-      # qbittorrent's incomplete dir (fast/downloads, quota 500G). Full =
+      # qbittorrent's incomplete dir (fast/downloads, quota 1T). Full =
       # downloads stall; also what a move to tank that keeps failing looks
       # like after a while. No quota -> no alert.
       - alert: DownloadsTempFull
