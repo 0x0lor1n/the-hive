@@ -1524,7 +1524,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(label_replace(label_replace(label_replace(probe_success{job=\"http-services\",tier=\"main\"}, \"link\", \"$1\", \"url\", \"(https?://[^/]+).*\"), \"lan\", \"$1\", \"url\", \"https?://([^/]+).*\"), \"other\", \"Yggdrasil\", \"service\", \"jellyfin|grafana|ntfy\"), \"other\", \"-\", \"other\", \"\")",
+          "expr": "label_replace(label_replace(label_replace(label_replace(probe_success{job=\"http-services\",tier=\"main\"}, \"link\", \"$1\", \"url\", \"(https?://[^/]+).*\"), \"lan\", \"$1\", \"url\", \"https?://([^/]+).*\"), \"other\", \"Yggdrasil\", \"service\", \"jellyfin|immich|grafana|ntfy\"), \"other\", \"-\", \"other\", \"\")",
           "legendFormat": "",
           "instant": true,
           "range": false,

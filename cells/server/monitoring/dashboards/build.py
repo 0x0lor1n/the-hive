@@ -562,12 +562,12 @@ def hive():
     ]
 
     # The probe url is the health endpoint; the link opens the app root, the
-    # LAN column shows host:port. Off-LAN, the router relays Jellyfin and
-    # serves Grafana/ntfy on ygg0 (jellyfin-ygg.nix, monitoring-server.nix);
+    # LAN column shows host:port. Off-LAN, the router relays Jellyfin/Immich and
+    # serves Grafana/ntfy on ygg0 (ygg-relay.nix, monitoring-server.nix);
     # the address stays out of this public repo.
-    ygg_services = "jellyfin|grafana|ntfy"
+    ygg_services = "jellyfin|immich|grafana|ntfy"
     # label_replace writes only where the source regex matches: "Yggdrasil"
-    # for those three, then "-" wherever `other` is still empty.
+    # for those four, then "-" wherever `other` is still empty.
     svc_expr = ('label_replace(label_replace(label_replace(label_replace('
                 'probe_success{job="http-services",tier="main"}, '
                 '"link", "$1", "url", "(https?://[^/]+).*"), '

@@ -114,8 +114,8 @@ in {
         p.monitoring-server
         p.backup-push
         p.monitoring-probes
-        # phone -> Jellyfin on imladris over ygg0 (TCP relay, :8096)
-        p.jellyfin-ygg
+        # phone -> Jellyfin/Immich on imladris over ygg0 (TCP relay, :8096/:2283)
+        p.ygg-relay
         p.deploy-minas-tirith
       ];
   };
