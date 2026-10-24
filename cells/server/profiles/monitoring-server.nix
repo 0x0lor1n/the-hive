@@ -67,6 +67,31 @@
     then "imladris"
     else "minas-tirith";
 
+  # globals.hosts.<h>.maintenance: everything about h goes to null -- its own
+  # alerts, link alerts naming it as peer, and the router-side backup push
+  # that targets it (imladris only). Alerts stay visible in Alertmanager.
+  maintenanceRoutes = lib.concatMap (h:
+    [
+      {
+        matchers = ["host = ${h}"];
+        receiver = "null";
+      }
+      {
+        matchers = ["peer = ${h}"];
+        receiver = "null";
+      }
+    ]
+    ++ lib.optionals (h == "imladris") [
+      {
+        matchers = ["host = minas-tirith" "name = hot-backup.service"];
+        receiver = "null";
+      }
+      {
+        matchers = ["host = minas-tirith" "alertname = BackupStale" "tier = hot"];
+        receiver = "null";
+      }
+    ]) (lib.attrNames (lib.filterAttrs (_: h: h.maintenance) globals.hosts));
+
   # Blackbox jobs: the target becomes ?target=, the scrape goes to blackbox.
   probeJob = name: module: staticConfigs: {
     job_name = name;
@@ -380,26 +405,28 @@ in {
         # DiskReallocatingGrowing fires for the 6 h after each growth step
         # by design (alerts.yml): one push per wave, no hourly repeats.
         # info = dashboard only.
-        routes = [
-          {
-            matchers = ["severity = info"];
-            receiver = "null";
-          }
-          {
-            matchers = ["alertname = DiskReallocatingGrowing"];
-            repeat_interval = "12h";
-          }
-          # An event, not a state: "rebooted" then "resolved" 15 min later
-          # is one push too many.
-          {
-            matchers = ["alertname = HostRebooted"];
-            receiver = "ntfy-no-resolve";
-          }
-          {
-            matchers = ["severity = critical"];
-            repeat_interval = "1h";
-          }
-        ];
+        routes =
+          maintenanceRoutes
+          ++ [
+            {
+              matchers = ["severity = info"];
+              receiver = "null";
+            }
+            {
+              matchers = ["alertname = DiskReallocatingGrowing"];
+              repeat_interval = "12h";
+            }
+            # An event, not a state: "rebooted" then "resolved" 15 min later
+            # is one push too many.
+            {
+              matchers = ["alertname = HostRebooted"];
+              receiver = "ntfy-no-resolve";
+            }
+            {
+              matchers = ["severity = critical"];
+              repeat_interval = "1h";
+            }
+          ];
       };
       # A host that is down takes its scrapes, services, backups and
       # snapshot stamps with it: HostDown is the one push. Needs `host` on

@@ -89,6 +89,9 @@ in let
             # secrets/hosts/imladris/, as penrose.
             hosts.imladris = {
               hasTpm = false;
+              # Board died 2026-10-23 (PS_ON never asserted); replacement
+              # B250M PRO-VDH due late Nov. Flip back with the first boot.
+              maintenance = true;
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEwAkSSJZvsb/d9LNkbYGtAcFL2ydkSJZC6PYa0IbYjP root@imladris";
             };
 

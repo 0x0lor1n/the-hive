@@ -111,6 +111,11 @@
                     default = null;
                     description = "TPM 2.0 present (swtpm counts). null = unknown.";
                   };
+                  maintenance = lib.mkOption {
+                    type = lib.types.bool;
+                    default = false;
+                    description = "Down on purpose: Alertmanager routes its alerts to null.";
+                  };
 
                   # Per-host local user. null falls back to the encrypted
                   # globals.user.*; the playground VMs carry a public throwaway

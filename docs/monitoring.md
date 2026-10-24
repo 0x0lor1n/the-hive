@@ -90,6 +90,13 @@ only (routed to the `null` receiver). Grouping is `alertname` x `host`,
 minute). Alertmanager state (nflog, silences) is persisted, so a router
 reboot or deploy neither re-sends active alerts nor loses their resolve.
 
+A box that is down on purpose gets `maintenance = true` in
+`globals.hosts.<name>` (`cells/common/globals.nix`): every alert with its
+`host` or `peer` goes to `null`, and for imladris also the router's
+`hot-backup` push to it (`BackupFailed`, `BackupStale` tier `hot`). Alerts
+still show in Alertmanager `:9093`. Set it back to `false` before the box
+returns, or its first-boot alerts are muted too.
+
 | alert | severity | fires when | what to do |
 |---|---|---|---|
 | `HostDown` | critical | a LAN box (imladris, vontar, asus-ap) misses ping for 2 m | power, cable, console |
