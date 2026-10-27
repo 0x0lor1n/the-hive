@@ -96,10 +96,13 @@ in let
               diskDevice = "/dev/nvme0n1";
               hasTpm = true; # /dev/tpmrm0, TPM 2.0
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN0MnzHtFzfGdAKGxda4bXNWCR9Kg+8ybwW8+6Lq/dvB root@elster";
+              # The local account is the operator only: tty/sudo/rebuild, no
+              # desktop, no agents, no docker daemon of its own. Everything
+              # that writes code lives under the Entra account.
               accounts = [
                 {
                   auth = "local";
-                  roles = ["admin" "dev"];
+                  roles = ["admin"];
                 }
                 {
                   auth = "entra";
