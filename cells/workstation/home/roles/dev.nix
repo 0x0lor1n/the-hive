@@ -2,7 +2,6 @@
 # agent CLIs (../dev), osint and tor (../security), personal chat apps.
 {
   lib,
-  accountRoles,
   roleInputs,
   ...
 }: {
@@ -20,11 +19,9 @@
   # module's setSocketVariable, so admin's shells keep the rootful socket.
   home.sessionVariables.DOCKER_HOST = "unix://$XDG_RUNTIME_DIR/docker.sock";
 
-  # Global author only on an account with no work role. Where freelance or
-  # employer keys live, every identity comes from an includeIf (secrets), so
-  # a commit to a remote nobody listed fails loudly instead of leaking the
-  # wrong author.
-  programs.git = lib.mkIf (!lib.elem "freelance" accountRoles && !lib.elem "employer" accountRoles) {
+  # Default author; the includeIf blocks (secrets, per remote glob) come
+  # later in the file and override it on work remotes.
+  programs.git = {
     userName = roleInputs.git.name;
     userEmail = roleInputs.git.email;
   };

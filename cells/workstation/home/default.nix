@@ -78,8 +78,8 @@ in
 
     # Declared, not `git config --global`: ~/.gitconfig is not persisted.
     # userName/userEmail/extraConfig: the release-25.05 API (settings is 25.11+).
-    # No author here: roles/dev.nix sets one only on an account without work
-    # roles.
+    # No author here: roles/dev.nix sets the default one; the includeIf
+    # blocks below override it per work remote.
     programs.git = {
       enable = true;
       # includeIf per remote glob (git >= 2.36 hasconfig): the encrypted half
