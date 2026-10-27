@@ -356,6 +356,30 @@ in {
     [ -d "$HOME/.local/share/bash" ] && export HISTFILE="$HOME/.local/share/bash/history"
   '';
 
+  # /etc/subuid + /etc/subgid for the Entra account (user namespaces:
+  # rootless docker in role-dev.nix, podman, nix sandboxes). NixOS writes
+  # those files from users.users at every activation (autoSubUidGidRange
+  # for the local user), which drops anything else in them. himmelblaud
+  # does append its own entry at PAM session start, but that line is gone
+  # after the next switch until the next login, and the task is on a 1 s
+  # timeout that the journal shows missing (2026-10-27). So: declared here,
+  # right after the users script, by cn (what NSS returns as the login).
+  # himmelblau checks by name before appending and skips an existing entry,
+  # so the two never fight. Start = the first slot of himmelblau's own
+  # subid_range (2100000000-4200000000), which it keeps disjoint from its
+  # idmap_range (200000-2000200000, the Entra uids/gids) and from NixOS's
+  # auto range (100000 + 65536 per local user).
+  system.activationScripts.entra-subids = lib.mkIf (globals.entra.user.upn != null) (
+    lib.stringAfter ["users"] (let
+      cn = lib.head (lib.splitString "@" globals.entra.user.upn);
+      entry = "${cn}:2100000000:65536";
+    in ''
+      for f in /etc/subuid /etc/subgid; do
+        grep -qs '^${cn}:' "$f" || echo '${entry}' >> "$f"
+      done
+    '')
+  );
+
   systemd.services.himmelblaud.serviceConfig.ExecStartPost = [
     "+${pkgs.writeShellScript "himmelblaud-fix-perms" ''
       set -u

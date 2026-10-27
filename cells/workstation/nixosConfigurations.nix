@@ -93,6 +93,8 @@
       p.browser-firefox
       # `vpn` over hive.tunnels; the tunnels come with their roles
       p.vpn
+      # rootless docker for the accounts holding dev
+      p.role-dev
       # vpn-w
       p.role-freelance
       # vpn-o, vpn-t

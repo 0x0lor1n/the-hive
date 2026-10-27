@@ -15,6 +15,11 @@
     roleInputs.packages.grayjay
   ];
 
+  # The account's own daemon (profiles/role-dev.nix, rootless): the socket
+  # lives in the runtime dir, not /var/run. Set here, not through the
+  # module's setSocketVariable, so admin's shells keep the rootful socket.
+  home.sessionVariables.DOCKER_HOST = "unix://$XDG_RUNTIME_DIR/docker.sock";
+
   # Global author only on an account with no work role. Where freelance or
   # employer keys live, every identity comes from an includeIf (secrets), so
   # a commit to a remote nobody listed fails loudly instead of leaking the

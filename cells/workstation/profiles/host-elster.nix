@@ -2,10 +2,12 @@
 # not carry. One host, one file; split into profiles when a second host wants
 # any of it.
 #
-# - docker: some work projects need it. Both accounts in the `docker` group
-#   (Entra via himmelblau local_groups, not users.users -- it has no entry).
-#   /var/lib/docker is its own dataset (disks/elster.nix, rpool/safe/docker),
-#   so nothing to persist here.
+# - docker: some work projects need it. Two daemons: the rootful one here is
+#   admin's (`docker` group = the admin role only), dev accounts run their
+#   own rootless daemon (role-dev.nix). Membership in `docker` is root
+#   without sudo (`docker run -v /:/host`), so no account that is not
+#   already wheel gets it. /var/lib/docker is its own dataset
+#   (disks/elster.nix, rpool/safe/docker), so nothing to persist here.
 # - DisplayLink: Lenovo ThinkPad Hybrid USB-C dock (17e9:6015). On TB4 the
 #   first output is DP alt-mode; the extra heads are DisplayLink (evdi).
 #   Unfree with a manual download: the Synaptics zip must be in the store
@@ -34,11 +36,15 @@
   };
   # dialout: flash and talk to the bench MCUs (/dev/ttyACM*, root:dialout)
   # without sudo; under sudo nix runs as root, which lacks safe.directory.
-  users.users = lib.genAttrs config.hive.localUsers (_: {extraGroups = ["docker" "dialout"];});
+  # docker: the rootful socket (root:docker 0660) -- admin only, see above.
+  users.users = lib.mkMerge [
+    (lib.genAttrs config.hive.localUsers (_: {extraGroups = ["dialout"];}))
+    (lib.genAttrs config.hive.roleHolders.admin (_: {extraGroups = ["docker"];}))
+  ];
   # The Entra account: himmelblau reconciles group membership on login
   # (local_groups_reconcile_interval), same path as `hive`/`networkmanager`
   # in auth-entra.nix.
-  services.himmelblau.settings.local_groups = ["docker" "dialout"];
+  services.himmelblau.settings.local_groups = ["dialout"];
 
   # btop reads the i915 PMU and the card's sysfs for the Iris Xe panel; both
   # are refused without these caps (upstream `make setcap`). /run/wrappers/bin
