@@ -177,7 +177,12 @@ in {
         "himmelblaud"
         "video"
         "audio"
-        "input"
+        # No "input": it arrived as compositor boilerplate (a18c0a8) and was
+        # never needed -- the compositor takes devices via logind, Vial via its
+        # hidraw uaccess rule, and the local admin has run the same desktop
+        # without it. With it, /dev/input/event* (root:input 0660) is a
+        # keylogger over every session on this keyboard, admin's sudo and
+        # greetd passwords included (accounts-as-roles baseline, 2026-10-27).
         # read /srv/the-hive, write /srv/the-hive/dotfiles (srv-the-hive.nix)
         "hive"
         # Wi-Fi/VPN control without a polkit prompt: NetworkManager's own
