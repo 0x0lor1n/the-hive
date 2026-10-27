@@ -25,17 +25,17 @@
   flakeRoot = inputs.self.outPath;
 
   # Outbound ssh identities; the pubkeys are registered on GitHub/Azure/client
-  # hosts, so there is no generator. Split per account: the local user gets the
-  # personal keys, the Entra user every work key (employer, its client,
-  # freelance). Each key ships with its .pub: for a passphrase-protected key,
-  # without the .pub next to it ssh must decrypt the key just to learn which
-  # agent identity to offer, i.e. it prompts even when the agent has it.
+  # hosts, so there is no generator. Handed out by role (accounts.nix): dev
+  # gets the personal keys, employer and freelance their organisation's.
+  # Each key ships with its .pub: for a passphrase-protected key, without the
+  # .pub next to it ssh must decrypt the key just to learn which agent
+  # identity to offer, i.e. it prompts even when the agent has it.
   # IdentityFile in the per-role user secrets points at these paths.
   #
-  # Entra owner: users.users has no entry, so `owner` is the numeric uid (chown
-  # accepts it, nothing resolves the name at activation) and group falls back
-  # to root; mode keeps it to the owner.
-  entraUid = globals.entra.user.uid;
+  # Owner is account.owner: the name for a local account, the numeric uid for
+  # an Entra one (users.users has no entry; chown accepts the number, nothing
+  # resolves the name at activation, group falls back to root).
+  holders = config.hive.roleHolders;
   mkIdentity = owner: name: {
     "${name}" = {
       rekeyFile = "${flakeRoot}/secrets/ssh/${name}.age";
@@ -48,52 +48,49 @@
       mode = "0644";
     };
   };
-  # Same key for both accounts, read through the shared group instead of a
-  # second copy: one pubkey to register, one key to revoke.
-  mkSharedIdentity = owner: name:
-    lib.recursiveUpdate (mkIdentity owner name) {
-      "${name}" = {
-        group = "hive";
-        mode = "0640";
-      };
+  # A role held by two accounts: one copy, owned by the first holder and read
+  # by the rest through the shared group. One pubkey to register, one key to
+  # revoke.
+  shared = attrs:
+    attrs
+    // {
+      group = "hive";
+      mode = "0640";
     };
+  mkRoleIdentity = role: name: let
+    hs = holders.${role};
+    id = mkIdentity (lib.head hs) name;
+  in
+    lib.optionalAttrs (hs != [])
+    (
+      if lib.length hs > 1
+      then id // {"${name}" = shared id.${name};}
+      else id
+    );
   # Real hosts only: the VM rehearsal has its own host key and no business
   # holding these, so no rekeyed bundle exists for it (eval would assert).
   sshIdentities = lib.optionals (!host.isVm) (
     [
-      # Personal GitHub key. The Entra account pushes to the same personal
-      # repos (this flake, the-hive tooling) and otherwise holds only the
-      # employer key; one key registered upstream, read through hive like
-      # runpod. Still passphrase-protected: typed once per session into that
-      # account's agent.
-      (mkSharedIdentity host.userName "ssh-github")
+      # Personal GitHub key: this flake, the-hive tooling, public repos.
+      # Passphrase-protected: typed once per session into the agent.
+      (mkRoleIdentity "dev" "ssh-github")
       # Rented GPU boxes for training runs. Passphrase-less, unlike the others:
       # the pod is destroyed after the run and a prompt would block a job
-      # nobody is watching. Readable by the Entra account too (hive), which
-      # runs the same training jobs.
-      (mkSharedIdentity host.userName "ssh-runpod")
+      # nobody is watching.
+      (mkRoleIdentity "dev" "ssh-runpod")
     ]
     # Letter = organisation (o employer, t its client, w freelance); which one
-    # is behind a letter lives only in secrets/user-entra.nix.age.
-    ++ lib.optionals (entraUid != null) (map (mkIdentity (toString entraUid)) [
-      "ssh-ogh"
-      "ssh-oaz"
-      "ssh-tgl"
-      "ssh-tprod"
-      "ssh-wgl"
-      "ssh-w"
-    ])
+    # is behind a letter lives only in the encrypted user secrets.
+    ++ map (mkRoleIdentity "employer") ["ssh-ogh" "ssh-oaz" "ssh-tgl" "ssh-tprod"]
+    ++ map (mkRoleIdentity "freelance") ["ssh-wgl" "ssh-w"]
   );
   # gitleaks rule naming the user, for public repos' pre-commit. Encrypted
-  # because the regex is the list of names it hunts for. Both accounts commit
-  # to those repos, so it is read through hive; home/dev links it into
-  # ~/.config, which does not survive a relogin.
-  gitleaksPersonal = lib.optionalAttrs (!host.isVm) {
-    gitleaks-personal = {
+  # because the regex is the list of names it hunts for. dev commits to those
+  # repos; home/dev links it into ~/.config, which does not survive a relogin.
+  gitleaksPersonal = lib.optionalAttrs (!host.isVm && holders.dev != []) {
+    gitleaks-personal = shared {
       rekeyFile = "${flakeRoot}/secrets/gitleaks/personal.toml.age";
-      owner = host.userName;
-      group = "hive";
-      mode = "0640";
+      owner = lib.head holders.dev;
     };
   };
 in {
@@ -160,15 +157,15 @@ in {
             "$(${pkgs.xkcdpass}/bin/xkcdpass --numwords=6 --delimiter=-)"
         '';
 
-        # The local user's SSH keypair (layer-users-local reads the .pub). Custom
+        # The workstation's homelab key (layer-users-local reads the .pub). Custom
         # generator: agenix's built-in ssh-ed25519 does not write a .pub. The private
         # key is the secret; the .pub is committed next to the .age in generated/.
-        # User-owned: the fleet's servers authorise it (server/layer-users-admin).
-        # Read through hive like ssh-github: the Entra account uses the same
+        # Owned by admin: the fleet's servers authorise it for their admin user
+        # (server/layer-users-admin). Read through hive by dev too: the
         # system-wide `Host minas-tirith`/`imladris` entries (layer-users-local,
-        # ygg-client), which point at this path, and one key per workstation
-        # is still one key to revoke.
-        user-ssh-key.owner = host.userName;
+        # ygg-client) point at this path, and one key per workstation is still
+        # one key to revoke.
+        user-ssh-key.owner = lib.head config.hive.roleHolders.admin;
         user-ssh-key.group = "hive";
         user-ssh-key.mode = "0640";
         user-ssh-key.generator.script = {

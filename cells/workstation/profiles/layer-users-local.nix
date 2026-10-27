@@ -27,7 +27,8 @@
     uid = globals.user.uid;
     # himmelblaud: auth-entra.nix hands /dev/tpmrm0 to that group (Hello PIN);
     # the local user needs it too for age-plugin-tpm (unlock-secrets / rage).
-    extraGroups = ["wheel" "himmelblaud"];
+    # wheel comes with the admin role (role-admin.nix).
+    extraGroups = ["himmelblaud"];
 
     # Fleet default from the encrypted half of globals, per-host public
     # override for the playground VMs (AGENTS.md documents the passphrase).
@@ -49,8 +50,6 @@
       (inputs.self.outPath + "/secrets/generated/${host.hostName}/user-ssh-key.pub")
     ];
   };
-
-  security.sudo.wheelNeedsPassword = true;
 
   # The home lives on the rolled-back root; anything not listed here is gone
   # at next reboot. Paths are relative to the home, stored under
@@ -134,22 +133,6 @@
     ];
     files = [".bash_history"];
   };
-
-  # Eval-time plaintext of secrets/globals.nix.age (nix/rageImportEncrypted.sh).
-  # Keyed by ciphertext hash, so a changed secret misses the cache and needs one
-  # TPM PIN (prompted by eval itself, or via `unlock-secrets` without a tty);
-  # an unchanged one never touches the TPM again. Persisted so a reboot does
-  # not force the PIN either. Accepted risk: 0700 to the local user, the only
-  # account that can rebuild anyway (trusted-users, checkout, PIN identity),
-  # and the pool itself is encrypted.
-  environment.persistence."/persist".directories = [
-    {
-      directory = "/var/tmp/nix-import-encrypted";
-      user = host.userName;
-      group = "users";
-      mode = "0700";
-    }
-  ];
 
   programs.ssh = {
     knownHosts = {

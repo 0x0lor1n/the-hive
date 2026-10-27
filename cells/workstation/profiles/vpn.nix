@@ -1,44 +1,30 @@
-# The three VPN profiles as system units with agenix runtime secrets. Every
-# credential is an age.secret in /run/agenix (root, 0400) rather than a
-# home-manager file in the world-readable store, and the tunnels are ordinary
-# systemd units the accounts start and stop over polkit:
+# The `vpn` CLI over every on-demand tunnel on the host. Tunnels themselves
+# come from the role that needs them, registered in hive.tunnels:
 #
-#   vpn-o  wireguard  wg-quick-o.service    employer
-#   vpn-t  openvpn    openvpn-t.service     employer's client
-#   vpn-w  openvpn    openvpn-w.service     freelance client
+#   vpn-o      wireguard  wg-quick-o.service   employer   role-employer.nix
+#   vpn-t      openvpn    openvpn-t.service    employer   role-employer.nix
+#   vpn-w      openvpn    openvpn-w.service    freelance  role-freelance.nix
+#   yggdrasil  yggstack   yggstack.service     any        ygg-client.nix
 #
 # Letters, not names: which organisation sits behind each lives only in the
-# encrypted halves (secrets/*.age, secrets/user-*.nix.age). Other on-demand
-# tunnels join through hive.tunnels (yggdrasil: ygg-client.nix).
+# encrypted halves (secrets/*.age, secrets/user-*.nix.age). Every credential
+# is an age.secret in /run/agenix (root, 0400), never a world-readable store
+# file.
 #
-# All three belong to the Entra account (networkmanager group via himmelblau
-# local_groups, auth-entra.nix); wheel keeps them for the local account.
-# wheel alone is auth_admin_keep on manage-units, i.e. a password prompt on
-# every `vpn up`, hence the explicit grant. Routing is host-global: a tunnel
-# raised by one account carries the other's traffic too.
+# networkmanager (Entra via himmelblau local_groups, auth-entra.nix) and
+# wheel may start/stop exactly these units. wheel alone is auth_admin_keep on
+# manage-units, i.e. a password prompt on every `vpn up`, hence the explicit
+# grant. Routing is host-global: a tunnel raised by one account carries the
+# other's traffic too.
 #
-# `vpn up|down|status <name>` wraps systemctl for both accounts.
-#
-# Secret sources: secrets/vpn/<name>.age, rekeyed per host into
-# secrets/rekeyed/<host>/ like the ssh identities. wg-quick takes the whole
-# [Interface]/[Peer] file; openvpn takes the .ovpn verbatim (inline
-# ca/cert/key, so the file itself is the secret) plus a two-line
-# auth-user-pass file. Real hosts only: the VM has no rekeyed bundle.
+# `vpn up|down|status <name>` wraps systemctl for every account.
 {
-  inputs,
-  cell,
-}: {
   pkgs,
   lib,
   config,
   host,
   ...
 }: let
-  flakeRoot = inputs.self.outPath;
-  secret = name: {
-    rekeyFile = "${flakeRoot}/secrets/vpn/${name}.age";
-    mode = "0400";
-  };
   units = config.hive.tunnels;
   vpn = pkgs.writeShellApplication {
     name = "vpn";
@@ -68,69 +54,14 @@
   };
 in {
   # name -> systemd unit. Everything that can be flipped from `vpn` / vpnmenu
-  # / the bar; other profiles register their own (ygg-client.nix).
+  # / the bar.
   options.hive.tunnels = lib.mkOption {
     type = lib.types.attrsOf lib.types.str;
     default = {};
   };
 
   config = lib.mkIf (!host.isVm) {
-    hive.tunnels = {
-      vpn-o = "wg-quick-o.service";
-      vpn-t = "openvpn-t.service";
-      vpn-w = "openvpn-w.service";
-    };
-
-    environment.systemPackages = [vpn pkgs.wireguard-tools];
-
-    age.secrets = {
-      vpn-o-conf = secret "o.conf";
-      vpn-t-ovpn = secret "t.ovpn";
-      vpn-t-auth = secret "t-auth";
-      vpn-w-ovpn = secret "w.ovpn";
-      vpn-w-auth = secret "w-auth";
-    };
-
-    # wg-quick reads DNS= itself (resolvconf), so the whole [Interface]/[Peer]
-    # file is the secret; nothing to template.
-    networking.wg-quick.interfaces.o = {
-      configFile = config.age.secrets.vpn-o-conf.path;
-      autostart = false;
-    };
-
-    services.openvpn.servers = let
-      ovpn = name: pushedDns: extra: {
-        config = ''
-          config ${config.age.secrets."vpn-${name}-ovpn".path}
-          auth-user-pass ${config.age.secrets."vpn-${name}-auth".path}
-          ${extra}
-        '';
-        autoStart = false;
-        updateResolvConf = pushedDns;
-      };
-    in {
-      # The server pushes its resolver as `dns server ...` (2.6 syntax), which
-      # update-resolv-conf does not see; restate it as dhcp-option so
-      # openresolv picks it up while the tunnel is up.
-      t = ovpn "t" true ''
-        dhcp-option DNS 10.109.0.2
-      '';
-      # Split-horizon: the pushed resolver answers internal 10.x for hosts
-      # whose public addresses are dead from inside the tunnel.
-      # redirect-gateway takes api.anthropic.com too, and it is unreachable
-      # through w (pxpipe 502s); send Anthropic's inbound /23 around it.
-      # The client's network overlaps the home LAN (192.168.10.0/24); the
-      # on-link route beats redirect-gateway's /1s, so the hosts reached on
-      # their side need a /32 into the tunnel. Home .33 is unreachable while w is up.
-      w = ovpn "w" true ''
-        route 160.79.104.0 255.255.254.0 net_gateway
-        route 192.168.10.33 255.255.255.255 vpn_gateway
-      '';
-    };
-
-    # AUTH_FAILED (MFA push not yet approved) exits 0; Restart=always turned
-    # that into a push storm. Link drops are handled in-process by ping-restart.
-    systemd.services.openvpn-w.serviceConfig.Restart = lib.mkForce "on-failure";
+    environment.systemPackages = [vpn];
 
     security.polkit.extraConfig = ''
       polkit.addRule(function(action, subject) {

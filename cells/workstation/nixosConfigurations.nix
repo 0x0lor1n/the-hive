@@ -76,8 +76,12 @@
       p.layer-kernel
       p.storage-zfs
       p.storage-zfs-rollback
+      # who logs in and with which roles (hive.accounts / hive.roleHolders)
+      p.accounts
       # the local desktop user (break-glass next to Entra)
       p.layer-users-local
+      # wheel + eval-time secrets cache for the account holding admin
+      p.role-admin
       # Wayland session: seat/portal/greetd, then dwl + the user's home
       p.layer-session
       p.layer-compositor
@@ -87,8 +91,12 @@
       p.input-vial
       # firefox + Phoenix: system package (Entra users have no HM profile)
       p.browser-firefox
-      # the three VPN tunnels as system units, secrets in /run/agenix
+      # `vpn` over hive.tunnels; the tunnels come with their roles
       p.vpn
+      # vpn-w
+      p.role-freelance
+      # vpn-o, vpn-t
+      p.role-employer
       # off-LAN ssh to the router over Yggdrasil, on demand via `vpn`
       p.ygg-client
       # 3 generations, weekly nh clean
