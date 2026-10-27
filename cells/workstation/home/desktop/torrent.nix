@@ -55,7 +55,7 @@
 in {
   home.packages = [pkgs.qbittorrent];
 
-  # Merges into the mimeApps set in home/default.nix; magnet links from
+  # Merges into the mimeApps set in home/desktop/mime.nix; magnet links from
   # Firefox go out through xdg-open to here.
   xdg.mimeApps.defaultApplications = {
     "application/x-bittorrent" = "org.qbittorrent.qBittorrent.desktop";

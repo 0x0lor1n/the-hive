@@ -78,7 +78,7 @@
   # paths in the script are rewritten by the package's own postInstall, so
   # the store copy is the only runnable one.
   #
-  #   1. The script becomes the https handler (home/default.nix), so its own
+  #   1. The script becomes the https handler (home/desktop/mime.nix), so its own
   #      `exec xdg-open` fallbacks loop back into it. A shim first on its PATH
   #      sends them to the browser. `firefox` by name, not store path: that is
   #      the Phoenix-wrapped system package (browser-firefox.nix).

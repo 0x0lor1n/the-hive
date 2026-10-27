@@ -382,7 +382,7 @@
     # C-Up/Down walks the agent list (tmux: panes), C-,/. walks workspaces
     # (tmux: windows), M-1..9 jumps (dwl holds Super, Alt is free),
     # C-S-Enter spawns an agent (tmux: split in cwd), C-S-w/q/f close/zoom.
-    # foot already emits every C-S-* chord as CSI-u (home/default.nix).
+    # foot already emits every C-S-* chord as CSI-u (home/desktop/terminal.nix).
     # C-n/C-p stay on prefix: unconditional here, and they are prompt
     # history inside hermes/claude. split_horizontal stays prefix+minus.
     keys = {

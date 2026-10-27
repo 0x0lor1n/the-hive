@@ -1,6 +1,8 @@
-# Desktop companions for the local user's home-manager config: fuzzel,
-# swaylock, mako, swayidle, swaybg, cliphist, avizo, waybar, gtk/qt/cursor/fonts, plus
-# mpv, mpd/rmpc, the non-nixpak chat clients, KeePassXC and qBittorrent. One small module each.
+# Desktop companions for an account's home-manager config: foot, fuzzel,
+# swaylock, mako, swayidle, swaybg, cliphist, avizo, waybar, gtk/qt/cursor/fonts,
+# xdg mime defaults, plus mpv, mpd/rmpc, the non-nixpak chat clients, KeePassXC
+# and qBittorrent. One small module each. Skipped as a whole for `desktop =
+# false` (admin-only) accounts.
 #
 # A plain helper directory, NOT a cell block: imported from
 # ../default.nix, which layer-compositor.nix feeds to home-manager.users.
@@ -8,6 +10,8 @@
 # through dwl-status in layer-compositor.nix.
 {...}: {
   imports = [
+    ./terminal.nix
+    ./mime.nix
     ./launcher.nix
     ./lock.nix
     ./notify.nix
