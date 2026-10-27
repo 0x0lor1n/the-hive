@@ -1,4 +1,4 @@
-# OSINT toolbelt. Personal-account only (see ./default.nix). `dig` is the
+# OSINT toolbelt, dev role (see ./default.nix). `dig` is the
 # bind client package in nixpkgs.
 {pkgs, ...}: {
   home.packages = with pkgs; [

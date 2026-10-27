@@ -27,16 +27,16 @@
   mkHome = {
     userName,
     homeDir,
-    extraPackages ? [],
-    git ? null,
+    roles,
     secrets ? {},
-    personal ? false,
-    tor ? personal,
     startDir ? null,
-    httpsHandler ? "firefox.desktop",
   }:
     import ../home {
-      inherit userName homeDir theme extraPackages git secrets personal tor startDir httpsHandler;
+      inherit userName homeDir theme roles secrets startDir;
+      roleInputs = {
+        inherit (cell) packages;
+        inherit (globals.user) git;
+      };
       deck = inputs.cells.deck.homeModules;
       agentPkgs = {
         inherit (inputs.cells.repo.packages) claude-code opencode oh-my-opencode rtk;
@@ -52,27 +52,13 @@
   entraCn = lib.head (lib.splitString "@" entra.upn);
   entraHome = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
-    # Work-account-only apps live here, not in systemPackages: the local
-    # break-glass user has no SSO and no business in the tenant's chat.
     modules = [
       (mkHome {
         userName = entraCn;
         homeDir = "/home/${entraCn}";
-        # Sandboxed (packages.nix); state persists via auth-entra.nix.
-        extraPackages = [
-          cell.packages.slack
-          cell.packages.telegram-desktop
-          # One account only: fixed /tmp launch symlinks (nixpkgs#415842).
-          cell.packages.grayjay
-          # Horizon behind a gm-only sign-in browser (packages.nix).
-          cell.packages.horizon-gm
-        ];
+        # Fixed until host.accounts carries per-host role lists.
+        roles = ["dev" "freelance" "employer"];
         secrets = userSecrets "entra";
-        tor = true;
-        # SharePoint/Word/Excel/PowerPoint links open in the o365 app, the
-        # rest fall through to Firefox. Entra only: the local account has no
-        # SSO and would get a login wall. See auth-entra.nix.
-        httpsHandler = "o365-url-handler.desktop";
       })
     ];
   };
@@ -316,12 +302,11 @@ in {
 
     home-manager.useGlobalPkgs = true;
     home-manager.useUserPackages = true;
-    # The local user holds the checkout: commit identity from public globals.
     home-manager.users.${host.userName} = mkHome {
       inherit (host) userName homeDir;
-      git = globals.user.git;
+      # Fixed until host.accounts carries per-host role lists.
+      roles = ["admin" "dev"];
       secrets = userSecrets "local";
-      personal = true;
       # This account exists to rebuild the fleet; the checkout is where it
       # works. Only reached by tty/ssh/`su -` -- foot lands in tmux, which
       # sesh already opens at the same path.
