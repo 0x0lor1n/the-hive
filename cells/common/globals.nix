@@ -54,6 +54,16 @@ in let
               rootHashedPassword = "$y$j9T$46atH3AmHBsnheSr3VdkW/$qaal/LB3V26HiltSiVTtd6DP3DZVJEmo24AO8EN2311";
               # Persisted in the image (/persist/etc/ssh); a new `ws-image` changes it.
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEkHLFGCFphGyc0GGyxCENyE/762o1ZPOVa1Ar15ee5 root@sevastopol";
+              accounts = [
+                {
+                  auth = "local";
+                  roles = ["admin" "dev"];
+                }
+                {
+                  auth = "entra";
+                  roles = ["dev" "freelance" "employer"];
+                }
+              ];
             };
 
             # Dell Latitude 5580. Whole disk, nothing else on it. User + hashes
@@ -65,6 +75,16 @@ in let
               # + KeePass), shipped to /persist/etc/ssh by nixos-anywhere
               # --extra-files. Never keyscanned.
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMbQt3EL0KhxSadOnWnBDKVySy843hxcCPNbUtU8pqgi root@penrose";
+              accounts = [
+                {
+                  auth = "local";
+                  roles = ["admin" "dev"];
+                }
+                {
+                  auth = "entra";
+                  roles = ["dev" "freelance" "employer"];
+                }
+              ];
             };
 
             # HP ZBook Firefly 16 G10: the daily driver and the Entra machine.
@@ -76,6 +96,16 @@ in let
               diskDevice = "/dev/nvme0n1";
               hasTpm = true; # /dev/tpmrm0, TPM 2.0
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIN0MnzHtFzfGdAKGxda4bXNWCR9Kg+8ybwW8+6Lq/dvB root@elster";
+              accounts = [
+                {
+                  auth = "local";
+                  roles = ["admin" "dev"];
+                }
+                {
+                  auth = "entra";
+                  roles = ["dev" "freelance" "employer"];
+                }
+              ];
             };
 
             # Router. Disk by-id + root hash in the encrypted half;

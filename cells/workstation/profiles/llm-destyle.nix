@@ -29,7 +29,7 @@
 {
   lib,
   pkgs,
-  host,
+  config,
   ...
 }: let
   root = "/srv/workspace/projects/llms/destyle";
@@ -82,7 +82,8 @@ in {
       '';
       TimeoutStartSec = "90s";
       # Reads the weights through the hive group; /dev/dri is root:video here.
-      User = host.userName;
+      # admin: the one account sure to be in users.users.
+      User = lib.head config.hive.roleHolders.admin;
       SupplementaryGroups = ["video" "render"];
       WorkingDirectory = root;
       Restart = "no";

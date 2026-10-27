@@ -14,6 +14,8 @@
   # role with a home side is ./roles/<role>.nix; admin has none (the deck
   # shell below is everyone's).
   roles ? [],
+  # dwl session apps and theming (./desktop). Off for an admin-only account.
+  desktop ? true,
   # What the role modules need from outside home/: `packages` (the
   # sandboxed apps in cell.packages) and `git` ({name, email}, the personal
   # commit identity from public globals).
@@ -64,7 +66,7 @@ in
     home.enableNixpkgsReleaseCheck = false;
 
     imports =
-      [./desktop]
+      lib.optional desktop ./desktop
       ++ map (role: ./roles + "/${role}.nix") (lib.remove "admin" roles)
       ++ builtins.attrValues deck;
 

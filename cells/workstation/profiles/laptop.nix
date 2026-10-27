@@ -9,7 +9,7 @@
 }: {
   lib,
   pkgs,
-  host,
+  config,
   globals,
   ...
 }: {
@@ -60,7 +60,7 @@
     openFirewall = true;
   };
   # `lp` group: add/remove printers and use the CUPS web UI without root.
-  users.users.${host.userName}.extraGroups = ["networkmanager" "lp"];
+  users.users = lib.genAttrs config.hive.localUsers (_: {extraGroups = ["networkmanager" "lp"];});
 
   # Fingerprint (Synaptics 06cb:00f0, libfprint's open `synaptics` driver).
   # Wired into sudo and su only: pam_fprintd goes first and blocks the

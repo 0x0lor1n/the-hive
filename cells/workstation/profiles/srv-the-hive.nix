@@ -34,13 +34,15 @@
 #   sudo systemd-tmpfiles --create         # or wait for the next boot
 {
   lib,
-  host,
+  config,
   ...
-}: {
+}: let
+  admin = lib.head config.hive.roleHolders.admin;
+in {
   # Local for the local user; the Entra account gets it from himmelblau's
   # local_groups (auth-entra.nix), same as networkmanager.
   users.groups.hive = {};
-  users.users.${host.userName}.extraGroups = ["hive"];
+  users.users = lib.genAttrs config.hive.localUsers (_: {extraGroups = ["hive"];});
 
   # The mount comes from disko (disks/<host>.nix declares the dataset with
   # mountpoint = "/srv/the-hive").
@@ -54,7 +56,7 @@
   systemd.tmpfiles.rules = [
     # `z`, not `d`: adjust the mountpoint's owner/mode, never create a dir
     # that would then block `git clone` into it.
-    "z /srv/the-hive 0750 ${host.userName} hive -"
+    "z /srv/the-hive 0750 ${admin} hive -"
     # Default ACL on the checkout root, inherited by everything created below
     # (.git/ included, so either account can commit). Named-group entries so
     # the files' own group (users, from the cloning account) does not matter.

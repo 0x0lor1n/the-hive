@@ -7,8 +7,9 @@
 # exists: "local" is in users.users, "entra" is an NSS user from himmelblau
 # (auth-entra.nix) with no users.users entry, so it is owned by numeric uid.
 #
-# The list is fixed here until globals carries per-host accounts; the roles
-# match the ones layer-compositor.nix hands each home.
+# The list is globals.hosts.<h>.accounts (public: auth + roles only); the
+# names come from the encrypted half -- host.userName for "local",
+# globals.entra.user for "entra".
 {
   lib,
   config,
@@ -29,6 +30,9 @@
       # the uid for an Entra one (nothing resolves its name at activation).
       owner = lib.mkOption {type = lib.types.str;};
       roles = lib.mkOption {type = lib.types.listOf (lib.types.enum roles);};
+      home = lib.mkOption {type = lib.types.str;};
+      # Gets the dwl session and home/desktop: any role but admin.
+      desktop = lib.mkOption {type = lib.types.bool;};
     };
   };
   holders = role: lib.filter (a: lib.elem role a.roles) config.hive.accounts;
@@ -43,28 +47,51 @@ in {
       readOnly = true;
       description = "role -> owners (account.owner) of the accounts holding it, in account order.";
     };
+    localUsers = lib.mkOption {
+      type = lib.types.listOf lib.types.str;
+      readOnly = true;
+      description = "Names of the auth = local accounts, i.e. the ones in users.users.";
+    };
   };
 
   config = {
-    hive.accounts =
-      [
-        {
+    hive.accounts = map (a: let
+      named =
+        if a.auth == "local"
+        then {
           name = host.userName;
-          auth = "local";
           owner = host.userName;
-          roles = ["admin" "dev"];
+          home = host.homeDir;
         }
-      ]
-      ++ lib.optional (entra.upn != null && entra.uid != null) {
-        name = lib.head (lib.splitString "@" entra.upn);
-        auth = "entra";
-        owner = toString entra.uid;
-        roles = ["dev" "freelance" "employer"];
-      };
+        else let
+          cn = lib.head (lib.splitString "@" entra.upn);
+        in {
+          name = cn;
+          owner = toString entra.uid;
+          # The home_alias himmelblau creates (auth-entra.nix).
+          home = "/home/${cn}";
+        };
+    in
+      named
+      // {
+        inherit (a) auth roles;
+        desktop = lib.subtractLists ["admin"] a.roles != [];
+      })
+    host.accounts;
 
     hive.roleHolders = lib.genAttrs roles (r: map (a: a.owner) (holders r));
+    hive.localUsers = map (a: a.name) (lib.filter (a: a.auth == "local") config.hive.accounts);
 
     assertions = [
+      {
+        # One name per auth in globals (host.userName, entra.user).
+        assertion = lib.all (auth: lib.length (lib.filter (a: a.auth == auth) host.accounts) <= 1) ["local" "entra"];
+        message = "accounts: at most one local and one entra account per host.";
+      }
+      {
+        assertion = lib.any (a: a.auth == "entra") host.accounts -> (entra.upn != null && entra.uid != null);
+        message = "accounts: an entra account needs globals.entra.user.{upn,uid}.";
+      }
       {
         # sudo, the checkout and the PIN identity for eval-time secrets all
         # hang off one users.users entry (role-admin.nix).

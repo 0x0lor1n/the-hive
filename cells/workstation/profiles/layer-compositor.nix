@@ -12,7 +12,6 @@
   pkgs,
   lib,
   config,
-  host,
   globals,
   ...
 }: let
@@ -28,11 +27,12 @@
     userName,
     homeDir,
     roles,
+    desktop,
     secrets ? {},
     startDir ? null,
   }:
     import ../home {
-      inherit userName homeDir theme roles secrets startDir;
+      inherit userName homeDir theme roles desktop secrets startDir;
       roleInputs = {
         inherit (cell) packages;
         inherit (globals.user) git;
@@ -44,23 +44,30 @@
       };
     };
 
+  # One home per hive.accounts entry (accounts.nix).
+  mkAccount = a:
+    mkHome {
+      userName = a.name;
+      homeDir = a.home;
+      inherit (a) roles desktop;
+      secrets = userSecrets a.auth;
+      # admin exists to rebuild the fleet; the checkout is where it works.
+      # Only reached by tty/ssh/`su -` -- foot lands in tmux, which sesh
+      # already opens at the same path.
+      startDir =
+        if lib.elem "admin" a.roles
+        then "/srv/the-hive"
+        else null;
+    };
+  locals = lib.filter (a: a.auth == "local") config.hive.accounts;
+
   # The Entra user is an NSS user (himmelblau), not in users.users, so the HM
   # NixOS module can't target it. Build the same home standalone and activate
-  # it from a user unit at login. cn = upn before '@', which is also the
-  # /home/<cn> alias himmelblau creates (home_alias = "cn" in auth-entra.nix).
-  entra = globals.entra.user;
-  entraCn = lib.head (lib.splitString "@" entra.upn);
+  # it from a user unit at login.
+  entra = lib.findFirst (a: a.auth == "entra") null config.hive.accounts;
   entraHome = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
-    modules = [
-      (mkHome {
-        userName = entraCn;
-        homeDir = "/home/${entraCn}";
-        # Fixed until host.accounts carries per-host role lists.
-        roles = ["dev" "freelance" "employer"];
-        secrets = userSecrets "entra";
-      })
-    ];
+    modules = [(mkAccount entra)];
   };
   # himmelblau creates /home/<upn> and the /home/<cn> alias from pam_himmelblau
   # while the session is opening, in parallel with the user manager starting
@@ -302,16 +309,7 @@ in {
 
     home-manager.useGlobalPkgs = true;
     home-manager.useUserPackages = true;
-    home-manager.users.${host.userName} = mkHome {
-      inherit (host) userName homeDir;
-      # Fixed until host.accounts carries per-host role lists.
-      roles = ["admin" "dev"];
-      secrets = userSecrets "local";
-      # This account exists to rebuild the fleet; the checkout is where it
-      # works. Only reached by tty/ssh/`su -` -- foot lands in tmux, which
-      # sesh already opens at the same path.
-      startDir = "/srv/the-hive";
-    };
+    home-manager.users = lib.listToAttrs (map (a: lib.nameValuePair a.name (mkAccount a)) locals);
 
     # HM for the Entra user (see entraHome above). Runs in the user manager
     # PAM starts at login, so dbus is up and dconfSettings works. Idempotent.
@@ -325,9 +323,9 @@ in {
     # wants by hand — the target's job was queued before the links existed.
     # graphical-session.target.wants are picked up by the dwl bridge below,
     # ordered After= this unit.
-    systemd.user.services.home-manager-entra = lib.mkIf (entra.upn != null && entra.uid != null) {
+    systemd.user.services.home-manager-entra = lib.mkIf (entra != null) {
       description = "Home Manager environment for the Entra user";
-      unitConfig.ConditionUser = toString entra.uid;
+      unitConfig.ConditionUser = entra.owner;
       wantedBy = ["default.target"];
       # activate registers the generation via nix-env, which the unit's
       # default PATH lacks. ~/.local/state/nix/profiles is created by the
@@ -336,7 +334,7 @@ in {
       serviceConfig = {
         Type = "oneshot";
         RemainAfterExit = true;
-        ExecStartPre = "${waitForEntraHome} /home/${entraCn}";
+        ExecStartPre = "${waitForEntraHome} ${entra.home}";
         ExecStart = "${entraHome.activationPackage}/activate";
         ExecStartPost = pkgs.writeShellScript "home-manager-entra-start-wants" ''
           units=${entraHome.activationPackage}/home-files/.config/systemd/user

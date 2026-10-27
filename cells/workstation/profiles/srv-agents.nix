@@ -21,12 +21,18 @@
 # rollback. On an already installed host, once by hand:
 #   sudo zfs create -o mountpoint=legacy rpool/safe/srv/agents
 #   (rebuild -> mount + rules below are live)
-{host, ...}: {
+{
+  lib,
+  config,
+  ...
+}: let
+  admin = lib.head config.hive.roleHolders.admin;
+in {
   systemd.tmpfiles.rules = [
-    "d /srv/agents                 2770 ${host.userName} hive -"
-    "d /srv/agents/hermes          2770 ${host.userName} hive -"
-    "d /srv/agents/hermes/skills   2770 ${host.userName} hive -"
-    "d /srv/agents/hermes/memories 2770 ${host.userName} hive -"
+    "d /srv/agents                 2770 ${admin} hive -"
+    "d /srv/agents/hermes          2770 ${admin} hive -"
+    "d /srv/agents/hermes/skills   2770 ${admin} hive -"
+    "d /srv/agents/hermes/memories 2770 ${admin} hive -"
     "a+ /srv/agents - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 }

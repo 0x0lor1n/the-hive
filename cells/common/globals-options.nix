@@ -133,6 +133,21 @@
                     default = null;
                   };
 
+                  # Workstation logins and what each is for (profiles/accounts.nix).
+                  # No names: "local" is userName above, "entra" is entra.user,
+                  # both from the encrypted half.
+                  accounts = lib.mkOption {
+                    default = [];
+                    type = lib.types.listOf (lib.types.submodule {
+                      options = {
+                        auth = lib.mkOption {type = lib.types.enum ["local" "entra"];};
+                        roles = lib.mkOption {
+                          type = lib.types.listOf (lib.types.enum ["admin" "dev" "freelance" "employer"]);
+                        };
+                      };
+                    });
+                  };
+
                   # Encrypted half. layer-server-hardening.nix asserts this is
                   # set: an internet-facing host must not inherit the fleet
                   # default.

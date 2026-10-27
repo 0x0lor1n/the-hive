@@ -15,13 +15,19 @@
 #   sudo zfs create -o mountpoint=legacy -o recordsize=1M rpool/safe/srv/data/music
 #   sudo zfs create -o mountpoint=legacy rpool/safe/srv/data/documents
 #   (rebuild -> mounts + rules below are live)
-{host, ...}: {
+{
+  lib,
+  config,
+  ...
+}: let
+  admin = lib.head config.hive.roleHolders.admin;
+in {
   systemd.tmpfiles.rules = [
-    "d /srv/data           2770 ${host.userName} hive -"
-    "d /srv/data/music     2770 ${host.userName} hive -"
-    "d /srv/data/documents 2770 ${host.userName} hive -"
+    "d /srv/data           2770 ${admin} hive -"
+    "d /srv/data/music     2770 ${admin} hive -"
+    "d /srv/data/documents 2770 ${admin} hive -"
     # qBittorrent save path (home/desktop/torrent.nix).
-    "d /srv/data/torrents  2770 ${host.userName} hive -"
+    "d /srv/data/torrents  2770 ${admin} hive -"
     "a+ /srv/data - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 }

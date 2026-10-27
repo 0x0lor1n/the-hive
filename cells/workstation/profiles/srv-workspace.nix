@@ -13,13 +13,19 @@
 # @blank rollback. On an already installed host, once by hand:
 #   sudo zfs create -o mountpoint=legacy rpool/safe/srv/workspace
 #   (rebuild -> mount + rules below are live)
-{host, ...}: {
+{
+  lib,
+  config,
+  ...
+}: let
+  admin = lib.head config.hive.roleHolders.admin;
+in {
   # `hive` group and its members: srv-the-hive.nix (local user) and
   # himmelblau local_groups (Entra user).
   systemd.tmpfiles.rules = [
-    "d /srv/workspace          2770 ${host.userName} hive -"
-    "d /srv/workspace/work     2770 ${host.userName} hive -"
-    "d /srv/workspace/projects 2770 ${host.userName} hive -"
+    "d /srv/workspace          2770 ${admin} hive -"
+    "d /srv/workspace/work     2770 ${admin} hive -"
+    "d /srv/workspace/projects 2770 ${admin} hive -"
     "a+ /srv/workspace - - - - d:group:hive:rwx,group:hive:rwx"
   ];
 

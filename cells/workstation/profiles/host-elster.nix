@@ -21,7 +21,6 @@
   config,
   lib,
   pkgs,
-  host,
   ...
 }: {
   virtualisation.docker = {
@@ -35,7 +34,7 @@
   };
   # dialout: flash and talk to the bench MCUs (/dev/ttyACM*, root:dialout)
   # without sudo; under sudo nix runs as root, which lacks safe.directory.
-  users.users.${host.userName}.extraGroups = ["docker" "dialout"];
+  users.users = lib.genAttrs config.hive.localUsers (_: {extraGroups = ["docker" "dialout"];});
   # The Entra account: himmelblau reconciles group membership on login
   # (local_groups_reconcile_interval), same path as `hive`/`networkmanager`
   # in auth-entra.nix.
