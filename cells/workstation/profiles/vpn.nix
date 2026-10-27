@@ -7,7 +7,7 @@
 #   yggdrasil  yggstack   yggstack.service     any        ygg-client.nix
 #
 # Letters, not names: which organisation sits behind each lives only in the
-# encrypted halves (secrets/*.age, secrets/user-*.nix.age). Every credential
+# encrypted halves (secrets/*.age, secrets/roles/*.nix.age). Every credential
 # is an age.secret in /run/agenix (root, 0400), never a world-readable store
 # file.
 #

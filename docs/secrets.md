@@ -31,7 +31,7 @@ open ("unable to acquire SRK") instead of trying the next, so every tool picks
 |---|---|---|
 | `secrets/globals.nix.age` | encrypted half of `globals`: IPs, user names, password hashes, disk ids | `cells/common/globals.nix` |
 | `secrets/<host>-site.nix.age` | per-host site params (minas-tirith: WAN/LAN, leases, yggdrasil keys) | `cells/server/nixosConfigurations.nix` (`site = true`) |
-| `secrets/user-{local,entra}.nix.age` | per-account git identities, ssh matchBlocks, vpn credentials | `cells/workstation/home/secrets.nix` |
+| `secrets/roles/<role>.nix.age` | per-role git includeIf identities, ssh matchBlocks; an account gets the merge of its roles | `cells/workstation/home/secrets.nix` |
 
 All are encrypted to both workstation TPM identities plus the recovery key.
 Files are named by role, never by account: the user names themselves are in
@@ -49,7 +49,7 @@ On a cache miss with a tty, eval prompts for the PIN itself. Without one
 first:
 
 ```bash
-unlock-secrets      # globals.nix.age + user-*.nix.age, this host's TPM PIN
+unlock-secrets      # globals.nix.age + roles/*.nix.age, this host's TPM PIN
 ```
 
 `sudo` drops `NIX_CONFIG`; use `--preserve-env=NIX_CONFIG` or `nixos-rebuild

@@ -20,7 +20,7 @@
   # sandboxed apps in cell.packages) and `git` ({name, email}, the personal
   # commit identity from public globals).
   roleInputs ? {},
-  # Per-account attrset from home/secrets.nix (secrets/user-<role>.nix.age):
+  # Per-account attrset from home/secrets.nix (merge of secrets/roles/*.nix.age):
   # git.includes (includeIf blocks), ssh.includes and ssh.matchBlocks, the
   # latter pointing at the account's own age.secrets keys
   # (profiles/secrets.nix). {} when the file is absent, so a host without

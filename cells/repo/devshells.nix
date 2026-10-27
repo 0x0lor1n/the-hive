@@ -84,7 +84,7 @@
   # agents, CI, sudo without a terminal. Cache lives in
   # /var/tmp/nix-import-encrypted/$UID, keyed by ciphertext hash, and is
   # persisted (layer-users-local): one PIN per change of an .age file, not per
-  # boot. Covers globals.nix.age and the per-role secrets/user-*.nix.age
+  # boot. Covers globals.nix.age and the per-role secrets/roles/*.nix.age
   # (cells/workstation/home/secrets.nix) in one session.
   unlock-secrets = pkgs.writeShellApplication {
     name = "unlock-secrets";
@@ -100,7 +100,7 @@
       cache="/var/tmp/nix-import-encrypted/$UID"
       umask 077; mkdir -p "$cache"
       missed=0
-      for file in "$root/secrets/globals.nix.age" "$root"/secrets/user-*.nix.age; do
+      for file in "$root/secrets/globals.nix.age" "$root"/secrets/roles/*.nix.age; do
         [[ -e $file ]] || continue
         name=$(basename "''${file%.age}")
         out="$cache/$(sha512sum "$file" | cut -c1-32)-$name"
@@ -266,7 +266,7 @@ in {
     enterShellCommands.motd.text = ''
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
-      echo "  unlock-secrets  decrypt globals.nix.age + secrets/user-*.nix.age with this host's TPM (PIN); eval prompts itself when it has a tty"
+      echo "  unlock-secrets  decrypt globals.nix.age + secrets/roles/*.nix.age with this host's TPM (PIN); eval prompts itself when it has a tty"
       echo "  agenix edit|generate|rekey|view   host secrets (generated/ + rekeyed/<host>)"
       echo "  agents-bump     bump hermes/claude/opencode/herdr, check, snapshot hermes state; prints the switch"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"

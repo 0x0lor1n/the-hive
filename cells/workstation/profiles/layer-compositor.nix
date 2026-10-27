@@ -16,12 +16,12 @@
   ...
 }: let
   theme = inputs.cells.common.theme;
-  # Per-role encrypted attrset (git includeIf blocks, ssh matchBlocks), PIN
-  # identity. Same flakeRoot shape as cells/common/globals.nix.
-  userSecrets = role:
+  # Merged per-role encrypted attrsets (git includeIf blocks, ssh matchBlocks),
+  # PIN identity. Same flakeRoot shape as cells/common/globals.nix.
+  userSecrets = roles:
     import ../home/secrets.nix {
       flakeRoot = /. + builtins.unsafeDiscardStringContext inputs.self.outPath;
-      inherit role;
+      inherit roles;
     };
   mkHome = {
     userName,
@@ -50,7 +50,7 @@
       userName = a.name;
       homeDir = a.home;
       inherit (a) roles desktop;
-      secrets = userSecrets a.auth;
+      secrets = userSecrets a.roles;
       # admin exists to rebuild the fleet; the checkout is where it works.
       # Only reached by tty/ssh/`su -` -- foot lands in tmux, which sesh
       # already opens at the same path.

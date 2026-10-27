@@ -12,7 +12,7 @@ Two age master identities, `secrets/*.pub` holds the recipients:
 | `elster-nix-rage` | elster (ZBook) TPM, PIN | everything (was `jarvis-nix-rage`) |
 | `penrose-nix-rage` | penrose TPM, PIN | everything (was `dellvis-nix-rage`) |
 
-Both are recipients of every secret (globals, user-*.nix, generated/, host keys,
+Both are recipients of every secret (globals, roles/*.nix, generated/, host keys,
 hisilome); each host decrypts with its own. `jarvis-nopin-rage` (PIN-less, only
 ever needed for the swtpm VM) is gone. age-plugin-tpm aborts on the first identity
 whose key is not in the local TPM, so nothing ever passes both identities to one
@@ -93,7 +93,7 @@ nixos-install → reboot.
   `secrets/<host>-nix-rage.pub` and add it to `masterIdentities` (with its pubkey);
   `nix/agenix-primary.sh` picks the recipient up from that file's `# Recipient:`
   header by hostname. Then `agenix rekey` and re-encrypt the eval-time
-  files (globals, user-*.nix, hosts/*, hisilome/*) to the new recipient.
+  files (globals, roles/*.nix, hosts/*, hisilome/*) to the new recipient.
 - Log in as the fleet user from `secrets/globals.nix.age` (not `jarvis` — that's the
   zBook playground user). From the builder:
   `ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 <user>@<ip>` — without
