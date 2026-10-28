@@ -27,29 +27,30 @@ The library is group `media` (gid 950), setgid and group-writable; tmpfiles
 fixes only the dataset roots, so a tree copied in from elsewhere needs:
 
 ```bash
-cd /tank/media && sudo chgrp -R media films anime music \
-  && sudo find films anime music -type d -exec chmod 2775 {} + \
-  && sudo find films anime music -type f -exec chmod 664 {} +
+cd /tank/media && sudo chgrp -R media films series anime music \
+  && sudo find films series anime music -type d -exec chmod 2775 {} + \
+  && sudo find films series anime music -type f -exec chmod 664 {} +
 ```
 
 ## What it sets
 
 | app | what |
 |---|---|
-| Jellyfin | startup wizard (ru/RU), libraries Фильмы/Сериалы/Аниме/Мультфильмы/Музыка, metrics off, viewer user (no admin, no delete, RU audio+subs), `arr-stack` API key |
-| qbittorrent | share limit: stop at ratio 0 (no seeding); categories `tv`/`movies`/`music` → `/tank/media/downloads/complete/<cat>` (paths/port/LAN auth bypass are the nix seed) |
-| Sonarr | root `/tank/media/series`, qBittorrent client (cat `tv`), no rename, 755 folders, Jellyfin notification, tag `anime`, TRaSH CFs + `WEB-1080p RU` / `Anime RU` |
+| Jellyfin | startup wizard (ru/RU), libraries Фильмы/Сериалы/Аниме/Музыка, metrics off, viewer user (no admin, no delete, RU audio+subs), `arr-stack` API key |
+| qbittorrent | share limit: stop at ratio 0 (no seeding); incomplete on `/fast/downloads/incomplete`, at most 10 active downloads; categories `tv`/`movies`/`music` → `/tank/media/downloads/complete/<cat>` (paths/port/LAN auth bypass are the nix seed) |
+| Sonarr | root `/tank/media/series`, qBittorrent client (cat `tv`), no rename, 755 folders, Jellyfin notification, tag `anime`, TRaSH CFs + `WEB-1080p RU` / `Anime RU` / `Anime UHD RU`, every series forced to type `standard` |
 | Radarr | root `/tank/media/films`, client (cat `movies`), no rename, Jellyfin notification, TRaSH CFs + `UHD Bluray + WEB RU` / `HD Bluray + WEB RU` / `Anime RU` |
-| Lidarr | root `/tank/media/music`, client (cat `music`), profile `FLAC > MP3-320` (cutoff Lossless), metadata Album+EP, track naming, cue/log/covers kept |
-| Prowlarr | tag `cf` + FlareSolverr proxy; indexers RuTracker.org, Kinozal (both `cf`), RuTor, Nyaa.si, Anime Tosho; apps Sonarr/Radarr/Lidarr full sync with category lists |
+| Lidarr | root `/tank/media/music`, client (cat `music`), profile `FLAC > MP3-320` (cutoff Lossless), metadata Album+EP, track naming, 775 folders, cue/log/covers kept |
+| Prowlarr | tag `cf` + FlareSolverr proxy; indexers RuTracker.org, Kinozal (both `cf`), RuTor, Nyaa.si, Anime Tosho, AniLiberty (local `anilibria-torznab` bridge, priority 10); apps Radarr/Lidarr full sync, Sonarr add-only (per-indexer anime flags are set by `configure.py`) |
 
 TRaSH data comes from the `trash-guides` flake input (`cells/server/flake.nix`,
 pinned by rev). Own additions: the `RU Audio` custom format (+2500, parsed
-Russian OR dub keywords, NOT sub-only), `Dubs Only` neutralised, x265 softened.
-Anime is a second Sonarr root (`/tank/media/anime`, `Anime RU` profile,
-series type `anime`); the legacy trees were renamed to `Series (Year)/Season
+Russian or dub keywords, not sub-only), `Dubs Only` neutralised, x265 softened.
+Anime lives in `/tank/media/anime` (own Jellyfin library) as `Series (Year)/Season
 01/Series S01Exx.mkv` with external `.ru.mka`/`.ru.ass` next to the video
-(2026-10-21, log in `/tank/media/anime/.rename-log.tsv`). Cartoons are not a
+(rename log in `/tank/media/anime/.rename-log.tsv`). Sonarr's series type is
+forced to `standard`: `anime` fans a season search out per episode (380
+Prowlarr queries vs one per indexer). Cartoons are not a
 separate library any more: feature films live in `films`, episodic ones in
 `series`; the `Мультфильмы` Jellyfin library is removed by `configure.py`.
 
@@ -81,9 +82,9 @@ media-configure search sonarr 'seriesId=1&seasonNumber=1' [n]    # top releases 
 journalctl -u media-configure -o cat
 ```
 
-## Vontar X5 (Android TV, 192.168.10.55)
+## Vontar X5 (Android TV, 192.168.10.103, DHCP lease)
 
-    adb connect 192.168.10.55:5555
+    adb connect 192.168.10.103:5555
     adb install -r jellyfin-androidtv-v0.19.x-libre.apk   # from GitHub releases
     adb shell monkey -p org.jellyfin.androidtv 1
 

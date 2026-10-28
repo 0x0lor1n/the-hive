@@ -28,10 +28,10 @@
 </head>
 <body>
 <h1>zsh — key and tool reference</h1>
-<p class="sub">elster · source of truth: <code>cells/deck/homeModules/{zsh,skim,fzf,bat,eza,zoxide,git,direnv}.nix</code>, <code>dotfiles/zsh/{key-bindings,functions,config}.zsh</code></p>
+<p class="sub">elster · source of truth: <code>cells/deck/homeModules/{zsh,skim,fzf,bat,eza,zoxide,git,lazygit,direnv}.nix</code>, <code>dotfiles/zsh/{key-bindings,functions,config,.p10k}.zsh</code></p>
 
 <div class="legend">
-  The line editor is <b>zsh-vi-mode</b>: every prompt starts in <b>insert</b> mode (beam cursor); <kbd>Esc</kbd> goes to <b>normal</b> mode (block cursor), <kbd>i</kbd> / <kbd>a</kbd> back to insert.<br>
+  The line editor is <b>zsh-vi-mode</b>: every prompt starts in <b>insert</b> mode (blinking beam cursor); <kbd>Esc</kbd> goes to <b>normal</b> mode (block cursor), <kbd>i</kbd> / <kbd>a</kbd> back to insert.<br>
   <kbd>Ctrl</kbd> chords below are insert-mode bindings. Anything with <kbd>Super</kbd> goes to dwl, <kbd>Ctrl+Shift</kbd> and <kbd>Alt+1..9</kbd> go to tmux (see the dwl + tmux sheet).<br>
   Plugins: zsh-vi-mode · zsh-autocomplete · zsh-autosuggestions · fast-syntax-highlighting · zsh-histdb + histdb-skim · skim · zsh-nix-shell · powerlevel10k.
 </div>
@@ -43,7 +43,7 @@
 <tr><td><kbd>v</kbd> / <kbd>V</kbd></td><td>visual / visual-line selection (white on black)</td></tr>
 <tr><td><kbd>v</kbd><kbd>v</kbd></td><td>normal mode: edit the command line in <code>$EDITOR</code> (nvim)</td></tr>
 <tr><td><kbd>u</kbd> / <kbd>Ctrl+R</kbd> (normal)</td><td>undo / redo</td></tr>
-<tr><td><kbd>s</kbd><kbd>a</kbd> <i>motion</i> <i>char</i></td><td>surround: add, e.g. <kbd>saiw"</kbd> wraps the word in quotes (<code>s-prefix</code> scheme)</td></tr>
+<tr><td><kbd>v</kbd> <i>motion</i> <kbd>s</kbd><kbd>a</kbd> <i>char</i></td><td>surround: add around a visual selection, e.g. <kbd>viw</kbd> then <kbd>sa"</kbd> wraps the word in quotes (<code>s-prefix</code> scheme)</td></tr>
 <tr><td><kbd>s</kbd><kbd>d</kbd> <i>char</i> · <kbd>s</kbd><kbd>r</kbd> <i>old</i> <i>new</i></td><td>surround: delete / replace, e.g. <kbd>sd"</kbd>, <kbd>sr"'</kbd></td></tr>
 <tr><td><kbd>Ctrl+A</kbd> / <kbd>Ctrl+E</kbd></td><td>insert mode: line start / line end</td></tr>
 <tr><td><kbd>Ctrl+W</kbd> / <kbd>Ctrl+U</kbd></td><td>insert mode: delete word back / delete to line start</td></tr>
@@ -58,12 +58,11 @@
 <tr><td><kbd>Tab</kbd></td><td>enter the menu (<code>menu-select</code>); inside: next item</td></tr>
 <tr><td><kbd>Shift+Tab</kbd></td><td>enter the menu; inside: previous item</td></tr>
 <tr><td><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd></td><td>move in the menu</td></tr>
-<tr><td><kbd>Ctrl+\</kbd></td><td>type-to-filter inside the menu (<code>menu-search</code>)</td></tr>
+<tr><td><kbd>Ctrl+\</kbd></td><td>at the prompt: open the completion menu in type-to-filter mode (<code>menu-search</code>)</td></tr>
 <tr><td><kbd>Ctrl+Y</kbd></td><td>accept the highlighted item and leave the menu</td></tr>
 <tr><td><kbd>Enter</kbd></td><td>accept <b>and run</b> the command</td></tr>
 <tr><td><kbd>Ctrl+E</kbd> / <kbd>Backspace</kbd></td><td>undo the completion and leave the menu</td></tr>
 <tr><td><kbd>Esc</kbd></td><td>abort the menu</td></tr>
-<tr><td><kbd>**</kbd><kbd>Tab</kbd></td><td>skim fuzzy completion, e.g. <code>nvim **</code>, <code>cd **</code>, <code>kill -9 **</code>, <code>ssh **</code>, <code>unset **</code></td></tr>
 </table>
 
 <h2>history · Ctrl+R</h2>
@@ -75,11 +74,11 @@
 <tr><td><kbd>F6</kbd> / <kbd>F7</kbd></td><td>lock the results to the selected entry's session / directory (press again to unlock)</td></tr>
 <tr><td><kbd>Enter</kbd> · <kbd>Esc</kbd> / <kbd>Ctrl+C</kbd></td><td>put the command on the line (not executed) · abort</td></tr>
 <tr><td><kbd>↑</kbd> / <kbd>↓</kbd></td><td>plain history walk at the prompt</td></tr>
-<tr><td><code>histdb <i>pattern</i></code></td><td>query history from the shell; <code>--in DIR</code>, <code>--host</code>, <code>--from '1 week ago'</code>, <code>-d</code> details, <code>--limit N</code></td></tr>
-<tr><td><code>histdb-top</code> · <code>histdb-top-here</code></td><td>most used commands, overall / in this directory</td></tr>
+<tr><td><code>histdb <i>pattern</i></code></td><td>query history from the shell; <code>--in DIR</code>, <code>--host</code>, <code>--from '1 week ago'</code>, <code>--detail</code> exit status + duration, <code>--limit N</code></td></tr>
+<tr><td><code>histdb-top</code> · <code>histdb-top dir</code></td><td>most used commands · most used directories</td></tr>
 <tr><td><code>sqlite3 $HISTDB_FILE</code></td><td>raw access: <code>~/.local/share/zsh/history.db</code> (survives the impermanence rollback)</td></tr>
 </table>
-<p class="note">Not recorded: <code>rm …</code>, <code>rmd …</code>, <code>git s</code>, <code>git unstash</code>, <code>git stash…</code>. Duplicates are collapsed, blanks trimmed. Plain <code>$HISTFILE</code> is kept too (1 000 000 lines) — <kbd>↑</kbd> uses it.</p>
+<p class="note">Kept out of <code>$HISTFILE</code> (<kbd>↑</kbd>) but still recorded by histdb / <kbd>Ctrl+R</kbd>: <code>rm …</code>, <code>rmd …</code>, <code>git s</code>, <code>git unstash</code>, <code>git stash…</code>. Duplicates are collapsed, blanks trimmed. Plain <code>$HISTFILE</code> is kept too (1 000 000 in memory, 1 000 500 on disk) — <kbd>↑</kbd> uses it.</p>
 
 <h2>fuzzy finder · skim</h2>
 <table>
@@ -88,9 +87,9 @@
 <tr><td><kbd>Tab</kbd> (inside)</td><td>multi-select</td></tr>
 <tr><td><kbd>Ctrl+J</kbd> / <kbd>Ctrl+K</kbd> · <kbd>↑</kbd> / <kbd>↓</kbd></td><td>move</td></tr>
 <tr><td><kbd>Enter</kbd> · <kbd>Esc</kbd></td><td>accept · abort</td></tr>
-<tr><td><code>sk</code></td><td>the binary itself: <code>rg -n foo | sk</code>, <code>fd | sk -m</code></td></tr>
+<tr><td><code>sk</code></td><td>the binary itself: <code>rg -n foo | sk</code>, <code>rg --files | sk -m</code></td></tr>
 </table>
-<p class="note"><code>fzf</code> is installed for tools that shell out to it (sesh, lazygit …) but has no shell bindings. Inside fzf popups: <kbd>Ctrl+Y</kbd> accept, <kbd>Ctrl+E</kbd> abort, <kbd>Ctrl+F</kbd>/<kbd>Ctrl+B</kbd> half page, <kbd>Ctrl+D</kbd>/<kbd>Ctrl+U</kbd> scroll preview, <kbd>?</kbd> toggle preview.</p>
+<p class="note"><code>fzf</code> is installed for tools that shell out to it (sesh, zoxide's <code>zi</code> …) but has no shell bindings. Inside fzf popups: <kbd>Ctrl+Y</kbd> accept, <kbd>Ctrl+E</kbd> abort, <kbd>Ctrl+F</kbd>/<kbd>Ctrl+B</kbd> half page, <kbd>Ctrl+D</kbd>/<kbd>Ctrl+U</kbd> scroll preview, <kbd>?</kbd> toggle preview.</p>
 
 <h2 class="tools pb">tools · aliases and functions</h2>
 <table>
@@ -98,12 +97,12 @@
 <tr><td><code>eza --tree --level=2 --icons</code></td><td>tree view (same as the Alt+C preview)</td></tr>
 <tr><td><code>cat</code></td><td>→ <code>bat --plain</code> (syntax highlight, no gutter); <code>bat FILE</code> for numbers + pager</td></tr>
 <tr><td><code>help <i>cmd</i></code></td><td>runs <code><i>cmd</i> --help</code> through bat with help-page highlighting</td></tr>
-<tr><td><code>z <i>query</i></code> · <code>zi</code></td><td>zoxide: jump to the best-ranked directory · interactive pick (skim)</td></tr>
+<tr><td><code>z <i>query</i></code> · <code>zi</code></td><td>zoxide: jump to the best-ranked directory · interactive pick (fzf — the popup keys above apply)</td></tr>
 <tr><td><code>rich <i>cmd</i></code></td><td>"real which": <code>realpath $(which cmd)</code> — resolves the nix store path</td></tr>
-<tr><td><code>killport <i>N</i></code></td><td>kill -9 whatever listens on port N (falls back to sudo)</td></tr>
+<tr><td><code>killport <i>N</i></code></td><td>kill -9 whatever listens on port N (falls back to sudo; needs <code>lsof</code>, not installed)</td></tr>
 <tr><td><code>clipcopy</code> · <code>clippaste</code></td><td>clipboard from the shell: <code>cmd | clipcopy</code>, <code>clippaste &gt; file</code> (wl-copy / wl-paste underneath)</td></tr>
-<tr><td><code>acs</code> · <code>als <i>str</i></code></td><td>alias cheatsheet by group · search aliases (oh-my-zsh aliases plugin)</td></tr>
-<tr><td><code>mpv-hq</code></td><td><code>mpv --profile=hq</code> (Anime4K shaders)</td></tr>
+<tr><td><code>als</code> · <code>als <i>str</i></code> · <code>als --groups</code></td><td>all aliases by group · search · group names (oh-my-zsh aliases plugin)</td></tr>
+<tr><td><code>mpv-hq</code></td><td><code>mpv --profile=hq</code> (high-quality profile, ewa_lanczossharp scaling; Anime4K is <kbd>Ctrl+1..6</kbd> inside mpv)</td></tr>
 <tr><td><code>fd</code> · <code>rg</code> · <code>jq</code></td><td>find / grep / json — all on PATH; fd honours .gitignore, <code>-H</code> for hidden</td></tr>
 </table>
 
@@ -130,9 +129,9 @@
 <tr><td><code>cd</code> into a repo with <code>.envrc</code></td><td>direnv loads the flake devshell automatically (nix-direnv cache, silent log); the p10k <i>direnv</i> segment appears</td></tr>
 <tr><td><code>direnv allow</code> · <code>direnv reload</code></td><td>trust a new/changed .envrc · re-evaluate</td></tr>
 <tr><td><code>direnv deny</code> · <code>direnv status</code></td><td>unload · show what is loaded and why</td></tr>
-<tr><td><code>nix develop</code> · <code>nix-shell -p pkg</code></td><td>stay in zsh (zsh-nix-shell), prompt shows the shell name</td></tr>
+<tr><td><code>nix-shell -p pkg</code></td><td>stays in zsh (zsh-nix-shell), prompt shows the shell name; <code>nix develop</code> still gives bash (<code>nix develop -c zsh</code>)</td></tr>
 <tr><td><code>nix run nixpkgs#pkg -- args</code></td><td>one-off tool without installing</td></tr>
-<tr><td><code>nh os switch</code></td><td>rebuild wrapper with diff (nvd) — the repo's own rebuild is <code>sudo nixos-rebuild switch --flake .#elster</code></td></tr>
+<tr><td><code>nh os switch /srv/the-hive</code></td><td>rebuild wrapper with diff (nvd) — the repo's own rebuild (README) is <code>nixos-rebuild switch --sudo --flake /srv/the-hive#elster</code>; plain <code>sudo</code> drops <code>NIX_CONFIG</code></td></tr>
 </table>
 
 <h2>shell options worth knowing</h2>

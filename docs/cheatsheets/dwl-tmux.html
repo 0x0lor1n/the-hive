@@ -26,7 +26,7 @@
 </head>
 <body>
 <h1>dwl + tmux — key reference</h1>
-<p class="sub">elster · source of truth: <code>packages/dwl/config.h</code>, <code>dotfiles/tmux/config.conf</code></p>
+<p class="sub">elster · source of truth: <code>cells/workstation/packages/dwl/config.h</code>, <code>dotfiles/tmux/config.conf</code></p>
 
 <div class="legend">
   <kbd>Super</kbd> = Win/Logo key — everything with Super goes to <b>dwl</b> (the compositor).<br>
@@ -38,6 +38,7 @@
 <h2>dwl · launching</h2>
 <table>
 <tr><td><kbd>Super+Alt+T</kbd></td><td>new terminal window (foot + tmux), or focus the open one (tag 1)</td></tr>
+<tr><td><kbd>Super+Alt+M</kbd></td><td>music: rmpc in a floating foot (no tmux), or focus it; <kbd>q</kbd> closes, mpd keeps playing</td></tr>
 <tr><td><kbd>Super+Alt+H</kbd></td><td>agents: foot + herdr, or focus the open one (tag 2) — keys in the last section</td></tr>
 <tr><td><kbd>Super+D</kbd> / <kbd>Super+P</kbd></td><td>app launcher (fuzzel)</td></tr>
 <tr><td><kbd>Super+Alt+F</kbd></td><td>file manager (thunar)</td></tr>
@@ -48,12 +49,14 @@
 <tr><td><kbd>Super+Esc</kbd></td><td>power menu</td></tr>
 <tr><td><kbd>Super+L</kbd></td><td>lock screen (swaylock)</td></tr>
 <tr><td><kbd>Super+Shift+Q</kbd></td><td>quit dwl</td></tr>
-<tr><td><kbd>Ctrl+Alt+F7..F12</kbd></td><td>switch virtual terminal</td></tr>
+<tr><td><kbd>Ctrl+Alt+Backspace</kbd></td><td>quit dwl</td></tr>
+<tr><td><kbd>Ctrl+Alt+F1..F12</kbd></td><td>switch virtual terminal</td></tr>
 </table>
 
 <h2>dwl · windows and focus</h2>
 <table>
 <tr><td><kbd>Super+J</kbd> / <kbd>Super+K</kbd></td><td>focus next / previous window in the stack</td></tr>
+<tr><td><kbd>Ctrl+←↑↓→</kbd></td><td>focus the window in that direction (inside tmux / herdr the keys go to them)</td></tr>
 <tr><td><kbd>Super+Shift+J</kbd> / <kbd>Super+Shift+K</kbd></td><td>move window down / up the stack</td></tr>
 <tr><td><kbd>Super+Enter</kbd></td><td>zoom — make the focused window the master (swap with master)</td></tr>
 <tr><td><kbd>Super+Shift+C</kbd></td><td>close window</td></tr>
@@ -64,7 +67,7 @@
 <tr><td><kbd>Super+Middle mouse</kbd></td><td>toggle floating</td></tr>
 <tr><td><kbd>Super+Right mouse</kbd></td><td>resize window</td></tr>
 </table>
-<p class="note">Focus does not follow the mouse (<code>sloppyfocus = 0</code>): it changes on click or <kbd>Super+J</kbd>/<kbd>K</kbd> only. Touchpad taps click but never drag.</p>
+<p class="note">Focus does not follow the mouse (<code>sloppyfocus = 0</code>): it changes on click, <kbd>Super+J</kbd>/<kbd>K</kbd> or <kbd>Ctrl+arrows</kbd> only. Touchpad taps click but never drag.</p>
 
 <h2>dwl · two monitors</h2>
 <table>
@@ -115,7 +118,7 @@
 <tr><td><kbd>Super+Shift+S</kbd></td><td>select area → clipboard only (no file)</td></tr>
 <tr><td><kbd>Super+Alt+R</kbd></td><td>recorder: select area → mp4. <b>Press again, or click <code>REC</code> in the bar, to stop</b></td></tr>
 </table>
-<p class="note">From the takeshot notification: Edit (satty — arrows, lines, text, pixelate, blur) / Open / Copy PNG. Files land in <code>~/Pictures/Screenshots</code> and <code>~/Videos/Recordings</code>.</p>
+<p class="note">takeshot notification: left click = Edit (satty — arrows, lines, text, pixelate, blur), middle click = menu Edit / Open / Copy PNG, right click = dismiss. The clipboard gets the file (<code>file://</code> URI), not raw pixels. Files land in <code>~/Pictures/Screenshots</code> and <code>~/Videos/Recordings</code>.</p>
 
 <h2>dwl · notifications (mako)</h2>
 <h3>Notification mode: <kbd>Super+Alt+N</kbd>, then one key</h3>
@@ -131,17 +134,18 @@
 <table>
 <tr><td><kbd>Super+B</kbd></td><td>show / hide the bar</td></tr>
 <tr><td>click <code>REC</code></td><td>stop recording</td></tr>
-<tr><td>click bell / right-click bell</td><td>toggle do-not-disturb / dismiss all notifications</td></tr>
+<tr><td>click bell / right-click bell</td><td>toggle do-not-disturb / dismiss all notifications (bell is visible only in DND or with pending notifications)</td></tr>
 <tr><td>click wifi / bluetooth / vpn</td><td>wifi menu / bluetui / vpn menu</td></tr>
 <tr><td>volume: click / right-click / scroll</td><td>mute / pwvucontrol / volume</td></tr>
 <tr><td>brightness: scroll</td><td>brightness</td></tr>
 <tr><td><kbd>XF86 Vol±</kbd> / <kbd>Mute</kbd></td><td>volume (avizo on-screen display)</td></tr>
 <tr><td><kbd>XF86 Brightness±</kbd></td><td>brightness</td></tr>
+<tr><td><kbd>XF86 Play/Next/Prev/Stop</kbd></td><td>playerctl (mpd via mpdris2)</td></tr>
 </table>
 
 <h2 class="tmux">tmux · panes</h2>
 <table>
-<tr><td><kbd>Ctrl+Shift+Enter</kbd></td><td>new pane (split). <kbd>Super+Shift+Enter</kbd> does the same — dwl passes it through</td></tr>
+<tr><td><kbd>Ctrl+Shift+Enter</kbd></td><td>new pane (split). <kbd>Super+Shift+Enter</kbd> does the same (foot sends both as one sequence; in herdr it spawns an agent)</td></tr>
 <tr><td><kbd>Ctrl+Shift+W</kbd></td><td>close pane (layout re-applied)</td></tr>
 <tr><td><kbd>Ctrl+←</kbd> <kbd>Ctrl+↑</kbd> <kbd>Ctrl+↓</kbd> <kbd>Ctrl+→</kbd></td><td>focus the pane in that direction</td></tr>
 <tr><td><kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd></td><td>next / previous pane (passed to vim / fzf when they are running)</td></tr>
@@ -179,7 +183,7 @@
 
 <h2 class="tmux">tmux · scrollback and copy</h2>
 <table>
-<tr><td><kbd>Ctrl+Shift+PgUp</kbd> / <kbd>PgDn</kbd></td><td>scroll history one page (passed to vim / less when running)</td></tr>
+<tr><td><kbd>Ctrl+Shift+PgUp</kbd> / <kbd>PgDn</kbd></td><td>scroll history one page (passed to vim / fzf / sk when running)</td></tr>
 <tr><td><kbd>Ctrl+Shift+Home</kbd> / <kbd>End</kbd></td><td>jump to top / bottom of history</td></tr>
 <tr><td><kbd>Ctrl+Shift+K</kbd></td><td>clear screen and history</td></tr>
 <tr><td><kbd>v</kbd></td><td>copy-mode: start selection</td></tr>
@@ -199,6 +203,7 @@
 <tr><td><kbd>Ctrl+Shift+W</kbd> / <kbd>Ctrl+Shift+Q</kbd></td><td>close pane / close workspace</td></tr>
 <tr><td><kbd>Ctrl+Shift+F</kbd></td><td>zoom pane / back</td></tr>
 <tr><td><kbd>Ctrl+Shift+←↑↓→</kbd></td><td>resize pane</td></tr>
+<tr><td><kbd>Ctrl+D</kbd></td><td>blocked inside herdr (EOF would end the agent); no shell exit or less/nvim half-page there either</td></tr>
 <tr><td><kbd>Ctrl+Shift+Backspace</kbd></td><td>kill agent: fuzzel lists workspaces with agent status; pick one to close it, or the <code>✕</code> row to close every workspace without an agent</td></tr>
 <tr><td><kbd>Ctrl+Shift+B</kbd> <kbd>-</kbd></td><td>prefix + split (herdr default; <kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd> are prefixed too — inside the agents they are prompt history)</td></tr>
 <tr><td><kbd>Shift+Enter</kbd></td><td>newline in the hermes prompt (works under herdr via the <code>HERDR_ENV</code> patch, under tmux natively)</td></tr>

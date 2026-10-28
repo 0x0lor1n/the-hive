@@ -9,12 +9,11 @@ Two age master identities, `secrets/*.pub` holds the recipients:
 
 | identity | where the key lives | scope |
 |---|---|---|
-| `elster-nix-rage` | elster (ZBook) TPM, PIN | everything (was `jarvis-nix-rage`) |
-| `penrose-nix-rage` | penrose TPM, PIN | everything (was `dellvis-nix-rage`) |
+| `elster-nix-rage` | elster (ZBook) TPM, PIN | everything |
+| `penrose-nix-rage` | penrose TPM, PIN | everything |
 
 Both are recipients of every secret (globals, roles/*.nix, generated/, host keys,
-hisilome); each host decrypts with its own. `jarvis-nopin-rage` (PIN-less, only
-ever needed for the swtpm VM) is gone. age-plugin-tpm aborts on the first identity
+hisilome); each host decrypts with its own. age-plugin-tpm aborts on the first identity
 whose key is not in the local TPM, so nothing ever passes both identities to one
 `rage` call: `nix/rageImportEncrypted.sh` tries `<hostname>-nix-rage` first, and
 the devshells export `AGENIX_REKEY_PRIMARY_IDENTITY(_ONLY)` for the host.
@@ -26,10 +25,13 @@ Everything flows through `agenix-rekey`; per-host rekeyed files land in
 
 ## 1. Host config
 
-- `cells/workstation/hosts/<host>.nix` — hostname, disk device, profiles.
+- `cells/common/globals.nix` `hosts.<host>` — disk device, TPM, SSH host pubkey, accounts.
+- `cells/workstation/nixosConfigurations.nix` — `<host> = mkHost {...}` with its
+  hardware list (`intelLaptop`, `raptorLaptop`) and encryption stack (`zfsNative`).
 - `cells/workstation/disks/<host>.nix` — disko: ESP + ZFS rpool (native encryption,
   passphrase via `/tmp/rpool.key` at install), impermanence layout.
-- `cells/workstation/profiles/hardware-*.nix` — split per hardware, not per host.
+- Hardware profiles (`platform-*`, `gpu-*`, `laptop`) are split per hardware, not
+  per host; `host-<host>.nix` holds the rest.
 - Register in `nixosConfigurations` and run `agenix generate && agenix rekey`
   from the workstation devshell (`nix develop .#workstation`). Commit the
   generated secrets.
@@ -94,8 +96,7 @@ nixos-install → reboot.
   `nix/agenix-primary.sh` picks the recipient up from that file's `# Recipient:`
   header by hostname. Then `agenix rekey` and re-encrypt the eval-time
   files (globals, roles/*.nix, hosts/*, hisilome/*) to the new recipient.
-- Log in as the fleet user from `secrets/globals.nix.age` (not `jarvis` — that's the
-  zBook playground user). From the builder:
+- Log in as the fleet user from `secrets/globals.nix.age`. From the builder:
   `ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 <user>@<ip>` — without
   `IdentitiesOnly` the agent burns through `MaxAuthTries` before it gets to the
   right key. Put it in `~/.ssh/config` as `Host penrose`.
@@ -144,16 +145,16 @@ to find the unsigned component.
 Login with Entra creds on the greeter; the device enrolls on first login. Compliance
 runs the ZFS-encryption script in `cells/workstation/profiles/auth-entra.nix`
 (root on encrypted dataset -> compliant). Portal shows the device within ~5 min.
-Note: on a VM (the former sevastopol test VM, now retired) the same config reports
-"Not evaluated" -- Intune's platform check rejects VMs, it is not a config bug.
+On a VM the same config reports "Not evaluated": Intune's platform check rejects
+VMs, it is not a config bug.
 
 ## 8. Day-to-day quirks (expected, not bugs)
-- **greeter goes straight to PIN** for a user with an enrolled Hello PIN.
-  Upstream himmelblau asks Password first and ignores the answer; we carry a
-  patch (`cells/workstation/profiles/auth-entra.nix`, `patchedHimmelblauSrc`)
-  that checks the cached Hello key in `pam authenticate init` and skips the
-  password prompt. Re-check the patch on every himmelblau bump. Disabling
-  `enable_hello` would mean password + MFA every login.
+- **greeter goes straight to PIN** for a user with an enrolled Hello PIN:
+  himmelblau's auth init asks for the PIN alone once a Hello key is cached
+  (upstream behaviour at the pinned rev, no patch). Password + MFA come back
+  only without a Hello key, after too many bad PINs, or while Intune
+  enrollment is pending. Disabling `enable_hello` would mean password + MFA
+  every login.
 - **rpool passphrase on the first boot after install (once).** The TPM
   credential is sealed to PCR 15 = ZFS wrapping-key fingerprint, *not* to the
   generation (Lanzaboote UKIs are dynamic, so PCR 11 is never used). disko
@@ -164,14 +165,10 @@ Note: on a VM (the former sevastopol test VM, now retired) the same config repor
   `journalctl -b -u zfs-key-sync` and `zpool get guid rpool`.
 
 ## 9. Open questions
-- **Should the Entra user be able to rebuild at all?** Current answer: no.
-  `the-hive` lives in `/persist/home/crookedmirror/the-hive`; the Entra (PAM)
-  user has no access to the checkout, the TPM PIN identity or the deploy key.
-  Rebuilds are done as `crookedmirror` (local admin / break-glass), the Entra
-  session is a plain workstation session. Revisit only if daily work under the
-  Entra account needs the repo — then a shared checkout in `/etc/nix/the-hive`
-  (root:users, `git config --system safe.directory`) is the candidate, not
-  giving the Entra user sudo.
+- ~~Should the Entra user be able to rebuild?~~ No. Both accounts share the
+  checkout at `/srv/the-hive` (group `hive`, default ACL, `srv-the-hive.nix`)
+  and can edit and commit; only the admin account has wheel
+  (`role-admin.nix`), so rebuilds stay there.
 - ~~Split secrets into "install-time, TPM+PIN" vs "rebuild-time, no PIN"~~
   Resolved differently: the eval-time plaintext cache
   (`/var/tmp/nix-import-encrypted`, ciphertext-hash keyed, 0700 local user)
@@ -180,7 +177,7 @@ Note: on a VM (the former sevastopol test VM, now retired) the same config repor
   for the PIN itself (age-plugin-tpm uses `/dev/tty`); `unlock-secrets` is the
   same decrypt for shells without a tty (agents, CI, `sudo` from a script).
 - **Slack lost its login across reboots with only `~/.config/Slack` persisted.**
-  Now sandboxed (nixpak, `packages.nix`): every path Electron may write
+  Now sandboxed (nixpak, `cells/workstation/packages/sandboxed.nix`): every path Electron may write
   (`~/.config`, `~/.local/share`, `~/.cache`) is mapped into the single
   persisted `~/.var/app/com.slack.Slack`, and no secret service is reachable
   from inside, so the token has nowhere else to go. Verify after one reboot;

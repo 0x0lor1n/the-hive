@@ -105,7 +105,7 @@
       p.maintenance
       # pxpipe system unit + /etc/hosts alias, shared by every session's Hermes
       p.agent-proxy
-      # /srv/the-hive: one checkout for both accounts, dotfiles/ group-writable
+      # /srv/the-hive: one checkout for both accounts, group hive via default ACL
       p.srv-the-hive
       # /srv/workspace: shared project clones (work/, projects/), both accounts write
       p.srv-workspace

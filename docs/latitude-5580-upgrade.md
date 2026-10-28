@@ -40,7 +40,7 @@
 ## Инфраструктура вокруг (для контекста)
 - **ThinkCentre M90q Gen 2** (i9-11900/T, 16 ГБ 2×8) — билдер и гипервизор: `nix.buildMachines`, k3s/QEMU VM, coding-agents. Память → 64 ГБ (~200 CHF) когда упрёмся. Проверить райзер PCIe для 10G.
 - **CWWK S8 (N305, 16 ГБ, 1.5 ТБ)** — роутер: nftables, DHCP → + unbound/blocky, WireGuard-хаб, attic (nix-кэш), Suricata (IDS → IPS), бэкап-таргет. ZFS с `zfs_arc_max` ≤ 4 ГБ, корень не на ZFS. 48 ГБ DDR5 одной планкой — возможно, отложено.
-- Хосты: penrose (дом), osgiliath (VPS), sevastopol (VM). Флейк: `/home/jarvis/workspace/playground/nix-rensa` (std + colmena + agenix-rekey + disko).
+- Хосты и флейк: `/srv/the-hive` (rensa + colmena + agenix-rekey + disko), таблица хостов в README.
 
 ## eGPU: CMP 50HX 20GB под llama.cpp (проект, ноябрь 2026)
 Цель двойная: дешёвая 20 ГБ CUDA-карта для локальных LLM + навык ремонта видеокарт.

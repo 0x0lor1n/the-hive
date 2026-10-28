@@ -33,7 +33,7 @@
 
 <div class="legend">
   Surfingkeys turns the page into a vim-like modal surface: single letters act while <b>no text field is focused</b>. Focused input → normal typing; <kbd>Esc</kbd> leaves it.<br>
-  <kbd>?</kbd> shows the live, per-site list of Surfingkeys bindings — always authoritative. <kbd>Alt+S</kbd> disables Surfingkeys on the current site (toggle), <kbd>Alt+I</kbd> enters pass-through (keys go to the page until <kbd>Esc</kbd>), <kbd>p</kbd> passes through a single key.<br>
+  <kbd>?</kbd> shows the live, per-site list of Surfingkeys bindings — always authoritative. <kbd>Alt+S</kbd> disables Surfingkeys on the current site (toggle), <kbd>Alt+I</kbd> enters pass-through (keys go to the page until <kbd>Esc</kbd>), <kbd>p</kbd> suppresses Surfingkeys for a moment (ephemeral pass-through).<br>
   <kbd>Super</kbd> chords belong to dwl. Inside Firefox <kbd>Alt+1..9</kbd> and <kbd>Ctrl+Shift+…</kbd> are <b>not</b> stolen by tmux — they only go to tmux in a terminal.
 </div>
 
@@ -55,7 +55,7 @@
 <tr><td><kbd>Ctrl+B</kbd> · <kbd>Ctrl+H</kbd> · <kbd>Ctrl+Shift+H</kbd></td><td>bookmarks sidebar · history sidebar · history window</td></tr>
 <tr><td><kbd>Ctrl+Shift+Y</kbd> · <kbd>Ctrl+Shift+A</kbd> · <kbd>Ctrl+Shift+Delete</kbd></td><td>downloads · add-ons manager · clear recent data</td></tr>
 <tr><td><kbd>Ctrl+P</kbd> · <kbd>Ctrl+S</kbd> · <kbd>Ctrl+U</kbd> · <kbd>Ctrl+I</kbd></td><td>print (→ save as PDF) · save page · view source · page info</td></tr>
-<tr><td><kbd>Ctrl+Shift+S</kbd> · <kbd>F9</kbd> (<kbd>Ctrl+Alt+R</kbd>) · <kbd>F7</kbd></td><td>screenshot · reader view · caret browsing</td></tr>
+<tr><td><kbd>Ctrl+Shift+S</kbd> · <kbd>Ctrl+Alt+R</kbd> · <kbd>F7</kbd></td><td>screenshot · reader view · caret browsing</td></tr>
 <tr><td><kbd>Ctrl+.</kbd></td><td>Multi-Account Containers panel (open the page in a container)</td></tr>
 </table>
 
@@ -66,13 +66,13 @@
 <tr><td><kbd>Shift+F7</kbd> · <kbd>Shift+F5</kbd> · <kbd>Ctrl+Shift+J</kbd></td><td>style editor · performance · browser console</td></tr>
 </table>
 
-<h3>search engines (URL bar keywords) — default is <b>4get</b> (jarvis)</h3>
+<h3>search engines (URL bar keywords) — default is <b>4get</b> (4get.dcs0.hu)</h3>
 <table>
 <tr><td><kbd>gh</kbd> <i>query</i></td><td>GitHub repositories</td></tr>
 <tr><td><kbd>np</kbd> <i>query</i> · <kbd>no</kbd> <i>query</i> · <kbd>nl</kbd> <i>query</i></td><td>Nix packages (unstable) · Nix &amp; Home-Manager options (mynixos) · Nix library (noogle)</td></tr>
 <tr><td><kbd>wen</kbd> <i>query</i> · <kbd>wru</kbd> <i>query</i></td><td>Wikipedia en · Wikipedia ru</td></tr>
 </table>
-<p class="note">Google / Bing / DDG builtins are removed by Phoenix; DDG, Mojeek, Startpage and SearXNG remain selectable in the search-mode bar (<kbd>Ctrl+K</kbd>). Surfingkeys' own <kbd>s</kbd>-prefix searches (below) use <i>its</i> aliases, not these.</p>
+<p class="note">Phoenix removes the Google / Bing / DDG / Ecosia / Qwant builtins and adds its own DuckDuckGo, Mojeek, Startpage and SearXNG engines, selectable in the search-mode bar (<kbd>Ctrl+K</kbd>). Surfingkeys' own <kbd>s</kbd>-prefix searches (below) use <i>its</i> aliases, not these.</p>
 
 <h2 class="sk">Surfingkeys · page &amp; links</h2>
 <table>
@@ -137,7 +137,7 @@
 </table>
 <p class="note">Everything in the Surfingkeys sections is the upstream default map. If a binding here disagrees with <kbd>?</kbd>, trust <kbd>?</kbd> — some keys are disabled per site or renamed across releases.</p>
 
-<h2 class="ext">extensions (force-installed by policy)</h2>
+<h2 class="ext">extensions (installed by policy; only Linux Entra SSO is force-installed)</h2>
 <table>
 <tr><td>Surfingkeys · Dark Reader <kbd>Alt+Shift+D</kbd></td><td>vim keys (this sheet) · dark mode toggle</td></tr>
 <tr><td>uBlock Origin · LocalCDN · NoScript</td><td>blocking (uBO has no default hotkeys; element picker via toolbar icon) · local CDN replacement · script permissions per site</td></tr>

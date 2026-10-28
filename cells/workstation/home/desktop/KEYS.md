@@ -1,7 +1,7 @@
 # dwl — памятка по клавишам (elster)
 
-`Super` = Win/Logo. Источник истины — `packages/dwl/config.h`; этот файл
-надо править вместе с ним.
+`Super` = Win/Logo. Источник истины — `cells/workstation/packages/dwl/config.h`
+(+ `patches/` рядом); этот файл надо править вместе с ним.
 
 ## Запуск
 
@@ -9,7 +9,7 @@
 |---|---|
 | `Super + Alt + T` | терминал (foot); если уже открыт, фокус на него (переключит тег) |
 | `Super + Alt + H` | агенты (foot + herdr, тег 2); если уже открыт, фокус на него. Бинды внутри — как в tmux, см. `docs/keys/herdr.md` |
-| `Super + Shift + Enter` | tmux: split — новый pane в текущем окне (то же, что `Ctrl + Shift + Enter`) |
+| `Super + Shift + Enter` | = `Ctrl + Shift + Enter`: в tmux split, в herdr новый агент |
 | `Super + D` / `Super + P` | лаунчер (fuzzel) |
 | `Super + Alt + F` | файловый менеджер (thunar) |
 | `Super + Alt + M` | музыка: rmpc в плавающем foot, без tmux; если уже открыт, фокус на него. `q` закрывает, mpd играет дальше |
@@ -30,8 +30,9 @@
 | `Super + Shift + S` | область → только буфер (без файла) |
 | `Super + Alt + R` | recorder: область → запись mp4. **Повторное нажатие или клик по `REC` в баре — стоп** |
 
-Из уведомления takeshot: Edit (satty — стрелки, линии, текст, пиксели, blur) /
-Open / Copy PNG. Файлы: `~/Pictures/Screenshots`, `~/Videos/Recordings`.
+Уведомление takeshot: ЛКМ — Edit (satty — стрелки, линии, текст, пиксели, blur),
+СКМ — меню Edit / Open / Copy PNG, ПКМ — закрыть. В буфер идёт файл
+(`file://` URI), не пиксели. Файлы: `~/Pictures/Screenshots`, `~/Videos/Recordings`.
 
 ## Окна и фокус
 
@@ -76,7 +77,7 @@ Open / Copy PNG. Файлы: `~/Pictures/Screenshots`, `~/Videos/Recordings`.
 
 Тег ≠ воркспейс в чистом виде: окно может висеть на нескольких тегах, а
 экран — показывать несколько тегов одновременно. В баре: активный тег
-подсвечен, занятые — жирные, пустые — приглушены.
+подсвечен, занятые — яркие, пустые — приглушены, urgent — красные.
 
 ## Режимы (modes-патч)
 
@@ -114,7 +115,7 @@ Open / Copy PNG. Файлы: `~/Pictures/Screenshots`, `~/Videos/Recordings`.
 |---|---|
 | `Super + B` | показать/скрыть бар |
 | клик `REC` | остановить запись |
-| клик на колокольчик | toggle do-not-disturb (mako); ПКМ — закрыть все уведомления |
+| клик на колокольчик | toggle do-not-disturb (mako); ПКМ — закрыть все уведомления. Колокольчик виден только при DND или непрочитанных |
 | клик на wifi | wifi-меню |
 | клик на VPN | vpn-меню (модуль виден, только когда туннель поднят) |
 | клик на bluetooth | bluetui |
@@ -131,4 +132,5 @@ Open / Copy PNG. Файлы: `~/Pictures/Screenshots`, `~/Videos/Recordings`.
 | | |
 |---|---|
 | `Super + Shift + Q` | выйти из dwl |
-| `Ctrl + Alt + F7..F12` | переключить VT |
+| `Ctrl + Alt + Backspace` | выйти из dwl |
+| `Ctrl + Alt + F1..F12` | переключить VT |

@@ -2,8 +2,9 @@
 
 Бинды повторяют tmux на теге 1 (см. [tmux.md](tmux.md)): одна и та же рука
 работает в обоих мультиплексорах. Источник истины: `herdrConfig.keys` в
-`cells/workstation/home/dev/agents.nix`. foot шлёт `Ctrl+Shift+*` как CSI-u
-(`cells/workstation/home/default.nix`), поэтому эти аккорды доходят до herdr.
+`cells/workstation/home/dev/agents.nix`. foot шлёт нужные `Ctrl+Shift+<буква>`,
+`Ctrl+Shift+Enter` и `Ctrl+Shift+Backspace` как CSI-u
+(`cells/workstation/home/desktop/terminal.nix`), поэтому они доходят до herdr.
 Полный список активных биндов внутри herdr: `prefix` `?`.
 
 Один агент живёт в одном workspace. Табы не используются.
@@ -15,7 +16,8 @@
 | `Ctrl+Shift+Enter` | новый агент. fuzzel спрашивает тип (hermes / claude / opencode), потом директорию: первая строка = cwd текущего pane, дальше cwd других pane и zoxide. Enter, Enter = такой же агент здесь |
 | `Ctrl+Shift+Backspace` | убить агента. fuzzel со списком workspaces и статусом агента: выбрал строку, workspace закрыт. Строка `✕ close N workspaces without an agent` закрывает только workspaces без агента |
 | `Ctrl+↑` / `Ctrl+↓` | предыдущий / следующий агент |
-| `Shift+Enter` | перенос строки в промпте hermes/claude (через патч `HERDR_ENV` в hermes) |
+| `Shift+Enter` | перенос строки в промпте hermes (патч `HERDR_ENV`, `cells/repo/hermes-herdr-extended-enter.patch`) |
+| `Ctrl+D` | заблокирован (EOF убил бы агента); в шеллах/less/nvim внутри herdr тоже не работает |
 
 ## Workspaces
 
