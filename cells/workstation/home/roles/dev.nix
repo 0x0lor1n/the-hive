@@ -1,10 +1,6 @@
 # dev: the account that writes code and runs the agents. Dev tooling and
 # agent CLIs (../dev), osint and tor (../security), personal chat apps.
-{
-  lib,
-  roleInputs,
-  ...
-}: {
+{roleInputs, ...}: {
   imports = [../dev ../security ../security/tor.nix];
 
   # Sandboxed (packages.nix). Grayjay: one account per host, fixed /tmp

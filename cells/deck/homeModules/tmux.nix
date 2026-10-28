@@ -10,7 +10,6 @@
 }: {
   config,
   pkgs,
-  lib,
   ...
 }: let
   dotfiles = "/srv/the-hive/dotfiles/tmux";

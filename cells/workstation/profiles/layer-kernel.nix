@@ -1,7 +1,6 @@
 # CachyOS kernel + zfs from nyx. specialisation.safe must keep the same zfs
 # release, or the pool won't import there.
 {
-  config,
   pkgs,
   lib,
   ...

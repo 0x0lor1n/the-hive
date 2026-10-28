@@ -3,11 +3,7 @@
 {
   inputs,
   cell,
-}: {
-  config,
-  site,
-  ...
-}: let
+}: {config, ...}: let
   br = config.router.lanBridge;
 in {
   # ixgbe: the DAC port to imladris is a bridge member too. Its

@@ -10,12 +10,7 @@
 {
   inputs,
   cell,
-}: {
-  config,
-  pkgs,
-  lib,
-  ...
-}: let
+}: {pkgs, ...}: let
   textfileDir = "/var/lib/node_exporter/textfile";
   bootMarker = pkgs.writeShellScript "boot-marker" ''
     set -euo pipefail

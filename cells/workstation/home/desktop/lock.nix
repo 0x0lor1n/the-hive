@@ -1,10 +1,6 @@
 # Plain swaylock (not swaylock-effects) — no blur/images, just locking.
 # PAM config lives in layer-session.nix instead (HM can't install PAM).
-{
-  pkgs,
-  theme,
-  ...
-}: let
+{theme, ...}: let
   k = theme.roles;
 in {
   programs.swaylock = {

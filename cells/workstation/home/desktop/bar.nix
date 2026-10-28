@@ -2,7 +2,6 @@
 # patch. Started by graphical-session.target, not the dwl startup script.
 {
   pkgs,
-  lib,
   theme,
   ...
 }: let

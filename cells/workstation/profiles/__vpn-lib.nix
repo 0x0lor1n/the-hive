@@ -7,7 +7,6 @@
 # two-line auth-user-pass file. root 0400: the tunnels are system units.
 {
   inputs,
-  lib,
   config,
 }: {
   secret = name: {

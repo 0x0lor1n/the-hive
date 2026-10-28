@@ -8,7 +8,6 @@
   lib,
   config,
   host,
-  globals,
   ...
 }: let
   flakeRoot = inputs.self.outPath;

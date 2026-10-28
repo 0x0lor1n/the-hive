@@ -35,11 +35,7 @@
   agentPkgs ? {},
   # Where a plain login shell lands (tty, ssh, `su -`). null keeps $HOME.
   startDir ? null,
-}: {
-  pkgs,
-  lib,
-  ...
-}: let
+}: {lib, ...}: let
   sec = secrets;
   known = ["admin" "dev" "freelance" "employer"];
   unknown = lib.subtractLists known roles;
