@@ -20,8 +20,7 @@
   color = builtins.concatStringsSep "," (["empty"]
     ++ lib.mapAttrsToList (n: v: "${n}:#${v}") {
       normal = r.fg;
-      fg = r.fg;
-      bg = r.bg;
+      inherit (r) fg bg;
       hl = r.highlight;
       "fg+" = r.fg;
       "bg+" = r.selection;
@@ -34,7 +33,7 @@
       spinner = r.info;
       info = r.muted;
       header = r.info;
-      border = r.border;
+      inherit (r) border;
       scrollbar = r.border;
     });
 in {

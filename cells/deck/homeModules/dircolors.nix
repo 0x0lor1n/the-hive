@@ -4,6 +4,6 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: _: {
   programs.dircolors.enable = true;
 }

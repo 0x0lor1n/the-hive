@@ -3,6 +3,6 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: _: {
   home.sessionVariables.DIRENV_LOG_FORMAT = "";
 }

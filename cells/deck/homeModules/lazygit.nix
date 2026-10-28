@@ -3,7 +3,7 @@
 {
   inputs,
   cell,
-}: {...}: let
+}: _: let
   r = inputs.cells.common.theme.roles;
 in {
   programs.lazygit = {

@@ -4,7 +4,7 @@
   cell,
   ...
 }: let
-  pkgs = inputs.pkgs;
+  inherit (inputs) pkgs;
 in {
   # Ctrl-R for zsh-histdb (homeModules/zsh.nix).
   zsh-histdb-skim = pkgs.callPackage ./packages/zsh-histdb-skim.nix {};

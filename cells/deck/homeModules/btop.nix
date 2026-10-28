@@ -4,7 +4,7 @@
 {
   inputs,
   cell,
-}: {...}: let
+}: _: let
   r = inputs.cells.common.theme.roles;
   c = inputs.cells.common.theme.colors;
   # start/mid/end of one btop gradient.

@@ -25,7 +25,7 @@
     which sets NIX_CONFIG's plugin-files and extra-builtins-file.
   '';
     builtins.extraBuiltins.rageImportEncrypted identities (flakeRoot + "/secrets/globals.nix.age");
-in let
+
   merged =
     (lib.evalModules {
       modules = [

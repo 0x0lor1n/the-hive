@@ -14,7 +14,7 @@
   host,
   ...
 }: let
-  roles = (lib.findFirst (a: a.auth == "local") {roles = [];} config.hive.accounts).roles;
+  inherit (lib.findFirst (a: a.auth == "local") {roles = [];} config.hive.accounts) roles;
   has = role: lib.elem role roles;
 in {
   # tss owns /dev/tpmrm0 (0660) when himmelblau's udev rule does not.

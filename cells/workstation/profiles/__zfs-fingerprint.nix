@@ -6,7 +6,7 @@
 }: let
   zdb = "${zfsPackage}/bin/zdb";
   grep = "${pkgs.gnugrep}/bin/grep";
-  coreutils = pkgs.coreutils;
+  inherit (pkgs) coreutils;
 
   script = pkgs.writeShellScript "zfs-fingerprint" ''
     set -euo pipefail

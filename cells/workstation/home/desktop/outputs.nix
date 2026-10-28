@@ -1,6 +1,6 @@
 # kanshi. DVI-I-1 is evdi's fixed name for the DisplayLink 4K; the HP matches by
 # EDID, MST connector numbers change on replug.
-{...}: {
+_: {
   services.kanshi = {
     enable = true;
     settings = [

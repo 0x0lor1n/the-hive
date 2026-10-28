@@ -1,7 +1,7 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: _: {
   boot.supportedFilesystems = ["btrfs"];
 
   services.btrfs.autoScrub = {

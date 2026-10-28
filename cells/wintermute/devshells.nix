@@ -9,7 +9,7 @@
   cell,
   ...
 }: let
-  pkgs = inputs.pkgs;
+  inherit (inputs) pkgs;
 
   programmer = "ft2232_spi:type=2232H,port=A,divisor=8";
 

@@ -4,7 +4,7 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: _: {
   programs.eza.enable = true;
 
   home.shellAliases = {

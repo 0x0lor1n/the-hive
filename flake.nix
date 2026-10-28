@@ -82,7 +82,7 @@
         toplevel = l.mapAttrs (_: v: v.config.system.build.toplevel) nodes;
         deploymentConfig = l.mapAttrs (_: v: v.config.deployment) nodes;
       in {
-        __schema = (import (inputs.colmena + "/src/nix/hive/eval.nix") {}).__schema;
+        inherit (import (inputs.colmena + "/src/nix/hive/eval.nix") {}) __schema;
         inherit nodes toplevel deploymentConfig;
         deploymentConfigSelected = names: l.filterAttrs (n: _: l.elem n names) deploymentConfig;
         evalSelected = names: l.filterAttrs (n: _: l.elem n names) toplevel;

@@ -3,8 +3,8 @@
   cell,
   ...
 }: let
-  pkgs = inputs.pkgs;
-  lib = pkgs.lib;
+  inherit (inputs) pkgs;
+  inherit (pkgs) lib;
   theme = inputs.cells.common.theme;
 
   # dwl is C and cannot import Nix, so config.h carries @theme_<role>@

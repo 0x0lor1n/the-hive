@@ -7,7 +7,7 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: _: {
   fileSystems."/mnt/share" = {
     device = "share";
     fsType = "9p";

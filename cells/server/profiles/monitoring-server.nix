@@ -25,7 +25,7 @@
 
   # Up/down per box on the LAN; vontar is a DHCP lease (.103), not static.
   icmpTargets = {
-    imladris = imladris;
+    inherit imladris;
     vontar = "192.168.10.103";
     asus-ap = "192.168.10.2";
   };

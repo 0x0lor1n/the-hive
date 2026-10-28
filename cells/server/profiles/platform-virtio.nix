@@ -2,7 +2,7 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: _: {
   services.qemuGuest.enable = true;
 
   # services.qemuGuest does not add these; without them /dev/vda is invisible

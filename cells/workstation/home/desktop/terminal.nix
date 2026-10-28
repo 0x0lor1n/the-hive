@@ -8,7 +8,7 @@
 }: let
   k = theme.colors;
   r = theme.roles;
-  ansi = theme.ansi;
+  inherit (theme) ansi;
 in {
   programs.foot = {
     enable = true;

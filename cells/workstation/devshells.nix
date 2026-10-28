@@ -5,7 +5,7 @@
   cell,
   ...
 }: let
-  pkgs = inputs.pkgs;
+  inherit (inputs) pkgs;
 
   # Pinned together with pkgs.nix by the overlay in flake.nix.
   nixPlugins = pkgs.nix-plugins;

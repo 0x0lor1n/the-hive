@@ -4,7 +4,7 @@
 {
   inputs,
   cell,
-}: {...}: let
+}: _: let
   r = inputs.cells.common.theme.roles;
   hex = c: "#${c}";
 in {

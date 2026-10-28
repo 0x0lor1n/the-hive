@@ -160,9 +160,9 @@
       fastMode = r.warning;
       fastModeShimmer = r.highlight;
       chromeYellow = r.highlight;
-      success = r.success;
+      inherit (r) success;
       error = r.urgent;
-      warning = r.warning;
+      inherit (r) warning;
       warningShimmer = r.highlight;
       # Line bgs (plain and dimmed variant).
       diffAdded = r.diffAdd;
@@ -224,9 +224,7 @@
       secondary = r.hover;
       accent = c.sakuraPink;
       error = r.urgent;
-      warning = r.warning;
-      success = r.success;
-      info = r.info;
+      inherit (r) warning success info;
       text = r.fg;
       textMuted = r.muted;
       background = r.bg;

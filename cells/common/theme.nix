@@ -4,7 +4,7 @@
 # tuigreet) derives its colours from here so a hex change is one edit.
 # Hexes are rrggbb without '#': each consumer adds its own prefix/alpha.
 # Kanagawa Wave, verbatim from rebelot/kanagawa.nvim.
-{...}: rec {
+_: rec {
   name = "kanagawa";
   colors = {
     # backgrounds

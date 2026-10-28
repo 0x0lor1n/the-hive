@@ -3,7 +3,7 @@
   cell,
   ...
 }: let
-  pkgs = inputs.pkgs;
+  inherit (inputs) pkgs;
   llmAgents = inputs.llm-agents.packages.${pkgs.stdenv.hostPlatform.system};
 
   # nixq goes in front of PATH inside the agent process, so only the shells
@@ -68,7 +68,7 @@ in {
   # homes by workstation/home/dev/agents.nix.
   claude-code = withNixq llmAgents.claude-code;
   opencode = withNixq llmAgents.opencode;
-  oh-my-opencode = llmAgents.oh-my-opencode;
+  inherit (llmAgents) oh-my-opencode;
 
   # Anthropic loopback proxy that images the bulky, hash-free parts of each
   # request (system prompt, tool docs, cold history). Lossy: hashes read back

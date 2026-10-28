@@ -2,7 +2,7 @@
 {
   inputs,
   cell,
-}: {...}: {
+}: _: {
   programs.zoxide = {
     enable = true;
     enableBashIntegration = false;
