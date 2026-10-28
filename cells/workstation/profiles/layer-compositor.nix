@@ -1,10 +1,4 @@
-# Compositor layer: DWL + home-manager as a NixOS module. Session startup is
-# the `-s` target below; there is no separate /etc/dwl/startup.
-#
-# dwl is a system package, not home.packages: greetd execs /etc/dwl/session as
-# the authenticated user and system packages are on PATH regardless of whether
-# HM activation has run in this boot. Same for microsoft-edge: Entra users are
-# not local users and never get a home.packages profile.
+# dwl session, home-manager for every account, portals and the session's user units.
 {
   inputs,
   cell,
@@ -16,8 +10,7 @@
   ...
 }: let
   theme = inputs.cells.common.theme;
-  # Merged per-role encrypted attrsets (git includeIf blocks, ssh matchBlocks),
-  # PIN identity. Same flakeRoot shape as cells/common/globals.nix.
+  # Per-role encrypted attrsets; flakeRoot as in cells/common/globals.nix.
   userSecrets = roles:
     import ../home/secrets.nix {
       flakeRoot = /. + builtins.unsafeDiscardStringContext inputs.self.outPath;
@@ -35,13 +28,11 @@
     import ../home {
       inherit userName homeDir theme roles desktop secrets startDir;
       roleInputs = {
-        # nixpak apps bind the account's own canonical home
-        # (packages/sandboxed.nix), so they are built per account.
+        # nixpak apps bind the account's canonical home, so they are built per account.
         packages =
           cell.packages
           // import ../packages/sandboxed.nix {
-            # The cell's package set, as packages.nix: the host pkgs carries
-            # extra overlays and would rebuild both apps.
+            # Cell pkgs, as packages.nix: the host's overlays would rebuild both apps.
             inherit inputs canonicalHome;
             inherit (inputs) pkgs;
             inherit (inputs.pkgs) lib;
@@ -67,9 +58,7 @@
         if a.auth == "entra"
         then "/home/${globals.entra.user.upn}"
         else null;
-      # admin exists to rebuild the fleet; the checkout is where it works.
-      # Only reached by tty/ssh/`su -` -- foot lands in tmux, which sesh
-      # already opens at the same path.
+      # tty/ssh/`su -` only; foot lands in tmux, which sesh opens here already.
       startDir =
         if lib.elem "admin" a.roles
         then "/srv/the-hive"
@@ -77,19 +66,14 @@
     };
   locals = lib.filter (a: a.auth == "local") config.hive.accounts;
 
-  # The Entra user is an NSS user (himmelblau), not in users.users, so the HM
-  # NixOS module can't target it. Build the same home standalone and activate
-  # it from a user unit at login.
+  # NSS user, not in users.users: the same home built standalone, activated by a user unit.
   entra = lib.findFirst (a: a.auth == "entra") null config.hive.accounts;
   entraHome = inputs.home-manager.lib.homeManagerConfiguration {
     inherit pkgs;
     modules = [(mkAccount entra)];
   };
-  # himmelblau creates /home/<upn> and the /home/<cn> alias from pam_himmelblau
-  # while the session is opening, in parallel with the user manager starting
-  # home-manager-entra. On the first login after a boot the home does not exist
-  # yet (rolled-back root) and HM's `activate` dies on its opening `cd $HOME`.
-  # Type=oneshot forbids Restart=, so wait in ExecStartPre instead.
+  # himmelblau creates the home in parallel with the user manager, so on first login after boot
+  # HM's activate dies on `cd $HOME`. Type=oneshot forbids Restart=, hence the wait.
   waitForEntraHome = pkgs.writeShellScript "wait-for-entra-home" ''
     for _ in $(seq 1 120); do
       [ -d "$1" ] && exit 0
@@ -99,11 +83,8 @@
     exit 1
   '';
 
-  # xdpw chooser (dmenu mode: "Monitor: <out> <desc>" / "Window: <title> (<id>)"
-  # lines on stdin). Chromium's WebRTC drops PipeWire's VideoTransform meta,
-  # so a rotated output reaches Teams sideways. For those, open a wl-mirror
-  # of the output (dwl rule: tag 9, still capturable) and answer with that
-  # window instead; xdpw re-reads toplevels first (chooser-roundtrip.patch).
+  # Chromium's WebRTC drops PipeWire's VideoTransform, so a rotated output is answered with a
+  # wl-mirror window of it (dwl rule: tag 9); xdpw re-reads toplevels (chooser-roundtrip.patch).
   share-chooser = pkgs.writeShellApplication {
     name = "share-chooser";
     runtimeInputs = with pkgs; [fuzzel wl-mirror wlr-randr lswt jq util-linux coreutils];
@@ -116,12 +97,8 @@
       out=''${sel#Monitor: }
       out=''${out%% *}
       transform=$(wlr-randr --json | jq -r --arg o "$out" '.[] | select(.name == $o) | .transform // "normal"')
-      # The mirror maps straight onto hidden tag 9, where dwl never tiles it,
-      # so it keeps wl-mirror's 100x100 and Teams upscales mush. Fullscreen
-      # makes dwl size it to the monitor even hidden. -F waits for a
-      # wl_surface.enter that a hidden window never gets, and
-      # --fullscreen-output refuses the mirrored output: name another one
-      # (dwl sizes to the client's own monitor regardless).
+      # Untiled on hidden tag 9 the mirror stays 100x100; fullscreen sizes it even hidden. -F waits
+      # for a wl_surface.enter that never comes, --fullscreen-output refuses the mirrored output.
       other=$(wlr-randr --json | jq -r --arg o "$out" '[.[] | select(.enabled and .name != $o) | .name][0] // empty')
       if [ "$transform" = normal ] || [ -z "$other" ]; then
         printf '%s\n' "$sel"
@@ -150,31 +127,15 @@
     '';
   };
 
-  # `dwl -s <cmd>`: dwl makes the child's stdin the read end of its status
-  # pipe, so dwl-status must be exec'd (not backgrounded) to hold it open or
-  # the bar shows stale text. swaybg and the cliphist watchers start here;
-  # mako/swayidle/avizo/waybar have HM user units and must not also start here.
-  #
-  # dwl-status: the somebar replacement's back half. Lines are
-  # "<output> <field> <value...>" (title/appid/fullscreen/floating/selmon/
-  # tags/layout, plus "mode" from the modes patch). State is kept per output in
-  # $XDG_RUNTIME_DIR/dwl/<output>/<field>: waybar runs one bar per output and
-  # exports WAYBAR_OUTPUT_NAME to every custom exec, so each bar shows its own
-  # monitor — without this every bar showed the selected monitor's tags and
-  # only redrew on focus change (2026-09-16, two-monitor work profile). The
-  # selected monitor's copy stays in $XDG_RUNTIME_DIR/dwl/<field> as fallback.
-  # Waybar's custom/dwl-* modules are poked via signal 1 -> SIGRTMIN+1
-  # (home/desktop/bar.nix). tags is pango markup: "tags <occ> <tagset> <sel>
-  # <urg>" are bitmasks.
+  # "<output> <field> <value>" -> $XDG_RUNTIME_DIR/dwl/<output>/<field>, one dir per waybar
+  # (WAYBAR_OUTPUT_NAME); dwl/<field> holds the selected monitor's. bar.nix listens on SIGRTMIN+1.
   dwl-status = pkgs.writeShellScript "dwl-status" ''
     d="''${XDG_RUNTIME_DIR:-/tmp}/dwl"
     mkdir -p "$d"
     sel=""
     last=""
     declare -A layout title mode tags
-    # Nerd Font glyphs (Symbols Nerd Font via fontconfig fallback): tag 1 =
-    # nf-md-pulse (U+F0430, human), tag 2 = nf-md-transit_connection_variant
-    # (U+F0D3D, hub fanning out to agents).
+    # nf-md-pulse (U+F0430), nf-md-transit_connection_variant (U+F0D3D)
     declare -A taglabel=([1]="󰐰" [2]="󰴽")
     render_tags() {
       read -r occ tagset _ urg <<<"$1"
@@ -203,8 +164,7 @@
         mode) mode["$out"]="$rest" ;;
         *) continue ;;
       esac
-      # printstatus emits ~8 lines per monitor per event; write and signal
-      # once per actual change, not once per line.
+      # printstatus emits ~8 lines per monitor per event.
       cur="$sel"
       for o in "''${!tags[@]}"; do
         cur+=$'\n'"$o"$'\n'"''${tags[$o]-}"$'\n'"''${layout[$o]-}"$'\n'"''${title[$o]-}"$'\n'"''${mode[$o]-}"
@@ -224,33 +184,21 @@
         printf '%s\n' "''${title[$sel]-}" > "$d/title"
         printf '%s\n' "''${mode[$sel]-}" > "$d/mode"
       fi
-      # nixpkgs wraps the binary: the process is named `.waybar-wrapped`, so
-      # `pkill -x waybar` never matched and the bar stayed on tag 1
-      # (2026-09-15). Match the comm without -x.
+      # No -x: the wrapped process is named .waybar-wrapped.
       ${pkgs.procps}/bin/pkill -RTMIN+1 waybar 2>/dev/null || true
     done
   '';
 
+  # dwl makes this child's stdin its status pipe, so dwl-status is exec'd to hold it open.
+  # mako/swayidle/avizo/waybar are HM units and would run twice if started here.
   dwl-startup-with-bar = pkgs.writeShellScript "dwl-startup-with-bar" ''
-    # systemd 257+ refuses `systemctl --user start graphical-session.target`
-    # (RefuseManualStart=yes), silently stranding every WantedBy= unit. Start
-    # the bridge unit below instead: Wants= may pull the target in.
-    #
-    # dwl sets WAYLAND_DISPLAY only in its own environment; the HM units
-    # (avizo, swayidle) gate on ConditionEnvironment=WAYLAND_DISPLAY, so hand
-    # the session variables to the user manager and the session bus first.
-    # DISPLAY too (dwl sets it for Xwayland before running this): links the
-    # OpenURI portal hands to an X11-only app would otherwise start it with no
-    # display, and it dies before drawing (Horizon's sign-in return, 2026-09-24).
+    # HM units gate on ConditionEnvironment=WAYLAND_DISPLAY. DISPLAY: X11 apps started by the
+    # OpenURI portal (Horizon's sign-in return) would get no display.
     export XDG_CURRENT_DESKTOP="''${XDG_CURRENT_DESKTOP:-dwl}"
     ${pkgs.systemd}/bin/systemctl --user import-environment WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
     ${pkgs.dbus}/bin/dbus-update-activation-environment --systemd WAYLAND_DISPLAY DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_TYPE 2>/dev/null || true
-    # A previous dwl session (relogin via greeter) can leave the oneshot bridge
-    # active and graphical-session.target up, so a plain `start` is a no-op and
-    # avizo/swayidle stay dead from the moment the old compositor went away
-    # (measured 2026-09-15). Take the target down first, then start the bridge:
-    # its Wants= re-pulls the target and every WantedBy= unit against the new
-    # WAYLAND_DISPLAY.
+    # The target refuses manual start, the bridge pulls it. A previous session can leave both
+    # up, making `start` a no-op against a dead WAYLAND_DISPLAY: stop first.
     ${pkgs.systemd}/bin/systemctl --user stop graphical-session.target dwl-session-bridge.service 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user reset-failed 2>/dev/null || true
     ${pkgs.systemd}/bin/systemctl --user start dwl-session-bridge.service 2>/dev/null || true
@@ -258,33 +206,21 @@
     ${pkgs.swaybg}/bin/swaybg -c '#${theme.roles.bg}' &
     ${pkgs.wl-clipboard}/bin/wl-paste --type text  --watch ${pkgs.cliphist}/bin/cliphist store &
     ${pkgs.wl-clipboard}/bin/wl-paste --type image --watch ${pkgs.cliphist}/bin/cliphist store &
-    # Pinned to tags 1/2 by app_id (packages/dwl/config.h rules[]). foot-tmux
-    # needs no command: foot's shell is sesh -> tmux. herdr-server is started
-    # here, after import-environment, so pane shells inherit WAYLAND_DISPLAY
-    # (agents read clipboard images via wl-paste). No-op on relogin.
+    # Tags 1/2 by app_id (packages/dwl/config.h); foot's shell is sesh -> tmux.
     ${pkgs.foot}/bin/foot -a foot-tmux &
     ${pkgs.systemd}/bin/systemctl --user start herdr-server.service 2>/dev/null || true
     ${pkgs.foot}/bin/foot -a foot-herdr ${cell.packages.herdr}/bin/herdr &
     exec ${dwl-status}
   '';
 
-  # greetd starts the session with a PAM-clean env (systemd.services.greetd.
-  # environment does NOT reach it, and neither does environment.variables),
-  # and dwl's -s child only exports into the user manager / session bus.
-  # Clients spawned by dwl itself (foot, fuzzel) inherit dwl's env, so the
-  # desktop identity and any wlroots knobs must be set here, before exec.
+  # greetd's session env is PAM-clean (environment.variables does not reach it), and clients
+  # dwl spawns itself inherit only dwl's env.
   dwl-session = pkgs.writeShellScript "dwl-session" ''
     export XDG_CURRENT_DESKTOP=dwl
     export XDG_SESSION_TYPE=wayland
     ${lib.concatStringsSep "\n" (lib.mapAttrsToList (k: v: "export ${k}=${lib.escapeShellArg v}") config.session.compositorEnvironment)}
-    # Last crash log survives in the (persisted) home; if $HOME is not there
-    # yet (first login after boot raced himmelblaud_tasks), fall back to the
-    # journal rather than letting the log kill the session.
-    # Not exec: when dwl exits, stop graphical-session.target itself so PartOf=
-    # units (avizo, swayidle) stop cleanly instead of crash-looping into their
-    # start limit. BindsTo is one-way — stopping the bridge does not stop the
-    # target (2026-09-15: MOD+Shift+Q left the target active and both units in
-    # start-limit-hit).
+    # Without $HOME yet (first Entra login after boot) dwl logs to the journal. Not exec: BindsTo
+    # is one-way, PartOf= units would crash-loop into their start limit unless the target stops.
     if mkdir -p "$HOME/.cache/dwl" 2>/dev/null; then
       ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
     else
@@ -297,8 +233,7 @@
 in {
   imports = [inputs.home-manager.nixosModules.home-manager];
 
-  # The only channel into the compositor's environment (see dwl-session).
-  # Hardware profiles put WLR_* here; UX profiles should not need it.
+  # Hardware profiles put WLR_* here; nothing else reaches the compositor's env.
   options.session.compositorEnvironment = lib.mkOption {
     type = lib.types.attrsOf lib.types.str;
     default = {};
@@ -306,17 +241,13 @@ in {
   };
 
   config = {
-    # File pickers, screen sharing (Edge/Teams), xdg-open. wlr does screen
-    # capture, gtk everything else.
+    # wlr does screen capture, gtk everything else.
     xdg.portal = {
       enable = true;
       extraPortals = [pkgs.xdg-desktop-portal-wlr pkgs.xdg-desktop-portal-gtk];
       config.dwl.default = ["wlr" "gtk"];
     };
-    # slurp (xdpw's first default chooser) only picks outputs. dmenu mode
-    # lists outputs and every toplevel (all tags) from ext-foreign-toplevel-list.
-    # share-chooser swaps a rotated output for a mirror window; exec_after
-    # closes the mirrors once the last screencast ends.
+    # The default slurp only picks outputs; dmenu mode also lists every toplevel.
     xdg.portal.wlr.settings.screencast = {
       chooser_type = "dmenu";
       chooser_cmd = "${share-chooser}/bin/share-chooser";
@@ -327,25 +258,13 @@ in {
     home-manager.useUserPackages = true;
     home-manager.users = lib.listToAttrs (map (a: lib.nameValuePair a.name (mkAccount a)) locals);
 
-    # HM for the Entra user (see entraHome above). Runs in the user manager
-    # PAM starts at login, so dbus is up and dconfSettings works. Idempotent.
-    #
-    # HM's own reloadSystemd step is a no-op here: it gates on
-    # `systemctl --user is-system-running` == running|degraded, and a unit
-    # wanted by default.target always sees "starting" (2026-09-15: tmux-server
-    # and ssh-agent linked into default.target.wants but never started).
-    # ExecStartPost does what sd-switch would have: reload so the manager sees
-    # the freshly linked ~/.config/systemd/user, then start default.target's
-    # wants by hand — the target's job was queued before the links existed.
-    # graphical-session.target.wants are picked up by the dwl bridge below,
-    # ordered After= this unit.
+    # HM's reloadSystemd needs is-system-running == running|degraded, which a default.target unit
+    # never sees, so ExecStartPost reloads and starts the new default.target wants itself.
     systemd.user.services.home-manager-entra = lib.mkIf (entra != null) {
       description = "Home Manager environment for the Entra user";
       unitConfig.ConditionUser = entra.owner;
       wantedBy = ["default.target"];
-      # activate registers the generation via nix-env, which the unit's
-      # default PATH lacks. ~/.local/state/nix/profiles is created by the
-      # tmpfiles rules in auth-entra.nix. coreutils: seq/sleep for the wait.
+      # activate registers the generation via nix-env.
       path = [config.nix.package pkgs.bash pkgs.coreutils pkgs.systemd];
       serviceConfig = {
         Type = "oneshot";
@@ -366,9 +285,9 @@ in {
 
     environment.systemPackages =
       [
+        # System package: greetd runs /etc/dwl/session before any HM activation.
         cell.packages.dwl
-        # `transcribe <file>`: whisper.cpp on the iGPU (Vulkan), CPU fallbacks.
-        # `transcribe-parakeet`: faster, CPU-only, clean speech only.
+        # whisper.cpp on Vulkan; parakeet is faster, CPU-only, clean speech only.
         cell.packages.transcribe
         cell.packages.transcribe-parakeet
         pkgs.foot
@@ -384,34 +303,26 @@ in {
         # DPMS toggle for swayidle's 600 s step (vanilla dwl has no dwl-msg).
         pkgs.wlopm
       ]
-      # Silent M365 SSO through himmelblau's broker DBus service.
+      # Silent M365 SSO through himmelblau's broker; Entra users get no home.packages profile.
       ++ lib.optional (entra != null) pkgs.microsoft-edge;
 
-    # File manager (Super+Alt+F in packages/dwl/config.h). System-level rather
-    # than home.packages: the NixOS module also wires xfconf (settings persist)
-    # and the D-Bus bits; gvfs gives it trash://, mtp/smb and the
-    # removable-drive sidebar, udisks2 lets it mount them.
+    # NixOS module, not home.packages: it also wires xfconf and D-Bus.
     programs.thunar = {
       enable = true;
       plugins = [pkgs.thunar-archive-plugin];
     };
     services.gvfs.enable = true;
     services.udisks2.enable = true;
-    # Thumbnails in Thunar (tumbler is what gvfs/thunar ask over D-Bus).
     services.tumbler.enable = true;
 
-    # Edge managed policy: Chromium-on-Linux never reads
-    # ~/.config/microsoft-edge/policies, only the system dir. Force-installs
-    # Dark Reader + Surfingkeys from the Edge Add-ons store for every account.
-    # Edge Add-ons ids, not Chrome Web Store ones: Dark Reader's CWS id
-    # (eimadpbc…) is unknownApplication there and silently never installs.
+    # Chromium on Linux reads policies only from the system dir. Edge Add-ons ids: Dark Reader's
+    # Chrome Web Store id is unknownApplication there and never installs.
     environment.etc."opt/edge/policies/managed/extensions.json".text = builtins.toJSON {
       ExtensionInstallForcelist = map (id: "${id};https://edge.microsoft.com/extensionwebstorebase/v1/crx") [
         "ifoakfbpdcdoeenechcleahebpibofpc" # Dark Reader
         "kgnghhfkloifoabeaobjkgagcecbnppg" # Surfingkeys
       ];
-      # Edge sync (extensions on) reinstalls the old CWS copy of Dark Reader
-      # from the account next to the forced one.
+      # Edge sync would reinstall the CWS copy next to the forced one.
       ExtensionInstallBlocklist = ["eimadpbcbfnmbkopoojfekhnkhdbieeh"];
     };
 
@@ -421,11 +332,7 @@ in {
       mode = "0755";
     };
 
-    # The sway-session.target pattern: Wants= is allowed to pull in a
-    # RefuseManualStart target, BindsTo= ties this unit's lifecycle to it.
-    # After=home-manager-entra: graphical-session.target.wants (avizo,
-    # swayidle) come from HM's generation; on the local account the unit is
-    # skipped by ConditionUser and the ordering is inert.
+    # sway-session.target pattern. After=home-manager-entra: the target's wants come from its generation.
     systemd.user.services.dwl-session-bridge = {
       description = "DWL session bridge to graphical-session.target";
       unitConfig = {
@@ -441,27 +348,17 @@ in {
       };
     };
 
-    # herdr keeps agent panes alive across detach. Started by
-    # dwl-startup-with-bar, not wantedBy default.target: from default.target
-    # it came up before import-environment, every pane lacked WAYLAND_DISPLAY
-    # and agents could not read clipboard images (2026-09-27). No PartOf=
-    # graphical-session.target, so it still survives MOD+Shift+Q and a dwl
-    # crash.
-    # Pane shells inherit this env: enableDefaultPath would swap the
-    # manager's PATH for coreutils+grep+sed.
-    # After=home-manager-entra: the server reads ~/.config/herdr/config.toml
-    # once at start and publishes keys.command to the TUI from that. On the
-    # Entra account the link is (re)made by HM activation; racing it left
-    # the server on the stale config and Ctrl+Shift+Enter fell through to
-    # the pane as CSI-u `[13;6u` (2026-09-26). Local account: inert.
-    # ConditionUser=!@system: greeter (uid 999, $HOME=/var/empty) made herdr
-    # loop on PermissionDenied 50x per boot.
+    # Started by dwl-startup-with-bar after import-environment, so panes get WAYLAND_DISPLAY.
+    # No PartOf=: agent panes survive a dwl exit.
     systemd.user.services.herdr-server = {
       description = "herdr server (agent sessions)";
       unitConfig = {
+        # The server reads config.toml once; HM activation (re)links it.
         After = ["home-manager-entra.service"];
+        # The greeter ($HOME=/var/empty) looped on PermissionDenied.
         ConditionUser = "!@system";
       };
+      # Pane shells inherit this PATH.
       enableDefaultPath = false;
       serviceConfig = {
         ExecStart = "${cell.packages.herdr}/bin/herdr server";
