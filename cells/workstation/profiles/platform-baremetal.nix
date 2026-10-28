@@ -12,11 +12,13 @@
   config,
   ...
 }: {
-  # The disk (nvme) and the keyboard (xhci) must be visible before stage 2,
-  # same reasoning as virtio_blk in platform-virtio.nix.
+  # The disk (nvme, or SATA via ahci -- penrose boots from a 2.5" SSD in the
+  # bay) and the keyboard (xhci) must be visible before stage 2, same
+  # reasoning as virtio_blk in platform-virtio.nix.
   boot.initrd.availableKernelModules = [
     "xhci_pci"
     "nvme"
+    "ahci"
     "usb_storage"
     "sd_mod"
     "rtsx_pci_sdmmc"

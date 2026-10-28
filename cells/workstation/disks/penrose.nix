@@ -1,7 +1,8 @@
 # penrose (Dell Latitude 5580). Native ZFS encryption behind a pre-unseal
 # PCR 15 gate (no LUKS layer).
 #
-# ESP + one partition for `rpool` on the whole NVMe: one plain GPT, nothing to
+# ESP + one partition for `rpool` on the whole 2.5" SATA SSD in the bay (KEYM is
+# kept free for OCuLink, see wintermute/recon/xeon/sch/mods.md F17/F18): one plain GPT, nothing to
 # preserve. The pool root carries the encryption, the datasets are the
 # impermanence layout: local/root is rolled back to @blank on every boot
 # (storage-zfs-rollback.nix), local/nix, local/state and safe/persist survive.
@@ -69,6 +70,10 @@ in
       };
       options = {
         ashift = "12";
+        # Install-time only: the disko run is done with autotrim=off (the
+        # install ISO's kernel 6.18 / zfs 2.4.3 lost a TRIM zio on this SATA
+        # SSD and wedged txg_sync, 2026-10-28); after first boot
+        # `zpool set autotrim=on rpool` brings the pool in line with this.
         autotrim = "on";
       };
       # /tmp/rpool.key does not exist in the booted initrd; switch to the

@@ -69,7 +69,11 @@
             # Dell Latitude 5580. Whole disk, nothing else on it. User + hashes
             # come from the encrypted half (fleet user).
             hosts.penrose = {
-              diskDevice = "/dev/nvme0n1";
+              # Dell Precision 3520 board (LA-E152P, Xeon E3-1505M v6) in the
+              # Latitude 5580 chassis. System disk = 2.5" SATA SSD in the bay;
+              # KEYM M.2 kept free for OCuLink. by-id: sdX order moves with
+              # USB media on the bench.
+              diskDevice = "/dev/disk/by-id/ata-Lexar_SSD_NS100_1TB_QMV891H0100940S340";
               hasTpm = true; # Nuvoton NPCT, TPM 2.0 (fw 2015)
               # Private half in secrets/hosts/penrose/ (rage, master identities
               # + KeePass), shipped to /persist/etc/ssh by nixos-anywhere
