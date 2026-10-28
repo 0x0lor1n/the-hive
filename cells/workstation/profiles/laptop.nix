@@ -58,6 +58,12 @@
     enable = true;
     nssmdns4 = true;
     openFirewall = true;
+    # Announce ourselves too (off by default): the `Host <peer>` entries in
+    # layer-users-local point at <name>.local, both laptops are DHCP.
+    publish = {
+      enable = true;
+      addresses = true;
+    };
   };
   # `lp` group: add/remove printers and use the CUPS web UI without root.
   users.users = lib.genAttrs config.hive.localUsers (_: {extraGroups = ["networkmanager" "lp"];});

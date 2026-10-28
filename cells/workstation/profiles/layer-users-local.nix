@@ -16,6 +16,15 @@
 }: let
   inherit (lib.findFirst (a: a.auth == "local") {roles = [];} config.hive.accounts) roles;
   has = role: lib.elem role roles;
+
+  # The other bare-metal workstations: every one authorises every other one's
+  # user-ssh-key and gets a `Host <name>` for it. The VM is left out both
+  # ways (its key is a throwaway, its address is whatever QEMU hands it).
+  # mDNS, not an address: both are DHCP laptops; laptop.nix runs avahi with
+  # nssmdns4, so <name>.local resolves without a lease on the router.
+  peers =
+    lib.filterAttrs (n: h: n != host.hostName && !h.isVm && h.accounts != [])
+    globals.hosts;
 in {
   # tss owns /dev/tpmrm0 (0660) when himmelblau's udev rule does not.
   security.tpm2.enable = !config.services.himmelblau.enable;
@@ -57,10 +66,11 @@ in {
     shell = pkgs.zsh;
 
     # Per host, matching secrets.nix's generatedSecretsDir, so a playground
-    # key can never be authorised on real hardware.
-    openssh.authorizedKeys.keyFiles = [
-      (inputs.self.outPath + "/secrets/generated/${host.hostName}/user-ssh-key.pub")
-    ];
+    # key can never be authorised on real hardware. Plus the other laptops'
+    # keys (peers above): the same user on either machine reaches the other.
+    openssh.authorizedKeys.keyFiles =
+      map (n: inputs.self.outPath + "/secrets/generated/${n}/user-ssh-key.pub")
+      ([host.hostName] ++ lib.attrNames peers);
   };
 
   # The home lives on the rolled-back root; anything not listed here is gone
@@ -159,39 +169,57 @@ in {
   };
 
   programs.ssh = {
-    knownHosts = {
-      minas-tirith = {
-        hostNames = ["minas-tirith" "192.168.10.1"];
-        publicKeyFile = inputs.self.outPath + "/secrets/hosts/minas-tirith/ssh_host_ed25519_key.pub";
-      };
-      minas-tirith-initrd = {
-        hostNames = ["minas-tirith-initrd" "[192.168.10.1]:2222"];
-        publicKeyFile = inputs.self.outPath + "/secrets/hosts/minas-tirith/initrd_ssh_host_ed25519_key.pub";
-      };
-      imladris = {
-        hostNames = ["imladris" "192.168.10.10"];
-        publicKeyFile = inputs.self.outPath + "/secrets/hosts/imladris/ssh_host_ed25519_key.pub";
-      };
-    };
-    extraConfig = ''
-      Host minas-tirith
-        HostName 192.168.10.1
-        User ${host.userName}
-        IdentityFile /run/agenix/user-ssh-key
-        IdentitiesOnly yes
-      # ZFS passphrase prompt when the TPM unseal fails (server/initrd-ssh).
-      Host minas-tirith-initrd
-        HostName 192.168.10.1
-        Port 2222
-        User root
-        HostKeyAlias minas-tirith-initrd
-        IdentityFile /run/agenix/user-ssh-key
-        IdentitiesOnly yes
-      Host imladris
-        HostName 192.168.10.10
-        User ${host.userName}
-        IdentityFile /run/agenix/user-ssh-key
-        IdentitiesOnly yes
-    '';
+    knownHosts =
+      {
+        minas-tirith = {
+          hostNames = ["minas-tirith" "192.168.10.1"];
+          publicKeyFile = inputs.self.outPath + "/secrets/hosts/minas-tirith/ssh_host_ed25519_key.pub";
+        };
+        minas-tirith-initrd = {
+          hostNames = ["minas-tirith-initrd" "[192.168.10.1]:2222"];
+          publicKeyFile = inputs.self.outPath + "/secrets/hosts/minas-tirith/initrd_ssh_host_ed25519_key.pub";
+        };
+        imladris = {
+          hostNames = ["imladris" "192.168.10.10"];
+          publicKeyFile = inputs.self.outPath + "/secrets/hosts/imladris/ssh_host_ed25519_key.pub";
+        };
+      }
+      # Pinned from globals (sshHostPubkey), same key the --extra-files
+      # install shipped; HostKeyAlias below keeps the .local name out of it.
+      // lib.mapAttrs (n: h: {
+        hostNames = [n];
+        publicKey = h.sshHostPubkey;
+      })
+      peers;
+    extraConfig =
+      ''
+        Host minas-tirith
+          HostName 192.168.10.1
+          User ${host.userName}
+          IdentityFile /run/agenix/user-ssh-key
+          IdentitiesOnly yes
+        # ZFS passphrase prompt when the TPM unseal fails (server/initrd-ssh).
+        Host minas-tirith-initrd
+          HostName 192.168.10.1
+          Port 2222
+          User root
+          HostKeyAlias minas-tirith-initrd
+          IdentityFile /run/agenix/user-ssh-key
+          IdentitiesOnly yes
+        Host imladris
+          HostName 192.168.10.10
+          User ${host.userName}
+          IdentityFile /run/agenix/user-ssh-key
+          IdentitiesOnly yes
+      ''
+      + lib.concatStrings (lib.mapAttrsToList (n: _: ''
+          Host ${n}
+            HostName ${n}.local
+            HostKeyAlias ${n}
+            User ${host.userName}
+            IdentityFile /run/agenix/user-ssh-key
+            IdentitiesOnly yes
+        '')
+        peers);
   };
 }
