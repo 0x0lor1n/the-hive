@@ -10,6 +10,28 @@ place, so editing the script and redeploying is the way to change a setting.
 Nothing here is done in a web UI anymore. If a UI change is wanted, put it in
 `configure.py`; the next run overwrites what it owns and leaves the rest.
 
+## Datasets
+
+Created by hand on imladris before the first deploy; `fast/services` is
+snapshotted hourly and copied to warm1, `fast/downloads` (qbittorrent's
+incomplete pieces) is not.
+
+```bash
+for s in qbittorrent prowlarr radarr sonarr lidarr jellyfin; do
+  sudo zfs create -o mountpoint=legacy fast/services/$s; done
+sudo zfs create -o mountpoint=legacy -o recordsize=1M tank/media/downloads
+sudo zfs create -o mountpoint=legacy -o recordsize=1M -o quota=1T fast/downloads
+```
+
+The library is group `media` (gid 950), setgid and group-writable; tmpfiles
+fixes only the dataset roots, so a tree copied in from elsewhere needs:
+
+```bash
+cd /tank/media && sudo chgrp -R media films anime music \
+  && sudo find films anime music -type d -exec chmod 2775 {} + \
+  && sudo find films anime music -type f -exec chmod 664 {} +
+```
+
 ## What it sets
 
 | app | what |
