@@ -1,4 +1,4 @@
-# elster-only: docker, DisplayLink, btop caps. Split out when a second host
+# elster-only: docker, DisplayLink. Split out when a second host
 # wants any of it.
 {
   inputs,
@@ -29,16 +29,6 @@
   # (local_groups_reconcile_interval), same path as `hive`/`networkmanager`
   # in auth-entra.nix.
   services.himmelblau.settings.local_groups = ["dialout"];
-
-  # btop reads the i915 PMU and the card's sysfs for the Iris Xe panel; both
-  # are refused without these caps (upstream `make setcap`). /run/wrappers/bin
-  # precedes the home profile in PATH, so `btop` resolves here.
-  security.wrappers.btop = {
-    source = "${pkgs.btop}/bin/btop";
-    owner = "root";
-    group = "root";
-    capabilities = "cap_perfmon,cap_dac_read_search+ep";
-  };
 
   # DisplayLink through the nixpkgs module: it keys on the xserver driver
   # list, but everything that matters for a Wayland session (evdi module,

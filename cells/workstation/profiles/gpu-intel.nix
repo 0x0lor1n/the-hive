@@ -21,4 +21,12 @@
     # NVIDIA VGA/3D controller with no driver: allow runtime suspend.
     ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto"
   '';
+
+  # btop's GPU panel reads the i915 PMU; upstream `make setcap`.
+  security.wrappers.btop = {
+    source = "${pkgs.btop}/bin/btop";
+    owner = "root";
+    group = "root";
+    capabilities = "cap_perfmon,cap_dac_read_search+ep";
+  };
 }

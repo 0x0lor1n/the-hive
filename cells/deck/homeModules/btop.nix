@@ -1,6 +1,4 @@
-# btop: resource monitor. The GPU/CPU-wattage panels need cap_perfmon +
-# cap_dac_read_search, which a home package cannot carry -- elster grants them
-# through security.wrappers (profiles/host-elster.nix).
+# GPU/wattage panels need caps a home package can't carry: see profiles/gpu-intel.nix.
 {
   inputs,
   cell,
