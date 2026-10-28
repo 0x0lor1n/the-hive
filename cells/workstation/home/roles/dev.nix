@@ -19,6 +19,9 @@
   # module's setSocketVariable, so admin's shells keep the rootful socket.
   home.sessionVariables.DOCKER_HOST = "unix://$XDG_RUNTIME_DIR/docker.sock";
 
+  # t.me "Open in app" and tg:// links from the browser, through the portal.
+  xdg.mimeApps.defaultApplications."x-scheme-handler/tg" = "org.telegram.desktop.desktop";
+
   # Default author; the includeIf blocks (secrets, per remote glob) come
   # later in the file and override it on work remotes.
   programs.git = {
