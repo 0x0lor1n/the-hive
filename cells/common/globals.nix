@@ -75,14 +75,12 @@ in let
               # + KeePass), shipped to /persist/etc/ssh by nixos-anywhere
               # --extra-files. Never keyscanned.
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMbQt3EL0KhxSadOnWnBDKVySy843hxcCPNbUtU8pqgi root@penrose";
+              # Personal machine: one local account does everything, no
+              # employer tenant on it (no Entra login, no o/t keys or tunnels).
               accounts = [
                 {
                   auth = "local";
-                  roles = ["admin" "dev"];
-                }
-                {
-                  auth = "entra";
-                  roles = ["dev" "freelance" "employer"];
+                  roles = ["admin" "dev" "freelance"];
                 }
               ];
             };

@@ -8,10 +8,14 @@
   cell,
 }: {
   pkgs,
+  config,
   globals,
   host,
   ...
 }: {
+  # tss owns /dev/tpmrm0 (0660) when himmelblau's udev rule does not.
+  security.tpm2.enable = !config.services.himmelblau.enable;
+
   # /etc/zshenv + /run/current-system/sw/bin/zsh (also what auth-entra.nix
   # names as himmelblau's shell). Completion and prompt stay OFF here:
   # deck/homeModules/zsh.nix runs compinit through zsh-autocomplete, which must be
@@ -25,10 +29,14 @@
   users.users.${host.userName} = {
     isNormalUser = true;
     uid = globals.user.uid;
-    # himmelblaud: auth-entra.nix hands /dev/tpmrm0 to that group (Hello PIN);
-    # the local user needs it too for age-plugin-tpm (unlock-secrets / rage).
+    # /dev/tpmrm0 for age-plugin-tpm (unlock-secrets / rage): auth-entra.nix
+    # hands it to himmelblaud (Hello PIN) where there is an Entra account,
+    # security.tpm2's tss group (below) everywhere else.
     # wheel comes with the admin role (role-admin.nix).
-    extraGroups = ["himmelblaud"];
+    extraGroups =
+      if config.services.himmelblau.enable
+      then ["himmelblaud"]
+      else ["tss"];
 
     # Fleet default from the encrypted half of globals, per-host public
     # override for the playground VMs (AGENTS.md documents the passphrase).

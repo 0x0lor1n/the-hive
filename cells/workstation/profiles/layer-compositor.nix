@@ -348,27 +348,28 @@ in {
       };
     };
 
-    environment.systemPackages = [
-      cell.packages.dwl
-      # `transcribe <file>`: whisper.cpp on the iGPU (Vulkan), CPU fallbacks.
-      # `transcribe-parakeet`: faster, CPU-only, clean speech only.
-      cell.packages.transcribe
-      cell.packages.transcribe-parakeet
-      pkgs.foot
-      # By name from dwl's Super+Alt+H, and the CLI agents drive panes with.
-      cell.packages.herdr
-      pkgs.fuzzel
-      pkgs.swaylock
-      pkgs.swaybg
-      pkgs.grim
-      pkgs.slurp
-      pkgs.wl-clipboard
-      pkgs.cliphist
-      # DPMS toggle for swayidle's 600 s step (vanilla dwl has no dwl-msg).
-      pkgs.wlopm
+    environment.systemPackages =
+      [
+        cell.packages.dwl
+        # `transcribe <file>`: whisper.cpp on the iGPU (Vulkan), CPU fallbacks.
+        # `transcribe-parakeet`: faster, CPU-only, clean speech only.
+        cell.packages.transcribe
+        cell.packages.transcribe-parakeet
+        pkgs.foot
+        # By name from dwl's Super+Alt+H, and the CLI agents drive panes with.
+        cell.packages.herdr
+        pkgs.fuzzel
+        pkgs.swaylock
+        pkgs.swaybg
+        pkgs.grim
+        pkgs.slurp
+        pkgs.wl-clipboard
+        pkgs.cliphist
+        # DPMS toggle for swayidle's 600 s step (vanilla dwl has no dwl-msg).
+        pkgs.wlopm
+      ]
       # Silent M365 SSO through himmelblau's broker DBus service.
-      pkgs.microsoft-edge
-    ];
+      ++ lib.optional (entra != null) pkgs.microsoft-edge;
 
     # File manager (Super+Alt+F in packages/dwl/config.h). System-level rather
     # than home.packages: the NixOS module also wires xfconf (settings persist)
