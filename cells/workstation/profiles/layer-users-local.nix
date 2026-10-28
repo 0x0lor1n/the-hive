@@ -42,7 +42,7 @@ in {
   users.users.${host.userName} = {
     isNormalUser = true;
     uid = globals.user.uid;
-    # /dev/tpmrm0 for age-plugin-tpm (unlock-secrets / rage): auth-entra.nix
+    # /dev/tpmrm0 for age-plugin-tpm (rage): auth-entra.nix
     # hands it to himmelblaud (Hello PIN) where there is an Entra account,
     # security.tpm2's tss group (below) everywhere else.
     # wheel comes with the admin role (role-admin.nix).

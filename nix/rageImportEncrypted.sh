@@ -10,8 +10,7 @@ shift
 identities=("$@")
 
 # Cache key = content hash + plain basename, so the same ciphertext maps to the
-# same cache entry whether it is addressed via the store (eval) or the checkout
-# (`unlock-secrets` in the devshell, which primes this cache with a PIN identity).
+# same cache entry whether it is addressed via the store or the checkout.
 basename="$(basename "${file%".age"}")"
 
 new_name="$(sha512sum "$file")"
@@ -37,8 +36,7 @@ if [[ ! -e $out ]]; then
   done
   # age-plugin-tpm asks for the PIN on /dev/tty itself, so a cache miss during
   # an interactive `nix build`/`nixos-rebuild` simply prompts (oddlama-style).
-  # Only when there is no controlling tty (agents, CI, sudo without a tty) does
-  # this fail — then say what to do instead of dumping a rage trace.
+  # Without a tty (agents, CI) it fails; say why instead of dumping a rage trace.
   ok=0
   for i in "${ordered[@]}"; do
     if rage --decrypt --identity "$i" --output "$out" "$file"; then
@@ -50,7 +48,7 @@ if [[ ! -e $out ]]; then
   if [[ $ok == 0 ]]; then
     if ! { : </dev/tty; } 2>/dev/null; then
       echo "secrets: no cached plaintext for $(basename "$file") (UID $UID) and no tty to ask the TPM PIN on." >&2
-      echo '  run `unlock-secrets` from an interactive shell (same user, no sudo), then retry.' >&2
+      echo '  eval it from an interactive shell (same user, no sudo).' >&2
     fi
     exit 1
   fi

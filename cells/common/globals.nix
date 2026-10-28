@@ -13,8 +13,7 @@
 
   # PIN identities of the two workstations; rageImportEncrypted.sh tries the
   # one named after the running host first and stops there when it works, so
-  # the foreign TPM is never touched. Plaintext is cached by ciphertext hash
-  # (unlock-secrets primes it without a tty).
+  # the foreign TPM is never touched. Plaintext is cached by ciphertext hash.
   identities = [
     (flakeRoot + "/secrets/penrose-nix-rage.pub")
     (flakeRoot + "/secrets/elster-nix-rage.pub")

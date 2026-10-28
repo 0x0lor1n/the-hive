@@ -125,7 +125,7 @@ side (domain, cert, secrets, firewall).
 
 Two planes on a workstation: the local user (`layer-users-local`) holds the
 checkout, the TPM identities (`himmelblaud` group), `wheel` and nix
-trusted-users -- it is the only account that can `unlock-secrets` or rebuild.
+trusted-users -- it is the only account that can decrypt eval-time secrets or rebuild.
 The Entra user is desktop-only (no `wheel`, no TPM); untrusted apps there run
 under nixpak (`cells/workstation/packages.nix`).
 

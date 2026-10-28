@@ -15,7 +15,7 @@ in {
 
   # Eval-time plaintext of secrets/globals.nix.age (nix/rageImportEncrypted.sh).
   # Keyed by ciphertext hash, so a changed secret misses the cache and needs one
-  # TPM PIN (prompted by eval itself, or via `unlock-secrets` without a tty);
+  # TPM PIN (prompted by eval itself);
   # an unchanged one never touches the TPM again. Persisted so a reboot does
   # not force the PIN either. Accepted risk: 0700 to admin, the only account
   # that can rebuild anyway (trusted-users, checkout, PIN identity), and the

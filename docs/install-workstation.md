@@ -174,8 +174,7 @@ VMs, it is not a config bug.
   (`/var/tmp/nix-import-encrypted`, ciphertext-hash keyed, 0700 local user)
   is persisted, so the TPM PIN is asked once per *change* of
   `globals.nix.age`, never per boot. On a cache miss `nixos-rebuild` prompts
-  for the PIN itself (age-plugin-tpm uses `/dev/tty`); `unlock-secrets` is the
-  same decrypt for shells without a tty (agents, CI, `sudo` from a script).
+  for the PIN itself (age-plugin-tpm uses `/dev/tty`).
 - **Slack lost its login across reboots with only `~/.config/Slack` persisted.**
   Now sandboxed (nixpak, `cells/workstation/packages/sandboxed.nix`): every path Electron may write
   (`~/.config`, `~/.local/share`, `~/.cache`) is mapped into the single

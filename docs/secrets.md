@@ -44,13 +44,8 @@ order above, cache the plaintext in `/var/tmp/nix-import-encrypted/$UID/`
 keyed by ciphertext hash, `import` it. The cache is persisted, so the TPM PIN
 is asked once per change of an `.age` file, not per eval.
 
-On a cache miss with a tty, eval prompts for the PIN itself. Without one
-(agents, `sudo` without a terminal) it fails with a hint; prime the cache
-first:
-
-```bash
-unlock-secrets      # globals.nix.age + roles/*.nix.age, this host's TPM PIN
-```
+On a cache miss eval prompts for the PIN on the tty; without one (agents,
+`sudo` without a terminal) it fails.
 
 `sudo` drops `NIX_CONFIG`; use `--preserve-env=NIX_CONFIG` or `nixos-rebuild
 --sudo`. Only the local user can decrypt: the Entra account has no TPM access.
