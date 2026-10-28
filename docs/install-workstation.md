@@ -140,6 +140,19 @@ to find the unsigned component.
   use `wpa_supplicant` directly.
 - The Intune compliance script matches by ZFS/LUKS state, not by disk name — don't
   "fix" it to look for `nvme0n1p3`.
+- `Corrupted page table` / `Bad page map` in several processes, or an Oops in
+  `dbuf_find [zfs]`, during the closure copy = bad RAM, not ZFS. Run memtest86+
+  from the ISO boot menu before retrying.
+- Moving `/srv/*` from another host: `zfs recv -F` refuses to overwrite the
+  empty encrypted datasets disko made. `zfs destroy` them, then plain
+  `zfs send @snap | sudo zfs recv -u` (no `-w`: data re-encrypts under this
+  host's key) and `zfs set mountpoint=legacy` (properties don't travel without
+  `-p`). A busy `/srv/the-hive` is usually a shell (or zsh-histdb's sqlite3)
+  with cwd inside it.
+- After that send, `rm -rf /srv/the-hive/.ren/direnv` before `direnv allow`:
+  the cached profile points at the sender's `/nix/store/...-source`.
+- Rebuild only from the devshell (`direnv allow` once per fresh home):
+  plain shell → `builtins.extraBuiltins is missing`.
 
 ## 7. Intune (himmelblau)
 Login with Entra creds on the greeter; the device enrolls on first login. Compliance
