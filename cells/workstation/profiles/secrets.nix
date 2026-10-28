@@ -99,7 +99,7 @@ in {
         identity = "${flakeRoot}/secrets/penrose-nix-rage.pub";
         # Required for TPM identities: age-plugin-tpm cannot derive the
         # recipient from the identity file without touching the TPM.
-        pubkey = "age1tag1q2ggf943ppzwpqwcf39m0r3ztj3vzg6yap2e3tewda7m7k6k0cxdv9dramt";
+        pubkey = "age1tag1qvf8ljm22ptzg3yp5zdq7jqmjpy5svx2rykgwg0fxzcsmg0jp655vhud8fr";
       }
       {
         identity = "${flakeRoot}/secrets/elster-nix-rage.pub";
