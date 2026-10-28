@@ -13,16 +13,18 @@
 
   programmer = "ft2232_spi:type=2232H,port=A,divisor=8";
 
+  # Default board is xeon (LA-E152P, the port target). i7u = the spare board,
+  # only for optional recon of the old board; pass BOARD=i7u explicitly for it.
   prologue = ''
     # shellcheck disable=SC2034
     root=$(git rev-parse --show-toplevel)
-    recon="$root/cells/wintermute/recon/''${BOARD:-i7u}"
+    recon="$root/cells/wintermute/recon/''${BOARD:-xeon}"
     mkdir -p "$recon"
   '';
 
   # Phase 0.1: everything readable from the running stock system. Run as root
-  # on the target BEFORE teardown. Free, ~15 min, and the Boot Guard answer
-  # here decides whether the project continues.
+  # on the target BEFORE teardown. Free, ~15 min. Boot Guard here no longer
+  # decides go/no-go: fused + ME v11 (Kaby Lake) => deguard bypasses it.
   recon = pkgs.writeShellApplication {
     name = "recon";
     runtimeInputs = with pkgs; [git coreutils util-linux coreboot-utils msr-tools dmidecode pciutils usbutils acpica-tools kmod];
@@ -57,12 +59,16 @@
         rm -f acpi.dat
         chown -R "''${SUDO_UID:-0}:''${SUDO_GID:-0}" "$recon"
         echo "recon: written to $recon"
-        echo "recon: now READ intelmetool-b.txt — Boot Guard fused/verified => stop."
+        echo "recon: Boot Guard fused/verified is NOT a stop — if ME is v11 (Kaby Lake), deguard bypasses it."
       '';
   };
 
-  # Phase 0.4: two reads + cmp, or nothing. Chip autodetect first; if flashrom
+  # Phase 1: two reads + cmp, or nothing. Chip autodetect first; if flashrom
   # sees several candidates, pass CHIP=W25Q128.V etc.
+  # POWER: board fully unpowered (no AC/battery/CMOS/USB-C). Clip VCC must come
+  # from an EXTERNAL current-limited 3.3 V, NOT from ESP-Prog — it back-powers
+  # +3.3V_ALW_PCH through UZ3 and the PCH fights the bus (garbage reads =>
+  # that is why; lower divisor / reseat / check idle current, sch/spi-ec.md 50).
   dump = pkgs.writeShellApplication {
     name = "dump";
     runtimeInputs = with pkgs; [git coreutils flashrom diffutils];
@@ -204,11 +210,11 @@ in {
     shellHook = ''
       export COREBOOT_SRC=${inputs.coreboot}
       export FLASHROM_PROGRAMMER="${programmer}"
-      echo "wintermute: LA-E152P firmware shell (BOARD=''${BOARD:-i7u}; set BOARD=xeon for the new board)"
-      echo "  sudo --preserve-env=BOARD recon   phase 0.1: live-system recon -> cells/wintermute/recon/\$BOARD/"
-      echo "  dump                              phase 0.4: 2x SPI read + cmp via ESP-Prog"
-      echo "  inspect <stock.bin>               phase 0.5: ifdtool layout/regions, me_cleaner -c"
-      echo "  flash-bios <coreboot.rom>         phase 1.5: write BIOS region only"
+      echo "wintermute: LA-E152P firmware shell (BOARD=''${BOARD:-xeon}; set BOARD=i7u for the old spare board)"
+      echo "  sudo --preserve-env=BOARD recon   phase A: live-system recon -> cells/wintermute/recon/\$BOARD/"
+      echo "  dump                              phase 1: 2x SPI read + cmp via ESP-Prog (EXTERNAL 3.3 V to clip!)"
+      echo "  inspect <stock.bin>               phase 1.5: ifdtool layout/regions, me_cleaner -c"
+      echo "  flash-bios <coreboot.rom>         phase 3: write BIOS region only (after deguard, phase D)"
       echo "  coreboot src: \$COREBOOT_SRC (read-only; cp -r to work on it)"
     '';
   };
