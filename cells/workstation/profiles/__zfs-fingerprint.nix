@@ -3,7 +3,8 @@
 #
 # Derives a fingerprint from a locked pool's on-disk crypto metadata:
 # MOS object 1 -> root_dataset -> com.datto:crypto_key_obj ->
-# DSL_CRYPTO_GUID + DSL_CRYPTO_MAC, hashed together. Readable via zdb without
+# DSL_CRYPTO_GUID + DSL_CRYPTO_MAC, hashed together (the MAC changes on every
+# `zfs change-key`, so an old wrapped key refuses to unseal). Readable via zdb without
 # the encryption key, which is the point: hardware-zfs-unlock.nix extends
 # PCR 15 before unsealing, so a swapped pool makes the TPM refuse the key.
 #

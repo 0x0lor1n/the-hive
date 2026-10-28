@@ -99,6 +99,8 @@ nixos-install → reboot.
   `ssh -o IdentitiesOnly=yes -i ~/.ssh/id_ed25519 <user>@<ip>` — without
   `IdentitiesOnly` the agent burns through `MaxAuthTries` before it gets to the
   right key. Put it in `~/.ssh/config` as `Host penrose`.
+- As the local user: `git clone <this repo> /srv/the-hive` (dataset from disko),
+  then `sudo systemd-tmpfiles --create` to apply its owner and ACL.
 - Sanity check: `bootctl status | grep 'Secure Boot'` → `enabled (user)`,
   `zfs get keystatus rpool` → `available`, `systemctl --failed` → empty.
 
