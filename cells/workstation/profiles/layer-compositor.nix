@@ -30,11 +30,22 @@
     desktop,
     secrets ? {},
     startDir ? null,
+    canonicalHome ? null,
   }:
     import ../home {
       inherit userName homeDir theme roles desktop secrets startDir;
       roleInputs = {
-        inherit (cell) packages;
+        # nixpak apps bind the account's own canonical home
+        # (packages/sandboxed.nix), so they are built per account.
+        packages =
+          cell.packages
+          // import ../packages/sandboxed.nix {
+            # The cell's package set, as packages.nix: the host pkgs carries
+            # extra overlays and would rebuild both apps.
+            inherit inputs canonicalHome;
+            inherit (inputs) pkgs;
+            inherit (inputs.pkgs) lib;
+          };
         inherit (globals.user) git;
       };
       deck = inputs.cells.deck.homeModules;
@@ -51,6 +62,11 @@
       homeDir = a.home;
       inherit (a) roles desktop;
       secrets = userSecrets a.roles;
+      # $HOME is the /home/<cn> alias; the real directory is /home/<upn>.
+      canonicalHome =
+        if a.auth == "entra"
+        then "/home/${globals.entra.user.upn}"
+        else null;
       # admin exists to rebuild the fleet; the checkout is where it works.
       # Only reached by tty/ssh/`su -` -- foot lands in tmux, which sesh
       # already opens at the same path.

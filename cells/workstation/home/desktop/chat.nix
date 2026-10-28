@@ -1,5 +1,5 @@
-# Chat clients outside the nixpak set (packages.nix has slack + telegram for
-# the Entra home).
+# Chat clients outside the nixpak set (packages/sandboxed.nix: telegram for
+# roles/dev.nix, slack for roles/employer.nix).
 #
 # Both stay unsandboxed:
 # - simplex-chat-desktop is an AppImage under appimageTools.wrapType2, i.e.

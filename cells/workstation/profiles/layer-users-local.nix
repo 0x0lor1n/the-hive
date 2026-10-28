@@ -8,11 +8,15 @@
   cell,
 }: {
   pkgs,
+  lib,
   config,
   globals,
   host,
   ...
-}: {
+}: let
+  roles = (lib.findFirst (a: a.auth == "local") {roles = [];} config.hive.accounts).roles;
+  has = role: lib.elem role roles;
+in {
   # tss owns /dev/tpmrm0 (0660) when himmelblau's udev rule does not.
   security.tpm2.enable = !config.services.himmelblau.enable;
 
@@ -64,81 +68,93 @@
   # /persist/<homeDir>/<...>. Declared here, not in storage-impermanence: it
   # names the account this file creates.
   environment.persistence."/persist".users.${host.userName} = {
-    directories = [
-      # sshd refuses keys at anything looser than 0700.
-      {
-        directory = ".ssh";
-        mode = "0700";
-      }
-      # The fleet repo checkout: what `nixos-rebuild --flake .#<host>` runs from.
-      "the-hive"
-      # direnv's allow-list, so `cd the-hive` does not re-prompt every boot.
-      ".local/share/direnv"
-      # Agent state: hermes config/sessions/skills; claude credentials +
-      # settings, and ~/.claude.json too via CLAUDE_CONFIG_DIR (layer-session).
-      # 0700: both hold API keys.
-      {
-        directory = ".hermes";
-        mode = "0700";
-      }
-      {
-        directory = ".claude";
-        mode = "0700";
-      }
-      # cli/dev state — keep in sync with the Entra allowlist in auth-entra.nix.
-      ".local/share/zsh"
-      # zoxide's frecency db (db.zo) — empty after every boot otherwise.
-      ".local/share/zoxide"
-      # tmux-resurrect snapshots (prefix+C-s), restored with prefix+C-r.
-      ".local/share/tmux/resurrect"
-      # lazygit state.yml: recent repos, dismissed startup popups. Without it
-      # every first lazygit after boot behaves like a fresh install.
-      ".local/state/lazygit"
-      # neovim state: lazy.nvim plugin clones (~110 repos), mason binaries,
-      # compiled treesitter parsers. Nothing authoritative (lazy-lock.json
-      # pins it), but without it every first nvim after boot re-clones and
-      # re-compiles for minutes.
-      ".local/share/nvim"
-      # whisper.cpp + Parakeet models (transcribe), ~1 GB, fetched from HF.
-      ".local/share/asr-models"
-      # Whole ~/.cache: powerlevel10k hardcodes its dump/instant-prompt files
-      # to $XDG_CACHE_HOME root (typeset -gr, no override), and without them
-      # the first zsh after boot pays ~10 s (measured 2026-09-14). Nothing
-      # here is authoritative — every app rebuilds its cache on miss.
-      ".cache"
-      # Firefox profile dir -- see the same entry in auth-entra.nix.
-      # Firefox 154+ uses XDG_CONFIG_HOME/mozilla instead of ~/.mozilla.
-      ".config/mozilla"
-      ".config/opencode"
-      {
-        directory = ".local/share/opencode";
-        mode = "0700";
-      }
-      # home/desktop/chat.nix (unsandboxed): Mattermost is Electron
-      # (~/.config/<productName>), SimpleX keeps its db under XDG_DATA_HOME.
-      ".config/Mattermost"
-      ".local/share/simplex"
-      # home/desktop/music: mpd db, queue/state, playlists.
-      ".local/share/mpd"
-      # home/desktop/keepass.nix: settings (.config) and the vault itself
-      # (.local/share/keepassxc/*.kdbx). Recent-db list is under .cache.
-      ".config/keepassxc"
-      {
-        directory = ".local/share/keepassxc";
-        mode = "0700";
-      }
-      # home/desktop/torrent.nix: settings, resume data (BT_backup).
-      ".config/qBittorrent"
-      ".local/share/qBittorrent"
-      # home/dev/agents.nix: herdr keeps session.json (workspaces, cwds,
-      # agent names + native session ids) in .config/herdr, next to the
-      # config.toml symlink and the sockets. Without it every reboot starts
-      # with one empty workspace. resume_agents_on_restore is on by default,
-      # so hermes/claude/opencode panes come back with `--resume <id>`.
-      # .local/state/herdr: agent-detection cache, cheap to keep.
-      ".config/herdr"
-      ".local/state/herdr"
-    ];
+    directories =
+      [
+        # sshd refuses keys at anything looser than 0700.
+        {
+          directory = ".ssh";
+          mode = "0700";
+        }
+        # The fleet repo checkout: what `nixos-rebuild --flake .#<host>` runs from.
+        "the-hive"
+        # direnv's allow-list, so `cd the-hive` does not re-prompt every boot.
+        ".local/share/direnv"
+        # Agent state: hermes config/sessions/skills; claude credentials +
+        # settings, and ~/.claude.json too via CLAUDE_CONFIG_DIR (layer-session).
+        # 0700: both hold API keys.
+        {
+          directory = ".hermes";
+          mode = "0700";
+        }
+        {
+          directory = ".claude";
+          mode = "0700";
+        }
+        # cli/dev state — keep in sync with the Entra allowlist in auth-entra.nix.
+        ".local/share/zsh"
+        # zoxide's frecency db (db.zo) — empty after every boot otherwise.
+        ".local/share/zoxide"
+        # tmux-resurrect snapshots (prefix+C-s), restored with prefix+C-r.
+        ".local/share/tmux/resurrect"
+        # lazygit state.yml: recent repos, dismissed startup popups. Without it
+        # every first lazygit after boot behaves like a fresh install.
+        ".local/state/lazygit"
+        # neovim state: lazy.nvim plugin clones (~110 repos), mason binaries,
+        # compiled treesitter parsers. Nothing authoritative (lazy-lock.json
+        # pins it), but without it every first nvim after boot re-clones and
+        # re-compiles for minutes.
+        ".local/share/nvim"
+        # whisper.cpp + Parakeet models (transcribe), ~1 GB, fetched from HF.
+        ".local/share/asr-models"
+        # Whole ~/.cache: powerlevel10k hardcodes its dump/instant-prompt files
+        # to $XDG_CACHE_HOME root (typeset -gr, no override), and without them
+        # the first zsh after boot pays ~10 s (measured 2026-09-14). Nothing
+        # here is authoritative — every app rebuilds its cache on miss.
+        ".cache"
+        # Firefox profile dir -- see the same entry in auth-entra.nix.
+        # Firefox 154+ uses XDG_CONFIG_HOME/mozilla instead of ~/.mozilla.
+        ".config/mozilla"
+        ".config/opencode"
+        {
+          directory = ".local/share/opencode";
+          mode = "0700";
+        }
+        # home/desktop/chat.nix (unsandboxed): Mattermost is Electron
+        # (~/.config/<productName>), SimpleX keeps its db under XDG_DATA_HOME.
+        ".config/Mattermost"
+        ".local/share/simplex"
+        # home/desktop/music: mpd db, queue/state, playlists.
+        ".local/share/mpd"
+        # home/desktop/keepass.nix: settings (.config) and the vault itself
+        # (.local/share/keepassxc/*.kdbx). Recent-db list is under .cache.
+        ".config/keepassxc"
+        {
+          directory = ".local/share/keepassxc";
+          mode = "0700";
+        }
+        # home/desktop/torrent.nix: settings, resume data (BT_backup).
+        ".config/qBittorrent"
+        ".local/share/qBittorrent"
+        # home/dev/agents.nix: herdr keeps session.json (workspaces, cwds,
+        # agent names + native session ids) in .config/herdr, next to the
+        # config.toml symlink and the sockets. Without it every reboot starts
+        # with one empty workspace. resume_agents_on_restore is on by default,
+        # so hermes/claude/opencode panes come back with `--resume <id>`.
+        # .local/state/herdr: agent-detection cache, cheap to keep.
+        ".config/herdr"
+        ".local/state/herdr"
+      ]
+      # The role's apps (home/roles/*.nix); nixpak keeps each app's state under
+      # one Flatpak-style dir. Same list as the Entra side in auth-entra.nix.
+      ++ lib.optionals (has "dev") [
+        ".var/app/org.telegram.desktop"
+        ".local/share/Grayjay"
+      ]
+      ++ lib.optionals (has "employer") [
+        ".var/app/com.slack.Slack"
+        # Horizon: server list, prefs, plus the gm sign-in Chromium profile.
+        ".omnissa"
+      ];
     files = [".bash_history"];
   };
 

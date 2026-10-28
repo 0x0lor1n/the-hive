@@ -12,4 +12,7 @@
   # SharePoint/Word/Excel/PowerPoint links open in the o365 app, the rest
   # fall through to Firefox. An account without SSO would get a login wall.
   xdg.mimeApps.defaultApplications."x-scheme-handler/https" = "o365-url-handler.desktop";
+  # slack.com hands the SSO token to the app through a slack:// link that
+  # must route to the (sandboxed) Slack entry, not the browser.
+  xdg.mimeApps.defaultApplications."x-scheme-handler/slack" = "slack.desktop";
 }

@@ -12,6 +12,7 @@
   lib,
   pkgs,
   theme,
+  accountRoles,
   ...
 }: let
   r = theme.roles;
@@ -105,9 +106,15 @@
         "$colorsPath" "$pinsPath" $out
     '';
 in {
-  xdg.configFile = {
-    "chat-themes/slack.txt".text = slack + "\n";
-    "chat-themes/mattermost.json".source = (pkgs.formats.json {}).generate "mattermost-kanagawa.json" mattermost;
-    "chat-themes/kanagawa.tdesktop-theme".source = telegram;
-  };
+  # Each app's theme only where the role ships the app (roles/*.nix).
+  xdg.configFile =
+    {
+      "chat-themes/mattermost.json".source = (pkgs.formats.json {}).generate "mattermost-kanagawa.json" mattermost;
+    }
+    // lib.optionalAttrs (lib.elem "employer" accountRoles) {
+      "chat-themes/slack.txt".text = slack + "\n";
+    }
+    // lib.optionalAttrs (lib.elem "dev" accountRoles) {
+      "chat-themes/kanagawa.tdesktop-theme".source = telegram;
+    };
 }
