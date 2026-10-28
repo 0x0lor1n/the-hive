@@ -1,18 +1,5 @@
-# Hot backup tier on imladris: `tank/backups` is the landing zone for every
-# copy that is not media. Nightly, rpool/safe is copied there locally; the
-# router pushes its own rpool/{safe,logs} as user `backup` (backup-push.nix).
-# warm-backup then carries tank/backups to warm1 with the rest.
-#
-# Datasets and the push user's rights, by hand on the live host (not disko,
-# same as `fast`/`warm1`):
-#
-#   sudo zfs create -o mountpoint=none tank/backups
-#   sudo zfs create -o mountpoint=none tank/backups/imladris
-#   sudo zfs create -o mountpoint=none tank/backups/minas-tirith
-#   sudo zfs allow -u backup create,mount,receive,destroy,rollback,snapshot,hold tank/backups/minas-tirith
-#
-# snapshot-age: newest sanoid snapshot per dataset, for SnapshotStale and
-# the dashboard; received copies under tank/backups are listed too.
+# Hot backup tier on imladris: rpool/safe and the router's push land in
+# tank/backups (docs/monitoring.md).
 {
   inputs,
   cell,

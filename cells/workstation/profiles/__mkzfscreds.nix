@@ -1,19 +1,5 @@
-# Seals a ZFS passphrase into a systemd credential bound to the PCR 15 value
-# that hardware-zfs-unlock.nix will produce on the next boot, with the
-# fingerprint and PCR prediction computed in-process.
-#
-# Derived from shinasada/nix-config (modules/apps/mkzfscreds/flake-parts.nix),
-# itself built on codgician/mkcreds. Upstream is a flake-parts `perSystem`
-# module; this repo must not retreat to flake-parts (AGENTS.md), so the shell
-# body is lifted into a plain function returning the package.
-#
-# Three divergences from upstream, each documented at its own call site: the
-# default PCR set, how the PCR spec string is built, and passing mkcreds
-# --name (without which nothing this produces can be decrypted by
-# hardware-zfs-unlock.nix).
-#
-# `__` prefix keeps the profiles/default.nix loader from picking this up as a
-# profile — it's a plain function, not a NixOS module.
+# Seals a ZFS passphrase to the PCR 15 value hardware-zfs-unlock.nix will
+# produce. From shinasada/nix-config; divergences marked inline.
 {
   pkgs,
   zfsPackage,

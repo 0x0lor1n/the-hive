@@ -78,8 +78,11 @@ backup stamp only moves on success, so a failed run shows as an old stamp.
 stale temperatures disappear instead of freezing. `net-speed-probe` keeps the
 last good result per peer in `/var/lib/net-speed-probe`; the dashboard hides
 results older than two days. Peers: imladris (iperf3 over the DAC), Vontar
-(static iperf3 on the box itself, outside this repo, see the header of
-`monitoring-probes.nix`), `salt` (Ookla to Wingo Lausanne).
+(static iperf3 on the box itself, see [Setup by hand](#setup-by-hand)),
+`salt` (Ookla to Wingo Lausanne: Salt's own server 41691 drops Ookla's
+socket, and speedtest-go tops out near 0.8 Gbit/s on this line where Ookla
+measures 8). A run moves ~22 GB over the DAC, ~1 GB to the Vontar and ~12 GB
+of WAN, counted in the dashboard's "transferred".
 
 ## Alerts
 
@@ -179,11 +182,47 @@ imladris by hand, unload it again (`zfs unload-key -r
 tank/backups/minas-tirith`).
 
 The push user `backup` on imladris has a `restrict`ed key (no pty, no
-forwarding) and `zfs allow` on `tank/backups/minas-tirith` only; see the
-header of `backup-hot.nix` for the hand-made datasets and the `zfs allow`
-line.
+forwarding) and `zfs allow` on `tank/backups/minas-tirith` only; see
+[Setup by hand](#setup-by-hand).
 
 ## Storage
 
 Prometheus: 30 d retention on `rpool/logs/prometheus` (quota 20 G). After two
 days it holds 84 MB for about 7700 series, so 30 d lands near 1.3 G.
+
+## Setup by hand
+
+Not disko-managed; once per host before the first deploy.
+
+Router, monitoring state (`disks/minas-tirith.nix` mounts them):
+
+```bash
+zfs create -o mountpoint=legacy -o quota=20G rpool/logs/prometheus
+zfs create -o mountpoint=legacy -o quota=5G  rpool/logs/grafana
+zfs create -o mountpoint=legacy -o quota=2G  rpool/logs/ntfy-sh
+```
+
+imladris, hot backup landing zone and the push user's rights:
+
+```bash
+sudo zfs create -o mountpoint=none tank/backups
+sudo zfs create -o mountpoint=none tank/backups/imladris
+sudo zfs create -o mountpoint=none tank/backups/minas-tirith
+sudo zfs allow -u backup create,mount,receive,destroy,rollback,snapshot,hold tank/backups/minas-tirith
+```
+
+ntfy publisher password: one agenix-rekey generator (`agenix generate &&
+agenix rekey`); ntfy gets it as a bcrypt hash through its env file, the
+Alertmanager bridge in clear. The phone subscribes over its own yggdrasil
+peering (its key in `site.yggdrasil.allowedPublicKeys`): ygg0 gets the
+Grafana and ntfy ports, the WAN gets nothing.
+
+Vontar X5 iperf3 server (rooted Android, no Nix). A box reset loses it; the
+probe then writes no vontar speed:
+
+```bash
+nix build --impure --expr '(import <nixpkgs> {}).pkgsCross.aarch64-multiplatform.pkgsStatic.iperf3'
+adb push result/bin/iperf3 /data/local/tmp/iperf3
+# /data/adb/service.d/iperf3.sh (Magisk, root, after boot_completed):
+#   exec /data/local/tmp/iperf3 -s -D -p 5201 --logfile /data/local/tmp/iperf3.log
+```

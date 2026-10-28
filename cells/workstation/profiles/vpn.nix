@@ -1,23 +1,5 @@
-# The `vpn` CLI over every on-demand tunnel on the host. Tunnels themselves
-# come from the role that needs them, registered in hive.tunnels:
-#
-#   vpn-o      wireguard  wg-quick-o.service   employer   role-employer.nix
-#   vpn-t      openvpn    openvpn-t.service    employer   role-employer.nix
-#   vpn-w      openvpn    openvpn-w.service    freelance  role-freelance.nix
-#   yggdrasil  yggstack   yggstack.service     any        ygg-client.nix
-#
-# Letters, not names: which organisation sits behind each lives only in the
-# encrypted halves (secrets/*.age, secrets/roles/*.nix.age). Every credential
-# is an age.secret in /run/agenix (root, 0400), never a world-readable store
-# file.
-#
-# networkmanager (Entra via himmelblau local_groups, auth-entra.nix) and
-# wheel may start/stop exactly these units. wheel alone is auth_admin_keep on
-# manage-units, i.e. a password prompt on every `vpn up`, hence the explicit
-# grant. Routing is host-global: a tunnel raised by one account carries the
-# other's traffic too.
-#
-# `vpn up|down|status <name>` wraps systemctl for every account.
+# `vpn up|down|status <name>` over hive.tunnels (role-*.nix, ygg-client.nix).
+# Routing is host-global: one account's tunnel carries the other's traffic.
 {
   pkgs,
   lib,

@@ -1,14 +1,5 @@
-# Native ZFS encryption + TPM2 pre-unseal gate. Enables zfsUnlock
-# (hardware-zfs-unlock.nix) for the pre-unseal PCR 15 gate + anti-replay.
-#
-# Bootstrap needs no configuration and no rebuild: with no credential on
-# the ESP the fingerprint still extends into PCR 15 every boot, the unseal
-# is skipped, and the boot falls through to the ZFS passphrase prompt.
-# zfs-key-sync.service below then seals one on first boot, and the next
-# boot is silent.
-#
-# Two-level `{ inputs, cell }:` shape so the returned NixOS module can
-# reference `inputs.mkcreds` below.
+# ZFS encryption + PCR 15 gate. With no credential the boot asks for the
+# passphrase and zfs-key-sync seals one.
 {
   inputs,
   cell,

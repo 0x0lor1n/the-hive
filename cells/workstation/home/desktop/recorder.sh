@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
-# recorder: screen recording with wl-screenrec -> ~/Videos/Recordings/*.mp4.
-# Ported from wochap/nix-config wayland-utils/scripts/recorder.sh minus the
-# hyprctl screen_shader dance (no such thing under dwl).
-#
-#   recorder --now | --in5 | --area     start (or stop, if one is running)
-#   recorder --status                   "true"/"false": is a recording active
-#   recorder --listen                   same, re-printed on every change
-#
-# One recording at a time: $stopfile holds the wl-screenrec pid while it
-# runs, so a second invocation from the same keybind stops the first (SIGINT
-# lets wl-screenrec finalize the mp4). The bar polls --status.
+# recorder --now|--in5|--area (toggles) | --status | --listen. SIGINT lets
+# wl-screenrec finalize the mp4.
 
 stopfile="${XDG_RUNTIME_DIR:-/tmp}/recorder.pid"
 time=$(date +%Y-%m-%d_%H-%M-%S)

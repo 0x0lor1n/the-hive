@@ -130,19 +130,8 @@ in
           mountpoint = "/persist";
           options.mountpoint = "legacy";
         };
-        # /srv is on the rolled-back root, so each shared tree is its own
-        # dataset (no impermanence bind mount for tens of GB). safe/srv is a
-        # container; the-hive is the ONE config checkout both accounts read
-        # (dotfiles/ group-writable, see profiles/srv-the-hive.nix).
-        # /srv/workspace: shared project clones, work/ and projects/ inside
-        # (profiles/srv-workspace.nix).
-        #
-        # On an already installed host disko does not create these: add here
-        # for reproducibility AND run once by hand
-        #   zfs create -o canmount=off -o mountpoint=none rpool/safe/srv
-        #   zfs create -o mountpoint=legacy rpool/safe/srv/the-hive
-        #   zfs create -o mountpoint=legacy rpool/safe/srv/workspace
-        #   zfs create -o mountpoint=legacy rpool/safe/srv/agents
+        # /srv trees are datasets so they survive the rollback; on an installed
+        # host zfs-ensure-datasets creates them.
         "safe/srv" = {
           type = "zfs_fs";
           options = {

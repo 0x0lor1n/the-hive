@@ -1,14 +1,5 @@
-# Desktop apps behind bwrap + xdg-dbus-proxy (nixpak), built per account:
-# layer-compositor.nix calls this from mkAccount, packages.nix with the
-# defaults for `nix build`.
-#
-# canonicalHome: an Entra account's $HOME is the /home/<cn> alias himmelblau
-# creates (auth-entra.nix); the real directory is /home/<upn>. Anything that
-# canonicalises before handing a path over (GIO: Thunar's cwd, hence
-# drag-and-drop URIs) names /home/<upn>, which doesn't exist in the sandbox:
-# bwrap mounts $HOME/... as a plain directory tree, the alias is no symlink
-# inside, so the shared dirs are bound at that name too. null for an account
-# whose $HOME is the real path (local).
+# nixpak apps, built per account. canonicalHome: GIO resolves the Entra $HOME
+# alias to /home/<upn>, so binds repeat there.
 {
   inputs,
   pkgs,
@@ -76,19 +67,8 @@
                   [(sloth.mkdir sloth.appDataDir) sloth.xdgDataHome]
                   [(sloth.mkdir sloth.appCacheDir) sloth.xdgCacheHome]
                   (sloth.mkdir sloth.xdgDownloadDir)
-                  # Same dir under canonicalHome (see the header). Assumes the
-                  # default ~/Downloads: there is no user-dirs.dirs.
-                  # /tmp: bwrap starts from an empty root and nixpak adds none.
-                  # Chromium/Electron keeps its SingletonSocket there (Qt its
-                  # lock/IPC files); without it the main process hangs before
-                  # mapping a window. It must be the same directory for every
-                  # instance of one app: a URL-handler launch (browser ->
-                  # slack://) is a second instance that must reach the first
-                  # over that socket. With a private tmpfs the symlink dangles
-                  # and the lock's pid is invisible from the new pid namespace,
-                  # so Chromium treats it as stale and opens a second, empty
-                  # window. A per-appId dir under XDG_RUNTIME_DIR, as Flatpak
-                  # does it.
+                  # /tmp per appId, not private: a slack:// launch must reach
+                  # the running SingletonSocket.
                   [(sloth.mkdir (sloth.concat' sloth.runtimeDir "/app/${appId}/tmp")) "/tmp"]
                   # Document portal: for a caller with an app id the FileChooser
                   # portal doesn't return the real path but registers the pick

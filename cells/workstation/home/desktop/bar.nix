@@ -1,15 +1,5 @@
-# waybar: the status bar. Tags are display only (switched from the keyboard,
-# never clicked) and there is no dwl-ipc patch: tags/layout/mode/title come
-# from dwl's own `-s` status pipe through dwl-status
-# (profiles/layer-compositor.nix), which writes $XDG_RUNTIME_DIR/dwl/<field>
-# and pokes waybar with SIGRTMIN+1. Recorder (recorder.nix) pokes SIGRTMIN+2.
-#
-# Starts as an HM user unit on graphical-session.target, same as mako/
-# swayidle/avizo -- the dwl-session-bridge unit pulls it in, so it must not
-# also start from the dwl startup script. Super+B sends SIGUSR1 (toggle).
-#
-# Modules that read hardware that is not there (coretemp, intel_backlight,
-# BAT0 in the VM) fail to construct and waybar logs and skips them.
+# waybar on dwl's `-s` pipe via dwl-status (layer-compositor.nix), no dwl-ipc
+# patch. Started by graphical-session.target, not the dwl startup script.
 {
   pkgs,
   lib,

@@ -1,23 +1,5 @@
-# Prometheus + Alertmanager + Grafana + ntfy on the router: the one host that
-# is always up and is already the LAN/yggdrasil junction. Scrapes the
-# exporters from monitoring-exporters.nix (imladris) and its own; osgiliath is
-# only probed (tcp :22) -- a public box gets no new open port.
-#
-# Reachability: Prometheus/Alertmanager/bridge bind loopback; Grafana and ntfy
-# bind everything and the firewall decides -- br-lan is trusted
-# (net-router-wan.nix), ygg0 gets the two ports here, the WAN gets nothing.
-# The phone subscribes over its own yggdrasil peering (its key goes into
-# site.yggdrasil.allowedPublicKeys), so alerts arrive off-LAN too.
-#
-# State: three `rpool/logs/*` datasets (disks/minas-tirith.nix), created by
-# hand on the live host before the first apply:
-#   zfs create -o mountpoint=legacy -o quota=20G rpool/logs/prometheus
-#   zfs create -o mountpoint=legacy -o quota=5G  rpool/logs/grafana
-#   zfs create -o mountpoint=legacy -o quota=2G  rpool/logs/ntfy-sh
-#
-# Secrets (agenix-rekey generators, `agenix generate && agenix rekey`): one
-# publisher password; ntfy gets it as a bcrypt hash (declarative auth-users
-# through the env file), the bridge gets it in clear (extra config file).
+# Prometheus, Alertmanager, Grafana, ntfy on the router; layout, alerts and hand
+# setup in docs/monitoring.md.
 {
   inputs,
   cell,

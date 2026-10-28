@@ -1,15 +1,5 @@
-# Chat clients outside the nixpak set (packages/sandboxed.nix: telegram for
-# roles/dev.nix, slack for roles/employer.nix).
-#
-# Both stay unsandboxed:
-# - simplex-chat-desktop is an AppImage under appimageTools.wrapType2, i.e.
-#   already bwrap'd; nesting it in nixpak's bwrap means userns-in-userns and
-#   a second /etc, not worth debugging for a personal messenger.
-# - mattermost-desktop is Electron; NIXOS_OZONE_WL comes from
-#   layer-session.nix (system sessionVariables), so it is Wayland-native
-#   without a wrapper.
-# State to persist (impermanence lists in layer-users-local.nix /
-# auth-entra.nix): ~/.config/Mattermost, ~/.local/share/simplex.
+# Outside nixpak: simplex's AppImage is already bwrap'd (userns in userns),
+# mattermost is plain Electron.
 {pkgs, ...}: {
   home.packages = [
     pkgs.simplex-chat-desktop

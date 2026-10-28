@@ -1,14 +1,5 @@
-# Workstation shell: build the playground VM image and boot it under
-# QEMU + OVMF (Secure Boot, Setup Mode) + swtpm, and switch the running guest
-# over the 9p share.
-#
-# Everything here evaluates `globals`, so NIX_CONFIG must carry the same
-# nix-plugins extra-builtin the deploy shell loads.
-#
-# Runtime state lives in .ren/vm/ (gitignored): the raw image, the OVMF
-# varstore and the swtpm state. Delete the varstore to re-enroll Secure Boot
-# keys; delete swtpm-state after a new image (new pool -> new fingerprint ->
-# old sealed credential is meaningless anyway).
+# Workstation shell: build, boot (OVMF + swtpm) and switch the VM; state in
+# .ren/vm/. NIX_CONFIG loads nix-plugins: `globals`.
 {
   inputs,
   cell,
@@ -97,17 +88,8 @@
       '';
   };
 
-  # Lanzaboote enrollment is a 3-boot dance: boot 1 generates keys and writes
-  # PK/KEK/db .auth files to the ESP, boot 2's systemd-boot enrolls them (only
-  # in Setup Mode -> fresh OVMFFull.fd.variables, not .variablesMs), boot 3 is
-  # Secure Boot on with signed UKIs. Then, as root inside the VM:
-  #   mkzfscreds --devices rpool --print-pcr15         # sanity check
-  #   mkdir -p /boot/zfs-unlock
-  #   mkzfscreds --devices rpool > /boot/zfs-unlock/rpool.cred
-  #   reboot                                            # unlocks silently
-  #
-  # WS_DISPLAY=1 adds a GTK window with virgl (virtio-vga-gl + venus) for the
-  # desktop, keyboard and tablet; the serial console stays on stdio.
+  # Secure Boot enrolls on boot 2 (Setup Mode: OVMF .variables, not
+  # .variablesMs). WS_DISPLAY=1 adds a virgl window.
   ws-vm-run = pkgs.writeShellApplication {
     name = "ws-vm-run";
     runtimeInputs = with pkgs; [git coreutils procps qemu swtpm];

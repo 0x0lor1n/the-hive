@@ -1,16 +1,5 @@
-# agenix + agenix-rekey for workstation hosts. Only secrets with a runtime
-# consumer live here; login hashes stay in globals so console login survives
-# an agenix outage.
-#
-# Master identities: penrose-nix-rage.pub and elster-nix-rage.pub (each a
-# TPM-sealed, PIN-gated age-plugin-tpm identity on its own host). Every secret
-# is additionally encrypted to the recovery key held offline in KeePass
-# (extraEncryptionPubkeys) so losing both TPMs does not lose the secrets.
-# `agenix rekey/generate` on host X must be told to use X's identity only
-# (AGENIX_REKEY_PRIMARY_IDENTITY[_ONLY], set by the devshell): rage stops at
-# the first TPM identity it cannot open instead of trying the next one.
-# `generated/` holds values encrypted to those recipients, `rekeyed/<host>/`
-# the same values re-encrypted to host.sshHostPubkey.
+# agenix-rekey for workstations (docs/secrets.md); login hashes stay in globals
+# to survive an agenix outage.
 {
   inputs,
   cell,
@@ -24,17 +13,8 @@
 }: let
   flakeRoot = inputs.self.outPath;
 
-  # Outbound ssh identities; the pubkeys are registered on GitHub/Azure/client
-  # hosts, so there is no generator. Handed out by role (accounts.nix): dev
-  # gets the personal keys, employer and freelance their organisation's.
-  # Each key ships with its .pub: for a passphrase-protected key, without the
-  # .pub next to it ssh must decrypt the key just to learn which agent
-  # identity to offer, i.e. it prompts even when the agent has it.
-  # IdentityFile in the per-role user secrets points at these paths.
-  #
-  # Owner is account.owner: the name for a local account, the numeric uid for
-  # an Entra one (users.users has no entry; chown accepts the number, nothing
-  # resolves the name at activation, group falls back to root).
+  # Each key ships its .pub, or ssh decrypts (prompts) just to pick the agent
+  # identity. Entra owners are numeric uids.
   holders = config.hive.roleHolders;
   mkIdentity = owner: name: {
     "${name}" = {

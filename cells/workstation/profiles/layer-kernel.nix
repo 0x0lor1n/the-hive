@@ -1,14 +1,5 @@
-# CachyOS kernel + the matching ZFS module, both from chaotic-cx/nyx so they
-# are built against each other. The nyx overlay is applied to `ren.pkgs` in
-# nixosConfigurations.nix (NOT via nixpkgs.overlays: utils.mkSystem hands the
-# module system a ready `pkgs`, which makes that option a no-op).
-#
-# Second boot entry "safe" (PedroHLC/system-setup seat.nix): stock nixpkgs
-# kernel + stock zfs, for when a CachyOS bump breaks boot, ZFS or the GPU.
-# Both zfs builds are the same upstream release (2.4.4 at the 34ab9907 pin),
-# so a pool touched by one imports on the other; keep it that way when
-# bumping -- a pool with feature flags the fallback cannot read is a pool
-# that will not import.
+# CachyOS kernel + zfs from nyx. specialisation.safe must keep the same zfs
+# release, or the pool won't import there.
 {
   config,
   pkgs,

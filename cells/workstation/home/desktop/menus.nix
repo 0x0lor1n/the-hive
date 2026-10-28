@@ -1,18 +1,5 @@
-# powermenu / calcmenu / wifimenu / vpnmenu: fuzzel --dmenu menus (our
-# launcher, home/desktop/launcher.nix). Bound in packages/dwl/config.h to
-# Super+Esc, Super+C, Super+Alt+W, Super+Alt+V.
-#
-# powermenu: no uwsm here, so Logout kills the compositor -- dwl-session
-# (layer-compositor.nix) then stops graphical-session.target and greetd
-# comes back. Lock goes through loginctl so swayidle's lock handler
-# (home/desktop/idle.nix) runs the same swaylock as everywhere else.
-# No Suspend entry: swayidle still suspends at 1800 s (idle.nix), and the
-# menu slot is worth more as the CPU governor flip (profiles/cpu-governor.nix
-# declares the units and the polkit rule that makes them password-free).
-#
-# calcmenu: qalc (libqalculate) instead of bc -- unit-aware, no `scale=`
-# dance, and "2^10" means what it says. The result goes to the clipboard
-# and, while the popup is open again, the history is offered for reuse.
+# fuzzel menus, bound in packages/dwl/config.h. Logout kills dwl (no uwsm);
+# dwl-session then stops graphical-session.target.
 {
   pkgs,
   theme,

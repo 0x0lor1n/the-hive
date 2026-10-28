@@ -1,15 +1,5 @@
-# Music: mpd plays /srv/data/music (profiles/srv-data.nix) into PipeWire,
-# rmpc is the TUI client. Ported from wochap/nix-config wm-addons/music,
-# minus cava, the visualizer fifo/snd_aloop and YouTube Music.
-#
-# Bound in packages/dwl/config.h: Super+Alt+M opens rmpc in a floating foot
-# (app_id "music", bypasses sesh/tmux); XF86 Play/Next/Prev/Stop go through
-# playerctl, which reaches mpd via mpdris2. Closing rmpc leaves mpd playing.
-#
-# rmpc has no HM module on release-25.05. Its theme uses named ANSI colours,
-# so foot's kanagawa palette already applies; config.ron only overrides a few
-# keys, serde fills the rest from rmpc's defaults.
-# State to persist: ~/.local/share/mpd (db, queue/state, playlists).
+# mpd on /srv/data/music into PipeWire, rmpc as the TUI; media keys reach mpd
+# via mpdris2.
 {pkgs, ...}: let
   musicDir = "/srv/data/music";
 

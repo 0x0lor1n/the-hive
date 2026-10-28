@@ -1,24 +1,5 @@
-# Agent CLIs shared by both accounts: claude-code and opencode (+
-# oh-my-openagent) as packages, per-home state under $HOME.
-#
-#   - opencode: omo.jsonc carries the opencode-go/* models flattened to top
-#     level; anthropic is not used.
-#   - claude reaches pxpipe (profiles/agent-proxy.nix) via ANTHROPIC_BASE_URL
-#     in settings.json env.
-#   - rtk: the claude PreToolUse hook and RTK.md that `rtk init -g` would
-#     write, plus ~/.config/rtk/config.toml.
-#
-# Packages come from cells/repo (the llm-agents pin lives there), passed in
-# as `agentPkgs` from ../default.nix because home/ has no `inputs`.
-#
-# Store-backed, except omo.jsonc: oh-my-openagent rewrites its config in place
-# on load (self-migration between versions) and a read-only store file makes
-# that fail, so that one file is live-edited from
-# /srv/the-hive/dotfiles/opencode like nvim/tmux/zsh.
-#
-# Credentials are not declared: `opencode auth login` (OpenCode Go key) and
-# `claude` login once per account; both persist under the account's
-# ~/.local/share/opencode / ~/.claude (layer-users-local, auth-entra).
+# claude-code, opencode + oh-my-openagent for both accounts. omo.jsonc links out
+# of store: oh-my-openagent rewrites it on load.
 {
   config,
   pkgs,

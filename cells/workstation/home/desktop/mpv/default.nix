@@ -1,16 +1,5 @@
-# mpv.
-#
-# hwdec vaapi: these hosts run the iGPU only (gpu-intel.nix ships
-# intel-media-driver for exactly this).
-#
-# K (motion interpolation) needs a vapoursynth-enabled mpv: mpv-unwrapped is
-# built against `vapoursynth.withPlugins [mvtools ffms]`, whose patched
-# libvapoursynth autoloads $out/lib/vapoursynth, so the script's `core.mv.*` /
-# `core.ffms2.Source` resolve without LoadPlugin. Stock mpv has
-# vapoursynthSupport = false and the filter fails to load.
-#
-# No `vf = format=rgba`: an unconditional software RGBA convert on every frame
-# that also defeats hwdec by forcing a readback.
+# K (interpolation) needs mpv built against vapoursynth.withPlugins. No `vf =
+# format=rgba`: it defeats hwdec.
 {
   pkgs,
   theme,

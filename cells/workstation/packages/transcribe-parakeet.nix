@@ -1,25 +1,5 @@
-# `transcribe-parakeet <file>`: ffmpeg to 16 kHz mono, then Parakeet TDT 0.6b v3
-# through sherpa-onnx. The whisper engine is a separate tool, `transcribe`.
-#
-# Measured on elster over two French sets with reference text (WER by word-level
-# Levenshtein, case and punctuation folded):
-#
-#              FLEURS, clean studio 285s   MINDS-14, phone 8 kHz 184s
-#   whisper      15.8%  57s  Iris Xe        27.2%  31s  Iris Xe
-#   parakeet     14.4%  29s  CPU 10t        35.6%  19s  CPU 10t
-#
-# So: this for clean speech (narration, mic'd interviews), whisper for meetings,
-# phone audio and noise. Parakeet has no language flag and on poor audio its
-# language ID drifts -- it then emits fluent Spanish or English for French
-# input, which reads as a plausible transcript rather than as a failure.
-# Qwen3-ASR 0.6B (21.3% / 37.2%) and Canary 1B (slower than whisper, also
-# hallucinates) lost on both sets.
-#
-# VAD is mandatory, not a refinement: without segmentation Parakeet's long-form
-# output degrades into word salad. int8 and fp32 weights both score 14.4%, so
-# only int8 (458 MB) is fetched. onnxruntime's OpenVINO EP cannot run this model
-# on the iGPU (dynamic rank in the TDT decoder), so this is CPU-only -- which
-# also leaves the GPU free for whisper.
+# `transcribe-parakeet <file>`: Parakeet TDT 0.6b v3 on CPU; see
+# transcribe/README.md. VAD is required: without it, long output is word salad.
 {
   coreutils,
   curl,

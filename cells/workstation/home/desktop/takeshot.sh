@@ -1,15 +1,6 @@
 #!/usr/bin/env bash
-# takeshot -- screenshot helper, ported from wochap/nix-config
-# (modules/nixos/desktop/wm-addons-wayland/wayland-utils/scripts/takeshot.sh).
-#
-# Differences from upstream:
-#   * colours are baked in from the theme palette at build time instead of
-#     sourcing ~/.config/scripts/theme-colors.sh;
-#   * runs under writeShellApplication (set -euo pipefail, shellcheck), so
-#     the cancel paths (slurp Esc, pgrep miss) are handled explicitly;
-#   * PICTURES dir falls back to ~/Pictures when xdg-user-dir is unset.
-#
-# Usage: takeshot --now | --in5 | --area | --freeze
+# takeshot --now | --in5 | --area | --freeze. From wochap/nix-config, theme
+# colours baked in at build.
 
 background="#@theme_bg@"
 primary="#@theme_focus@"

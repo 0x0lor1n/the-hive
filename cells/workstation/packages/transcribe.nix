@@ -1,19 +1,5 @@
-# `transcribe <file>`: ffmpeg to 16 kHz mono, then whisper.cpp.
-#
-# The Parakeet engine lives in transcribe-parakeet.nix: its flags don't overlap
-# with this one's (no -m ggml file, no -l -- Parakeet only auto-detects), and
-# that file carries the WER measurements that decide which to reach for.
-#
-# --ct2 is faster-whisper (CTranslate2), CPU, and the one that gives word
-# timestamps.
-#
-# A SYCL/oneAPI build was tried first and dropped: fp16 aborts im2col on Gen12
-# and the flash-attn kernels spill ~287 registers, so both had to go, leaving
-# it 10x slower than Vulkan for a 5 GB unfree toolkit that has no binary cache.
-#
-# Models are fetched on first use into $XDG_DATA_HOME/asr-models (518 MB for
-# large-v3-turbo q5_0). Data, not cache: nothing rebuilds them on miss, so they
-# live where a `rm -rf ~/.cache` cannot take them offline.
+# `transcribe <file>`: whisper.cpp on Vulkan, --ct2 for word timestamps;
+# benchmarks in transcribe/README.md.
 {
   coreutils,
   curl,

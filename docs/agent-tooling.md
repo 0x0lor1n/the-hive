@@ -25,6 +25,11 @@ Hermes reaches it via `base_url: http://pxpipe.anthropic.com:47821`. The
 enables the rtk plugin and links the shared `skills/`, `memories/` from
 `/srv/agents/hermes`.
 
+Hermes is in `systemPackages`, not home-manager: the Entra user is NSS-only
+and has no home-manager profile. Credentials are not declared: `claude` login
+and `opencode auth login` once per account, persisted under `~/.claude` and
+`~/.local/share/opencode`.
+
 ## nixq
 
 `cells/repo/nixq` is a Go PATH shim shipped as `nix`, for agents only:

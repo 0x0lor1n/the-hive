@@ -113,17 +113,8 @@ in {
 
   inherit (sandboxedApps) telegram-desktop slack;
 
-  # Horizon for client gm, whose Horizon logs in through gm's own Entra tenant.
-  # The client has no login webview: SAML goes out via gtk_show_uri to the
-  # default https handler and comes back as a horizon-client:// link. The
-  # session default is Firefox with linux-entra-sso force-installed by policy
-  # (every profile), which would answer gm's login.microsoftonline.com with
-  # our own tenant's PRT. So this launcher gets its own XDG_CONFIG_HOME whose
-  # mimeapps.list sends https to a bare Chromium profile, and the return link
-  # back here. ~/.omnissa is persisted (auth-entra.nix) and holds both.
-  # The return link reaches the session's OpenURI portal, not this env: it
-  # lands on the horizon-gm entry below, so the launcher must run with the
-  # portal's environment (DISPLAY: layer-compositor.nix).
+  # Horizon for gm: its SAML would hit linux-entra-sso (our PRT), so https goes
+  # to a bare Chromium. The return link comes via the portal.
   horizon-gm = let
     stateDir = "$HOME/.omnissa";
     # The package only exposes /etc/omnissa/config (configText); the client's

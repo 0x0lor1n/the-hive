@@ -1,21 +1,5 @@
-# elster-only hardware/workload bits: what the ZBook needs that penrose must
-# not carry. One host, one file; split into profiles when a second host wants
-# any of it.
-#
-# - docker: some work projects need it. Two daemons: the rootful one here is
-#   admin's (`docker` group = the admin role only), dev accounts run their
-#   own rootless daemon (role-dev.nix). Membership in `docker` is root
-#   without sudo (`docker run -v /:/host`), so no account that is not
-#   already wheel gets it. /var/lib/docker is its own dataset
-#   (disks/elster.nix, rpool/safe/docker), so nothing to persist here.
-# - DisplayLink: Lenovo ThinkPad Hybrid USB-C dock (17e9:6015). On TB4 the
-#   first output is DP alt-mode; the extra heads are DisplayLink (evdi).
-#   Unfree with a manual download: the Synaptics zip must be in the store
-#   before build (nix-prefetch-url, see pkgs.displaylink.src.message).
-# - 5G modem (mtk_t7xx, 14c3:4d75): unused, driver is in-kernel, no
-#   ModemManager. Nothing to declare.
-# - kernel: layer-kernel's CachyOS 7.2.2 already covers Raptor Lake i915 and
-#   AX211 (iwlwifi); no override.
+# elster-only: docker, DisplayLink, btop caps. Split out when a second host
+# wants any of it.
 {
   inputs,
   cell,
@@ -36,7 +20,7 @@
   };
   # dialout: flash and talk to the bench MCUs (/dev/ttyACM*, root:dialout)
   # without sudo; under sudo nix runs as root, which lacks safe.directory.
-  # docker: the rootful socket (root:docker 0660) -- admin only, see above.
+  # docker: the rootful socket, i.e. root without sudo -- admin only.
   users.users = lib.mkMerge [
     (lib.genAttrs config.hive.localUsers (_: {extraGroups = ["dialout"];}))
     (lib.genAttrs config.hive.roleHolders.admin (_: {extraGroups = ["docker"];}))
@@ -60,6 +44,7 @@
   # list, but everything that matters for a Wayland session (evdi module,
   # udev rules, the DisplayLinkManager service) is gated on that same
   # switch. dwl/wlroots picks the evdi DRM node up like any other card.
+  # Unfree manual download: nix-prefetch-url the Synaptics zip before a build.
   services.xserver.videoDrivers = ["displaylink"];
   # The monitor is on evdi, whose cursor plane DLM appears to drop updates
   # for (the pointer vanishes until the next shape change). A software

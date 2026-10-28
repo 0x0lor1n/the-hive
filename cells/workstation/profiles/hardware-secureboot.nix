@@ -1,18 +1,4 @@
-# Secure Boot via Lanzaboote: replaces systemd-boot with a NixOS-aware
-# stub loader that bundles + signs each generation as a UKI via sbctl.
-# Keys live in /var/lib/sbctl (persisted by impermanence).
-#
-# Firmware enrollment needs two boots and Setup Mode: boot 1 writes
-# PK/KEK/db *.auth files to /boot/loader/keys/auto/; boot 2's
-# systemd-boot enrolls them into firmware variables, but only if
-# firmware is in Setup Mode. We get Setup Mode by booting with a fresh
-# `OVMFFull.fd.variables` template (not `.variablesMs`, which has MS
-# keys pre-enrolled) — see the `vm-run-secureboot` justfile recipe for
-# the matching QEMU SMM flags. On bare metal this is the physical UEFI
-# Setup Mode menu instead; this is Lanzaboote's own canonical workflow.
-#
-# `lib` isn't injected by the profiles/default.nix loader (only inputs+cell),
-# hence inputs.nixpkgs.lib below.
+# Secure Boot via Lanzaboote; enrollment in docs/install-workstation.md.
 {
   inputs,
   cell,

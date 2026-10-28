@@ -74,20 +74,8 @@ in {
     };
   };
 
-  # The server outlives the login session so continuum can restore it.
-  #
-  # `tmux start-server \; set -g exit-empty off`: the client forks the server
-  # and exits 0; Type=forking + GuessMainPID makes the daemonised server the
-  # unit's main process. `tmux -D` is not usable here: tmux 3.7 insists on a
-  # controlling tty under systemd and dies with "open terminal failed: not a
-  # terminal" (2026-09-14).
-  #
-  # No ExecStop: with one, every `nixos-rebuild switch` rewrote the unit, HM
-  # reloaded it, systemd ran kill-server (all sessions gone) and the clean
-  # stop meant Restart=on-failure never brought it back (2026-09-14).
-  # KillMode=process leaves panes' children alone, and exit-empty is forced
-  # off on the command line so the server stays up with zero sessions until
-  # continuum restores them or a client attaches.
+  # `start-server` + forking: `tmux -D` dies under systemd on 3.7. No ExecStop:
+  # a rebuild reload ran kill-server and Restart= never fired.
   systemd.user.services.tmux-server = {
     Unit = {
       Description = "tmux server (session persistence)";

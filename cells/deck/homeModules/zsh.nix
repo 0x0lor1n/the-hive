@@ -1,17 +1,5 @@
-# zsh: p10k prompt, vi mode, zsh-autocomplete menu, sqlite history (histdb)
-# with skim Ctrl-R, autosuggestions, fast-syntax-highlighting.
-#
-# The four hand-edited files (config.zsh, functions.zsh, key-bindings.zsh,
-# .p10k.zsh) are not store-backed: they are symlinked from
-# /srv/the-hive/dotfiles/zsh (profiles/srv-the-hive.nix) so either account
-# edits them in place. mkOutOfStoreSymlink never reads the target, so
-# dotfiles/ cannot influence a build.
-#
-# Both halves are needed for zsh to be the login shell: this module writes
-# ~/.config/zsh/.zshrc; the system side (programs.zsh.enable, the login shell
-# per account) is layer-users-local.nix and auth-entra.nix.
-#
-# Account-agnostic: the same module lands in the local and the Entra home.
+# zsh for every account; the four hand-edited files link out of store to
+# dotfiles/zsh. Login shell is set system-side.
 {
   inputs,
   cell,

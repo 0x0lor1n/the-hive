@@ -1,25 +1,4 @@
-# Firefox (stable) hardened by Phoenix, as a system package: the browser is
-# the Entra account's daily driver, and Entra users never get a home.packages
-# profile (see layer-compositor.nix).
-#
-# Phoenix has two halves:
-#   1. the wrapper: pkgs.withPhoenix = firefox.override { extraPoliciesFiles;
-#      extraPrefsFiles } -- bakes policies.json + phoenix.cfg into the
-#      package. pkgs already carries phoenix's overlay (nixosConfigurations.nix
-#      extends it there because a module's nixpkgs.overlays does not reach a
-#      pre-instantiated pkgs), so this is done by hand via programs.firefox.
-#      package, and the module's own overlay hook is turned off.
-#   2. the NixOS module: /etc/firefox/phoenix/{specs,assets} (phoenix.cfg
-#      lockPrefs autoadmin.global_config_url to the specs file), MOZ_*
-#      environment and programs.firefox.policies read from its policies.json,
-#      which the NixOS firefox module writes to /etc/firefox/policies/ -- on
-#      Linux that path wins over the package's distribution/policies.json.
-#      Its /etc/firefox/defaults/pref/phoenix.js is read (locked
-#      general.config.filename = phoenix.cfg), so /etc/firefox/phoenix.cfg
-#      is the autoconfig actually loaded, not the wrapper's mozilla.cfg.
-# Our own policies (search engines, addons) merge into the same
-# programs.firefox.policies attrset; Phoenix's SearchEngines defaults are
-# mkForce'd since the module system cannot merge two scalars.
+# Firefox hardened by Phoenix, system-wide: Entra users get no home.packages.
 {inputs, ...}: {
   config,
   pkgs,

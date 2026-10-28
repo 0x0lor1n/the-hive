@@ -1,14 +1,5 @@
-# Router-side probes that feed node_exporter's textfile dir
-# (monitoring-server.nix): ONU temperatures/RX power over the stick's
-# root-without-password ssh (same path as salt-status), and a daily speed
-# check: iperf3 to imladris over the 10G DAC and to the Vontar X5 on its 1G
-# port, Ookla speedtest over the WAN. The Vontar side lives outside this
-# repo (rooted Android, no Nix):
-#   nix build --impure --expr '(import <nixpkgs> {}).pkgsCross.aarch64-multiplatform.pkgsStatic.iperf3'
-#   adb push result/bin/iperf3 /data/local/tmp/iperf3
-#   /data/adb/service.d/iperf3.sh (Magisk, root, after boot_completed):
-#     exec /data/local/tmp/iperf3 -s -D -p 5201 --logfile /data/local/tmp/iperf3.log
-# A box reset loses both; the probe then just writes no vontar speed.
+# Router-side probes into the textfile dir: ONU temperatures/RX power, daily
+# speed test (docs/monitoring.md).
 {
   inputs,
   cell,
@@ -58,19 +49,8 @@
          }' <<<"$raw" | write_prom onu
   '';
 
-  # Daily, once (05:17 UTC, clear of the 02:00-03:59 backups): this checks
-  # the cables for degradation, not live load, so more often adds nothing.
-  # iperf3: send = router -> peer (download), recv (-R) = peer -> router.
-  # WAN: Ookla against Wingo Lausanne (16522, 5 ms): Salt's own Lausanne
-  # server (41691) drops Ookla's socket, and speedtest-go tops out near
-  # 0.8 Gbit/s on this line where Ookla measures 8. Ookla is unfree, hence
-  # its own nixpkgs import with a one-package predicate below.
-  # A run costs ~22 GB over the DAC, ~1 GB to the Vontar, ~12 GB of WAN;
-  # it is ordinary traffic and stays in the dashboard's "transferred".
-  #
-  # Each peer's last good result is kept (StateDirectory) with its time, so
-  # a failed run leaves the previous day's numbers, and the dashboard drops
-  # anything older than two days.
+  # Ookla to 16522: Salt's 41691 drops Ookla, speedtest-go caps at 0.8 of 8
+  # Gbit/s. A run moves ~35 GB, so once a day.
   speedProbe = pkgs.writeShellScript "net-speed-probe" ''
     set -uo pipefail
     ${writeProm}

@@ -1,15 +1,5 @@
-# Who logs into this host and what each account is for. Role profiles
-# (role-*.nix) and secrets.nix read `hive.roleHolders` instead of naming an
-# account, so a key or tunnel follows the role, not the login method.
-#
-# Roles: admin (rebuilds the host, wheel), dev (code + agents), freelance and
-# employer (that organisation's keys and tunnels). `auth` is how the account
-# exists: "local" is in users.users, "entra" is an NSS user from himmelblau
-# (auth-entra.nix) with no users.users entry, so it is owned by numeric uid.
-#
-# The list is globals.hosts.<h>.accounts (public: auth + roles only); the
-# names come from the encrypted half -- host.userName for "local",
-# globals.entra.user for "entra".
+# Accounts and their roles; consumers read `hive.roleHolders`, so keys and
+# tunnels follow the role, not the login.
 {
   lib,
   config,

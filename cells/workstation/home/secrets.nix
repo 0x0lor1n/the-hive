@@ -1,17 +1,5 @@
-# Eval-time user secrets: the per-account counterpart of cells/common/globals.nix.
-#
-# secrets/roles/<role>.nix.age is a plain Nix attrset (git includeIf blocks,
-# ssh includes and matchBlocks) decrypted through the same
-# rageImportEncrypted channel as globals: encrypted to the PIN-protected TPM
-# identities of both workstations (penrose-nix, elster-nix) plus the offline
-# recovery key. A home may only be evaluated by someone who can answer a TPM
-# PIN, and unlock-secrets primes the cache for the no-tty cases. Anything with
-# a RUNTIME consumer (key files, tokens that would otherwise land in
-# /nix/store) stays agenix, not here.
-#
-# An account gets the merge of its roles' files. Named by role, never by the
-# account: both usernames live in the encrypted half of globals and a public
-# path must not carry them. A role without a file (admin) contributes {}.
+# Eval-time per-account secrets: secrets/roles/<role>.nix.age merged over the
+# account's roles. Named by role: usernames stay encrypted.
 {
   # `/. + unsafeDiscardStringContext inputs.self.outPath`, as globals.nix does:
   # extra-builtins.nix asserts isPath, outPath carries store context.

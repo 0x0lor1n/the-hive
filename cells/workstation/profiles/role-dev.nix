@@ -1,17 +1,5 @@
-# dev: the account that writes code and runs the agents (home side:
-# home/roles/dev.nix). System side is rootless docker: the work projects
-# need a daemon, and the rootful one is root with no human in the chain
-# (`docker run -v /:/host` from any member of `docker`,
-# accounts-as-roles baseline p.1). rootless runs dockerd in the account's
-# own user namespace: the daemon, every container and the socket are the
-# account itself, and host root stays with admin's rootful daemon.
-#
-# What rootless cannot do, and is accepted: ports < 1024 (sysctl
-# ip_unprivileged_port_start), `--net=host` without privileges, no
-# `--privileged` access to host devices, no overlay2 on a ZFS home without
-# fuse-overlayfs (moby picks that up from PATH). Images do not carry over
-# from the rootful /var/lib/docker: `docker save | docker load` the few
-# that matter, pull the rest.
+# dev: code + agents. Rootless docker: `docker` group membership is root. No
+# ports < 1024, --net=host or --privileged.
 {
   lib,
   config,

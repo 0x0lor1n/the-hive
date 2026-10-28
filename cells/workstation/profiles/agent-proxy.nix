@@ -1,24 +1,5 @@
-# pxpipe: loopback proxy that images the bulky parts of each Anthropic
-# request before it leaves the machine (cells/repo/packages.nix). One system
-# instance, not a user unit: the port is shared, two logged-in users (Entra
-# on seat0, the local user over ssh) would fight over it. Stateless -- the
-# API key travels in each request -- so sharing the instance leaks nothing.
-#
-# Hermes itself is installed here too, system-wide: the Entra user is an
-# NSS-only account (no users.users, no home-manager), so systemPackages is
-# the only PATH both sessions share. State stays per-user in ~/.hermes
-# (persisted for both: layer-users-local.nix, auth-entra.nix), except
-# skills/ and memories/, which are symlinks into /srv/agents/hermes
-# (srv-agents.nix) so both accounts run against one skill tree and one
-# MEMORY.md. Sessions stay per-user.
-#
-# Token diet for the agent's terminal:
-#   nixq  shim named `nix` that collapses build/copy progress to one line. Not
-#         in systemPackages: the agent packages carry it on their own PATH
-#         (withNixq, cells/repo/packages.nix), so only agent shells get it.
-#   rtk   pre_tool_call plugin rewrites `git status` -> `rtk git status` etc.
-#         `rtk rewrite "nix ..."` is a passthrough (rc 1), so nix stays with
-#         nixq; rtk never touches it.
+# pxpipe + Hermes system-wide: the Entra user has no home-manager. One pxpipe
+# for all sessions: stateless, the API key rides in each request.
 {
   inputs,
   cell,
@@ -131,18 +112,8 @@
         ${hermes-agent}/lib/python3*/site-packages/hermes_cli/banner.py \
         ${skin} ${artColors} $out
     '';
-  # Hermes owns config.yaml (it rewrites _config_version and onboarding
-  # flags), so a store symlink is out; `hermes config set` merges a key into
-  # the existing file instead. Only `pinned` is -- the API key stays the
-  # user's (~/.hermes/auth.json); a `/skin` choice resets on the next login.
-  # plugins.enabled is a list:
-  # rtk-rewrite is appended, whatever the user enabled themselves stays.
-  # Plugin discovery scans ~/.hermes/plugins/<dir> with is_dir(), which
-  # follows the store symlink.
-  #
-  # The Entra user's $HOME is created by himmelblau while the session is
-  # opening (see home-manager-entra in layer-compositor.nix), so on the
-  # first login after a boot it may not exist yet: wait, don't fail.
+  # Hermes rewrites config.yaml itself, so keys are merged via `config set`. The
+  # Entra $HOME appears while the session opens: wait for it.
   seedHermes = pkgs.writeShellScript "hermes-seed-proxy" ''
     set -eu
     for _ in $(seq 1 120); do

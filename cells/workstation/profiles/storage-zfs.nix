@@ -65,19 +65,8 @@ in {
   # correct for both.
   boot.zfs.devNodes = "/dev/disk/by-partlabel";
 
-  # VM-ONLY, and deliberately not applied to real hardware.
-  #
-  # The disko image builder VM writes an /etc/hostid that does not match
-  # networking.hostId, so without forcing, the pool refuses to import in
-  # initrd. forceImportRoot only affects the userspace zfs-import script;
-  # the initrd's zfs-import-rpool checks kernelParams for zfs_force, so
-  # both are needed together.
-  #
-  # But forcing import is exactly "ignore the hostId mismatch", i.e. it
-  # switches off the protection the per-host hostId above provides. On a
-  # laptop that could mean importing a pool another system still has open.
-  # A bare-metal pool is created by disko running on the target itself, so
-  # the hostid matches from the start and no forcing is needed.
+  # VM only: disko's image builder leaves a mismatched /etc/hostid. On hardware
+  # this disables the guard against a pool open elsewhere.
   boot.zfs.forceImportRoot = host.isVm;
   boot.kernelParams = lib.optionals host.isVm ["zfs_force=1"];
 
