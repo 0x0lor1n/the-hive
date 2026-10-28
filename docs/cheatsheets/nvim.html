@@ -55,6 +55,7 @@
 <tr><td><kbd>Ctrl+Shift+Alt+←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd></td><td>resize window</td></tr>
 <tr><td><kbd>Ctrl+W</kbd><kbd>x</kbd> / <kbd>Ctrl+W</kbd><kbd>v</kbd> · <kbd>Ctrl+`</kbd></td><td>split below / split right · previous window</td></tr>
 <tr><td><kbd>␣um</kbd> · <kbd>␣uz</kbd></td><td>maximize current window (toggle) · zen mode</td></tr>
+<tr><td><kbd>Ctrl+F4</kbd> · <kbd>Ctrl+Shift+F4</kbd></td><td>window picker: focus · swap with the picked window</td></tr>
 <tr><td><kbd>Shift+↑</kbd> / <kbd>Shift+↓</kbd> · <kbd>␣⇥n</kbd> / <kbd>␣⇥o</kbd> / <kbd>␣⇥d</kbd></td><td>previous / next tab page · new tab / close other tabs / close tab</td></tr>
 <tr><td><kbd>␣ha</kbd> · <kbd>␣hs</kbd></td><td>harpoon: add file · quick menu</td></tr>
 <tr><td><kbd>␣hp</kbd> <kbd>␣hf</kbd> <kbd>␣hw</kbd> <kbd>␣hq</kbd> (= <kbd>␣h1..4</kbd>) · <kbd>[H</kbd> / <kbd>]H</kbd></td><td>jump to harpoon slot 1–4 · previous / next harpoon file</td></tr>
@@ -83,6 +84,9 @@
 <tr><td><kbd>S</kbd> <span class="m">[n x o]</span></td><td>flash treesitter: pick a syntax node to select</td></tr>
 <tr><td><kbd>r</kbd> <span class="m">[o]</span> · <kbd>R</kbd> <span class="m">[o x]</span></td><td>remote flash (operate on text elsewhere, e.g. <kbd>yr</kbd>) · treesitter search</td></tr>
 <tr><td><kbd>Ctrl+S</kbd> <span class="m">[c]</span></td><td>toggle flash while typing a <kbd>/</kbd> search</td></tr>
+<tr><td><kbd>Ctrl+Space</kbd> <span class="m">[n x o]</span></td><td>incremental selection (flash treesitter): again = grow, <kbd>⌫</kbd> = shrink</td></tr>
+<tr><td><kbd>[j</kbd> <kbd>]j</kbd> · <kbd>[l</kbd> <kbd>]l</kbd> · <kbd>[o</kbd> <kbd>]o</kbd> · <kbd>[q</kbd> <kbd>]q</kbd> · <kbd>[s</kbd> <kbd>]s</kbd></td><td>mini.bracketed: jumplist · location list · old files · quickfix · treesitter node</td></tr>
+<tr><td><kbd>gl</kbd> <span class="m">[n x]</span></td><td>open the URL / path under the cursor (gx.nvim <code>:Browse</code>)</td></tr>
 <tr><td><kbd>Alt+H</kbd> <kbd>J</kbd> <kbd>K</kbd> <kbd>L</kbd> <span class="m">[n v]</span></td><td>treewalker: move to parent / next / previous / child node</td></tr>
 <tr><td><kbd>gC</kbd> · <kbd>]]</kbd> / <kbd>[[</kbd></td><td>go to enclosing context (function/class header) · next / previous reference of word</td></tr>
 <tr><td><kbd>Ctrl+K</kbd> / <kbd>Ctrl+J</kbd> · <kbd>Ctrl+Shift+U</kbd> / <kbd>Ctrl+Shift+D</kbd></td><td>scroll 4 lines up / down · scroll half screen left / right</td></tr>
@@ -95,7 +99,7 @@
 <table>
 <tr><td><kbd>f</kbd> · <kbd>c</kbd> · <kbd>o</kbd></td><td>function · class · block/conditional/loop (treesitter)</td></tr>
 <tr><td><kbd>t</kbd> · <kbd>d</kbd> · <kbd>e</kbd></td><td>HTML tag · run of digits · word incl. case (camelCase segment)</td></tr>
-<tr><td><kbd>u</kbd> · <kbd>g</kbd></td><td>function call ("usage") · whole buffer</td></tr>
+<tr><td><kbd>u</kbd> · <kbd>U</kbd> · <kbd>g</kbd></td><td>function call ("usage") · same, name without dots · whole buffer</td></tr>
 <tr><td><kbd>q</kbd> · <kbd>b</kbd></td><td>any quote · any bracket (mini.ai builtins, plus <kbd>(</kbd> <kbd>[</kbd> <kbd>{</kbd> <kbd>"</kbd> …)</td></tr>
 </table>
 
@@ -118,6 +122,8 @@
 <tr><td><kbd>␣mt</kbd> · <kbd>␣mc</kbd> <span class="m">[n]</span> / <span class="m">[v]</span></td><td><code>:retab!</code> · diff buffer against clipboard / toggle colour format (hex ↔ rgb ↔ hsl)</td></tr>
 <tr><td><kbd>␣mlw</kbd> / <kbd>␣mlp</kbd></td><td>lorem ipsum words / paragraphs</td></tr>
 <tr><td><kbd>␣us</kbd> <kbd>␣uw</kbd> <kbd>␣ul</kbd> <kbd>␣uL</kbd> <kbd>␣uc</kbd></td><td>toggle spelling · wrap · line numbers · relative numbers · conceal</td></tr>
+<tr><td><kbd>␣ut</kbd> <kbd>␣uT</kbd> <kbd>␣ud</kbd> <kbd>␣uh</kbd></td><td>toggle treesitter context · treesitter highlight · diagnostics · inlay hints</td></tr>
+<tr><td><kbd>ga</kbd> / <kbd>gA</kbd> <span class="m">[n v]</span></td><td>align (mini.align) / with preview</td></tr>
 </table>
 
 <h3>multicursor — <kbd>␣c</kbd> prefix <span class="m">[n v]</span></h3>
@@ -134,6 +140,7 @@
 <h3>completion (blink.cmp) · snippets (LuaSnip)</h3>
 <table>
 <tr><td><kbd>Ctrl+Space</kbd> · <kbd>Ctrl+U</kbd> / <kbd>Ctrl+D</kbd> · <kbd>Ctrl+B</kbd> / <kbd>Ctrl+F</kbd></td><td>open menu · scroll docs up / down · 4 items up / down in the menu</td></tr>
+<tr><td><kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd> · <kbd>Ctrl+Y</kbd> · <kbd>Ctrl+E</kbd> <span class="m">[i]</span></td><td>next / previous item (opens the menu) · accept · cancel</td></tr>
 <tr><td><kbd>⇥</kbd> / <kbd>Shift+⇥</kbd> <span class="m">[i s]</span></td><td>next / previous snippet placeholder</td></tr>
 <tr><td><kbd>Ctrl+K</kbd> / <kbd>Ctrl+Shift+K</kbd> <span class="m">[i]</span></td><td>expand snippet or next choice / previous choice</td></tr>
 <tr><td><kbd>Ctrl+H</kbd> <span class="m">[i]</span> · <kbd>gh</kbd> · <kbd>gH</kbd></td><td>signature help · signature help · hover docs</td></tr>
@@ -151,7 +158,7 @@
 <tr><td><kbd>␣lh</kbd> <span class="m">C/C++</span> · <kbd>␣lo</kbd> <span class="m">Python</span> · <kbd>␣lc</kbd> <span class="m">Rust</span></td><td>switch source/header · organize imports · rustaceanvim code action</td></tr>
 <tr><td><kbd>␣lh</kbd> <kbd>␣le</kbd> <kbd>␣lr</kbd> / <kbd>␣lR</kbd> <kbd>␣lq</kbd> <span class="m">Haskell</span></td><td>hoogle signature · evaluate all · REPL package / buffer · quit REPL</td></tr>
 <tr><td><kbd>␣rs</kbd> · <kbd>␣ri</kbd> · <kbd>␣rx</kbd> <span class="m">[n x]</span></td><td>refactoring: pick · inline variable · extract variable</td></tr>
-<tr><td><kbd>␣rf</kbd> · <kbd>␣rp</kbd> / <kbd>␣rP</kbd> · <kbd>␣rc</kbd></td><td>extract function · debug-print variable / location · clean up debug prints</td></tr>
+<tr><td><kbd>␣rf</kbd> / <kbd>␣rF</kbd> · <kbd>␣rp</kbd> / <kbd>␣rP</kbd> · <kbd>␣rc</kbd></td><td>extract function / to a file · debug-print variable / location · clean up debug prints</td></tr>
 <tr><td><kbd>␣Sr</kbd> <span class="m">[n v]</span> · <kbd>␣SR</kbd> · <kbd>␣SC</kbd></td><td>sniprun: run line/selection · run as operator · clear output</td></tr>
 </table>
 
@@ -162,7 +169,7 @@
 <tr><td><kbd>␣dh</kbd> / <kbd>␣dH</kbd> · <kbd>␣de</kbd> · <kbd>[h</kbd> / <kbd>]h</kbd></td><td>toggle breakpoint / conditional · break on exceptions · previous / next breakpoint</td></tr>
 <tr><td><kbd>␣d←</kbd> · <kbd>␣d↓</kbd> · <kbd>␣d→</kbd> · <kbd>␣d↑</kbd></td><td>continue · step over · step into · step out</td></tr>
 <tr><td><kbd>␣dn</kbd> · <kbd>␣dc</kbd> · <kbd>␣di</kbd> <span class="m">[n v]</span> · <kbd>␣dr</kbd></td><td>run to cursor · terminate · hover value · toggle REPL</td></tr>
-<tr><td><kbd>␣dut</kbd> <kbd>␣duo</kbd> <kbd>␣due</kbd> <kbd>␣dul</kbd> <kbd>␣dur</kbd> · <kbd>␣dC</kbd></td><td>dap-view: toggle · open · expression · console · repl · clear virtual text</td></tr>
+<tr><td><kbd>␣dut</kbd> <kbd>␣duo</kbd> <kbd>␣due</kbd> <kbd>␣dul</kbd> <kbd>␣dur</kbd> · <kbd>␣duc</kbd> / <kbd>␣duC</kbd> · <kbd>␣dC</kbd></td><td>dap-view: toggle · open · expression · console · repl · close / force close · clear virtual text</td></tr>
 <tr><td><kbd>␣dt</kbd> <span class="m">Go</span> · <kbd>␣dR</kbd> <span class="m">Rust</span></td><td>debug nearest test · debuggables picker</td></tr>
 </table>
 
@@ -170,6 +177,9 @@
 <table>
 <tr><td><kbd>␣gl</kbd> / <kbd>␣gL</kbd> · <kbd>␣go</kbd> <span class="m">[n v]</span></td><td>lazygit cwd / root · open file (or selected lines) on the forge</td></tr>
 <tr><td><kbd>␣gf</kbd> · <kbd>␣gB</kbd> · <kbd>␣gm</kbd></td><td>file history (diffview) · blame sidebar · merge tool (diffview)</td></tr>
+<tr><td><kbd>]g</kbd> / <kbd>[g</kbd> · <kbd>ih</kbd> <span class="m">[o x]</span></td><td>next / previous hunk (gitsigns) · hunk text object</td></tr>
+<tr><td><kbd>␣gs</kbd> / <kbd>␣gS</kbd> · <kbd>␣gr</kbd> / <kbd>␣gR</kbd></td><td>stage hunk (<span class="m">[v]</span>: lines) / buffer · reset hunk (<span class="m">[v]</span>: lines) / buffer</td></tr>
+<tr><td><kbd>␣gp</kbd> / <kbd>␣gP</kbd> · <kbd>␣gb</kbd></td><td>preview hunk in a float / inline · blame line (full commit)</td></tr>
 <tr><td><kbd>␣xg</kbd> · <kbd>[c</kbd> / <kbd>]c</kbd> <span class="m">in merge tool</span></td><td>list conflicts in project · previous / next conflict</td></tr>
 <tr><td><kbd>␣gco</kbd> <kbd>␣gct</kbd> <kbd>␣gcb</kbd> <kbd>␣gca</kbd> · <kbd>␣gcO</kbd> <kbd>␣gcT</kbd> <kbd>␣gcB</kbd> <kbd>␣gcA</kbd></td><td>choose ours / theirs / base / all for this hunk · same for the whole file (in diffview merge tool; <kbd>dc</kbd> / <kbd>dC</kbd> delete conflict region / whole file)</td></tr>
 <tr><td><kbd>␣fg</kbd> · <kbd>␣ge</kbd></td><td>picker of changed files · NeoTree git status</td></tr>
@@ -182,6 +192,7 @@
 <tr><td><kbd>␣nl</kbd> <kbd>␣nh</kbd> <kbd>␣na</kbd> <kbd>␣nd</kbd> · <kbd>Shift+↵</kbd> <span class="m">[c]</span></td><td>noice: last message · history · all · dismiss · redirect command output to a split</td></tr>
 <tr><td><kbd>Ctrl+U</kbd> / <kbd>Ctrl+D</kbd> <span class="m">[i n s], in popups</span></td><td>scroll hover / signature / noice window</td></tr>
 <tr><td><kbd>F2</kbd> · <kbd>F3</kbd></td><td>inspect highlight group under cursor · inspect buffer info</td></tr>
+<tr><td><kbd>␣pp</kbd> · <kbd>␣pt</kbd></td><td>snacks profiler (toggle) · profile.nvim start / stop recording</td></tr>
 <tr><td><kbd>␣ps</kbd> / <kbd>␣pS</kbd> · <kbd>␣md</kbd> / <kbd>␣mD</kbd></td><td>syntax profiling start / report · start / stop osv debug server (port 8086)</td></tr>
 <tr><td><kbd>␣Oa</kbd> <kbd>␣OA</kbd> <kbd>␣Os</kbd> <kbd>␣Ot</kbd> <kbd>␣Or</kbd> <kbd>␣Oe</kbd> <kbd>␣Of</kbd> <span class="m">[n v]</span></td><td>opencode: ask · ask &amp; submit · action · toggle (<span class="m">[n t]</span>) · review · explain · fix diagnostics</td></tr>
 <tr><td><kbd>␣L</kbd> · <kbd>␣L…</kbd></td><td>Lazy · under <code>nvim leetcode.nvim</code>: <kbd>␣Ld</kbd> today, <kbd>␣Lr</kbd> run, <kbd>␣Ls</kbd> submit (<kbd>␣e</kbd>/<kbd>␣E</kbd>/<kbd>␣ff</kbd>/<kbd>␣fb</kbd> rebound)</td></tr>

@@ -99,7 +99,7 @@
 <tr><td><code>help <i>cmd</i></code></td><td>runs <code><i>cmd</i> --help</code> through bat with help-page highlighting</td></tr>
 <tr><td><code>z <i>query</i></code> · <code>zi</code></td><td>zoxide: jump to the best-ranked directory · interactive pick (fzf — the popup keys above apply)</td></tr>
 <tr><td><code>rich <i>cmd</i></code></td><td>"real which": <code>realpath $(which cmd)</code> — resolves the nix store path</td></tr>
-<tr><td><code>killport <i>N</i></code></td><td>kill -9 whatever listens on port N (falls back to sudo; needs <code>lsof</code>, not installed)</td></tr>
+<tr><td><code>killport <i>N</i></code></td><td>kill -9 whatever listens on TCP/UDP port N (<code>ss</code>; sudo when the socket is not yours)</td></tr>
 <tr><td><code>clipcopy</code> · <code>clippaste</code></td><td>clipboard from the shell: <code>cmd | clipcopy</code>, <code>clippaste &gt; file</code> (wl-copy / wl-paste underneath)</td></tr>
 <tr><td><code>als</code> · <code>als <i>str</i></code> · <code>als --groups</code></td><td>all aliases by group · search · group names (oh-my-zsh aliases plugin)</td></tr>
 <tr><td><code>mpv-hq</code></td><td><code>mpv --profile=hq</code> (high-quality profile, ewa_lanczossharp scaling; Anime4K is <kbd>Ctrl+1..6</kbd> inside mpv)</td></tr>

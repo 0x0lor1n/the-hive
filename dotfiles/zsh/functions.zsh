@@ -11,8 +11,12 @@ zle -N copybuffer
 
 # Kill process on specified port
 function killport() {
-  local pids=$(lsof -t -i:"$1" 2>/dev/null)
-  if [[ -z "$pids" ]]; then
+  local filter="( sport = :$1 )" out
+  out=$(ss -Htulnp "$filter")
+  # ss shows pid= only for sockets the caller owns.
+  [[ -n $out && $out != *pid=* ]] && out=$(sudo ss -Htulnp "$filter")
+  local -a pids=(${(u)${(M)${=${out//[,()]/ }}:#pid=*}#pid=})
+  if (( ! $#pids )); then
     echo "No process found on port $1"
     return 1
   fi
