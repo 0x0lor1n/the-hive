@@ -143,8 +143,10 @@ in {
         # (server/layer-users-admin). Read through hive by dev too: the
         # system-wide `Host minas-tirith`/`imladris` entries (layer-users-local,
         # ygg-client) point at this path, and one key per workstation is still
-        # one key to revoke.
-        user-ssh-key.owner = lib.head config.hive.roleHolders.admin;
+        # one key to revoke. File owner is root, not admin: ssh rejects a group-
+        # readable key only when the caller *owns* it, so 0640 root:hive is the
+        # one layout every hive member can load.
+        user-ssh-key.owner = "root";
         user-ssh-key.group = "hive";
         user-ssh-key.mode = "0640";
         user-ssh-key.generator.script = {
