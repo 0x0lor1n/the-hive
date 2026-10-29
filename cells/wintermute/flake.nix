@@ -6,8 +6,8 @@
   # so a cell input cannot leak into a host's evaluation.
   # Plan: hive-plans/wintermute/coreboot-5580.md
   inputs = {
-    # Pinned upstream coreboot; the board port lives in-tree under
-    # mainboard/dell/latitude_5580 once Phase 1 starts.
+    # Pinned upstream coreboot; the board port is overlaid from
+    # ./coreboot/src/mainboard/dell/precision_3520.
     coreboot = {
       url = "git+https://review.coreboot.org/coreboot.git?submodules=1";
       flake = false;
