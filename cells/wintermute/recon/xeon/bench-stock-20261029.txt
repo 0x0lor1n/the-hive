@@ -1,0 +1,66 @@
+== bench tag=stock board=xeon 2026-10-29T10:14:41+01:00
+bios: 1.16.0 kernel: 7.2.2-cachyos nproc: 8
+governor: performance
+== boot
+Startup finished in 10.013s (firmware) + 4.852s (loader) + 1.113s (kernel) + 9.801s (initrd) + 13.826s (userspace) = 39.608s 
+graphical.target reached after 13.825s in userspace.
+== idle 60 s (Busy% / MHz / temp / W)
+60.003326 sec
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+1.53	3760	50	50	2.47
+== sysbench cpu 30 s
+    events per second:  7350.23
+    total time:                          30.0008s
+== sysbench memory
+32768.00 MiB transferred (77581.39 MiB/sec)
+    total time:                          0.4211s
+== sustained 10 min: stress-ng all cores (bogo ops) + turbostat average over the run
+stress-ng: info:  [27445] setting to a 10 mins run per stressor
+stress-ng: info:  [27445] dispatching hogs: 8 cpu
+stress-ng: metrc: [27445] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s
+stress-ng: metrc: [27445]                           (secs)    (secs)    (secs)   (real time) (usr+sys time)
+stress-ng: metrc: [27445] cpu             5143581    600.00   4778.69      0.41      8572.61        1076.26
+stress-ng: info:  [27445] skipped: 0
+stress-ng: info:  [27445] passed: 8: cpu (8)
+stress-ng: info:  [27445] failed: 0
+stress-ng: info:  [27445] metrics untrustworthy: 0
+stress-ng: info:  [27445] successful run completed in 10 mins
+600.060498 sec
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+99.73	3385	76	76	35.24
+== sensors after
+iwlwifi_1-virtual-0
+Adapter: Virtual device
+temp1:        +30.0°C  
+
+dell_smm-isa-00de
+Adapter: ISA adapter
+fan1:        3279 RPM  (min =    0 RPM, max = 4900 RPM)
+temp1:        +78.0°C  
+temp2:        +69.0°C  
+temp3:        +43.0°C  
+temp4:        +37.0°C  
+temp5:         +0.0°C  
+pwm1:             64%  MANUAL CONTROL
+
+BAT0-acpi-0
+Adapter: ACPI interface
+in0:           8.36 V  
+curr1:       1000.00 uA 
+
+coretemp-isa-0000
+Adapter: ISA adapter
+Package id 0:  +70.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 0:        +69.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 1:        +66.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 2:        +70.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 3:        +68.0°C  (high = +100.0°C, crit = +100.0°C)
+
+pch_skylake-virtual-0
+Adapter: Virtual device
+temp1:        +48.0°C  
+
+acpitz-acpi-0
+Adapter: ACPI interface
+temp1:        +25.0°C  
+
