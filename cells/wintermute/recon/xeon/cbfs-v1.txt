@@ -1,0 +1,26 @@
+FMAP REGION: COREBOOT
+Name                           Offset     Type           Size   Comp
+cbfs_master_header             0x0        cbfs header        32 none
+cpu_microcode_blob.bin         0x80       microcode      218112 none
+intel_fit                      0x354c0    intel_fit         176 none
+fallback/romstage              0x355c0    stage           61680 none
+fallback/ramstage              0x44740    stage          129986 LZMA (282100 decompressed)
+config                         0x64380    raw              4224 LZMA (14914 decompressed)
+revision                       0x65440    raw               739 none
+build_info                     0x65780    raw               105 none
+fallback/dsdt.aml              0x65840    raw             10869 none
+vbt.bin                        0x68300    raw              1166 LZMA (4608 decompressed)
+(empty)                        0x687c0    null             2020 none
+fspm.bin                       0x68fc0    fsp            405504 none
+fsps.bin                       0xcc000    fsp            147442 LZ4  (188416 decompressed)
+fallback/postcar               0xf0040    stage           48304 none
+fallback/payload               0xfbd40    simple elf    1729532 none
+(empty)                        0x2a2180   null          5574180 none
+bootblock                      0x7f2fc0   bootblock       49152 none
+
+'BIOS' (read-only, size 9109504, offset 7667712)
+'RW_MRC_CACHE' (size 65536, offset 7667712)
+'SMMSTORE' (size 524288, offset 7733248)
+'CONSOLE' (size 131072, offset 8257536)
+'FMAP' (read-only, size 4096, offset 8388608)
+'COREBOOT' (CBFS, size 8384512, offset 8392704)
