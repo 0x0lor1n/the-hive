@@ -1,0 +1,47 @@
+# 10 cold boots, flash #4 ROM (sha256 0405398a...760df12f), 2026-10-29
+# Each: poweroff, charger out ~10 s, power on, rpool passphrase. Console = /sys/firmware/log.
+# fw = systemd-analyze firmware time (coreboot + edk2). T/M/P = TianoCore / systemd-boot menu / passphrase prompt seen on HDMI.
+# n  fw       bootblocks  MRC                                   screen
+0   26.950s  1           no data -> trained, cache written     T M P (training boot)
+1   15.821s  1           cache hit, does not need update       T - - (HDMI black after TianoCore, passphrase typed blind; Linux i915 restored both outputs)
+2   16.272s  1           cache hit, does not need update       T M P
+3   15.847s  1           cache hit, does not need update       T M P
+4   16.414s  1           cache hit, does not need update       T M P
+5   16.103s  1           cache hit, does not need update       T M P
+6   16.212s  1           cache hit, does not need update       T M P
+7   16.192s  1           cache hit, does not need update       T M P
+8   16.626s  1           cache hit, does not need update       T M P
+9   16.346s  1           cache hit, does not need update       T M P
+10  16.324s  1           cache hit, does not need update       T M P
+
+# cbmem -t, cached boot 2 (coreboot only; MRC skipped, total 1.84 s vs 15.27 s training in cbmem-t-4.txt)
+   9:finished loading ramstage                         325,085 (1,562)
+  10:start of ramstage                                 351,502 (26,416)
+ 971:loading FSP-S                                     355,141 (3,639)
+  17:starting LZ4 decompress (ignore for x86)          356,266 (1,124)
+  18:finished LZ4 decompress (ignore for x86)          365,862 (9,596)
+  30:early chipset initialization                      463,921 (98,058)
+ 954:calling FspSiliconInit                            467,789 (3,868)
+ 955:returning from FspSiliconInit                     487,334 (19,544)
+  31:device enumeration                                497,356 (10,022)
+  40:device configuration                              527,332 (29,975)
+ 956:calling FspNotify(AfterPciEnumeration)            629,749 (102,416)
+ 957:returning from FspNotify(AfterPciEnumeration)     629,887 (138)
+  50:device enable                                     739,141 (109,253)
+  60:device initialization                             756,485 (17,344)
+  15:starting LZMA decompress (ignore for x86)         762,012 (5,527)
+  16:finished LZMA decompress (ignore for x86)         762,153 (141)
+  70:device setup done                                 1,617,063 (854,910)
+  75:cbmem post                                        1,617,856 (792)
+  80:write tables                                      1,617,866 (9)
+  85:finalize chips                                    1,719,938 (102,071)
+  90:starting to load payload                          1,720,774 (836)
+  15:starting LZMA decompress (ignore for x86)         1,727,313 (6,539)
+  16:finished LZMA decompress (ignore for x86)         1,849,261 (121,947)
+ 958:calling FspNotify(ReadyToBoot)                    1,851,215 (1,954)
+ 959:returning from FspNotify(ReadyToBoot)             1,851,382 (166)
+ 960:calling FspNotify(EndOfFirmware)                  1,851,386 (4)
+ 961:returning from FspNotify(EndOfFirmware)           1,851,439 (52)
+  99:selfboot jump                                     1,855,442 (4,003)
+
+Total Time: 1,835,349
