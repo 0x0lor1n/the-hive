@@ -18,6 +18,11 @@
       url = "git+https://review.coreboot.org/deguard";
       flake = false;
     };
+    # Branch = coreboot's EDK2_TAG_OR_REV default for EDK2_REPO_MRCHROMEBOX.
+    edk2 = {
+      url = "git+https://github.com/MrChromebox/edk2?ref=uefipayload_2605&submodules=1";
+      flake = false;
+    };
   };
   outputs = i: i;
 }
