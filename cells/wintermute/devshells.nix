@@ -3,6 +3,7 @@
 # gitignored except the text reports.
 # Programmer: ESP-Prog (FT2232H). Port A = JTAG header, MPSSE mode.
 #   TCK->CLK  TDI->MOSI  TDO->MISO  TMS->CS#  GND  3.3V->VCC+WP#+HOLD#
+# Generic rig wiring and safety: https://github.com/0x0lor1n/spi-clip-rig
 # Board fully unpowered: no AC, no battery, no CMOS cell.
 {
   inputs,
