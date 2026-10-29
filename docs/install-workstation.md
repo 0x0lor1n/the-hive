@@ -90,6 +90,11 @@ nixos-install → reboot.
 - Boot 1: rpool asks for the passphrase on console. `zfs-key-sync.service` rotates
   the pool key to the agenix passphrase and seals a credential into
   `/boot/zfs-unlock/rpool.cred`. Every boot after that unlocks silently.
+- The passphrase is only in agenix, not in KeePass. When the TPM refuses
+  (another firmware, another board), decrypt it on a host whose TPM identity
+  is a master identity: `rage -d -i secrets/<builder>-nix-rage.pub
+  secrets/generated/<host>/zfs-rpool-passphrase.age` (`nix shell
+  nixpkgs#rage nixpkgs#age-plugin-tpm`), or with the KeePass recovery age key.
 - Secure Boot — see next section. No `sbctl` in PATH is needed, the config does it.
 - Create the host TPM identity (`age-plugin-tpm --generate` with PIN) as
   `secrets/<host>-nix-rage.pub` and add it to `masterIdentities` (with its pubkey);
@@ -173,7 +178,7 @@ VMs, it is not a config bug.
   generation (Lanzaboote UKIs are dynamic, so PCR 11 is never used). disko
   creates the pool with a throwaway key; on first login `zfs-key-sync`
   rotates it to the agenix passphrase, which changes the fingerprint, so the
-  next boot falls back to the passphrase (KeePass) exactly once, then
+  next boot falls back to the passphrase (agenix, see §5) exactly once, then
   reseals. Rebuilds do **not** trigger this. If it recurs, check
   `journalctl -b -u zfs-key-sync` and `zpool get guid rpool`.
 
