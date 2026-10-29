@@ -192,6 +192,7 @@ in {
       dmidecode
       pciutils
       usbutils
+      i2c-tools
       acpica-tools
       # build
       coreboot-toolchain.i386 # coreboot proper (romstage/ramstage are 32-bit)
