@@ -1,0 +1,112 @@
+00000000-00000fff : Reserved
+00001000-00057fff : System RAM
+00058000-00058fff : Reserved
+00059000-0009efff : System RAM
+0009f000-000fffff : Reserved
+  000a0000-000bffff : PCI Bus 0000:00
+  000c0000-000cffff : Video ROM
+  000d0000-000d0fff : Adapter ROM
+  000f0000-000fffff : System ROM
+00100000-6a44ffff : System RAM
+  12400000-1397ad17 : Kernel code
+  13a00000-14ab8fff : Kernel rodata
+  14c00000-14ee4bff : Kernel data
+  159eb000-15dfffff : Kernel bss
+6a450000-6a450fff : ACPI Non-volatile Storage
+6a451000-6a451fff : Reserved
+6a452000-766c4fff : System RAM
+766c5000-7674dfff : Reserved
+7674e000-7a1a8fff : System RAM
+7a1a9000-7a565fff : Reserved
+7a566000-7a5acfff : ACPI Tables
+7a5ad000-7af20fff : ACPI Non-volatile Storage
+7af21000-7b5fefff : Reserved
+7b5ff000-7b5fffff : System RAM
+7b600000-7f7fffff : Reserved
+  7d800000-7f7fffff : Graphics Stolen Memory
+7f800000-efffffff : PCI Bus 0000:00
+  80000000-8fffffff : 0000:00:02.0
+  90000000-b1ffffff : PCI Bus 0000:04
+  c0000000-d1ffffff : PCI Bus 0000:01
+    c0000000-cfffffff : 0000:01:00.0
+    d0000000-d1ffffff : 0000:01:00.0
+  d4000000-ea0fffff : PCI Bus 0000:04
+  eb000000-ebffffff : 0000:00:02.0
+  ec000000-ed0fffff : PCI Bus 0000:01
+    ec000000-ecffffff : 0000:01:00.0
+    ed000000-ed07ffff : 0000:01:00.0
+  ed100000-ed1fffff : PCI Bus 0000:03
+    ed100000-ed100fff : 0000:03:00.0
+      ed100000-ed100fff : rtsx_pci
+  ed200000-ed2fffff : PCI Bus 0000:02
+    ed200000-ed201fff : 0000:02:00.0
+      ed200000-ed201fff : iwlwifi
+  ed300000-ed31ffff : 0000:00:1f.6
+    ed300000-ed31ffff : e1000e
+  ed320000-ed32ffff : 0000:00:1f.3
+  ed330000-ed33ffff : 0000:00:14.0
+    ed330000-ed33ffff : xhci-hcd
+  ed340000-ed347fff : 0000:00:04.0
+    ed340000-ed347fff : proc_thermal
+  ed348000-ed34bfff : 0000:00:1f.3
+    ed348000-ed34bfff : ICH HD audio
+  ed34c000-ed34ffff : 0000:00:1f.2
+  ed350000-ed351fff : 0000:00:17.0
+    ed350000-ed351fff : ahci
+  ed352000-ed3520ff : 0000:00:1f.4
+    ed352000-ed3520ff : i801_smbus
+  ed353000-ed3537ff : 0000:00:17.0
+    ed353000-ed3537ff : ahci
+  ed354000-ed3540ff : 0000:00:17.0
+    ed354000-ed3540ff : ahci
+  ed355000-ed355fff : 0000:00:16.3
+  ed356000-ed356fff : 0000:00:16.0
+    ed356000-ed356fff : mei_me
+  ed357000-ed357fff : 0000:00:15.1
+    ed357000-ed3571ff : lpss_dev
+      ed357000-ed3571ff : i2c_designware.1 lpss_dev
+    ed357200-ed3572ff : lpss_priv
+    ed357800-ed357fff : idma64.1
+      ed357800-ed357fff : idma64.1 idma64.1
+  ed358000-ed358fff : 0000:00:15.0
+    ed358000-ed3581ff : lpss_dev
+      ed358000-ed3581ff : i2c_designware.0 lpss_dev
+    ed358200-ed3582ff : lpss_priv
+    ed358800-ed358fff : idma64.0
+      ed358800-ed358fff : idma64.0 idma64.0
+  ed359000-ed359fff : 0000:00:14.2
+    ed359000-ed359fff : Intel PCH thermal driver
+  effe0000-efffffff : PNP0C02:02
+f0000000-f7ffffff : PCI ECAM 0000 [bus 00-7f]
+  f0000000-f7ffffff : PNP0C02:02
+fd000000-fe7fffff : PCI Bus 0000:00
+  fd000000-fdabffff : PNP0C02:03
+  fdac0000-fdacffff : PNP0C02:05
+  fdad0000-fdadffff : PNP0C02:03
+  fdae0000-fdaeffff : PNP0C02:05
+  fdaf0000-fdafffff : PNP0C02:05
+  fdb00000-fdffffff : PNP0C02:03
+    fdc6000c-fdc6000f : iTCO_wdt
+      fdc6000c-fdc6000f : iTCO_wdt iTCO_wdt
+  fe000000-fe010fff : Reserved
+  fe036000-fe03bfff : PNP0C02:03
+  fe03d000-fe3fffff : PNP0C02:03
+  fe410000-fe7fffff : PNP0C02:03
+fec00000-fec00fff : Reserved
+  fec00000-fec003ff : IOAPIC 0
+fed00000-fed003ff : HPET 0
+  fed00000-fed003ff : PNP0103:00
+fed10000-fed17fff : PNP0C02:02
+fed18000-fed18fff : PNP0C02:02
+fed19000-fed19fff : PNP0C02:02
+fed20000-fed3ffff : PNP0C02:02
+fed40000-fed44fff : MSFT0101:00
+  fed40000-fed44fff : MSFT0101:00 MSFT0101:00
+fed45000-fed8ffff : PNP0C02:02
+fed90000-fed90fff : dmar0
+fed91000-fed91fff : dmar1
+fee00000-fee00fff : Reserved
+ff000000-ffffffff : INT0800:00
+  ff000000-ffffffff : PNP0C02:02
+100000000-47e7fffff : System RAM
+47e800000-47fffffff : RAM buffer

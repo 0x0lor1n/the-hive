@@ -1,0 +1,2 @@
+37113:        Device (ECDV)
+37184:            OperationRegion (ECOR, EmbeddedControl, Zero, 0xFF)

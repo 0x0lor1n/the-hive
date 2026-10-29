@@ -1,0 +1,235 @@
+/*
+ * Intel ACPI Component Architecture
+ * AML/ASL+ Disassembler version 20260408 (64-bit version)
+ * Copyright (c) 2000 - 2026 Intel Corporation
+ * 
+ * Disassembling to symbolic ASL+ operators
+ *
+ * Disassembly of ssdt16.dat
+ *
+ * Original Table Header:
+ *     Signature        "SSDT"
+ *     Length           0x000003FF (1023)
+ *     Revision         0x02
+ *     Checksum         0xAF
+ *     OEM ID           "PmRef"
+ *     OEM Table ID     "Cpu0Cst"
+ *     OEM Revision     0x00003001 (12289)
+ *     Compiler ID      "INTL"
+ *     Compiler Version 0x20160422 (538313762)
+ */
+DefinitionBlock ("", "SSDT", 2, "PmRef", "Cpu0Cst", 0x00003001)
+{
+    External (_PR_.CPU0, DeviceObj)
+    External (C3LT, UnknownObj)
+    External (C3MW, UnknownObj)
+    External (C6LT, UnknownObj)
+    External (C6MW, UnknownObj)
+    External (C7LT, UnknownObj)
+    External (C7MW, UnknownObj)
+    External (CDLT, UnknownObj)
+    External (CDLV, UnknownObj)
+    External (CDMW, UnknownObj)
+    External (CDPW, UnknownObj)
+    External (CFGD, UnknownObj)
+    External (FEMD, UnknownObj)
+    External (FMBL, UnknownObj)
+    External (PDC0, UnknownObj)
+    External (PFLV, UnknownObj)
+
+    Scope (\_PR.CPU0)
+    {
+        Name (C1TM, Package (0x04)
+        {
+            Buffer (0x11)
+            {
+                /* 0000 */  0x82, 0x0C, 0x00, 0x7F, 0x00, 0x00, 0x00, 0x00,  // ........
+                /* 0008 */  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79,  // .......y
+                /* 0010 */  0x00                                             // .
+            }, 
+
+            One, 
+            One, 
+            0x03E8
+        })
+        Name (C3TM, Package (0x04)
+        {
+            Buffer (0x11)
+            {
+                /* 0000 */  0x82, 0x0C, 0x00, 0x01, 0x08, 0x00, 0x00, 0x14,  // ........
+                /* 0008 */  0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79,  // .......y
+                /* 0010 */  0x00                                             // .
+            }, 
+
+            0x02, 
+            Zero, 
+            0x01F4
+        })
+        Name (C6TM, Package (0x04)
+        {
+            Buffer (0x11)
+            {
+                /* 0000 */  0x82, 0x0C, 0x00, 0x01, 0x08, 0x00, 0x00, 0x15,  // ........
+                /* 0008 */  0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79,  // .......y
+                /* 0010 */  0x00                                             // .
+            }, 
+
+            0x02, 
+            Zero, 
+            0x015E
+        })
+        Name (C7TM, Package (0x04)
+        {
+            Buffer (0x11)
+            {
+                /* 0000 */  0x82, 0x0C, 0x00, 0x01, 0x08, 0x00, 0x00, 0x16,  // ........
+                /* 0008 */  0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79,  // .......y
+                /* 0010 */  0x00                                             // .
+            }, 
+
+            0x02, 
+            Zero, 
+            0xC8
+        })
+        Name (CDTM, Package (0x04)
+        {
+            Buffer (0x11)
+            {
+                /* 0000 */  0x82, 0x0C, 0x00, 0x01, 0x08, 0x00, 0x00, 0x16,  // ........
+                /* 0008 */  0x18, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79,  // .......y
+                /* 0010 */  0x00                                             // .
+            }, 
+
+            0x03, 
+            Zero, 
+            Zero
+        })
+        Name (MWES, Buffer (0x11)
+        {
+            /* 0000 */  0x82, 0x0C, 0x00, 0x7F, 0x01, 0x02, 0x01, 0x00,  // ........
+            /* 0008 */  0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x79,  // .......y
+            /* 0010 */  0x00                                             // .
+        })
+        Name (AC2V, Zero)
+        Name (AC3V, Zero)
+        Name (C3ST, Package (0x04)
+        {
+            0x03, 
+            Package (0x01)
+            {
+                Zero
+            }, 
+
+            Package (0x01)
+            {
+                Zero
+            }, 
+
+            Package (0x01)
+            {
+                Zero
+            }
+        })
+        Name (C2ST, Package (0x03)
+        {
+            0x02, 
+            Package (0x01)
+            {
+                Zero
+            }, 
+
+            Package (0x01)
+            {
+                Zero
+            }
+        })
+        Name (C1ST, Package (0x02)
+        {
+            One, 
+            Package (0x01)
+            {
+                Zero
+            }
+        })
+        Name (CSTF, Zero)
+        Method (_CST, 0, Serialized)  // _CST: C-States
+        {
+            If (!CSTF)
+            {
+                C3TM [0x02] = C3LT /* External reference */
+                C6TM [0x02] = C6LT /* External reference */
+                C7TM [0x02] = C7LT /* External reference */
+                CDTM [0x02] = CDLT /* External reference */
+                CDTM [0x03] = CDPW /* External reference */
+                DerefOf (CDTM [Zero]) [0x07] = CDLV /* External reference */
+                If (((CFGD & 0x0800) && (PDC0 & 0x0200)))
+                {
+                    C1TM [Zero] = MWES /* \_PR_.CPU0.MWES */
+                    C3TM [Zero] = MWES /* \_PR_.CPU0.MWES */
+                    C6TM [Zero] = MWES /* \_PR_.CPU0.MWES */
+                    C7TM [Zero] = MWES /* \_PR_.CPU0.MWES */
+                    CDTM [Zero] = MWES /* \_PR_.CPU0.MWES */
+                    DerefOf (C3TM [Zero]) [0x07] = C3MW /* External reference */
+                    DerefOf (C6TM [Zero]) [0x07] = C6MW /* External reference */
+                    DerefOf (C7TM [Zero]) [0x07] = C7MW /* External reference */
+                    DerefOf (CDTM [Zero]) [0x07] = CDMW /* External reference */
+                }
+                ElseIf (((CFGD & 0x0800) && (PDC0 & 0x0100)))
+                {
+                    C1TM [Zero] = MWES /* \_PR_.CPU0.MWES */
+                }
+
+                CSTF = Ones
+            }
+
+            AC2V = Zero
+            AC3V = Zero
+            C3ST [One] = C1TM /* \_PR_.CPU0.C1TM */
+            If ((CFGD & 0x20))
+            {
+                C3ST [0x02] = C7TM /* \_PR_.CPU0.C7TM */
+                AC2V = Ones
+            }
+            ElseIf ((CFGD & 0x10))
+            {
+                C3ST [0x02] = C6TM /* \_PR_.CPU0.C6TM */
+                AC2V = Ones
+            }
+            ElseIf ((CFGD & 0x08))
+            {
+                C3ST [0x02] = C3TM /* \_PR_.CPU0.C3TM */
+                AC2V = Ones
+            }
+
+            If ((CFGD & 0x4000))
+            {
+                C3ST [0x03] = CDTM /* \_PR_.CPU0.CDTM */
+                AC3V = Ones
+            }
+
+            If ((AC2V && AC3V))
+            {
+                Return (C3ST) /* \_PR_.CPU0.C3ST */
+            }
+            ElseIf (AC2V)
+            {
+                C2ST [One] = DerefOf (C3ST [One])
+                C2ST [0x02] = DerefOf (C3ST [0x02])
+                Return (C2ST) /* \_PR_.CPU0.C2ST */
+            }
+            ElseIf (AC3V)
+            {
+                C2ST [One] = DerefOf (C3ST [One])
+                C2ST [0x02] = DerefOf (C3ST [0x03])
+                DerefOf (C2ST [0x02]) [One] = 0x02
+                Return (C2ST) /* \_PR_.CPU0.C2ST */
+            }
+            Else
+            {
+                C1ST [One] = DerefOf (C3ST [One])
+                Return (C1ST) /* \_PR_.CPU0.C1ST */
+            }
+        }
+    }
+}
+

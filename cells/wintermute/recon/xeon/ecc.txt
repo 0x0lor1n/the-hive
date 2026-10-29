@@ -1,0 +1,14 @@
+$ journalctl -k -b | grep -i edac
+Oct 28 22:58:24 penrose kernel: EDAC MC: Ver: 3.0.0
+Oct 28 22:58:35 penrose kernel: EDAC MC0: Giving out device to module ie31200_edac controller IE31200: DEV 0000:00:00.0 (POLLED)
+
+$ grep . /sys/devices/system/edac/mc/mc0/{mc_name,size_mb,ce_count,ue_count} rank*/dimm_edac_mode rank*/size
+mc_name:IE31200
+size_mb:16384
+ce_count:0
+ue_count:0
+rank0/dimm_edac_mode:Unknown
+rank1/dimm_edac_mode:Unknown
+rank0/size:8192
+rank1/size:8192
+	Error Correction Type: None

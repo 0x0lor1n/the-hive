@@ -1,0 +1,39 @@
+[31mBad news, you have a `CM238 Chipset LPC/eSPI Controller` so you have ME hardware on board and you can't control or disable it, continuing...
+
+[0mMEI found: [8086:a13a] 100/C230 Series Chipset Family MEI #1
+
+ME Status   : 0x94000245
+ME Status 2 : 0x82108106
+
+ME: FW Partition Table      : OK
+ME: Bringup Loader Failure  : NO
+ME: Firmware Init Complete  : YES
+ME: Manufacturing Mode      : NO
+ME: Boot Options Present    : NO
+ME: Update In Progress      : NO
+ME: Current Working State   : Normal
+ME: Current Operation State : M0 with UMA
+ME: Current Operation Mode  : Normal
+ME: Error Code              : No Error
+ME: Progress Phase          : Clean Moff->Mx wake
+ME: Power Management Event  : Clean global reset
+ME: Progress Phase State    : Unknown 0x10
+
+ME: Extend Register not valid
+
+Error mapping physical memory 0x00000000ed356000 [0x2000] ERRNO=1 Operation not permitted
+Could not map ME setup memory.
+Do you have kernel cmdline argument 'iomem=relaxed' set ?
+[31mBad news, you have a `CM238 Chipset LPC/eSPI Controller` so you have ME hardware on board and you can't control or disable it, continuing...
+
+[0mBoot Guard MSR Output : 0x30000007d
+Measured boot        : ON
+Verified boot        : ON
+FACB in FPFs         : ON
+Module revoked       : OFF
+TPM type             : TPM 2.0
+TPM success          : ON
+NEM enabled          : ON
+[31mVerified boot is enabled and ACM has enabled Cache-As-RAM.
+You can't flash other firmware!
+[0m
