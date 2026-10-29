@@ -10,12 +10,53 @@ chip soc/intel/skylake
 			register "PrimaryDisplay" = "Display_iGFX"
 		end
 
-		device ref south_xhci on end
+		device ref sa_thermal on end
+
+		# Port roles from the stock xh_rvp11 SSDT _UPC/_PLD
+		device ref south_xhci on
+			register "usb2_ports" = "{
+				[0]  = USB2_PORT_MID(OC0),		// JUSB1
+				[1]  = USB2_PORT_MID(OC_SKIP),		// JUSB2
+				[2]  = USB2_PORT_MID(OC_SKIP),		// JUSB3
+				[3]  = USB2_PORT_TYPE_C(OC_SKIP),	// USB-C via Alpine Ridge
+				[5]  = USB2_PORT_MID(OC_SKIP),		// WLAN slot Bluetooth
+				[7]  = USB2_PORT_MID(OC_SKIP),		// WWAN slot
+				[8]  = USB2_PORT_MID(OC_SKIP),		// Touchscreen
+				[9]  = USB2_PORT_MID(OC_SKIP),		// JUSH1 smart card board
+				[10] = USB2_PORT_MID(OC_SKIP),		// Camera
+			}"
+			register "usb3_ports" = "{
+				[0] = USB3_PORT_DEFAULT(OC0),		// JUSB1
+				[1] = USB3_PORT_DEFAULT(OC_SKIP),	// WWAN slot via UZ29 mux
+				[2] = USB3_PORT_DEFAULT(OC_SKIP),	// JUSB2
+				[3] = USB3_PORT_DEFAULT(OC_SKIP),	// JUSB3
+				[4] = USB3_PORT_DEFAULT(OC_SKIP),	// USB-C via Alpine Ridge
+			}"
+		end
+
+		device ref thermal on end
 
 		# HAP set: HECI would only add a reset delay
 		device ref heci1 off end
 
-		device ref sata on end
+		device ref sata on
+			register "SataPortsEnable[0]" = "1"	# KEYM in SATA mode
+			register "SataPortsEnable[2]" = "1"	# JSATA1 bay
+		end
+
+		# CLKREQ# links are nopop on the board
+		device ref pcie_rp2 on				# WLAN
+			register "PcieRpClkSrcNumber[1]" = "1"
+			register "PcieRpClkReqSupport[1]" = "false"
+		end
+		device ref pcie_rp3 on				# RTS525A card reader
+			register "PcieRpClkSrcNumber[2]" = "5"
+			register "PcieRpClkReqSupport[2]" = "false"
+		end
+		device ref pcie_rp9 on				# KEYM x4
+			register "PcieRpClkSrcNumber[8]" = "3"
+			register "PcieRpClkReqSupport[8]" = "false"
+		end
 
 		device ref lpc_espi on
 			register "serirq_mode" = "SERIRQ_CONTINUOUS"
