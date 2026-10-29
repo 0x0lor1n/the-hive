@@ -30,12 +30,12 @@
     });
   };
 
-  # evdi (DisplayLink DRM shim, host-elster) at the nixpkgs pin is 1.14.15 and
+  # evdi (DisplayLink DRM shim, dock-displaylink) at the nixpkgs pin is 1.14.15 and
   # does not compile against 7.x: DRM renamed `drm_atomic_state` to
   # `drm_atomic_commit` in the plane helpers. Upstream fixed it in v1.15.1
   # (2026-09-15). Overriding the package inside both kernel sets keeps the
-  # kernels themselves untouched (same drvs, nyx cache hits); only elster's
-  # closure pulls evdi in. Drop once nixpkgs carries >= 1.15.1.
+  # kernels themselves untouched (same drvs, nyx cache hits); only the
+  # laptops' closures pull evdi in. Drop once nixpkgs carries >= 1.15.1.
   evdiOverlay = final: prev: let
     bump = kp:
       kp.extend (_: kprev: {
@@ -132,10 +132,12 @@
     p.platform-baremetal
     p.gpu-intel
     p.laptop
+    # both laptops dock through DisplayLink (elster at work, penrose at home)
+    p.dock-displaylink
   ];
 
   # HP ZBook Firefly 16 G10 (Raptor Lake, iGPU only, TB4 dock): the same
-  # laptop shape plus what only this host needs (docker, DisplayLink).
+  # laptop shape plus what only this host needs (docker).
   raptorLaptop = intelLaptop ++ [p.host-elster p.audio-dawnctl];
 
   # Encryption + unlock; must match what the host's disk file created.

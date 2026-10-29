@@ -1,5 +1,7 @@
-# kanshi. DVI-I-1 is evdi's fixed name for the DisplayLink 4K; the HP matches by
-# EDID, MST connector numbers change on replug.
+# kanshi. DVI-I-1 is evdi's fixed name for any DisplayLink head (elster's 4K at
+# work, penrose's dock at home), so `docked` takes the monitor's preferred mode
+# rather than pinning one; the HP matches by EDID, MST connector numbers change
+# on replug. eDP-1 likewise: elster's panel is 1920x1200, penrose's 1920x1080.
 _: {
   services.kanshi = {
     enable = true;
@@ -10,7 +12,6 @@ _: {
           {
             criteria = "DVI-I-1";
             status = "enable";
-            mode = "3840x2160@60Hz";
             position = "0,0";
           }
           {
@@ -40,7 +41,6 @@ _: {
           {
             criteria = "eDP-1";
             status = "enable";
-            mode = "1920x1200@60Hz";
             position = "0,0";
           }
         ];
