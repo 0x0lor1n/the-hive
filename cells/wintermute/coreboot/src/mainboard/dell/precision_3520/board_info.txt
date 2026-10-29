@@ -1,0 +1,7 @@
+Category: laptop
+Board URL: https://www.dell.com/support/home/en-us/product-support/product/precision-15-3520-laptop/docs
+ROM package: SOIC-8
+ROM protocol: SPI
+ROM socketed: n
+Flashrom support: y
+Release year: 2017

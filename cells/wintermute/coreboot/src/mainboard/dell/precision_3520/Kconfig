@@ -1,0 +1,36 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+if BOARD_DELL_PRECISION_3520
+
+config BOARD_SPECIFIC_OPTIONS
+	def_bool y
+	select BOARD_ROMSIZE_KB_16384
+	select EC_DELL_MEC5035
+	select HAVE_ACPI_TABLES
+	select MAINBOARD_HAS_LIBGFXINIT
+	select SKYLAKE_SOC_PCH_H
+	select SOC_INTEL_KABYLAKE
+	select SYSTEM_TYPE_LAPTOP
+
+config MAINBOARD_DIR
+	default "dell/precision_3520"
+
+config MAINBOARD_PART_NUMBER
+	default "Precision 3520"
+
+# IFD BIOS region 0x750000-0xffffff
+config CBFS_SIZE
+	default 0x8b0000
+
+config DIMM_MAX
+	default 2
+
+config DIMM_SPD_SIZE
+	default 512
+
+# deguarded ME does not boot without MFS
+config ME_CLEANER_ARGS
+	string
+	default "-S --whitelist MFS"
+
+endif

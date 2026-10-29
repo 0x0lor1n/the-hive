@@ -1,0 +1,33 @@
+## SPDX-License-Identifier: GPL-2.0-only
+
+chip soc/intel/skylake
+	register "eist_enable" = "true"
+
+	device domain 0 on
+		device ref peg0 off end
+
+		device ref igpu on
+			register "PrimaryDisplay" = "Display_iGFX"
+		end
+
+		device ref south_xhci on end
+
+		# HAP set: HECI would only add a reset delay
+		device ref heci1 off end
+
+		device ref sata on end
+
+		device ref lpc_espi on
+			register "serirq_mode" = "SERIRQ_CONTINUOUS"
+
+			# MEC5105: Dell mailbox 0x910 + ACPI EC 0x930/0x934
+			register "gen3_dec" = "LPC_IO(0x900, 0x80)"
+		end
+
+		device ref hda on end
+
+		device ref smbus on end
+
+		device ref gbe on end
+	end
+end
