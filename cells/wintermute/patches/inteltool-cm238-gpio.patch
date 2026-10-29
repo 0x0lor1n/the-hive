@@ -1,0 +1,24 @@
+--- a/util/inteltool/gpio.c
++++ b/util/inteltool/gpio.c
+@@ -1034,6 +1034,9 @@
+ 	case PCI_DEVICE_ID_INTEL_QM170:
+ 	case PCI_DEVICE_ID_INTEL_HM170:
+ 	case PCI_DEVICE_ID_INTEL_CM236:
++	case PCI_DEVICE_ID_INTEL_HM175:
++	case PCI_DEVICE_ID_INTEL_QM175:
++	case PCI_DEVICE_ID_INTEL_CM238:
+ 	case PCI_DEVICE_ID_INTEL_APL_LPC:
+ 	case PCI_DEVICE_ID_INTEL_GLK_LPC:
+ 	case PCI_DEVICE_ID_INTEL_DNV_LPC:
+--- a/util/inteltool/gpio_groups.c
++++ b/util/inteltool/gpio_groups.c
+@@ -119,6 +119,9 @@
+ 	case PCI_DEVICE_ID_INTEL_QM170:
+ 	case PCI_DEVICE_ID_INTEL_HM170:
+ 	case PCI_DEVICE_ID_INTEL_CM236:
++	case PCI_DEVICE_ID_INTEL_HM175:
++	case PCI_DEVICE_ID_INTEL_QM175:
++	case PCI_DEVICE_ID_INTEL_CM238:
+ 	case PCI_DEVICE_ID_INTEL_H270:
+ 	case PCI_DEVICE_ID_INTEL_Z270:
+ 	case PCI_DEVICE_ID_INTEL_Q270:

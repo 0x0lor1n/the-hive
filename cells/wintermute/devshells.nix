@@ -28,7 +28,7 @@
   # decides go/no-go: fused + ME v11 (Kaby Lake) => deguard bypasses it.
   recon = pkgs.writeShellApplication {
     name = "recon";
-    runtimeInputs = with pkgs; [git coreutils gnused util-linux coreboot-utils msr-tools dmidecode pciutils usbutils acpica-tools kmod];
+    runtimeInputs = with pkgs; [git coreutils gnused util-linux cell.packages.inteltool coreboot-utils msr-tools dmidecode pciutils usbutils acpica-tools kmod];
     text =
       prologue
       + ''
@@ -178,6 +178,7 @@ in {
       # dump / flash
       flashrom
       flashprog
+      cell.packages.inteltool
       # coreboot utils: ifdtool, cbfstool, cbmem, nvramtool, inteltool, intelmetool, superiotool, ectool
       coreboot-utils
       intelp2m
