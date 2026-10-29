@@ -118,7 +118,7 @@
       + ''
         img="''${1:?usage: flash-bios <coreboot.rom>}"
         [ -e "$recon/layout.txt" ] || { echo "flash-bios: no $recon/layout.txt — run inspect first" >&2; exit 1; }
-        echo "flash-bios: writing BIOS region only from $img (board=''${BOARD:-i7u}). Ctrl-C within 5s to abort."
+        echo "flash-bios: writing BIOS region only from $img (board=''${BOARD:-xeon}). Ctrl-C within 5s to abort."
         sleep 5
         flashrom -p ${programmer} -l "$recon/layout.txt" -i bios -w "$img"
       '';
@@ -147,7 +147,7 @@
         out="$recon/bench-$tag-$(date +%Y%m%d).txt"
         ts="turbostat --quiet --Summary --show Busy%,Bzy_MHz,CoreTmp,PkgTmp,PkgWatt"
         {
-          echo "== bench tag=$tag board=''${BOARD:-i7u} $(date -Is)"
+          echo "== bench tag=$tag board=''${BOARD:-xeon} $(date -Is)"
           echo "bios: $(cat /sys/class/dmi/id/bios_version) kernel: $(uname -r) nproc: $n"
           echo "governor: $(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || echo n/a)"
           echo "== boot"
