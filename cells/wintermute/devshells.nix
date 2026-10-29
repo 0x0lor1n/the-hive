@@ -28,7 +28,7 @@
   # decides go/no-go: fused + ME v11 (Kaby Lake) => deguard bypasses it.
   recon = pkgs.writeShellApplication {
     name = "recon";
-    runtimeInputs = with pkgs; [git coreutils util-linux coreboot-utils msr-tools dmidecode pciutils usbutils acpica-tools kmod];
+    runtimeInputs = with pkgs; [git coreutils gnused util-linux coreboot-utils msr-tools dmidecode pciutils usbutils acpica-tools kmod];
     text =
       prologue
       + ''
@@ -41,6 +41,8 @@
         echo "== Boot Guard / ME (kill-switch) =="
         intelmetool -b 2>&1 | tee intelmetool-b.txt || true
         intelmetool -m 2>&1 | tee intelmetool-m.txt || true
+        # intelmetool -m needs iomem=relaxed for the version; MEI sysfs does not
+        cat /sys/class/mei/mei0/fw_ver > me-fw-ver.txt 2>&1 || true
         rdmsr -0 0x13A 2>&1 | tee msr-0x13A-boot-guard-sacm.txt || true
         echo "== chipset / GPIO =="
         inteltool -a > inteltool.txt 2>&1 || true
@@ -49,9 +51,10 @@
         acpidump -o acpi.dat >/dev/null && (cd . && acpixtract -a acpi.dat >/dev/null 2>&1 || true)
         for t in dsdt*.dat ssdt*.dat; do [ -e "$t" ] && iasl -d "$t" >/dev/null 2>&1 || true; done
         echo "== PCI / USB / DMI / mem =="
-        lspci -nnvvvxxxx > lspci.txt 2>&1
+        # recon/ is committed to a public repo: serials and UUIDs are redacted
+        lspci -nnvvvxxxx 2>&1 | sed -E 's/(Device Serial Number) .*/\1 <redacted>/' > lspci.txt
         lsusb -v > lsusb.txt 2>&1 || true
-        dmidecode > dmi.txt
+        dmidecode | sed -E 's/^(\s*(Serial Number|UUID|Asset Tag):).*/\1 <redacted>/' > dmi.txt
         cat /proc/iomem > iomem.txt
         cat /proc/cpuinfo > cpuinfo.txt
         cat /sys/class/dmi/id/bios_version > bios_version.txt
