@@ -18,9 +18,26 @@
         "url": "https://review.coreboot.org/coreboot.git"
       }
     },
+    "deguard": {
+      "flake": false,
+      "locked": {
+        "lastModified": 1771157354,
+        "narHash": "sha256-eqNfMeDRy6IquE5jW1n9LMjFHncw24GIF3l4Fvndi0E=",
+        "ref": "refs/heads/main",
+        "rev": "4944584c7cc0201adcc89a0465ab60f7f9f50ac6",
+        "revCount": 21,
+        "type": "git",
+        "url": "https://review.coreboot.org/deguard"
+      },
+      "original": {
+        "type": "git",
+        "url": "https://review.coreboot.org/deguard"
+      }
+    },
     "root": {
       "inputs": {
-        "coreboot": "coreboot"
+        "coreboot": "coreboot",
+        "deguard": "deguard"
       }
     }
   },

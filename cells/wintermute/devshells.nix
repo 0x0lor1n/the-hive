@@ -215,6 +215,7 @@ in {
     ];
     shellHook = ''
       export COREBOOT_SRC=${inputs.coreboot}
+      export DEGUARD_SRC=${inputs.deguard}
       export FLASHROM_PROGRAMMER="${programmer}"
       echo "wintermute: LA-E152P firmware shell (BOARD=''${BOARD:-xeon}; set BOARD=i7u for the old spare board)"
       echo "  sudo --preserve-env=BOARD recon   phase A: live-system recon -> cells/wintermute/recon/\$BOARD/"
@@ -222,6 +223,7 @@ in {
       echo "  inspect <stock.bin>               phase 1.5: ifdtool layout/regions, me_cleaner -c"
       echo "  flash-bios <coreboot.rom>         phase 3: write BIOS region only (after deguard, phase D)"
       echo "  coreboot src: \$COREBOOT_SRC (read-only; cp -r to work on it)"
+      echo "  deguard src:  \$DEGUARD_SRC (read-only; generatedelta.py / finalimage.py for phase D)"
     '';
   };
 }

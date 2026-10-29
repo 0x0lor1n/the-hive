@@ -12,6 +12,12 @@
       url = "git+https://review.coreboot.org/coreboot.git?submodules=1";
       flake = false;
     };
+    # BootGuard bypass tool (ME v11, CVE-2017-5705). Delta for precision_3520
+    # is generated from our own stock dump; donor ME and output stay off-tree.
+    deguard = {
+      url = "git+https://review.coreboot.org/deguard";
+      flake = false;
+    };
   };
   outputs = i: i;
 }
