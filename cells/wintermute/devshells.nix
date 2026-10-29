@@ -88,7 +88,7 @@
         flashrom -p ${programmer} $chip -r "$out.2"
         cmp "$out.1" "$out.2" && mv "$out.1" "$out" && rm "$out.2"
         sha256sum "$out" | tee "$out.sha256"
-        echo "dump: $out — copy to KeePass attachment + osgiliath NOW, before anything else."
+        echo "dump: $out — copy to KeePass attachment + own hardware (never a VPS) NOW, before anything else."
       '';
   };
 
@@ -101,10 +101,12 @@
       + ''
         img="''${1:?usage: inspect <stock.bin>}"
         cd "$recon"
-        ifdtool -d "$img" | tee ifd.txt
-        ifdtool -f layout.txt "$img"
-        ifdtool -x "$img"
-        me_cleaner -c "$img" | tee me_cleaner-c.txt || true
+        # -p sklkbl: without it ifdtool drops the EC region (FLREG8) and emits a bogus "pd" layout line.
+        ifdtool -p sklkbl -d "$img" | tee ifd.txt
+        ifdtool -p sklkbl -f layout.txt "$img"
+        ifdtool -p sklkbl -x "$img"
+        # nixpkgs ships the script as me_cleaner.py
+        me_cleaner.py -c "$img" | tee me_cleaner-c.txt || true
         echo "inspect: regions in $recon (flashregion_*.bin), layout.txt, ifd.txt, me_cleaner-c.txt"
       '';
   };
