@@ -14,7 +14,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | theming (bootsplash, edk2 colours) | no | not started. |
 | AC / battery | works | AC + BAT0 in power_supply, plug/unplug flips live. |
 | fan | works | EC fan loop runs after cmd 0xbf; KDRT0 tracks pkg within 1–2 °C. RPM not visible to Linux (no Dell SMM 0xB2). |
-| thermal zone `_TZ` | no | only CPU TCC/PROCHOT protects. |
+| thermal zone `_TZ` | works | `acpitz` from EC CPU sensor (EC 0x33/0x34), 46 °C idle, 73→87 °C under 60 s stress-ng, critical 107 °C. No passive trip; EC drives the fan. |
 | sleep | dropped | S0/S5 only by design (no `_S3`, `DISABLE_ACPI_HIBERNATE`). |
 | ECC | deferred | 2×8 GB non-ECC DIMMs fitted; ie31200_edac loads, mode None. |
 | dGPU M620 | no | PEG 00:01.0 off. |
