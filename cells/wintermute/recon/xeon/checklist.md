@@ -9,7 +9,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | touchpad | works | PS/2 Generic Mouse in Linux; I2C 00:15.x not enabled. |
 | power button | works | powers on; short press reaches logind. |
 | lid | works | `_LID` polls; "Lid closed."/"Lid opened." via eSPI SMI → SWGPE. One "[Firmware Bug] Unexpected lid state" at boot. |
-| eDP panel / backlight / brightness keys | partial | black until i915 loads (after rpool unlock); flash #18 = PCH backlight PWM from coreboot. |
+| eDP panel / backlight / brightness keys | partial | panel on from TianoCore (#18); backlight 0..937 via intel_backlight; brightness keys dead (no ACPI video device). |
 | HDMI | works | from TianoCore on; the one black boot in #4 was a misread (owner). |
 | theming (bootsplash, edk2 colours) | no | not started. |
 | AC / battery | works | AC + BAT0 in power_supply, plug/unplug flips live. |
