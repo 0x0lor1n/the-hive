@@ -40,6 +40,9 @@ Device (ECDV)
 		Offset (0x26),
 		BSER, 16,
 		BOEM, 8,
+		Offset (0x33),
+		TSEL, 8,	/* sensor select: 0 CPU, 1 skin, 2 mem, 3 NGFF, 4 GPU */
+		TVAL, 8,	/* °C, >= 0x80 invalid */
 	}
 
 	Method (_REG, 2)
@@ -215,6 +218,36 @@ Scope (\_SB)
 			BSTP[3] = \_SB.PCI0.LPCB.ECDV.BVOL
 			Release (BMTX)
 			Return (BSTP)
+		}
+	}
+}
+
+/* The EC raises no temperature events, so the zone is polled. */
+Scope (\_TZ)
+{
+	ThermalZone (THRM)
+	{
+		Name (_TZP, 50)
+
+		/* 107 °C, stock THM */
+		Name (_CRT, 3802)
+
+		/* 27 °C while the EC is not up or its reading is invalid. */
+		Method (_TMP, 0, Serialized)
+		{
+			If (!\_SB.PCI0.LPCB.ECDV.ECOK) {
+				Return (3000)
+			}
+			Local1 = 2
+			While (Local1) {
+				\_SB.PCI0.LPCB.ECDV.TSEL = 0
+				Local0 = \_SB.PCI0.LPCB.ECDV.TVAL
+				If (Local0 < 0x80) {
+					Return (2732 + Local0 * 10)
+				}
+				Local1--
+			}
+			Return (3000)
 		}
 	}
 }
