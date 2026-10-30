@@ -21,8 +21,8 @@ Board
   not the SPI TPM driver. USB2 port 8 (touchscreen, not fitted) is off.
 - `smihandler.c` answers the EC's eSPI SMI with mailbox cmd 0x04 (fetch +
   ack, as Dell's SMM does) and raises SWGPE; `_L62` in `acpi/ec.asl` notifies
-  LID0. The EC never raises its ACPI SCI on its own.
-- Own `acpi/ec.asl` (EC at 0x930/0x934, GPE 0x6E, LID0): upstream
+  LID0 and diffs EC 0x06 for AC/BAT0. The EC never raises its ACPI SCI on its own.
+- Own `acpi/ec.asl` (EC at 0x930/0x934, GPE 0x6E, LID0, AC, BAT0): upstream
   `ec/dell/mec5035/acpi` is newer than the pin, and its SCI switch does not stop
   the eSPI SMIs on MEC5105.
 - `ME_CLEANER_ARGS "-S --whitelist MFS"`: the deguarded ME does not boot
