@@ -22,7 +22,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | TPM 2.0 | works | NPCT650 via TIS MMIO 0xFED40000; ZFS unlock from PCR 15 unchanged. edk2 TPM off, no measured boot. |
 | audio | partial | HDA ALC256 + HDMI codec probe; no verb table, playback not tested. |
 | Wi-Fi / Bluetooth | works | 8265 fitted, no firmware change (#26): RP2 trains, 02:00.0 8086:24fd iwlwifi fw 36 (iwlmvm), no AER; rfkill clear; `nmcli dev wifi list` sees 2.4 + 5 GHz; BT hci0 via USB2 port 5. |
-| SD reader | no | RP3 in devicetree, not tested. |
+| SD reader | works | RP3: 03:00.0 10ec:525a rtsx_pci; SDHC 32 GB at UHS-I SDR104, partitions seen, 200 MiB read 12.8 MB/s without I/O errors; remove/reinsert hotplug OK. |
 | WWAN | no | RP17/18 off. |
 | webcam | no | not tested. |
 | touch screen USB2 port 9 | dropped | port off (no touch panel), `error -71` gone. |
