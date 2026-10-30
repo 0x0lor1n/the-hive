@@ -27,5 +27,5 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | webcam | no | not tested. |
 | touch screen USB2 port 9 | dropped | port off (no touch panel), `error -71` gone. |
 | daily drive ≥ 1 week | dropped | owner raises issues as they come. |
-| `me_cleaner -S`, own SB keys | dropped | went with the daily-drive step; ME is deguarded + HAP, SB off in edk2. |
+| `me_cleaner -S`, own SB keys | no | ME is deguarded + HAP; SB support off in edk2. |
 | performance vs stock | works | bench-coreboot-20261030: 10 min all-core 3365 MHz / 75 °C / 35.24 W (stock 3385 / 76 / 35.24), sysbench +1.9 %, idle 1.74 W (stock 2.47, governor powersave vs performance). |
