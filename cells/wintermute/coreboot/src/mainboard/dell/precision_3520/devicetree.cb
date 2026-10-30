@@ -4,6 +4,9 @@ chip soc/intel/skylake
 	register "eist_enable" = "true"
 
 	device domain 0 on
+		# Stock SSID; snd-hda picks the Dell ALC3246 fixup from it
+		subsystemid 0x1028 0x07a9 inherit
+
 		# M620, x16 on SRC7/SRCCLKREQ7#; FSP-M trains the board's lane reversal
 		device ref peg0 on end
 
