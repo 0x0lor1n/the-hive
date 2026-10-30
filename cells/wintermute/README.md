@@ -14,6 +14,8 @@ Board
   the OS leaves it low with the dGPU in D3.
 - `ramstage.c` sets the 8042 XLATE bit: the EC sends Set 1 scancodes, which
   Linux misreads as Set 2 and keys stick.
+- `ramstage.c` sends mailbox cmd 0xbf (CPU class | TDP code, as Dell's DXE
+  does): until then the EC reads no PECI and the fan never spins.
 - `smihandler.c` answers the EC's eSPI SMI with mailbox cmd 0x04 (fetch +
   ack, as Dell's SMM does) and raises SWGPE; `_L62` in `acpi/ec.asl` notifies
   LID0. The EC never raises its ACPI SCI on its own.
