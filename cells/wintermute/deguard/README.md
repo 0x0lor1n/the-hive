@@ -13,9 +13,9 @@ are discarded; this tree is the remainder. It carries no serial, UUID or key —
 only ME clocking/GPIO/ICC defaults, same class as the deltas already public in
 the deguard tree. Board ME: 11.8.65.3590, 5M SKU (ME region ~7 MiB), PCH-H.
 
-The patched ME image is built off-tree (donor ME + output carry the live ME and
-never enter git):
+The patched ME is built off-tree; donor and output are Intel firmware and stay
+out of git:
 
     python3 "$DEGUARD_SRC/finalimage.py" --delta precision_3520 \
-      --version <donor> --pch H --sku 5M --fake-fpfs "$DEGUARD_SRC/data/fpfs/zero" \
+      --version <donor> --pch H --sku 2M --fake-fpfs "$DEGUARD_SRC/data/fpfs/zero" \
       --input <donor> --output me_deguarded.bin
