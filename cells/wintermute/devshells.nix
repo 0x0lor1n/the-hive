@@ -14,6 +14,13 @@
 
   programmer = "ft2232_spi:type=2232H,port=A,divisor=8";
 
+  # Same switcher as the repo/workstation shells: `cd "$(dev)"` gets back out.
+  dev = pkgs.writeShellApplication {
+    name = "dev";
+    runtimeInputs = with pkgs; [git direnv coreutils];
+    text = builtins.readFile "${inputs.self.outPath}/nix/dev.sh";
+  };
+
   # Default board is xeon (LA-E152P, the port target). i7u = the spare board,
   # only for optional recon of the old board; pass BOARD=i7u explicitly for it.
   prologue = ''
@@ -213,6 +220,7 @@ in {
       inspect
       flash-bios
       bench
+      dev
       alejandra
     ];
     shellHook = ''
