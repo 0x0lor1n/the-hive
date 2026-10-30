@@ -66,6 +66,37 @@ Device (ECDV)
 		}
 	}
 
+	/* Event block left in the mailbox by the SMI handler's CMD_GET_EVENT. */
+	OperationRegion (MBOX, SystemIO, 0x910, 2)
+	Field (MBOX, ByteAcc, NoLock, Preserve)
+	{
+		MBIX, 8,
+		MBDT, 8,
+	}
+	IndexField (MBIX, MBDT, ByteAcc, NoLock, Preserve)
+	{
+		Offset (0x11),
+		EVB0, 8,	/* bit 1 = hotkey */
+		, 8,
+		EVB2, 8,	/* hotkey Set 1 code */
+	}
+
+	/*
+	 * Fn+F12 / Fn+F11 arrive as hotkey events with the F-key scan code. Notify only: with a native
+	 * backlight driver the OS never calls _BCL, and gma INCB/DECB would then write the PWM behind it.
+	 */
+	Method (HKEY, 0, Serialized)
+	{
+		If (EVB0 & 0x02) {
+			Local0 = EVB2
+			If (Local0 == 0x58) {
+				Notify (\_SB.PCI0.GFX0.LCD0, 0x86)
+			} ElseIf (Local0 == 0x57) {
+				Notify (\_SB.PCI0.GFX0.LCD0, 0x87)
+			}
+		}
+	}
+
 	/* The fetched block has no clean event mask, so diff PWST as stock PWCH does. */
 	Method (PWCH, 0, Serialized)
 	{
@@ -99,6 +130,7 @@ Scope (\_GPE)
 		SWGP = 0
 		Notify (\_SB.LID0, 0x80)
 		\_SB.PCI0.LPCB.ECDV.PWCH ()
+		\_SB.PCI0.LPCB.ECDV.HKEY ()
 	}
 }
 

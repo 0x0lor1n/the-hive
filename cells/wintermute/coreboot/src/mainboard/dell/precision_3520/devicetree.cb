@@ -8,6 +8,8 @@ chip soc/intel/skylake
 
 		device ref igpu on
 			register "PrimaryDisplay" = "Display_iGFX"
+			# LCD0 with _BCL/_BCM/_BQC for the brightness hotkeys
+			register "gfx" = "GMA_STATIC_DISPLAYS(0)"
 			# VBT panel 14; without it the PCH PWM stays off
 			register "panel_cfg" = "{
 				.up_delay_ms		= 200,
