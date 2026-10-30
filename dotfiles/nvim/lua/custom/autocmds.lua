@@ -100,7 +100,7 @@ nvim_utils.autocmd("BufWritePre", {
 })
 
 nvim_utils.autocmd("FileType", {
-  pattern = { "gitsendemail", "conf", "editorconfig", "qf", "checkhealth", "less", "taskedit", "gitignore" },
+  pattern = { "gitsendemail", "conf", "editorconfig", "qf", "checkhealth", "less", "taskedit", "gitignore", "asl" },
   group = nvim_utils.augroup "enable_filetypes_syntax",
   callback = function(event)
     vim.bo[event.buf].syntax = vim.bo[event.buf].filetype

@@ -48,6 +48,8 @@ in {
     # in buildEnv. Downgrade to texliveMedium if closure size bites.
     # Forward-search viewer (zathura) lives in desktop/zathura.nix.
     texliveFull
+    # asm: lang-asm.lua sets `mason = false`
+    asm-lsp
     # misc
     d2
     # android
