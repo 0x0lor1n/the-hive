@@ -9,8 +9,8 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | touchpad | works | PS/2 Generic Mouse in Linux; I2C 00:15.x not enabled. |
 | power button | works | powers on; short press reaches logind. |
 | lid | works | `_LID` polls; "Lid closed."/"Lid opened." via eSPI SMI → SWGPE. One "[Firmware Bug] Unexpected lid state" at boot. |
-| eDP panel / backlight / brightness keys | no | not tested under coreboot. |
-| HDMI | partial | works; black after TianoCore once in 10 boots (#4), i915 recovers. |
+| eDP panel / backlight / brightness keys | partial | black until i915 loads (after rpool unlock); flash #18 = PCH backlight PWM from coreboot. |
+| HDMI | works | from TianoCore on; the one black boot in #4 was a misread (owner). |
 | theming (bootsplash, edk2 colours) | no | not started. |
 | AC / battery | works | AC + BAT0 in power_supply, plug/unplug flips live. |
 | fan | works | EC fan loop runs after cmd 0xbf; KDRT0 tracks pkg within 1–2 °C. RPM not visible to Linux (no Dell SMM 0xB2). |
