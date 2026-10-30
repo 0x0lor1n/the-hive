@@ -7,10 +7,14 @@
   l = pkgs.lib;
 
   # Upstream tree with ./coreboot overlaid in the same layout (src/mainboard/..., 3rdparty/blobs/...).
+  # Timeless builds stamp 1970 into SMBIOS, and Linux refuses runtime D3 to root ports of
+  # pre-2015 firmware; the coreboot pin's commit date keeps the build reproducible.
   src = pkgs.runCommand "coreboot-src" {} ''
     cp -r ${inputs.coreboot} $out
     chmod -R u+w $out
     ${l.optionalString (builtins.pathExists ./coreboot) "cp -r ${./coreboot}/. $out/"}
+    substituteInPlace $out/util/genbuild_h/genbuild_h.sh \
+      --replace-fail 'DATE=0' 'DATE=${toString inputs.coreboot.lastModified}'
   '';
 
   makeFlags = ["XGCCPATH=${pkgs.coreboot-toolchain.i386}/bin/" "BUILD_TIMELESS=1"];

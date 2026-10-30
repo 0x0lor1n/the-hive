@@ -50,6 +50,9 @@ Board
   request at 0x248, which hangs nouveau behind a 0x1901 port. `DEV0._DSM`
   answers only Optimus functions 0 and 0x1A, so nouveau turns runtime PM on;
   no GC6.
+- SMBIOS BIOS date = the coreboot pin's commit date, not the 01/01/1970 of
+  `BUILD_TIMELESS`: Linux keeps root ports of pre-2015 firmware out of runtime
+  D3, so the M620 would never reach D3cold.
 
 Payload
 - edk2 is MrChromebox `uefipayload_2605`, built as its own derivation:
