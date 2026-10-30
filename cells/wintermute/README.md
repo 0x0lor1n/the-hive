@@ -45,6 +45,11 @@ Payload
   with 0x08, so Ps2KeyboardDxe never binds and the boot menu has no keyboard.
 - edk2 TPM and LVGL off: one of them reset-loops edk2 here, not bisected.
   Secure Boot off until own keys are enrolled.
+- Bootsplash = `assets/bootsplash.png`, faded to black and scaled to 400x400,
+  swapped into `MdeModulePkg/Logo/Logo.bmp`: coreboot's `logo` target sits in
+  the edk2 Makefile we bypass. BootLogoLib skips a logo taller than the screen.
+- `coreboot-qemu` runs without SMMSTORE: `-bios` maps the ROM read-only and
+  edk2 hangs on a black screen.
 
 ME / Boot Guard
 - deguard has no PCH-H 5M target. The H/2M donor (ASRock H110M-DGS 7.30,

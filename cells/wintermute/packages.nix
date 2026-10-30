@@ -51,7 +51,15 @@
       '';
     };
 
+  # Radial fade to black hides the square on the black GOP screen; BootLogoLib skips a logo taller than the mode.
+  bootsplash = pkgs.runCommand "bootsplash.bmp" {nativeBuildInputs = [pkgs.imagemagick];} ''
+    magick ${./assets/bootsplash.png} -alpha off \
+      \( -size 820x820 radial-gradient:white-black -gravity center -crop 640x640+0+0 +repage -level 30%,85% \) \
+      -compose multiply -composite -resize 400x400 BMP3:$out
+  '';
+
   # Built outside coreboot's make: its edk2 Makefile git-clones into the tree, which the sandbox forbids.
+  # Its `logo` target never runs either, so the splash is swapped in here.
   mkPayload = name: config:
     pkgs.stdenv.mkDerivation {
       name = "${name}-edk2";
@@ -60,7 +68,10 @@
       buildInputs = [pkgs.libuuid];
       hardeningDisable = ["all"];
       dontConfigure = true;
-      postPatch = "patchShebangs BaseTools";
+      postPatch = ''
+        patchShebangs BaseTools
+        install -m644 ${bootsplash} MdeModulePkg/Logo/Logo.bmp
+      '';
       buildPhase = ''
         runHook preBuild
         export WORKSPACE=$PWD PACKAGES_PATH=$PWD PYTHON_COMMAND=python3
