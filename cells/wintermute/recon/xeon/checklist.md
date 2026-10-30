@@ -1,0 +1,31 @@
+# precision_3520 under coreboot — feature checklist
+
+State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
+
+| item | state | evidence |
+|---|---|---|
+| EC driver | works | `ec/dell/mec5035` reused, no new mec5105 driver. Board code adds the MEC5105 extras: CPU id mailbox cmd 0xbf (fan loop), eSPI SMI → cmd 0x04 event fetch → SWGPE (`_L62`). |
+| internal keyboard | works | edk2 menu, systemd-boot, Linux ("AT Translated Set 2"). coreboot sets 8042 XLATE; edk2 `PcdPs2KbdExtendedVerification=FALSE` (EC answers 0x08 to 0xAB). |
+| touchpad | works | PS/2 Generic Mouse in Linux; I2C 00:15.x not enabled. |
+| power button | works | powers on; short press reaches logind. |
+| lid | works | `_LID` polls; "Lid closed."/"Lid opened." via eSPI SMI → SWGPE. One "[Firmware Bug] Unexpected lid state" at boot. |
+| eDP panel / backlight / brightness keys | no | not tested under coreboot. |
+| HDMI | partial | works; black after TianoCore once in 10 boots (#4), i915 recovers. |
+| theming (bootsplash, edk2 colours) | no | not started. |
+| AC / battery | works | AC + BAT0 in power_supply, plug/unplug flips live. |
+| fan | works | EC fan loop runs after cmd 0xbf; KDRT0 tracks pkg within 1–2 °C. RPM not visible to Linux (no Dell SMM 0xB2). |
+| thermal zone `_TZ` | no | only CPU TCC/PROCHOT protects. |
+| sleep | dropped | S0/S5 only by design (no `_S3`, `DISABLE_ACPI_HIBERNATE`). |
+| ECC | deferred | 2×8 GB non-ECC DIMMs fitted; ie31200_edac loads, mode None. |
+| dGPU M620 | no | PEG 00:01.0 off. |
+| Thunderbolt 3 | no | RP5 off. |
+| TPM 2.0 | works | NPCT650 via TIS MMIO 0xFED40000; ZFS unlock from PCR 15 unchanged. edk2 TPM off, no measured boot. |
+| audio | partial | HDA ALC256 + HDMI codec probe; no verb table, playback not tested. |
+| Wi-Fi | deferred | no card fitted (RP2 empty). |
+| SD reader | no | RP3 in devicetree, not tested. |
+| WWAN | no | RP17/18 off. |
+| webcam | no | not tested. |
+| touch screen USB2 port 9 | dropped | port off (no touch panel), `error -71` gone. |
+| daily drive ≥ 1 week | no | not started. |
+| `me_cleaner -S`, own SB keys | no | ME is deguarded + HAP; SB support off in edk2. |
+| performance vs stock | no | `bench coreboot` not run; 60 s load peaks 88–89 °C vs stock 76 °C sustained. |
