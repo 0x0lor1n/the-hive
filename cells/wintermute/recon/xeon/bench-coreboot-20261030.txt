@@ -1,0 +1,49 @@
+== bench tag=coreboot board=xeon 2026-10-30T04:33:04+01:00
+bios: -TIMELESS--LESSTIME- kernel: 7.2.2-cachyos nproc: 8
+governor: powersave
+== boot
+Startup finished in 5.524s (firmware) + 2.276s (loader) + 761ms (kernel) + 9.305s (initrd) + 11.976s (userspace) = 29.844s 
+graphical.target reached after 11.974s in userspace.
+== idle 60 s (Busy% / MHz / temp / W)
+60.006026 sec
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+1.29	1960	44	44	1.74
+== sysbench cpu 30 s
+    events per second:  7486.14
+    total time:                          30.0011s
+== sysbench memory
+32768.00 MiB transferred (78021.82 MiB/sec)
+    total time:                          0.4186s
+== sustained 10 min: stress-ng all cores (bogo ops) + turbostat average over the run
+stress-ng: info:  [12444] setting to a 10 mins run per stressor
+stress-ng: info:  [12444] dispatching hogs: 8 cpu
+stress-ng: info:  [12444] note: 8 cpus have scaling governors set to powersave and this may impact performance; setting /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor to 'performance' may improve performance
+stress-ng: metrc: [12444] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s
+stress-ng: metrc: [12444]                           (secs)    (secs)    (secs)   (real time) (usr+sys time)
+stress-ng: metrc: [12444] cpu             5164821    600.00   4749.82      0.71      8608.00        1087.21
+stress-ng: info:  [12444] skipped: 0
+stress-ng: info:  [12444] passed: 8: cpu (8)
+stress-ng: info:  [12444] failed: 0
+stress-ng: info:  [12444] metrics untrustworthy: 0
+stress-ng: info:  [12444] successful run completed in 10 mins
+600.062468 sec
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+99.74	3365	75	75	35.24
+== sensors after
+pch_skylake-virtual-0
+Adapter: Virtual device
+temp1:        +50.5°C  
+
+coretemp-isa-0000
+Adapter: ISA adapter
+Package id 0:  +68.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 0:        +66.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 1:        +65.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 2:        +64.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 3:        +67.0°C  (high = +100.0°C, crit = +100.0°C)
+
+BAT0-acpi-0
+Adapter: ACPI interface
+in0:           8.33 V  
+curr1:       1000.00 uA 
+
