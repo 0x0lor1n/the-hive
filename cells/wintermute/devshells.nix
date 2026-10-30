@@ -178,6 +178,46 @@
         echo "bench: written to $out — commit it (text, small)."
       '';
   };
+
+  # Phase 4.7(b): the M620 has no VBIOS chip; stock keeps the image in an option-ROM FFS
+  # beside the other 3520 dGPU SKUs. Picked by PCIR device id, checked against the hash
+  # the build pins (packages.nix m620Vbios), then added to the store for requireFile.
+  extract-vbios = pkgs.writeShellApplication {
+    name = "extract-vbios";
+    runtimeInputs = with pkgs; [coreutils uefitool python3 nix];
+    text = ''
+      img=$(realpath "''${1:?usage: extract-vbios <stock.bin>}")
+      want=d44ce6880a32085f3b3ce4adfccd228ad469e22798a9d2ca047c0751255acaaf
+      work=$(mktemp -d)
+      trap 'rm -rf "$work"' EXIT
+      cp "$img" "$work/bios.bin"
+      (cd "$work" && uefiextract bios.bin all >/dev/null) || true
+      out="$work/m620-vbios.rom"
+      python3 - "$work/bios.bin.dump" "$out" <<'EOF'
+      import os, struct, sys
+      for root, _, files in os.walk(sys.argv[1]):
+          if "body.bin" not in files:
+              continue
+          d = open(os.path.join(root, "body.bin"), "rb").read()
+          i = d.find(b"PCIR\xde\x10\xb4\x13")
+          if i < 0:
+              continue
+          # ROM header 55 AA whose PCIR pointer (+0x18) lands on this PCIR
+          for s in range(i - 2, max(-1, i - 0x10000), -1):
+              if d[s:s + 2] == b"\x55\xaa" and s + struct.unpack_from("<H", d, s + 0x18)[0] == i:
+                  n = struct.unpack_from("<H", d, i + 0x10)[0] * 512
+                  open(sys.argv[2], "wb").write(d[s:s + n])
+                  sys.exit(0)
+      sys.exit("extract-vbios: no PCI image for 10de:13b4 in this dump")
+      EOF
+      got=$(sha256sum "$out" | cut -d' ' -f1)
+      if [ "$got" != "$want" ]; then
+        echo "extract-vbios: sha256 $got, build pins $want (different BIOS version?)" >&2
+        exit 1
+      fi
+      nix-store --add-fixed sha256 "$out"
+    '';
+  };
 in {
   wintermute = pkgs.mkShellNoCC {
     name = "wintermute";
@@ -218,6 +258,7 @@ in {
       recon
       dump
       inspect
+      extract-vbios
       flash-bios
       bench
       dev
@@ -231,6 +272,7 @@ in {
       echo "  sudo --preserve-env=BOARD recon   phase A: live-system recon -> cells/wintermute/recon/\$BOARD/"
       echo "  dump                              phase 1: 2x SPI read + cmp via ESP-Prog (EXTERNAL 3.3 V to clip!)"
       echo "  inspect <stock.bin>               phase 1.5: ifdtool layout/regions, me_cleaner -c"
+      echo "  extract-vbios <stock.bin>         phase 4.7: M620 VBIOS from the dump into the store (build needs it)"
       echo "  flash-bios <coreboot.rom>         phase 3: write BIOS region only (after deguard, phase D)"
       echo "  coreboot src: \$COREBOOT_SRC (read-only; cp -r to work on it)"
       echo "  deguard src:  \$DEGUARD_SRC (read-only; generatedelta.py / finalimage.py for phase D)"

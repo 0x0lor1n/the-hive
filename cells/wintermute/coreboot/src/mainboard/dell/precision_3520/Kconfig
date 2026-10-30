@@ -26,6 +26,10 @@ config MAINBOARD_PART_NUMBER
 config CBFS_SIZE
 	default 0x8b0000
 
+# Quadro M620 (no VBIOS chip); the image comes from the stock BIOS region
+config VGA_BIOS_ID
+	default "10de,13b4"
+
 config DIMM_MAX
 	default 2
 

@@ -133,7 +133,17 @@
       '';
     };
 
-  mkRom = name: defconfig: let
+  # M620 VBIOS from the stock BIOS region, never in git: `extract-vbios <stock.bin>` adds it to the store.
+  m620Vbios = pkgs.requireFile {
+    name = "m620-vbios.rom";
+    sha256 = "d44ce6880a32085f3b3ce4adfccd228ad469e22798a9d2ca047c0751255acaaf";
+    message = ''
+      M620 VBIOS (GM107 E2704 SKU 0010, v82.07.BB.00.11) is not in the store.
+      In `dev wintermute`: extract-vbios <stock dump of your own board>
+    '';
+  };
+
+  mkRom = name: defconfig: {extraConfig ? ""}: let
     config = mkConfig name defconfig;
     payload = mkPayload name config;
   in
@@ -145,6 +155,7 @@
         runHook preBuild
         install -m644 ${config}/config .config
         echo 'CONFIG_PAYLOAD_FILE="${payload}/UEFIPAYLOAD.fd"' >> .config
+        ${l.optionalString (extraConfig != "") "echo ${l.escapeShellArg extraConfig} >> .config"}
         make $makeFlags olddefconfig
         make $makeFlags -j$NIX_BUILD_CORES
         runHook postBuild
@@ -162,7 +173,9 @@ in {
     patches = (old.patches or []) ++ [./patches/inteltool-cm238-gpio.patch];
   });
 
-  coreboot-5580 = mkRom "coreboot-5580" ./configs/precision_3520.defconfig;
+  coreboot-5580 = mkRom "coreboot-5580" ./configs/precision_3520.defconfig {
+    extraConfig = ''CONFIG_VGA_BIOS_FILE="${m620Vbios}"'';
+  };
   # Same pipeline on an in-tree board, to tell toolchain/edk2 failures from port failures.
-  coreboot-qemu = mkRom "coreboot-qemu" ./configs/qemu_q35.defconfig;
+  coreboot-qemu = mkRom "coreboot-qemu" ./configs/qemu_q35.defconfig {};
 }

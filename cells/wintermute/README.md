@@ -38,6 +38,12 @@ Board
   `acpi_video0` and skips `intel_backlight`.
 - `ME_CLEANER_ARGS "-S --whitelist MFS"`: the deguarded ME does not boot
   without MFS.
+- M620 VBIOS: the board has no GPU ROM chip, so stock serves the image via
+  ACPI `_ROM`. We ship it as CBFS `pci10de,13b4.rom` (`VGA_BIOS`, not run:
+  libgfxinit is pinned in the defconfig) and coreboot's `pci_rom_ssdt()` writes
+  `_ROM` under `\_SB.PCI0.PEGP.DEV0`; `acpi/peg.asl` declares that scope, which
+  the Skylake ASL lacks. The image is not in git: `extract-vbios <stock.bin>`
+  pulls it from your own dump into the store (`requireFile`, sha256 pinned).
 
 Payload
 - edk2 is MrChromebox `uefipayload_2605`, built as its own derivation:
