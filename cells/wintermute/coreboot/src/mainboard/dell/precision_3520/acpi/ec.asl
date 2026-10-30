@@ -44,6 +44,23 @@ Device (ECDV)
 	}
 }
 
+/* Raised by the eSPI SMI handler; the EC's only event so far is the lid. */
+Scope (\_GPE)
+{
+	OperationRegion (SWGC, SystemIO, ACPI_BASE_ADDRESS + 0x42, 1)
+	Field (SWGC, ByteAcc, NoLock, Preserve)
+	{
+		, 1,
+		SWGP, 1,
+	}
+
+	Method (_L62, 0)
+	{
+		SWGP = 0
+		Notify (\_SB.LID0, 0x80)
+	}
+}
+
 Scope (\_SB)
 {
 	Device (LID0)

@@ -14,11 +14,12 @@ Board
   the OS leaves it low with the dGPU in D3.
 - `ramstage.c` sets the 8042 XLATE bit: the EC sends Set 1 scancodes, which
   Linux misreads as Set 2 and keys stick.
-- `SOC_INTEL_COMMON_BLOCK_SMM_ESPI_DISABLE`: the MEC5105 reports events by eSPI
-  SMI and coreboot has no handler for them, so they storm. Temporary.
+- `smihandler.c` answers the EC's eSPI SMI with mailbox cmd 0x04 (fetch +
+  ack, as Dell's SMM does) and raises SWGPE; `_L62` in `acpi/ec.asl` notifies
+  LID0. The EC never raises its ACPI SCI on its own.
 - Own `acpi/ec.asl` (EC at 0x930/0x934, GPE 0x6E, LID0): upstream
   `ec/dell/mec5035/acpi` is newer than the pin, and its SCI switch does not stop
-  the eSPI SMIs on MEC5105. `_LID` polls; lid events do not arrive.
+  the eSPI SMIs on MEC5105.
 - `ME_CLEANER_ARGS "-S --whitelist MFS"`: the deguarded ME does not boot
   without MFS.
 

@@ -10,8 +10,6 @@ config BOARD_SPECIFIC_OPTIONS
 	select INTEL_GMA_HAVE_VBT
 	select MAINBOARD_HAS_LIBGFXINIT
 	select SKYLAKE_SOC_PCH_H
-	# EC raises eSPI SMI on every event; without Dell's SMM handler it storms
-	select SOC_INTEL_COMMON_BLOCK_SMM_ESPI_DISABLE
 	select SOC_INTEL_KABYLAKE
 	select SYSTEM_TYPE_LAPTOP
 
