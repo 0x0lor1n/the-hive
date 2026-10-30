@@ -44,6 +44,12 @@ Board
   `_ROM` under `\_SB.PCI0.PEGP.DEV0`; `acpi/peg.asl` declares that scope, which
   the Skylake ASL lacks. The image is not in git: `extract-vbios <stock.bin>`
   pulls it from your own dump into the store (`requireFile`, sha256 pinned).
+- M620 runtime power: `acpi/peg.asl` gives `PEGP` a `_PR0/_PR3` power resource
+  (D12/D10 with a PWROK wait, SRC7 clock gate, link disable via 0xB0), ported
+  from Dell's PegSsdt pre-Windows 8 branch. Dell's Win8+ branch uses the L2/3
+  request at 0x248, which hangs nouveau behind a 0x1901 port. `DEV0._DSM`
+  answers only Optimus functions 0 and 0x1A, so nouveau turns runtime PM on;
+  no GC6.
 
 Payload
 - edk2 is MrChromebox `uefipayload_2605`, built as its own derivation:
