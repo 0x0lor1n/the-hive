@@ -23,10 +23,6 @@
         command = "${pkgs.wlopm}/bin/wlopm --off '*'";
         resumeCommand = "${pkgs.wlopm}/bin/wlopm --on '*'";
       }
-      {
-        timeout = 1800;
-        command = "${pkgs.systemd}/bin/systemctl suspend";
-      }
     ];
   };
 }
