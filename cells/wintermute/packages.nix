@@ -54,14 +54,16 @@
   # EFI console colours in EFI order (BLACK BLUE GREEN CYAN RED MAGENTA BROWN LIGHTGRAY, then bright) from the ANSI slots.
   # Imported by path: `inputs.cells.common` loads every block of that cell, encrypted globals included.
   efiColors = map (builtins.elemAt (import ../common/theme.nix {}).ansi) [0 4 2 6 1 5 3 7 8 12 10 14 9 13 11 15];
-  efiColorTable = let
-    byte = hex: o: "0x${builtins.substring o 2 hex}";
-  in
-    l.concatMapStringsSep "\n" (hex: "  { ${byte hex 4}, ${byte hex 2}, ${byte hex 0}, 0x00 },") efiColors;
+  efiPixel = hex: let
+    byte = o: "0x${builtins.substring o 2 hex}";
+  in "{ ${byte 4}, ${byte 2}, ${byte 0}, 0x00 }";
+  efiColorTable = l.concatMapStringsSep "\n" (hex: "  ${efiPixel hex},") efiColors;
 
-  # The setup browser assumes a light-grey body; with the dark palette the body goes black and dark text sits on the accent bars.
+  # The setup browser assumes a light-grey body; with the dark palette the body goes black, and the
+  # setup-form title/footer become outlines, as on the front page.
   browserColors = {
-    TITLE_TEXT = "EFI_BLACK";
+    TITLE_TEXT = "EFI_BLUE";
+    TITLE_BACKGROUND = "EFI_BACKGROUND_BLACK";
     PICKLIST_HIGHLIGHT_TEXT = "EFI_BLACK";
     POPUP_TEXT = "EFI_BLACK";
     SUBTITLE_BACKGROUND = "EFI_BACKGROUND_BLACK";
@@ -104,6 +106,17 @@
               MdeModulePkg/Library/CustomizedDisplayLib/Colors.h
           '')
           browserColors)}
+        # GOP fills outside the console: the boot prompt strip, whose rows past the last text row the setup browser never repaints.
+        subst() { perl -0777 -pi -e "\$n = s/$2/$3/g; \$n == $4 or die \"$1: $2 matched \$n, want $4\n\"" "$1"; }
+        subst MdeModulePkg/Library/BootLogoLib/BootLogoLib.c \
+          'SetMem \(&Color, sizeof \(EFI_GRAPHICS_OUTPUT_BLT_PIXEL\), 0x0\);' \
+          'Color = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)${efiPixel (builtins.elemAt efiColors 0)};' 2
+        subst UefiPayloadPkg/Library/PlatformBootManagerLib/PlatformBootManager.c \
+          'Black.Blue = Black.Green = Black.Red = Black.Reserved = 0;' \
+          'Black = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)${efiPixel (builtins.elemAt efiColors 0)};' 2
+        subst UefiPayloadPkg/Library/PlatformBootManagerLib/PlatformBootManager.c \
+          'White.Blue = White.Green = White.Red = White.Reserved = 0xFF;' \
+          'White = (EFI_GRAPHICS_OUTPUT_BLT_PIXEL)${efiPixel (builtins.elemAt efiColors 15)};' 2
       '';
       buildPhase = ''
         runHook preBuild

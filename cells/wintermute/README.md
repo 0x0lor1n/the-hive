@@ -52,7 +52,11 @@ Payload
 - Console colours: GraphicsConsoleDxe's 16-colour table is rewritten from
   `cells/common/theme.nix` `ansi`. The setup browser's `Colors.h` and field PCDs
   are flipped to a dark body: its stock light-grey body would be the palette's
-  tan, with blue text on it.
+  tan, with blue text on it. Setup-form title/footer are outlines on that body,
+  as the front page has none.
+- BootLogoLib and the boot prompt fill with a hard-coded `#000`, which outlives
+  the splash in the bottom rows of a 1080 px mode (56 text rows = 1064 px);
+  both take palette colour 0 (prompt text colour 15).
 - `coreboot-qemu` runs without SMMSTORE: `-bios` maps the ROM read-only and
   edk2 hangs on a black screen.
 
