@@ -27,16 +27,6 @@
   services.logind.settings.Login = {
     HandleLidSwitch = "ignore";
     HandleLidSwitchExternalPower = "ignore";
-    HandleSuspendKey = "ignore";
-    HandleHibernateKey = "ignore";
-  };
-
-  # No sleep at all: the machine is on or off. Idle only locks (idle.nix).
-  systemd.sleep.settings.Sleep = {
-    AllowSuspend = "no";
-    AllowHibernation = "no";
-    AllowHybridSleep = "no";
-    AllowSuspendThenHibernate = "no";
   };
 
   # Printing: CUPS, driverless (IPP Everywhere). avahi + nssmdns4 lets

@@ -202,7 +202,7 @@ in {
   penrose = mkHost {
     hostKey = "penrose";
     base = workstation;
-    hardware = intelLaptop;
+    hardware = intelLaptop ++ [p.host-penrose];
     encryption = zfsNative;
   };
 
