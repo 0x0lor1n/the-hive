@@ -22,9 +22,19 @@ Board
 - `smihandler.c` answers the EC's eSPI SMI with mailbox cmd 0x04 (fetch +
   ack, as Dell's SMM does) and raises SWGPE; `_L62` in `acpi/ec.asl` notifies
   LID0 and diffs EC 0x06 for AC/BAT0. The EC never raises its ACPI SCI on its own.
-- Own `acpi/ec.asl` (EC at 0x930/0x934, GPE 0x6E, LID0, AC, BAT0): upstream
+- Own `acpi/ec.asl` (EC at 0x930/0x934, GPE 0x6E, LID0, AC, BAT0, `\_TZ.THRM`
+  from the EC CPU sensor at 0x33/0x34): upstream
   `ec/dell/mec5035/acpi` is newer than the pin, and its SCI switch does not stop
   the eSPI SMIs on MEC5105.
+- igpu `panel_cfg` (delays and 200 Hz PWM from the VBT): without it the PCH
+  backlight PWM stays off and the panel is dark until i915 loads. i915 inherits
+  the period, so `intel_backlight` runs 0..937.
+- Brightness keys: the EC reports Fn+F11/F12 in the SMI event block (byte 0
+  bit 1, byte 2 = Set 1 code 0x57/0x58); `HKEY` in `acpi/ec.asl` notifies
+  `GFX0.LCD0` (from `GMA_STATIC_DISPLAYS`) with 0x87/0x86. Notify only, no
+  `_BCM` writes, so the OS backlight driver stays the only PWM writer.
+- `\_SB._INI` queries `_OSI` as stock does: without "Windows 2012" Linux takes
+  `acpi_video0` and skips `intel_backlight`.
 - `ME_CLEANER_ARGS "-S --whitelist MFS"`: the deguarded ME does not boot
   without MFS.
 
