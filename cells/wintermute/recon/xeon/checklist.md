@@ -17,7 +17,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | thermal zone `_TZ` | works | `acpitz` from EC CPU sensor (EC 0x33/0x34), 46 °C idle, 73→87 °C under 60 s stress-ng, critical 107 °C. No passive trip; EC drives the fan. |
 | sleep | dropped | S0/S5 only by design (no `_S3`, `DISABLE_ACPI_HIBERNATE`). |
 | ECC | deferred | 2×8 GB non-ECC DIMMs fitted; ie31200_edac loads, mode None. |
-| dGPU M620 | partial | PEG x16 8GT/s (= stock), 01:00.0 10de:13b4 enumerates, no AER (#23). VBIOS via ACPI `_ROM` from CBFS: nouveau reads bios 82.07.bb.00.11, no "Unable to load the VBIOS" (#24). Runtime D3cold via ACPI `_PR3`: suspends idle, wakes on access, nouveau binds from D3cold, no AER (#26). No PRIME yet. |
+| dGPU M620 | partial | PEG x16 8GT/s (= stock), 01:00.0 10de:13b4 enumerates, no AER (#23). VBIOS via ACPI `_ROM` from CBFS: nouveau reads bios 82.07.bb.00.11, no "Unable to load the VBIOS" (#24). Runtime D3cold via ACPI `_PR3`: suspends idle, wakes on access, nouveau binds from D3cold, no AER (#26). PRIME offload on nouveau: `nvidia-offload glxinfo -B` = NV117, iGPU stays scanout, back to D3cold after. Proprietary driver not tried. |
 | Thunderbolt 3 | no | RP5 off. |
 | TPM 2.0 | works | NPCT650 via TIS MMIO 0xFED40000; ZFS unlock from PCR 15 unchanged. edk2 TPM off, no measured boot. |
 | audio | partial | HDA ALC256 + HDMI codec probe; no verb table, playback not tested. |
