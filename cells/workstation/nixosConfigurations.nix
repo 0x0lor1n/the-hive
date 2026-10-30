@@ -127,7 +127,7 @@
     p.dev-9p-share
   ];
 
-  # Intel laptop, iGPU only (the dGPU is powered down in gpu-intel).
+  # Intel laptop, iGPU scanout (penrose's dGPU: render offload, gpu-intel).
   intelLaptop = [
     p.platform-baremetal
     p.gpu-intel

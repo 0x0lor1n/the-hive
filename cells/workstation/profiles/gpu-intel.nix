@@ -1,9 +1,8 @@
-# Intel iGPU (i915) as the only display device. Counterpart to gpu-virtio.nix:
+# Intel iGPU (i915) as the display device. Counterpart to gpu-virtio.nix:
 # nothing here about cursors or output modes -- a real panel has a real EDID.
 #
-# On a hybrid host (HD 620 + GeForce 930MX) the dGPU is not worth its power
-# budget for dwl, so it stays off the bus. Revisit only if an external display
-# turns out to be wired to it.
+# penrose's Quadro M620 is muxless (no outputs): nouveau binds it as a
+# render-only PRIME offload GPU (DRI_PRIME=1), D3cold via coreboot's _PR3.
 {
   inputs,
   cell,
@@ -13,12 +12,8 @@
     intel-compute-runtime # OpenCL, cheap to carry
   ];
 
-  boot.blacklistedKernelModules = ["nouveau" "nvidia" "nvidia_drm" "nvidia_modeset"];
-  # Without a driver bound, the dGPU sits in D0 forever; runtime PM lets the
-  # PCI core put it to D3cold once nothing claims it.
-  boot.kernelParams = ["nouveau.modeset=0"];
+  # D3cold before (or without) nouveau; pcieport allows it on the root port.
   services.udev.extraRules = ''
-    # NVIDIA VGA/3D controller with no driver: allow runtime suspend.
     ACTION=="add", SUBSYSTEM=="pci", ATTR{vendor}=="0x10de", ATTR{class}=="0x03[0-9]*", ATTR{power/control}="auto"
   '';
 
