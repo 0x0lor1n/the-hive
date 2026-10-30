@@ -45,9 +45,14 @@ Payload
   with 0x08, so Ps2KeyboardDxe never binds and the boot menu has no keyboard.
 - edk2 TPM and LVGL off: one of them reset-loops edk2 here, not bisected.
   Secure Boot off until own keys are enrolled.
-- Bootsplash = `assets/bootsplash.png`, faded to black and scaled to 400x400,
-  swapped into `MdeModulePkg/Logo/Logo.bmp`: coreboot's `logo` target sits in
-  the edk2 Makefile we bypass. BootLogoLib skips a logo taller than the screen.
+- Bootsplash = `assets/bootsplash.png`, faded into the palette black and scaled
+  to 400x400, swapped into `MdeModulePkg/Logo/Logo.bmp`: coreboot's `logo`
+  target sits in the edk2 Makefile we bypass. BootLogoLib skips a logo taller
+  than the screen.
+- Console colours: GraphicsConsoleDxe's 16-colour table is rewritten from
+  `cells/common/theme.nix` `ansi`. The setup browser's `Colors.h` and field PCDs
+  are flipped to a dark body: its stock light-grey body would be the palette's
+  tan, with blue text on it.
 - `coreboot-qemu` runs without SMMSTORE: `-bios` maps the ROM read-only and
   edk2 hangs on a black screen.
 

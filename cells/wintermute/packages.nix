@@ -51,11 +51,36 @@
       '';
     };
 
-  # Radial fade to black hides the square on the black GOP screen; BootLogoLib skips a logo taller than the mode.
+  # EFI console colours in EFI order (BLACK BLUE GREEN CYAN RED MAGENTA BROWN LIGHTGRAY, then bright) from the ANSI slots.
+  # Imported by path: `inputs.cells.common` loads every block of that cell, encrypted globals included.
+  efiColors = map (builtins.elemAt (import ../common/theme.nix {}).ansi) [0 4 2 6 1 5 3 7 8 12 10 14 9 13 11 15];
+  efiColorTable = let
+    byte = hex: o: "0x${builtins.substring o 2 hex}";
+  in
+    l.concatMapStringsSep "\n" (hex: "  { ${byte hex 4}, ${byte hex 2}, ${byte hex 0}, 0x00 },") efiColors;
+
+  # The setup browser assumes a light-grey body; with the dark palette the body goes black and dark text sits on the accent bars.
+  browserColors = {
+    TITLE_TEXT = "EFI_BLACK";
+    PICKLIST_HIGHLIGHT_TEXT = "EFI_BLACK";
+    POPUP_TEXT = "EFI_BLACK";
+    SUBTITLE_BACKGROUND = "EFI_BACKGROUND_BLACK";
+    BANNER_BACKGROUND = "EFI_BACKGROUND_BLACK";
+    FIELD_BACKGROUND = "EFI_BACKGROUND_BLACK";
+    ARROW_BACKGROUND = "EFI_BACKGROUND_BLACK";
+  };
+  # Field text oldWhite; highlight = black on crystalBlue.
+  browserPcds = l.concatStringsSep " " (l.mapAttrsToList (n: v: "--pcd gEfiMdeModulePkgTokenSpaceGuid.${n}=${v}") {
+    PcdBrowserFieldTextColor = "0x07";
+    PcdBrowserFieldTextHighlightColor = "0x00";
+    PcdBrowserFieldBackgroundHighlightColor = "0x10";
+  });
+
+  # Radial fade into colour 0 (what ClearScreen paints) hides the square; BootLogoLib skips a logo taller than the mode.
   bootsplash = pkgs.runCommand "bootsplash.bmp" {nativeBuildInputs = [pkgs.imagemagick];} ''
-    magick ${./assets/bootsplash.png} -alpha off \
+    magick -size 640x640 xc:'#${builtins.head efiColors}' \( ${./assets/bootsplash.png} -alpha off \) \
       \( -size 820x820 radial-gradient:white-black -gravity center -crop 640x640+0+0 +repage -level 30%,85% \) \
-      -compose multiply -composite -resize 400x400 BMP3:$out
+      -composite -resize 400x400 BMP3:$out
   '';
 
   # Built outside coreboot's make: its edk2 Makefile git-clones into the tree, which the sandbox forbids.
@@ -64,13 +89,21 @@
     pkgs.stdenv.mkDerivation {
       name = "${name}-edk2";
       src = inputs.edk2;
-      nativeBuildInputs = with pkgs; [python3 nasm acpica-tools bc];
+      nativeBuildInputs = with pkgs; [python3 nasm acpica-tools bc perl];
       buildInputs = [pkgs.libuuid];
       hardeningDisable = ["all"];
       dontConfigure = true;
       postPatch = ''
         patchShebangs BaseTools
         install -m644 ${bootsplash} MdeModulePkg/Logo/Logo.bmp
+        TABLE='${efiColorTable}' perl -0777 -pi -e \
+          's/(mGraphicsEfiColors\[16\] = \{).*?\r?\n\};/$1\n$ENV{TABLE}\n};/s or die "mGraphicsEfiColors not found\n"' \
+          MdeModulePkg/Universal/Console/GraphicsConsoleDxe/GraphicsConsole.c
+        ${l.concatStrings (l.mapAttrsToList (n: v: ''
+            perl -pi -e 's/^(#define ${n}\s+)\S+/''${1}${v}/ and $n++; END { $n or die "${n} not found\n" }' \
+              MdeModulePkg/Library/CustomizedDisplayLib/Colors.h
+          '')
+          browserColors)}
       '';
       buildPhase = ''
         runHook preBuild
@@ -78,7 +111,7 @@
         make -C BaseTools -j$NIX_BUILD_CORES
         source edksetup.sh BaseTools
         build -a IA32 -a X64 -n $NIX_BUILD_CORES -b $(cat ${config}/edk2-target) \
-          $(cat ${config}/edk2-flags) -D BUILD_ARCH=X64
+          $(cat ${config}/edk2-flags) ${browserPcds} -D BUILD_ARCH=X64
         runHook postBuild
       '';
       installPhase = ''
