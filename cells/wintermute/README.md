@@ -10,8 +10,9 @@ Board
   dir is built around the SCH5555 Super I/O, this board has only the EC.
 - `bootblock.c` drives `GPP_C15` (HDD_EN) high: FSP-S disables SATA port 2
   if the bay SSD is still unpowered when it probes.
-- `gpio.h` is the inteltool dump, except `GPP_D12` (DGPU_PWR_EN) forced high;
-  the OS leaves it low with the dGPU in D3.
+- `gpio.h` is the inteltool dump, except `GPP_D12` (DGPU_PWR_EN) and `GPP_D10`
+  (DGPU_HOLD_RST#) forced high; the OS leaves both low with the dGPU in D3.
+  `bootblock.c` sets them already, so the M620 is up when FSP-M trains PEG.
 - `ramstage.c` sets the 8042 XLATE bit: the EC sends Set 1 scancodes, which
   Linux misreads as Set 2 and keys stick.
 - `ramstage.c` sends mailbox cmd 0xbf (CPU class | TDP code, as Dell's DXE

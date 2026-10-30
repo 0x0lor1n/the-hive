@@ -1,10 +1,14 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
+#include <console/console.h>
+#include <gpio.h>
 #include <soc/romstage.h>
 #include <spd_bin.h>
 
 void mainboard_memory_init_params(FSPM_UPD *mupd)
 {
+	printk(BIOS_INFO, "dGPU PWROK: %d\n", gpio_get(GPP_D18));
+
 	struct spd_block blk = { .addr_map = { 0x50, 0x52, } };
 	get_spd_smbus(&blk);
 	dump_spd_info(&blk);

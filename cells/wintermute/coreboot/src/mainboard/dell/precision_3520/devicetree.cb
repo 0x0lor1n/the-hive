@@ -4,7 +4,8 @@ chip soc/intel/skylake
 	register "eist_enable" = "true"
 
 	device domain 0 on
-		device ref peg0 off end
+		# M620, x16 on SRC7/SRCCLKREQ7#; FSP-M trains the board's lane reversal
+		device ref peg0 on end
 
 		device ref igpu on
 			register "PrimaryDisplay" = "Display_iGFX"
