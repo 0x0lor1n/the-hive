@@ -16,6 +16,29 @@ DefinitionBlock(
 
 	Scope (\_SB)
 	{
+		/*
+		 * As stock: query _OSI so Linux treats the firmware as Win8+ and keeps the native
+		 * intel_backlight instead of acpi_video0 (GFX0.LCD0 exists only for the hotkey Notify).
+		 */
+		Method (_INI, 0, Serialized)
+		{
+			OSYS = 2000
+			If (CondRefOf (\_OSI)) {
+				If (_OSI ("Windows 2009")) {
+					OSYS = 2009
+				}
+				If (_OSI ("Windows 2012")) {
+					OSYS = 2012
+				}
+				If (_OSI ("Windows 2013")) {
+					OSYS = 2013
+				}
+				If (_OSI ("Windows 2015")) {
+					OSYS = 2015
+				}
+			}
+		}
+
 		Device (PCI0)
 		{
 			#include <soc/intel/skylake/acpi/systemagent.asl>
