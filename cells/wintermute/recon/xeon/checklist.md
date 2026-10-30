@@ -11,7 +11,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | lid | works | `_LID` polls; "Lid closed."/"Lid opened." via eSPI SMI → SWGPE. One "[Firmware Bug] Unexpected lid state" at boot. |
 | eDP panel / backlight / brightness keys | works | panel on from TianoCore (#18); backlight 0..937 via intel_backlight; brightness keys via ACPI Video Bus (#19), native intel_backlight kept by _OSI (#20). |
 | HDMI | works | from TianoCore on; the one black boot in #4 was a misread (owner). |
-| theming (bootsplash, edk2 colours) | no | not started. |
+| theming (bootsplash, edk2 colours) | works | splash from assets/bootsplash.png; console + setup colours from common/theme.nix (#22). |
 | AC / battery | works | AC + BAT0 in power_supply, plug/unplug flips live. |
 | fan | works | EC fan loop runs after cmd 0xbf; KDRT0 tracks pkg within 1–2 °C. RPM not visible to Linux (no Dell SMM 0xB2). |
 | thermal zone `_TZ` | works | `acpitz` from EC CPU sensor (EC 0x33/0x34), 46 °C idle, 73→87 °C under 60 s stress-ng, critical 107 °C. No passive trip; EC drives the fan. |
