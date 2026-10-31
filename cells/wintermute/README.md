@@ -20,9 +20,12 @@ Board
   0x60 arg 1: the EC keeps the speakers muted until the BIOS unmutes them
   (headphones play either way).
 - `hda_verb.c`: stock pin defaults + codec SSID, so the kernel picks the Dell
-  ALC3246 fixup by pin match (headset mic). The coef and vendor-NID writes are
-  the part of Dell's PEIM table that the stock boot applies; the table also
-  holds variants for sibling boards.
+  ALC3246 fixup by pin match (headset mic). Dell's PEIM coef writes are left
+  out: the kernel fixup programs the codec itself.
+- Touchpad: HID over I2C1 (`DLL07A9` at 0x2c, as stock TPD1); the EC's PS/2
+  mouse alone has no gestures. I2C0 is on with nothing on it: without
+  function 0 nobody scans 15.1. The EC masters the pad's bus until EC RAM
+  0x20 is written 0 (stock `ECTP(0)`); `acpi/ec.asl` does that in `_REG`.
 - TPM: the NPCT650 sits on SPI CS#2 behind the PCH's TIS MMIO window
   (0xfed40000, stock `MSFT0101`), so `MEMORY_MAPPED_TPM` + `drivers/pc80/tpm`,
   not the SPI TPM driver. USB2 port 8 (touchscreen, not fitted) is off.

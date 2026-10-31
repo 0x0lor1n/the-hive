@@ -45,12 +45,23 @@ Device (ECDV)
 		TVAL, 8,	/* °C, >= 0x80 invalid */
 	}
 
+	/*
+	 * Writing 0 here makes the EC let go of the touchpad's I2C bus so the PCH can master it
+	 * (stock TPD1._STA, ECTP(0)). Reads back the battery block, not what was written.
+	 */
+	Field (ECOR, ByteAcc, Lock, Preserve)
+	{
+		Offset (0x20),
+		TPRL, 8,
+	}
+
 	Method (_REG, 2)
 	{
 		If (Arg0 == 3) {
 			ECOK = Arg1
 			If (ECOK) {
 				PWSV = PWST & 0x03
+				TPRL = 0
 			}
 		}
 	}

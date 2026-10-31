@@ -3,6 +3,12 @@
 chip soc/intel/skylake
 	register "eist_enable" = "true"
 
+	# I2C0 has nothing on it, but without function 0 nobody scans 15.1
+	register "SerialIoDevMode" = "{
+		[PchSerialIoIndexI2C0] = PchSerialIoPci,
+		[PchSerialIoIndexI2C1] = PchSerialIoPci,	// touchpad
+	}"
+
 	device domain 0 on
 		# Stock SSID on the PCH devices; 1f.3 does not take it (write-once, FSP)
 		subsystemid 0x1028 0x07a9 inherit
@@ -26,6 +32,18 @@ chip soc/intel/skylake
 		end
 
 		device ref sa_thermal on end
+
+		device ref i2c0 on end
+		# Stock TPD1: DLL07A9 at 0x2c, HID descriptor at 0x20
+		device ref i2c1 on
+			chip drivers/i2c/hid
+				register "generic.hid" = ""DLL07A9""
+				register "generic.desc" = ""Touchpad""
+				register "generic.irq" = "ACPI_IRQ_LEVEL_LOW(GPP_B3_IRQ)"
+				register "hid_desc_reg_offset" = "0x20"
+				device i2c 2c on end
+			end
+		end
 
 		# Port roles from the stock xh_rvp11 SSDT _UPC/_PLD
 		device ref south_xhci on

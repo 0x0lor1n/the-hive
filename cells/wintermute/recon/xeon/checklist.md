@@ -6,7 +6,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 |---|---|---|
 | EC driver | works | `ec/dell/mec5035` reused, no new mec5105 driver. Board code adds the MEC5105 extras: CPU id mailbox cmd 0xbf (fan loop), eSPI SMI → cmd 0x04 event fetch → SWGPE (`_L62`). |
 | internal keyboard | works | edk2 menu, systemd-boot, Linux ("AT Translated Set 2"). coreboot sets 8042 XLATE; edk2 `PcdPs2KbdExtendedVerification=FALSE` (EC answers 0x08 to 0xAB). |
-| touchpad | partial | PS/2 Generic Mouse only: no two-finger scroll. Stock runs it as HID over I2C1 (`DLL07A9`, 0x2c, GPP_B3 IRQ); 00:15.1 is off here. |
+| touchpad | works | #32: HID over I2C1 (`DLL07A9`, 0x2c, GPP_B3 IRQ), binds at a cold boot with no I2C errors, pointer + two-finger scroll. Needs I2C0 on (else 15.1 is not scanned) and EC RAM 0x20 ← 0 in `ECDV._REG` (stock `ECTP(0)`: the EC frees the bus). |
 | power button | works | powers on; short press reaches logind. |
 | lid | works | `_LID` polls; "Lid closed."/"Lid opened." via eSPI SMI → SWGPE. One "[Firmware Bug] Unexpected lid state" at boot. |
 | eDP panel / backlight / brightness keys | works | panel on from TianoCore (#18); backlight 0..937 via intel_backlight; brightness keys via ACPI Video Bus (#19), native intel_backlight kept by _OSI (#20). |
