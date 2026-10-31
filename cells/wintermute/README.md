@@ -62,6 +62,10 @@ Board
 - SMBIOS BIOS date = the coreboot pin's commit date, not the 01/01/1970 of
   `BUILD_TIMELESS`: Linux keeps root ports of pre-2015 firmware out of runtime
   D3, so the M620 would never reach D3cold.
+- Core+cache undervolt −90 mV via the OC mailbox driver, values as CBFS
+  `option/oc_undervolt_*` integers (`mkRom` `options`): the board has no CFR
+  menu, so they are fixed per build. Measured live: all-core holds the 3.6 GHz
+  ratio ceiling inside the EC's 35 W limit.
 
 Payload
 - edk2 is MrChromebox `uefipayload_2605`, built as its own derivation:

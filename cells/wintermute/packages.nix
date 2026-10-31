@@ -147,7 +147,11 @@
     '';
   };
 
-  mkRom = name: defconfig: {extraConfig ? ""}: let
+  # options: CBFS `option/<name>` integers, read by get_uint_option (needs USE_CBFS_FILE_OPTION_BACKEND).
+  mkRom = name: defconfig: {
+    extraConfig ? "",
+    options ? {},
+  }: let
     config = mkConfig name defconfig;
     payload = mkPayload name config;
   in
@@ -162,6 +166,10 @@
         ${l.optionalString (extraConfig != "") "echo ${l.escapeShellArg extraConfig} >> .config"}
         make $makeFlags olddefconfig
         make $makeFlags -j$NIX_BUILD_CORES
+        ${l.concatStrings (l.mapAttrsToList (n: v: ''
+            cbfstool build/coreboot.rom add-int -n option/${n} -i ${toString v}
+          '')
+          options)}
         runHook postBuild
       '';
       installPhase = ''
@@ -179,6 +187,12 @@ in {
 
   coreboot-5580 = mkRom "coreboot-5580" ./configs/precision_3520.defconfig {
     extraConfig = ''CONFIG_VGA_BIOS_FILE="${m620Vbios}"'';
+    # Core+cache share a rail; -90 mV passed 15 min stress-ng --verify per 10 mV step down to -100.
+    options = {
+      oc_undervolt_apply = 1;
+      oc_undervolt_core = 90;
+      oc_undervolt_cache = 90;
+    };
   };
   # Same pipeline on an in-tree board, to tell toolchain/edk2 failures from port failures.
   coreboot-qemu = mkRom "coreboot-qemu" ./configs/qemu_q35.defconfig {};
