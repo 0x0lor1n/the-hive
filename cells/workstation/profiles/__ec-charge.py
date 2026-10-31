@@ -119,6 +119,11 @@ def tick():
     elif cap <= start and on:
         hold_set(False)
         print(f"{cap} % <= {start} %: hold off")
+    elif on and read(f"{BAT}/status") == "Charging":
+        # AC detect re-enables the charger under a standing hold; only an enable edge re-applies it.
+        hold_set(False)
+        hold_set(True)
+        print(f"{cap} %: charging under hold, re-armed")
 
 
 def hhmm(t):
