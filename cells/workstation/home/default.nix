@@ -35,6 +35,8 @@
   agentPkgs ? {},
   # Where a plain login shell lands (tty, ssh, `su -`). null keeps $HOME.
   startDir ? null,
+  # swayidle lock + suspend (./desktop/idle.nix); off leaves only screen blanking.
+  idleLock ? true,
 }: {lib, ...}: let
   sec = secrets;
   known = ["admin" "dev" "freelance" "employer"];
@@ -49,6 +51,7 @@ in
     _module.args.agentPkgs = agentPkgs;
     _module.args.accountRoles = roles;
     _module.args.roleInputs = roleInputs;
+    _module.args.idleLock = idleLock;
 
     home.username = userName;
     home.homeDirectory = homeDir;

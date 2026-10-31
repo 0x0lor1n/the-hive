@@ -1,32 +1,40 @@
 # swayidle — idle management daemon for Wayland.
 # Vanilla dwl has no dwl-msg IPC binary, so the DPMS toggle uses wlopm.
-{pkgs, ...}: {
+{
+  pkgs,
+  lib,
+  idleLock,
+  ...
+}: let
+  lock = "${pkgs.swaylock}/bin/swaylock -fF";
+in {
   services.swayidle = {
     enable = true;
-    events = [
+    events = lib.optionals idleLock [
       {
         event = "before-sleep";
-        command = "${pkgs.swaylock}/bin/swaylock -fF";
+        command = lock;
       }
       {
         event = "lock";
-        command = "${pkgs.swaylock}/bin/swaylock -fF";
+        command = lock;
       }
     ];
-    timeouts = [
-      {
+    timeouts =
+      lib.optional idleLock {
         timeout = 300;
-        command = "${pkgs.swaylock}/bin/swaylock -fF";
+        command = lock;
       }
-      {
-        timeout = 600;
-        command = "${pkgs.wlopm}/bin/wlopm --off '*'";
-        resumeCommand = "${pkgs.wlopm}/bin/wlopm --on '*'";
-      }
-      {
+      ++ [
+        {
+          timeout = 600;
+          command = "${pkgs.wlopm}/bin/wlopm --off '*'";
+          resumeCommand = "${pkgs.wlopm}/bin/wlopm --on '*'";
+        }
+      ]
+      ++ lib.optional idleLock {
         timeout = 1800;
         command = "${pkgs.systemd}/bin/systemctl suspend";
-      }
-    ];
+      };
   };
 }

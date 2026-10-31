@@ -29,7 +29,9 @@
     HandleHibernateKey = "ignore";
   };
 
-  # Also refuses the shared swayidle `systemctl suspend` (home/desktop/idle.nix).
+  # No Intune here, so no idle lock either; swayidle only blanks the screen.
+  session.idleLock = false;
+
   systemd.sleep.settings.Sleep = {
     AllowSuspend = "no";
     AllowHibernation = "no";

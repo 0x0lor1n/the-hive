@@ -27,6 +27,7 @@
   }:
     import ../home {
       inherit userName homeDir theme roles desktop secrets startDir;
+      inherit (config.session) idleLock;
       roleInputs = {
         # nixpak apps bind the account's canonical home, so they are built per account.
         packages =
@@ -238,6 +239,11 @@ in {
     type = lib.types.attrsOf lib.types.str;
     default = {};
     description = "Variables exported to the compositor process only.";
+  };
+  options.session.idleLock = lib.mkOption {
+    type = lib.types.bool;
+    default = true;
+    description = "swayidle locks the session and suspends; false keeps only the screen blanking.";
   };
 
   config = {
