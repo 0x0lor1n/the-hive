@@ -24,6 +24,11 @@
     };
   };
 
+  # The firmware leaves TB3 at SL1: no PCIe tunnel until boltd authorises the
+  # device. Enrolled devices are kept across the root rollback.
+  services.hardware.bolt.enable = true;
+  environment.persistence."/persist".directories = ["/var/lib/boltd"];
+
   # Boot default only; the powermenu still flips it (cpu-governor.nix).
   powerManagement.cpuFreqGovernor = "performance";
 
