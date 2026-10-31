@@ -24,7 +24,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | Wi-Fi / Bluetooth | works | 8265 fitted, no firmware change (#26): RP2 trains, 02:00.0 8086:24fd iwlwifi fw 36 (iwlmvm), no AER; rfkill clear; `nmcli dev wifi list` sees 2.4 + 5 GHz; BT hci0 via USB2 port 5. |
 | SD reader | works | RP3: 03:00.0 10ec:525a rtsx_pci; SDHC 32 GB at UHS-I SDR104, partitions seen, 200 MiB read 12.8 MB/s without I/O errors; remove/reinsert hotplug OK. |
 | WWAN | not tested | no WWAN module fitted; RP17/18 off. |
-| webcam | no | not tested. |
+| webcam | works | USB2 port 10, 0bda:5650 uvcvideo, `/dev/video0` streams (#30, no firmware change). |
 | touch screen USB2 port 9 | dropped | port off (no touch panel), `error -71` gone. |
 | daily drive ≥ 1 week | dropped | owner raises issues as they come. |
 | `me_cleaner -S`, own SB keys | no | ME is deguarded + HAP; SB support off in edk2. |
