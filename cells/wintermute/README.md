@@ -16,7 +16,13 @@ Board
 - `ramstage.c` sets the 8042 XLATE bit: the EC sends Set 1 scancodes, which
   Linux misreads as Set 2 and keys stick.
 - `ramstage.c` sends mailbox cmd 0xbf (CPU class | TDP code, as Dell's DXE
-  does): until then the EC reads no PECI and the fan never spins.
+  does): until then the EC reads no PECI and the fan never spins. Then cmd
+  0x60 arg 1: the EC keeps the speakers muted until the BIOS unmutes them
+  (headphones play either way).
+- `hda_verb.c`: stock pin defaults + codec SSID, so the kernel picks the Dell
+  ALC3246 fixup by pin match (headset mic). The coef and vendor-NID writes are
+  the part of Dell's PEIM table that the stock boot applies; the table also
+  holds variants for sibling boards.
 - TPM: the NPCT650 sits on SPI CS#2 behind the PCH's TIS MMIO window
   (0xfed40000, stock `MSFT0101`), so `MEMORY_MAPPED_TPM` + `drivers/pc80/tpm`,
   not the SPI TPM driver. USB2 port 8 (touchscreen, not fitted) is off.
