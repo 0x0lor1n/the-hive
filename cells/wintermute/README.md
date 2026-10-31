@@ -67,12 +67,16 @@ Board
   menu, so they are fixed per build. Measured live: all-core holds the 3.6 GHz
   ratio ceiling inside the EC's 35 W limit.
 - Thunderbolt 3 (Alpine Ridge 2C on RP5) via upstream `drivers/intel/dtbt`,
-  with `TBT_FORCE_PWR` (`GPP_D4`) held high and PCIe hotplug padding. Two
+  with `TBT_FORCE_PWR` (`GPP_D4`) held high and PCIe hotplug padding. With D4
+  low the controller powers off and comes back on a plug masked again, with
+  nobody to send BOOT_ON; stock re-runs it from the plug event. Two
   patches on dtbt.c: SL1 (user authorisation, bolt on the OS side) where
   upstream hardcodes SL0; and BOOT_ON/USB_ON sent before enumeration over a
   temporary bus on the root port. This controller reads VID 0xffff until
   BOOT_ON, so upstream's per-device `.enable` never runs, and its BOOT_ON
-  sets no DONE bit, so the VID unmask is the success signal.
+  sets no DONE bit, so the VID unmask is the success signal. After a warm
+  reset with nothing plugged in the first BOOT_ON is dropped; it is resent
+  until the VID unmasks.
 
 Payload
 - edk2 is MrChromebox `uefipayload_2605`, built as its own derivation:
