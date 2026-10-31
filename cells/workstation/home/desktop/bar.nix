@@ -2,7 +2,9 @@
 # patch. Started by graphical-session.target, not the dwl startup script.
 {
   pkgs,
+  lib,
   theme,
+  idleLock,
   ...
 }: let
   r = theme.roles;
@@ -96,20 +98,24 @@ in {
       spacing = 10;
       modules-left = ["custom/dwl-tags" "custom/dwl-layout" "custom/dwl-mode" "custom/recorder"];
       modules-center = ["custom/dwl-title"];
-      modules-right = [
-        "tray"
-        "custom/vpn"
-        "custom/notifications"
-        "idle_inhibitor"
-        "custom/cpu-governor"
-        "temperature"
-        "backlight"
-        "pulseaudio"
-        "bluetooth"
-        "network"
-        "battery"
-        "clock"
-      ];
+      modules-right =
+        [
+          "tray"
+          "custom/vpn"
+          "custom/notifications"
+        ]
+        # Nothing to inhibit without the idle lock.
+        ++ lib.optional idleLock "idle_inhibitor"
+        ++ [
+          "custom/cpu-governor"
+          "temperature"
+          "backlight"
+          "pulseaudio"
+          "bluetooth"
+          "network"
+          "battery"
+          "clock"
+        ];
 
       # Tags 1-9 of this bar's monitor, pre-rendered as pango markup by
       # dwl-status. Display only: tags are switched from the keyboard.
