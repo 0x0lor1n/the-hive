@@ -152,6 +152,13 @@
           exit 1
         fi
         modprobe msr || true
+        # Stock and coreboot runs must share a governor; the previous one comes back on exit.
+        gov=$(cat /sys/devices/system/cpu/cpu0/cpufreq/scaling_governor 2>/dev/null || true)
+        set_gov() { for f in /sys/devices/system/cpu/cpu*/cpufreq/scaling_governor; do printf '%s' "$1" > "$f"; done; }
+        if [ -n "$gov" ]; then
+          set_gov performance
+          trap 'set_gov "$gov"' EXIT
+        fi
         n=$(nproc)
         out="$recon/bench-$tag-$(date +%Y%m%d).txt"
         ts="turbostat --quiet --Summary --show Busy%,Bzy_MHz,CoreTmp,PkgTmp,PkgWatt"
