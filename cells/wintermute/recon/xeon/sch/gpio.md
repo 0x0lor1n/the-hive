@@ -163,7 +163,7 @@ Columns: `dir` from the PCH's point of view; `pull` = parts on the sheet (`@` = 
 | GPP_G3 | M44 | GPU_GC6_FB_EN <49,53> | out | - | p.16 | dGPU GC6 framebuffer enable | GPO |
 | GPP_G4 | U36 | CONTACTLESS_DET# <41> | in | - | p.16 | USH/NFC present | GPI |
 | GPP_G5 | P44 | HOST_SD_WP# <36> | in | - | p.16 | SD write-protect | GPI |
-| GPP_G6 | T45 | AUD_PWR_EN <38> | out | - | p.16 | codec power | GPO(1) |
+| GPP_G6 | T45 | AUD_PWR_EN <38> | out | - | p.16 | drives @UZ5 only (unfitted); audio rails come from +5V_RUN/+3.3V_RUN via PJP17/PJP18 | GPO(1) |
 | GPP_G7 | T44 | NC | NC | - | p.16 | - | PAD_NC |
 | GPP_G8 | R44 | NC | NC | - | p.16 | - | PAD_NC |
 | GPP_G9 | R43 | NC | NC | - | p.16 | - | PAD_NC |
