@@ -1,0 +1,114 @@
+== bench tag=coreboot-quiet board=xeon 2026-10-31T14:59:38+01:00
+bios: -TIMELESS--LESSTIME- kernel: 7.2.2-cachyos nproc: 8
+governor: performance
+== boot
+Startup finished in 5.466s (firmware) + 1.836s (loader) + 781ms (kernel) + 9.984s (initrd) + 11.672s (userspace) = 29.741s 
+graphical.target reached after 11.671s in userspace.
+== idle 60 s (Busy% / MHz / temp / W)
+60.003109 sec
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+1.33	3795	47	47	2.80
+== sysbench cpu 30 s
+    events per second:  7514.29
+    total time:                          30.0006s
+== sysbench memory
+32768.00 MiB transferred (74896.74 MiB/sec)
+    total time:                          0.4362s
+== sustained 10 min: stress-ng all cores (bogo ops) + turbostat average over the run
+stress-ng: info:  [270449] setting to a 10 mins run per stressor
+stress-ng: info:  [270449] dispatching hogs: 8 cpu
+stress-ng: metrc: [270449] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s
+stress-ng: metrc: [270449]                           (secs)    (secs)    (secs)   (real time) (usr+sys time)
+stress-ng: metrc: [270449] cpu             5199484    600.00   4764.83      0.82      8665.79        1091.03
+stress-ng: info:  [270449] skipped: 0
+stress-ng: info:  [270449] passed: 8: cpu (8)
+stress-ng: info:  [270449] failed: 0
+stress-ng: info:  [270449] metrics untrustworthy: 0
+stress-ng: info:  [270449] successful run completed in 10 mins
+600.013234 sec
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+99.75	3374	78	78	35.25
+== sustained trace, 10 s samples
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+99.58	3591	83	83	41.58
+99.61	3585	83	83	42.01
+99.66	3509	79	79	39.72
+99.76	3359	79	79	34.88
+99.76	3368	78	78	34.93
+99.76	3374	78	78	34.93
+99.76	3372	78	78	34.93
+99.76	3372	77	77	34.94
+99.76	3372	77	77	34.95
+99.76	3371	78	78	34.93
+99.76	3372	78	78	34.94
+99.76	3370	77	77	34.94
+99.76	3369	78	78	34.94
+99.76	3371	77	77	34.93
+99.76	3371	78	78	34.95
+99.76	3369	78	78	34.93
+99.76	3368	77	77	34.95
+99.76	3367	77	77	34.93
+99.76	3368	78	78	34.94
+99.76	3368	78	78	34.94
+99.76	3367	78	78	34.94
+99.76	3366	79	79	34.94
+99.76	3367	78	78	34.94
+99.76	3368	78	78	34.95
+99.76	3367	78	78	34.94
+99.76	3367	78	78	34.93
+99.76	3366	78	78	34.94
+99.76	3366	79	79	34.95
+99.76	3366	78	78	34.93
+99.76	3366	79	79	34.94
+99.76	3364	79	79	34.94
+99.76	3364	78	78	34.94
+99.76	3364	78	78	34.94
+99.76	3362	78	78	34.93
+99.76	3363	77	77	34.94
+99.76	3363	78	78	34.94
+99.76	3363	79	79	34.94
+99.76	3363	78	78	34.94
+99.76	3365	78	78	34.94
+99.75	3363	79	79	34.94
+99.76	3363	79	79	34.94
+99.76	3363	78	78	34.93
+99.76	3361	78	78	34.94
+99.76	3361	79	79	34.94
+99.76	3360	78	78	34.93
+99.76	3361	78	78	34.95
+99.75	3360	79	79	34.93
+99.76	3361	79	79	34.94
+99.76	3362	78	78	34.94
+99.76	3359	79	79	34.94
+99.76	3359	79	79	34.94
+99.75	3359	79	79	34.94
+99.75	3357	79	79	34.94
+99.76	3359	80	80	34.95
+99.75	3360	78	78	34.93
+99.76	3358	79	79	34.94
+99.76	3359	77	77	34.94
+99.76	3359	78	78	34.95
+99.76	3359	79	79	34.94
+99.63	3358	73	73	34.91
+== sensors after
+coretemp-isa-0000
+Adapter: ISA adapter
+Package id 0:  +79.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 0:        +79.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 1:        +77.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 2:        +78.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 3:        +77.0°C  (high = +100.0°C, crit = +100.0°C)
+
+BAT0-acpi-0
+Adapter: ACPI interface
+in0:           8.34 V  
+curr1:       1000.00 uA 
+
+pch_skylake-virtual-0
+Adapter: Virtual device
+temp1:        +48.0°C  
+
+acpitz-acpi-0
+Adapter: ACPI interface
+temp1:        +78.0°C  
+
