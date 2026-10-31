@@ -1,0 +1,52 @@
+== bench tag=coreboot-ptm board=xeon 2026-10-31T06:50:50+01:00
+bios: -TIMELESS--LESSTIME- kernel: 7.2.2-cachyos nproc: 8
+governor: performance
+== boot
+Startup finished in 5.466s (firmware) + 1.836s (loader) + 781ms (kernel) + 9.984s (initrd) + 11.672s (userspace) = 29.741s 
+graphical.target reached after 11.671s in userspace.
+== idle 60 s (Busy% / MHz / temp / W)
+60.003309 sec
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+0.68	3781	47	47	2.08
+== sysbench cpu 30 s
+    events per second:  7499.47
+    total time:                          30.0009s
+== sysbench memory
+32768.00 MiB transferred (77539.46 MiB/sec)
+    total time:                          0.4212s
+== sustained 10 min: stress-ng all cores (bogo ops) + turbostat average over the run
+stress-ng: info:  [8716] setting to a 10 mins run per stressor
+stress-ng: info:  [8716] dispatching hogs: 8 cpu
+stress-ng: metrc: [8716] stressor       bogo ops real time  usr time  sys time   bogo ops/s     bogo ops/s
+stress-ng: metrc: [8716]                           (secs)    (secs)    (secs)   (real time) (usr+sys time)
+stress-ng: metrc: [8716] cpu             5098279    600.00   4755.43      0.84      8497.12        1071.91
+stress-ng: info:  [8716] skipped: 0
+stress-ng: info:  [8716] passed: 8: cpu (8)
+stress-ng: info:  [8716] failed: 0
+stress-ng: info:  [8716] metrics untrustworthy: 0
+stress-ng: info:  [8716] successful run completed in 10 mins
+600.060932 sec
+Busy%	Bzy_MHz	CoreTmp	PkgTmp	PkgWatt
+99.73	3358	75	75	35.25
+== sensors after
+coretemp-isa-0000
+Adapter: ISA adapter
+Package id 0:  +72.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 0:        +70.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 1:        +70.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 2:        +68.0°C  (high = +100.0°C, crit = +100.0°C)
+Core 3:        +71.0°C  (high = +100.0°C, crit = +100.0°C)
+
+BAT0-acpi-0
+Adapter: ACPI interface
+in0:           8.36 V  
+curr1:       1000.00 uA 
+
+pch_skylake-virtual-0
+Adapter: Virtual device
+temp1:        +49.0°C  
+
+acpitz-acpi-0
+Adapter: ACPI interface
+temp1:        +78.0°C  
+
