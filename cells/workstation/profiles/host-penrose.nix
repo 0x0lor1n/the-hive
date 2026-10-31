@@ -24,6 +24,9 @@
     };
   };
 
+  # Boot default only; the powermenu still flips it (cpu-governor.nix).
+  powerManagement.cpuFreqGovernor = "performance";
+
   services.logind.settings.Login = {
     HandleSuspendKey = "ignore";
     HandleHibernateKey = "ignore";
