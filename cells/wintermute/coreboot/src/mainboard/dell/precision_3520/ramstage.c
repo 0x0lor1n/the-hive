@@ -13,6 +13,22 @@
 #define MAILBOX_INDEX	0x910
 #define MAILBOX_DATA	0x911
 #define CMD_CPU_ID	0xbf
+#define CMD_HW_MUTE	0x60
+
+static void ec_mailbox_cmd(u8 cmd, u8 arg)
+{
+	int timeout = 100000;
+
+	outb(0x12, MAILBOX_INDEX);
+	outb(arg, MAILBOX_DATA);
+	outb(0, MAILBOX_INDEX);
+	outb(cmd, MAILBOX_DATA);
+	do {
+		outb(0, MAILBOX_INDEX);
+	} while (inb(MAILBOX_DATA) && --timeout);
+	if (!timeout)
+		printk(BIOS_ERR, "EC: mailbox cmd %#x timed out\n", cmd);
+}
 
 /*
  * The EC polls PECI and runs the fan only after the BIOS names the CPU: one byte,
@@ -23,7 +39,6 @@ static void ec_send_cpu_id(void)
 {
 	const u32 model = cpu_get_cpuid() & 0x0fff0ff0;
 	const u32 tdp = (cpu_get_power_max() + 500) / 1000;
-	int timeout = 100000;
 	u8 arg;
 
 	switch (model) {
@@ -44,13 +59,7 @@ static void ec_send_cpu_id(void)
 	}
 
 	printk(BIOS_INFO, "EC: CPU id %#x (TDP %u W)\n", arg, tdp);
-	outb(0x12, MAILBOX_INDEX);
-	outb(arg, MAILBOX_DATA);
-	outb(0, MAILBOX_INDEX);
-	outb(CMD_CPU_ID, MAILBOX_DATA);
-	do {
-		outb(0, MAILBOX_INDEX);
-	} while (inb(MAILBOX_DATA) && --timeout);
+	ec_mailbox_cmd(CMD_CPU_ID, arg);
 }
 
 void mainboard_silicon_init_params(FSP_SIL_UPD *params)
@@ -64,6 +73,8 @@ static void mainboard_enable(struct device *dev)
 	/* EC sends Set 1 codes regardless; without XLATE atkbd decodes them as Set 2. */
 	pc_keyboard_set_command_byte_bit(PC_KBC_TRANSLATE, 1);
 	ec_send_cpu_id();
+	/* The EC keeps the speakers muted until the BIOS sends unmute (arg 1). */
+	ec_mailbox_cmd(CMD_HW_MUTE, 1);
 }
 
 struct chip_operations mainboard_ops = {
