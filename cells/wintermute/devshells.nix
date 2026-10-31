@@ -176,8 +176,17 @@
           echo "== sysbench memory"
           sysbench memory --threads="$n" --memory-block-size=1M --memory-total-size=32G run | grep -E 'MiB/sec|total time'
           echo "== sustained 10 min: stress-ng all cores (bogo ops) + turbostat average over the run"
+          # The average hides the turbo burst and the fan catching up; the trace keeps them.
+          trace=$(mktemp)
+          # shellcheck disable=SC2086
+          $ts --interval 10 --num_iterations 60 --header_iterations 60 --out "$trace" &
+          tracer=$!
           # shellcheck disable=SC2086
           $ts stress-ng --cpu "$n" --timeout 600 --metrics-brief
+          wait "$tracer" || true
+          echo "== sustained trace, 10 s samples"
+          cat "$trace"
+          rm -f "$trace"
           echo "== sensors after"
           sensors
         } 2>&1 | tee "$out"
