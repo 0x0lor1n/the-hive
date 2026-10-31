@@ -29,3 +29,4 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | daily drive ≥ 1 week | dropped | owner raises issues as they come. |
 | `me_cleaner -S`, own SB keys | no | ME is deguarded + HAP; SB support off in edk2. |
 | performance vs stock | works | bench-coreboot-20261030: 10 min all-core 3365 MHz / 75 °C / 35.24 W (stock 3385 / 76 / 35.24), sysbench +1.9 %, idle 1.74 W (stock 2.47, governor powersave vs performance). |
+| 35 W sustained power limit | dropped | Board property, not a firmware setting: the EC sends `WrPkgConfig` index 0x1A = 35 W over PECI from a const table in its own flash (`flashregion_8_ec.bin`, apply at 0xE1010, tables at 0xF2168). No table row anywhere in the image exceeds 35 W, and PECI outranks the host's MSR 0x610, so no coreboot-side change raises it; lifting it needs an EC flash patch. |
