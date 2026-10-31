@@ -107,3 +107,10 @@ ME / Boot Guard
 
 Tools
 - `patches/inteltool-cm238-gpio.patch`: stock inteltool has no CM238 GPIO dump.
+
+OS side (penrose)
+- Charge limit: stock does it with Dell SMBIOS tokens through its SMM, which
+  coreboot lacks, and the pack ignores the EC's custom start/stop (PIDs
+  0x710..0x712). `cells/workstation/profiles/battery-charge-hold.nix` toggles
+  the EC's Peak Shift hold (mailbox cmd 0x1C, PIDs 0x4EA/0x4EE..0x4F4) from a
+  timer: on at 80 %, off at 75 %. `charge-mode full` until reboot.

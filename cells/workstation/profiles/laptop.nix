@@ -1,6 +1,5 @@
 # Laptop shape: radios, lid, and the things a VM or a VPS never has.
-# No battery tuning: penrose has no battery installed (dmidecode type 22
-# empty, no BAT0).
+# Battery charge limit: battery-charge-hold.nix (penrose).
 #
 # NetworkManager rather than iwd; wpa_supplicant is NM's default backend.
 {
