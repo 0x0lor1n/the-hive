@@ -66,6 +66,13 @@ Board
   `option/oc_undervolt_*` integers (`mkRom` `options`): the board has no CFR
   menu, so they are fixed per build. Measured live: all-core holds the 3.6 GHz
   ratio ceiling inside the EC's 35 W limit.
+- Thunderbolt 3 (Alpine Ridge 2C on RP5) via upstream `drivers/intel/dtbt`,
+  with `TBT_FORCE_PWR` (`GPP_D4`) held high and PCIe hotplug padding. Two
+  patches on dtbt.c: SL1 (user authorisation, bolt on the OS side) where
+  upstream hardcodes SL0; and BOOT_ON/USB_ON sent before enumeration over a
+  temporary bus on the root port. This controller reads VID 0xffff until
+  BOOT_ON, so upstream's per-device `.enable` never runs, and its BOOT_ON
+  sets no DONE bit, so the VID unmask is the success signal.
 
 Payload
 - edk2 is MrChromebox `uefipayload_2605`, built as its own derivation:

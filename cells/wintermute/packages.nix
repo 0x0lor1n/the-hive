@@ -13,6 +13,10 @@
     cp -r ${inputs.coreboot} $out
     chmod -R u+w $out
     ${l.optionalString (builtins.pathExists ./coreboot) "cp -r ${./coreboot}/. $out/"}
+    # Upstream dtbt hardcodes SL0; SL1 leaves PCIe tunnels to the OS (bolt).
+    patch -d $out -p1 < ${./patches/dtbt-security-level-user.patch}
+    # Alpine Ridge hides its VID until BOOT_ON, so dtbt has to send it before the scan.
+    patch -d $out -p1 < ${./patches/dtbt-boot-on-before-scan.patch}
     substituteInPlace $out/util/genbuild_h/genbuild_h.sh \
       --replace-fail 'DATE=0' 'DATE=${toString inputs.coreboot.lastModified}'
   '';

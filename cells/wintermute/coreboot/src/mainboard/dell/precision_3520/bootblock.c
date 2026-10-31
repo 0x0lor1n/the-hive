@@ -7,12 +7,14 @@
 /*
  * HDD_EN gates +5V_HDD to the bay; the SSD needs it long before FSP-S probes SATA.
  * The dGPU must be powered and out of reset before FSP-M trains PEG.
+ * Without a device the Alpine Ridge stays off unless forced, and RP5 finds nothing.
  */
 static const struct pad_config early_gpio_table[] = {
 	PAD_CFG_GPO(GPP_C15, 1, RSMRST),
 	PAD_CFG_GPO(GPP_D12, 1, PLTRST),	/* DGPU_PWR_EN */
 	PAD_CFG_GPO(GPP_D10, 1, PLTRST),	/* DGPU_HOLD_RST# */
 	PAD_CFG_GPI(GPP_D18, NONE, PLTRST),	/* DGPU_PWROK */
+	PAD_CFG_GPO(GPP_D4, 1, PLTRST),		/* TBT_FORCE_PWR */
 };
 
 void bootblock_mainboard_early_init(void)

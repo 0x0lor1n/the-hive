@@ -95,7 +95,7 @@ static const struct pad_config gpio_table[] = {
 	PAD_CFG_GPO(GPP_D1, 0, PLTRST),	/* GPIO */
 	PAD_CFG_GPO(GPP_D2, 0, PLTRST),	/* GPIO */
 	PAD_CFG_GPO(GPP_D3, 0, PLTRST),	/* GPIO */
-	PAD_CFG_GPO(GPP_D4, 0, PLTRST),	/* GPIO */
+	PAD_CFG_GPO(GPP_D4, 1, PLTRST),	/* TBT_FORCE_PWR */
 	PAD_CFG_GPO(GPP_D5, 0, PLTRST),	/* GPIO */
 	PAD_CFG_GPO(GPP_D6, 0, PLTRST),	/* GPIO */
 	PAD_CFG_GPO(GPP_D7, 0, PLTRST),	/* GPIO */

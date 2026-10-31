@@ -85,6 +85,16 @@ chip soc/intel/skylake
 			register "PcieRpClkSrcNumber[2]" = "5"
 			register "PcieRpClkReqSupport[2]" = "false"
 		end
+		# Alpine Ridge 2C x4 on SRC6; the controller manages its own links
+		device ref pcie_rp5 on
+			register "PcieRpClkSrcNumber[4]" = "6"
+			register "PcieRpClkReqSupport[4]" = "false"
+			register "PcieRpHotPlug[4]" = "true"
+			register "PcieRpAdvancedErrorReporting[4]" = "true"
+			chip drivers/intel/dtbt
+				device pci 00.0 on end
+			end
+		end
 		device ref pcie_rp9 on				# KEYM x4
 			register "PcieRpClkSrcNumber[8]" = "3"
 			register "PcieRpClkReqSupport[8]" = "false"

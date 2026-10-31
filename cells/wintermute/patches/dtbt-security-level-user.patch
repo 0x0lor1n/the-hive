@@ -1,0 +1,14 @@
+--- a/src/drivers/intel/dtbt/dtbt.c
++++ b/src/drivers/intel/dtbt/dtbt.c
+@@ -197,9 +197,8 @@
+ 	printk(BIOS_INFO, "dTBT controller found at %s\n", dev_path(dev));
+ 
+ 	/* Set security level (Table 37/428); failure aborts enable */
+-	// XXX: Recommendation is to set SL1 ("User Authorization")
+-	printk(BIOS_DEBUG, "dTBT set security level SL0\n");
+-	if (!dtbt_cmd(dev, PCIE2TBT_SET_SECURITY_LEVEL, SEC_LEVEL_NONE, MBOX_TIMEOUT_MS)) {
++	printk(BIOS_DEBUG, "dTBT set security level SL1\n");
++	if (!dtbt_cmd(dev, PCIE2TBT_SET_SECURITY_LEVEL, SEC_LEVEL_USER, MBOX_TIMEOUT_MS)) {
+ 		printk(BIOS_ERR, "dTBT Set_Security_Level failed, aborting enable\n");
+ 		return;
+ 	}

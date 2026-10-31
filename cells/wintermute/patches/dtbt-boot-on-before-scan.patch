@@ -1,0 +1,129 @@
+--- a/src/drivers/intel/dtbt/dtbt.c
++++ b/src/drivers/intel/dtbt/dtbt.c
+@@ -1,17 +1,20 @@
+ /* SPDX-License-Identifier: GPL-2.0-only */
+ 
+ #include <acpi/acpigen.h>
++#include <bootstate.h>
+ #include <console/console.h>
+ #include <delay.h>
+ #include <device/device.h>
+ #include <device/pci.h>
+ #include <device/pciexp.h>
+ #include <device/pci_ids.h>
++#include <device/pci_ops.h>
+ #include <timer.h>
+ #include "chip.h"
+ #include "dtbt.h"
+ 
+ static struct device_operations dtbt_device_ops;
++extern struct chip_operations drivers_intel_dtbt_ops;
+ 
+ /* Returns true on success, false on timeout or TBT2PCIE Error field non-zero */
+ static bool dtbt_cmd(struct device *dev, u8 command, u32 data, u32 timeout)
+@@ -178,6 +181,96 @@
+ 	return "DTBT";
+ }
+ 
++/*
++ * Alpine Ridge reads VID 0xffff until the host sends BOOT_ON, so the scan skips it and
++ * dtbt_enable never runs. Send the sequence before enumeration over a temporary bus on
++ * the root port. BOOT_ON unmasks the VID but may never set DONE: wait for either.
++ */
++static bool dtbt_early_done;
++
++static bool dtbt_early_cmd(pci_devfn_t tbt, u8 command, u32 data)
++{
++	u32 status;
++
++	pci_s_write_config32(tbt, PCIE2TBT, (data << 8) | (command << 1) | PCIE2TBT_VALID);
++	if (!wait_ms(MBOX_TIMEOUT_MS, (status = pci_s_read_config32(tbt, TBT2PCIE)) & TBT2PCIE_DONE)) {
++		printk(BIOS_ERR, "dTBT early command 0x%x timeout, status 0x%x\n", command, status);
++		pci_s_write_config32(tbt, PCIE2TBT, 0);
++		return false;
++	}
++	pci_s_write_config32(tbt, PCIE2TBT, 0);
++	wait_ms(MBOX_TIMEOUT_MS, !(pci_s_read_config32(tbt, TBT2PCIE) & TBT2PCIE_DONE));
++	if (status & TBT2PCIE_ERROR_MASK) {
++		printk(BIOS_ERR, "dTBT early command 0x%x error, status 0x%x\n", command, status);
++		return false;
++	}
++	return true;
++}
++
++static void dtbt_early_boot_on(pci_devfn_t tbt)
++{
++	struct stopwatch sw;
++	u32 status;
++
++	printk(BIOS_DEBUG, "dTBT early set security level SL1\n");
++	if (!dtbt_early_cmd(tbt, PCIE2TBT_SET_SECURITY_LEVEL, SEC_LEVEL_USER))
++		return;
++
++	printk(BIOS_DEBUG, "dTBT early boot on\n");
++	pci_s_write_config32(tbt, PCIE2TBT, (PCIE2TBT_BOOT_ON << 1) | PCIE2TBT_VALID);
++	stopwatch_init_msecs_expire(&sw, MBOX_TIMEOUT_MS);
++	do {
++		status = pci_s_read_config32(tbt, TBT2PCIE);
++		if (pci_s_read_config16(tbt, PCI_VENDOR_ID) != 0xffff || (status & TBT2PCIE_DONE))
++			break;
++		mdelay(1);
++	} while (!stopwatch_expired(&sw));
++	pci_s_write_config32(tbt, PCIE2TBT, 0);
++	wait_ms(MBOX_TIMEOUT_MS, !(pci_s_read_config32(tbt, TBT2PCIE) & TBT2PCIE_DONE));
++
++	if (pci_s_read_config16(tbt, PCI_VENDOR_ID) == 0xffff) {
++		printk(BIOS_ERR, "dTBT VID still masked after BOOT_ON, status 0x%x\n", status);
++		return;
++	}
++	printk(BIOS_INFO, "dTBT unmasked after %lld ms: %04x:%04x\n",
++	       (long long)stopwatch_duration_msecs(&sw),
++	       pci_s_read_config16(tbt, PCI_VENDOR_ID), pci_s_read_config16(tbt, PCI_DEVICE_ID));
++
++	printk(BIOS_DEBUG, "dTBT early USB on\n");
++	if (dtbt_early_cmd(tbt, PCIE2TBT_USB_ON, 0))
++		dtbt_early_done = true;
++}
++
++static void dtbt_early_init(void *unused)
++{
++	/* Above anything FSP or the allocator could have handed out yet. */
++	const u8 tmp_bus = CONFIG_ECAM_MMCONF_BUS_NUMBER - 1;
++	struct device *dev;
++
++	for (dev = all_devices; dev; dev = dev->next) {
++		if (dev->chip_ops != &drivers_intel_dtbt_ops || !is_dev_enabled(dev))
++			continue;
++		const struct device *rp = dev->upstream ? dev->upstream->dev : NULL;
++		if (!rp || rp->path.type != DEVICE_PATH_PCI || !is_dev_enabled(rp))
++			continue;
++
++		const pci_devfn_t rp_bdf = PCI_DEV(0, PCI_SLOT(rp->path.pci.devfn),
++						   PCI_FUNC(rp->path.pci.devfn));
++		const pci_devfn_t tbt = PCI_DEV(tmp_bus, 0, 0);
++		const u32 busses = pci_s_read_config32(rp_bdf, PCI_PRIMARY_BUS);
++
++		pci_s_write_config32(rp_bdf, PCI_PRIMARY_BUS,
++				     (busses & 0xff000000) | tmp_bus << 16 | tmp_bus << 8);
++		if (pci_s_read_config32(tbt, PCI_CLASS_REVISION) >> 16 == PCI_CLASS_BRIDGE_PCI &&
++		    pci_s_read_config16(tbt, PCI_VENDOR_ID) == 0xffff)
++			dtbt_early_boot_on(tbt);
++		pci_s_write_config32(rp_bdf, PCI_PRIMARY_BUS, busses);
++		return;
++	}
++}
++
++BOOT_STATE_INIT_ENTRY(BS_DEV_ENUMERATE, BS_ON_ENTRY, dtbt_early_init, NULL);
++
+ static void dtbt_enable(struct device *dev)
+ {
+ 	/* Only enable the primary bridge device (device 0, function 0) */
+@@ -195,6 +288,8 @@
+ 		return;
+ 
+ 	printk(BIOS_INFO, "dTBT controller found at %s\n", dev_path(dev));
++	if (dtbt_early_done)
++		return;
+ 
+ 	/* Set security level (Table 37/428); failure aborts enable */
+ 	printk(BIOS_DEBUG, "dTBT set security level SL1\n");
