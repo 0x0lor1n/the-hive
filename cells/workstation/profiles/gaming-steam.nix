@@ -1,17 +1,8 @@
-# penrose-only. Muxless PRIME: the i915 keeps scanout, so Steam is started
-# with the four variables the nvidia-offload wrapper exports and every child
-# (Proton, the shader precompiler, the game) renders on the Quadro. No
-# per-game `nvidia-offload %command%`. The client's CEF lands on the dGPU
-# too, accepted.
-#
-# The library goes to /state, not /persist: shader caches, prefixes and games
-# are re-downloadable and must stay out of the backups.
-#
-# nyx's proton-cachyos / luxtorpeda unpack into $out/bin and have no
-# `steamcompattool` output. programs.steam.extraCompatPackages reads that
-# output (makeSearchPathOutput falls back to $out), so without the adapter
-# Steam gets a dir with no compatibilitytool.vdf and lists nothing.
-# x86_64_v3: the E3-1505M v6 has AVX2.
+# penrose-only. Muxless PRIME: i915 keeps scanout, Steam gets the four
+# nvidia-offload variables so every child renders on the Quadro. Library in
+# /state, not /persist: re-downloadable, keep it out of backups.
+# nyx's luxtorpeda unpacks into $out/bin without a `steamcompattool` output;
+# extraCompatPackages would see a dir with no compatibilitytool.vdf.
 {
   inputs,
   cell,
@@ -39,15 +30,28 @@ in {
         __VK_LAYER_NV_optimus = "NVIDIA_only";
       };
     };
-    extraCompatPackages = map asCompatTool [
+    # x86_64_v3: the E3-1505M v6 has AVX2.
+    extraCompatPackages = [
       pkgs.proton-cachyos_x86_64_v3
-      pkgs.luxtorpeda
+      pkgs.proton-ge-custom
+      (asCompatTool pkgs.luxtorpeda)
     ];
     extest.enable = true;
   };
-  hardware.graphics.enable32Bit = true;
+  hardware.graphics = {
+    enable32Bit = true;
+    # Inert until a game is launched with LOW_LATENCY_LAYER=1 %command%.
+    extraPackages = [pkgs.low-latency-layer];
+  };
+  environment.systemPackages = [pkgs.mangohud_git];
 
-  # `users` form, unlike host-elster.nix: the account here is in users.users
+  services.ananicy = {
+    enable = true;
+    package = pkgs.ananicy-cpp;
+    rulesProvider = pkgs.ananicy-rules-cachyos_git;
+  };
+
+  # `users` form, unlike host-elster.nix: the account is in users.users
   # (layer-users-local), not NSS-only.
   environment.persistence."/state".users.${host.userName}.directories = [
     {
