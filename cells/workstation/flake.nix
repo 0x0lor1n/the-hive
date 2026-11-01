@@ -3,10 +3,11 @@
   # by every host, and cells/server must never gain lanzaboote or mkcreds in
   # its closure.
   inputs = {
-    # Cell flakes cannot follow a root input, so lanzaboote's nixpkgs is pinned
-    # here to the same rev as the root flake.lock. Keep them equal when
-    # bumping, or lanzaboote's Rust toolchain builds from a second nixpkgs.
-    nixpkgs.url = "github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9";
+    # nixpkgs is whatever nyx's lock says. nyx-cache only holds artifacts
+    # built from its current lock and drops the rest within weeks; the kernel
+    # and zfs module are hours of local build otherwise. Bump with
+    # `nix flake update chaotic`, never nixpkgs alone.
+    nixpkgs.follows = "chaotic/nixpkgs";
 
     utils.url = "gitlab:rensa-nix/utils/v0.1.2?dir=lib";
     disko.url = "github:nix-community/disko/65fb947964bd44fc0008faf77d1fcb7a9f40bb32";
@@ -34,14 +35,12 @@
     home-manager.url = "github:nix-community/home-manager/release-25.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     # CachyOS kernel + matching zfs_cachyos, pre-built on nyx-cache.chaotic.cx.
-    # Pinned to the nyx rev whose own nixpkgs lock == our nixpkgs pin above
-    # (34ab9907); any drift between the two turns the kernel into a local
-    # build. Bump both together. Only the overlay is consumed (layer-kernel,
-    # gaming-steam's proton-cachyos + luxtorpeda tarballs);
-    # nyx's NixOS modules are not imported (mkSystem passes a ready `pkgs`, so
-    # `nixpkgs.overlays` from a module would be silently ignored anyway).
-    chaotic.url = "github:chaotic-cx/nyx/43fe06999491eabd2ec15c221f5066e39d6a5a51";
-    chaotic.inputs.nixpkgs.follows = "nixpkgs";
+    # Branch, not a rev: the cache tracks this branch's head, and nixpkgs
+    # above follows this lock. Only the overlay is consumed (layer-kernel,
+    # gaming-steam); nyx's NixOS modules are not imported (mkSystem passes a
+    # ready `pkgs`, so `nixpkgs.overlays` from a module would be silently
+    # ignored anyway).
+    chaotic.url = "github:chaotic-cx/nyx/nyxpkgs-unstable";
     # bwrap + xdg-dbus-proxy sandboxes for untrusted desktop apps (packages.nix).
     # Only lib.nixpak is consumed; its NixOS module targets systemPackages.
     nixpak.url = "github:nixpak/nixpak/333bd8c7ca0c014e61be1933b3c131c9dfa20218";
