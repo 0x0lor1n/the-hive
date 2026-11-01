@@ -26,7 +26,7 @@ in {
 
       # Required on real hardware — some signed option ROMs depend on
       # Microsoft's trust anchors. No harm on the VM either way.
-      includeMicrosoftKeys = true;
+      includeMicrosoftKeys = lib.mkDefault true;
 
       # Manual reboot so the operator can verify the enrollment
       # transition between boot 1 and boot 2 (see header).

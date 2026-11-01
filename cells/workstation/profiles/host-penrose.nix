@@ -50,6 +50,32 @@
   # No Intune here, so no idle lock either; swayidle only blanks the screen.
   session.idleLock = false;
 
+  # Own PK/KEK/db only. Nothing here runs an option ROM: libgfxinit drives the
+  # iGPU, the M620 has no ROM chip, the I219 has no oprom.
+  boot.lanzaboote.autoEnrollKeys = {
+    includeMicrosoftKeys = false;
+    allowBrickingMyMachine = true;
+  };
+  # sbctl create-keys takes the cert CN from keys.*.description.
+  environment.etc."sbctl/sbctl.conf".source = let
+    dir = config.boot.lanzaboote.pkiBundle;
+    key = name: description: {
+      privkey = "${dir}/keys/${name}/${name}.key";
+      pubkey = "${dir}/keys/${name}/${name}.pem";
+      type = "file";
+      inherit description;
+    };
+  in
+    lib.mkForce ((pkgs.formats.yaml {}).generate "sbctl.conf" {
+      keydir = "${dir}/keys";
+      guid = "${dir}/GUID";
+      keys = {
+        pk = key "PK" "penrose.the-hive Platform Key";
+        kek = key "KEK" "penrose.the-hive Key Exchange Key";
+        db = key "db" "penrose.the-hive Signature Database Key";
+      };
+    });
+
   systemd.sleep.settings.Sleep = {
     AllowSuspend = "no";
     AllowHibernation = "no";
