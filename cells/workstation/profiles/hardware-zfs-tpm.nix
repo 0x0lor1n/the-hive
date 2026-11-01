@@ -41,7 +41,8 @@ in {
   };
 
   config = {
-    boot.initrd.systemd.enable = true;
+    # systemd initrd is the only initrd in this nixpkgs (scripted one is
+    # gone; `boot.initrd.systemd.enable` is a removed option).
     boot.initrd.systemd.tpm2.enable = true;
 
     boot.initrd.availableKernelModules = [
