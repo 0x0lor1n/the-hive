@@ -28,6 +28,9 @@ in {
         __NV_PRIME_RENDER_OFFLOAD_PROVIDER = "NVIDIA-G0";
         __GLX_VENDOR_LIBRARY_NAME = "nvidia";
         __VK_LAYER_NV_optimus = "NVIDIA_only";
+        # Mesa's device_select layer runs after NV_optimus and puts the i915
+        # back at index 0, where fossilize (--device-index 0) and DXVK pick.
+        NODEVICE_SELECT = "1";
       };
     };
     # x86_64_v3: the E3-1505M v6 has AVX2.
