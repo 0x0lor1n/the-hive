@@ -28,6 +28,9 @@
   # device. Enrolled devices are kept across the root rollback.
   services.hardware.bolt.enable = true;
   environment.persistence."/persist".directories = ["/var/lib/boltd"];
+  # bolt only gates the tunnel; an authorised device still DMAs anywhere
+  # without VT-d. The coreboot DMAR has no opt-in flag, so it stays off by default.
+  boot.kernelParams = ["intel_iommu=on"];
 
   # Boot default only; the powermenu still flips it (cpu-governor.nix).
   powerManagement.cpuFreqGovernor = "performance";
