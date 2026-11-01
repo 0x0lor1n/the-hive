@@ -94,6 +94,9 @@ Payload
   the Microsoft set on every boot. Delete only PK in setup, then systemd-boot's
   auto-enrol replaces PK/KEK/db; deleting all keys brings Microsoft back.
 - Flash `-i COREBOOT`, never `-i bios`: SMMSTORE holds the enrolled keys.
+- No UEFI Shell: edk2 runs images from its own FV unverified, so the Shell
+  bypassed Secure Boot. Setup is behind an admin password (UserAuthenticationDxe,
+  hash in SMMSTORE); a lost password means `-i bios` and re-enrolling the keys.
 - Bootsplash = `assets/bootsplash.png`, faded into the palette black and scaled
   to 400x400, swapped into `MdeModulePkg/Logo/Logo.bmp`: coreboot's `logo`
   target sits in the edk2 Makefile we bypass. BootLogoLib skips a logo taller
