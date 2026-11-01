@@ -16,7 +16,9 @@
   # All plugins from the nixpkgs pin except zsh-histdb: nixpkgs ships
   # 90a6c10 (2024-04-18), which merged the HISTORY_IGNORE change (7b010a6 +
   # f73d9c8) that breaks this setup. 30797f0 is the last commit before that
-  # series, so the derivation stays nixpkgs', only src moves.
+  # series, so the derivation stays nixpkgs' (postPatch keeps pinning
+  # sqlite3), only src moves. installPhase is ours too: nixpkgs' list now
+  # includes histdb-fzf.zsh, which does not exist at 30797f0.
   zshHistdb = pkgs.zsh-histdb.overrideAttrs (_: {
     version = "0-unstable-2022-01-18";
     src = pkgs.fetchFromGitHub {
@@ -25,6 +27,12 @@
       rev = "30797f0c50c31c8d8de32386970c5d480e5ab35d";
       hash = "sha256-PQIFF8kz+baqmZWiSr+wc4EleZ/KD8Y+lxW2NT35/bg=";
     };
+    installPhase = ''
+      runHook preInstall
+      install -Dt $out/share/zsh-histdb/ \
+        sqlite-history.zsh histdb-interactive.zsh histdb-{merge,migrate}
+      runHook postInstall
+    '';
   });
   # nixpkgs' zsh-autocomplete 26.08.03 is missing its z-async git submodule
   # (upstream .gitmodules points at git@github.com:, so fetchSubmodules
