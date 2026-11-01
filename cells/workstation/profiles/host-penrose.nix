@@ -3,7 +3,12 @@
 {
   inputs,
   cell,
-}: {config, ...}: {
+}: {
+  config,
+  lib,
+  pkgs,
+  ...
+}: {
   # Quadro M620 (Maxwell) on the proprietary driver, for CUDA. 580 is the last
   # branch with Maxwell; no runtime D3 before Turing, so the GPU idles in D0
   # (~7.5 W over nouveau's D3cold, accepted). Muxless: the i915 stays scanout.
@@ -23,6 +28,8 @@
       nvidiaBusId = "PCI:1:0:0";
     };
   };
+  # btop dlopens libnvidia-ml only with the driver runpath patched in.
+  security.wrappers.btop.source = lib.mkForce "${pkgs.btop.override {cudaSupport = true;}}/bin/btop";
 
   # The firmware leaves TB3 at SL1: no PCIe tunnel until boltd authorises the
   # device. Enrolled devices are kept across the root rollback.
