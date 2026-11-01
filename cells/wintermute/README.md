@@ -109,6 +109,17 @@ ME / Boot Guard
   ME 11.6.0.1126) padded with 0xFF fills the 5M region, as on the Supermicro
   X11SSH-F (deguard CL 91226). Delta: `deguard/precision_3520`.
 
+EC firmware
+- The EC region (0x700000–0x74FFFF) on this board is not stock: the quiet
+  mode's fan tables are rewritten. CPU: 2500 rpm above 75 °C (off below 60),
+  3000 above 84, 3700 above 94, 4400 above 96; memory and M.2 sensors start
+  the fan at 48 °C instead of 40, so it stops at idle. Skin and GPU tables are
+  stock. Stock quiet runs 2300 rpm at idle on the memory/M.2 steps.
+  Measured cover on: 0 rpm idle, 3700 rpm at 35 W sustained, pkg 86–88 °C.
+  The quiet mode is lost with the RTC cell (default balanced). The patch tool
+  is not in this repo yet; restore the EC region only from a dump taken after
+  the patch.
+
 Tools
 - `patches/inteltool-cm238-gpio.patch`: stock inteltool has no CM238 GPIO dump.
 

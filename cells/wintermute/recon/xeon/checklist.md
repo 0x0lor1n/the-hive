@@ -14,7 +14,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | theming (bootsplash, edk2 colours) | works | splash from assets/bootsplash.png; console + setup colours from common/theme.nix (#22). |
 | AC / battery | works | AC + BAT0 in power_supply, plug/unplug flips live. |
 | charge limit 80 % | works | EC Peak Shift hold toggled by penrose `charge-hold.timer` (on ≥80, off ≤75); holds across AC replug, USB-C → AC, cold boot; `charge-mode full` until reboot. |
-| fan | works | EC fan loop runs after cmd 0xbf; KDRT0 tracks pkg within 1–2 °C. RPM not visible to Linux (no Dell SMM 0xB2). |
+| fan | works | EC fan loop runs after cmd 0xbf; KDRT0 tracks pkg within 1–2 °C. RPM not visible to Linux (no Dell SMM 0xB2). Patched quiet set (EC region): 0 rpm idle, 3700 rpm / pkg 86–88 °C at 35 W sustained, cover on. Quiet mode resets to balanced when the RTC cell is out. |
 | thermal zone `_TZ` | works | `acpitz` from EC CPU sensor (EC 0x33/0x34), 46 °C idle, 73→87 °C under 60 s stress-ng, critical 107 °C. No passive trip; EC drives the fan. |
 | sleep | dropped | S0/S5 only by design (no `_S3`, `DISABLE_ACPI_HIBERNATE`). |
 | ECC | deferred | 2×8 GB non-ECC DIMMs fitted; ie31200_edac loads, mode None. |
