@@ -14,6 +14,8 @@
 #define MAILBOX_DATA	0x911
 #define CMD_CPU_ID	0xbf
 #define CMD_HW_MUTE	0x60
+#define CMD_THERMAL_MODE	0xa6
+#define THERMAL_MODE_QUIET	(1 << 2)
 
 static void ec_mailbox_cmd(u8 cmd, u8 arg)
 {
@@ -75,6 +77,10 @@ static void mainboard_enable(struct device *dev)
 	/* EC sends Set 1 codes regardless; without XLATE atkbd decodes them as Set 2. */
 	pc_keyboard_set_command_byte_bit(PC_KBC_TRANSLATE, 1);
 	ec_send_cpu_id();
+	/* The EC keeps its thermal mode in VBAT and falls back to balanced when the cell is out. */
+	outb(0x13, MAILBOX_INDEX);
+	outb(THERMAL_MODE_QUIET, MAILBOX_DATA);
+	ec_mailbox_cmd(CMD_THERMAL_MODE, 1);
 	/* The EC keeps the speakers muted until the BIOS sends unmute (arg 1). */
 	ec_mailbox_cmd(CMD_HW_MUTE, 1);
 }

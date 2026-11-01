@@ -116,7 +116,9 @@ EC firmware
   the fan at 48 °C instead of 40, so it stops at idle. Skin and GPU tables are
   stock. Stock quiet runs 2300 rpm at idle on the memory/M.2 steps.
   Measured cover on: 0 rpm idle, 3700 rpm at 35 W sustained, pkg 86–88 °C.
-  The quiet mode is lost with the RTC cell (default balanced). The patch tool
+  The quiet mode is lost with the RTC cell (default balanced), so `ramstage.c`
+  sets it at every boot (mailbox cmd 0xA6 sub 1, mask 4); a mode picked from
+  the OS lasts until the next boot. The patch tool
   is not in this repo yet; restore the EC region only from a dump taken after
   the patch.
 
