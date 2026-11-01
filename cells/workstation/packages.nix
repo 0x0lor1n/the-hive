@@ -65,17 +65,8 @@ in {
   # dwl with our config.h. dwl's Makefile copies config.def.h to config.h only
   # when the latter is absent, so dropping the file in is the whole override.
   # Keybinds and rationale live in packages/dwl/config.h.
-  # v0.9 ahead of nixpkgs (still 0.8 on wlroots 0.19): 0.9 adds ext-image-
-  # capture-source + ext-foreign-toplevel-list, which xdg-desktop-portal-wlr
-  # needs to share single windows, including ones on hidden tags.
-  dwl = (pkgs.dwl.override {wlroots_0_19 = pkgs.wlroots_0_20;}).overrideAttrs (old: {
-    version = "0.9";
-    src = pkgs.fetchFromCodeberg {
-      owner = "dwl";
-      repo = "dwl";
-      rev = "v0.9";
-      hash = "sha256-PYBOi/A9n1611XBEaZW9PolSfjwe1KWoI2VbVrS2s0Q=";
-    };
+  # nixpkgs is on 0.9 / wlroots 0.20 now; the patches below are against 0.9.
+  dwl = pkgs.dwl.overrideAttrs (old: {
     patches =
       (old.patches or [])
       ++ [
