@@ -30,31 +30,16 @@
     });
   };
 
-  # evdi (DisplayLink DRM shim, dock-displaylink) at the nixpkgs pin is 1.14.15 and
-  # does not compile against 7.x: DRM renamed `drm_atomic_state` to
-  # `drm_atomic_commit` in the plane helpers. Upstream fixed it in v1.15.1
-  # (2026-09-15). Overriding the package inside both kernel sets keeps the
-  # kernels themselves untouched (same drvs, nyx cache hits); only the
-  # laptops' closures pull evdi in. Drop once nixpkgs carries >= 1.15.1.
-  evdiOverlay = final: prev: let
-    bump = kp:
-      kp.extend (_: kprev: {
-        evdi = kprev.evdi.overrideAttrs (_old: rec {
-          version = "1.15.1";
-          src = final.fetchFromGitHub {
-            owner = "DisplayLink";
-            repo = "evdi";
-            tag = "v${version}";
-            hash = "sha256-3g6OETXJSf6AScJ2K9F67mPlh3Wpi20Yq+f+xe78p9Y=";
-          };
-          # nixpkgs' prePatch stubs out the Makefile's /etc/os-release read;
-          # 1.15.x no longer has it, and --replace-fail aborts on a miss.
-          prePatch = "";
-        });
-      });
-  in {
-    linuxPackages_cachyos = bump prev.linuxPackages_cachyos;
-    linuxPackages = bump prev.linuxPackages;
+  # evdi (DisplayLink DRM shim, dock-displaylink) in the cachyos set: nyx's
+  # llvm-module-overlay empties postBuild ("Don't build userspace stuff"),
+  # but nixpkgs' postInstall still copies library/libevdi.so, so the
+  # derivation dies at install. Drop the copy to match; dock-displaylink
+  # borrows the library from the stock linuxPackages set anyway. Kernel drv
+  # untouched (nyx cache hits).
+  evdiOverlay = _final: prev: {
+    linuxPackages_cachyos = prev.linuxPackages_cachyos.extend (_: kprev: {
+      evdi = kprev.evdi.overrideAttrs (_: {postInstall = "";});
+    });
   };
   globals = inputs.cells.common.globals;
   common = inputs.cells.common.profiles;
