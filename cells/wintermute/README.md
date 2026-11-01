@@ -77,6 +77,10 @@ Board
   sets no DONE bit, so the VID unmask is the success signal. After a warm
   reset with nothing plugged in the first BOOT_ON is dropped; it is resent
   until the VID unmasks.
+- RP5 capped at Gen2 (`PcieRpPcieSpeed[4] = 2` in `ramstage.c`): at 8 GT/s
+  the Alpine Ridge upstream port logs ~4 BadDLLP per MB of host-to-dock
+  traffic, none at 5 GT/s. FSP's Gen3 software EQ search did not change it.
+  Lifts when a Gen3 EQ setting is found that runs clean.
 
 Payload
 - edk2 is MrChromebox `uefipayload_2605`, built as its own derivation:

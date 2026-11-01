@@ -65,6 +65,8 @@ static void ec_send_cpu_id(void)
 void mainboard_silicon_init_params(FSP_SIL_UPD *params)
 {
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
+	/* RP5 -> Alpine Ridge: BadDLLP at AR under load at 8 GT/s, none at 5 GT/s. */
+	params->PcieRpPcieSpeed[4] = 2;		/* Gen2 */
 }
 
 static void mainboard_enable(struct device *dev)
