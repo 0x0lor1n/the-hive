@@ -90,7 +90,10 @@ Payload
 - `PcdPs2KbdExtendedVerification=FALSE`: the EC answers the 8042 interface test
   with 0x08, so Ps2KeyboardDxe never binds and the boot menu has no keyboard.
 - edk2 TPM and LVGL off: one of them reset-loops edk2 here, not bisected.
-  Secure Boot off until own keys are enrolled.
+- Secure Boot: on a board in Setup Mode with no KEK, `EnrollDefaultKeys` enrols
+  the Microsoft set on every boot. Delete only PK in setup, then systemd-boot's
+  auto-enrol replaces PK/KEK/db; deleting all keys brings Microsoft back.
+- Flash `-i COREBOOT`, never `-i bios`: SMMSTORE holds the enrolled keys.
 - Bootsplash = `assets/bootsplash.png`, faded into the palette black and scaled
   to 400x400, swapped into `MdeModulePkg/Logo/Logo.bmp`: coreboot's `logo`
   target sits in the edk2 Makefile we bypass. BootLogoLib skips a logo taller
