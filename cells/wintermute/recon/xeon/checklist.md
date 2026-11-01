@@ -22,6 +22,7 @@ State as of flash #16 (87ec2bc). works / partial / no / deferred / dropped.
 | Thunderbolt 3 | partial | #36: AR up at boot via early BOOT_ON, SL1; USB-C dock (USB/DP/LAN) hotplug works. TB PCIe tunnel untested (no TB device). BadDLLP under dock traffic at 8 GT/s (~4 per MB); RP5 capped at 5 GT/s since #38, 0 per 3 GiB. Idle +~0.5 W (AR has no runtime PM). |
 | VT-d | works | `intel_iommu=on` (OS side): DMAR faults 0 with dock, M620 CUDA, i915, DisplayLink. `iommu_dma_protection` 0: the DMAR has no opt-in flag. |
 | TPM 2.0 | works | NPCT650 via TIS MMIO 0xFED40000; ZFS unlock from PCR 15 unchanged. edk2 TPM off, no measured boot. |
+| measured boot, PCR 7 seal | not tested | PCR 0/2/4/7 read all zero (edk2 TPM off, coreboot measured boot off), so a PCR 7 seal would bind to a constant. Needs edk2 TPM on (a suspect in the flash #1 reset loop), then `defaultPcrIds = "7,15"` + reseal on PCR 7 change. Will seal after 2 weeks of usage on the current firmware. |
 | audio | works | #29: speakers (EC mailbox cmd 0x60 unmute), headphones, headset mic, internal DMIC (poor quality, the mic itself); Dell ALC3246 fixup by pin match from `hda_verb.c`. |
 | Wi-Fi / Bluetooth | works | 8265 fitted, no firmware change (#26): RP2 trains, 02:00.0 8086:24fd iwlwifi fw 36 (iwlmvm), no AER; rfkill clear; `nmcli dev wifi list` sees 2.4 + 5 GHz; BT hci0 via USB2 port 5. |
 | SD reader | works | RP3: 03:00.0 10ec:525a rtsx_pci; SDHC 32 GB at UHS-I SDR104, partitions seen, 200 MiB read 12.8 MB/s without I/O errors; remove/reinsert hotplug OK. |
