@@ -45,8 +45,10 @@ Board
   `_BCM` writes, so the OS backlight driver stays the only PWM writer.
 - `\_SB._INI` queries `_OSI` as stock does: without "Windows 2012" Linux takes
   `acpi_video0` and skips `intel_backlight`.
-- `ME_CLEANER_ARGS "-S --whitelist MFS"`: the deguarded ME does not boot
-  without MFS.
+- me_cleaner runs offline on the deguarded ME region, not in the build (the
+  ME never goes through it, so the board's `ME_CLEANER_ARGS` is unused):
+  `me_cleaner.py -S --whitelist MFS` on a full dump, written back with
+  `-i me`. The deguarded ME does not boot without MFS.
 - M620 VBIOS: the board has no GPU ROM chip, so stock serves the image via
   ACPI `_ROM`. We ship it as CBFS `pci10de,13b4.rom` (`VGA_BIOS`, not run:
   libgfxinit is pinned in the defconfig) and coreboot's `pci_rom_ssdt()` writes
