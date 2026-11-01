@@ -118,3 +118,12 @@ OS side (penrose)
   0x710..0x712). `cells/workstation/profiles/battery-charge-hold.nix` toggles
   the EC's Peak Shift hold (mailbox cmd 0x1C, PIDs 0x4EA/0x4EE..0x4F4) from a
   timer: on at 80 %, off at 75 %. `charge-mode full` until reboot.
+
+## Known, untested
+
+- Thunderbolt 3 PCIe tunnel: nothing TB-native has been plugged in yet (no
+  eGPU, NVMe enclosure or TB dock on hand). What works is the USB-C side of
+  Alpine Ridge (USB 3.1 Gen 2 xHCI, DP alt mode, a DisplayLink dock). Unknown:
+  boltd enrolment of a real device (SL1), PCIe hotplug of a tunnelled bridge
+  into the hotplug padding, and whether the RP5 Gen2 cap holds for one. With
+  the cap a tunnel gets ~16 Gb/s instead of ~32 Gb/s.
