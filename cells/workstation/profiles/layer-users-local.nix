@@ -220,12 +220,10 @@ in {
           User ${host.userName}
           IdentityFile /run/agenix/user-ssh-key
           IdentitiesOnly yes
-        # VPS (hisilo.me). Unprivileged; root is deploy-key only (deploy-key).
+        # VPS (hisilo.me). No local user there: deploy target only, so
+        # `ssh root@osgiliath` after `deploy-key`. Host key pinned above.
         Host osgiliath
           HostName ${osgiliathAddr}
-          User ${host.userName}
-          IdentityFile /run/agenix/user-ssh-key
-          IdentitiesOnly yes
       ''
       + lib.concatStrings (lib.mapAttrsToList (n: _: ''
           Host ${n}
