@@ -44,6 +44,9 @@ zoom_module="#{?window_zoomed_flag,${layout_icon_by_name["zoom"]} zoom  ,}"
 
 tmux set-option -g status-position "bottom"
 tmux set-option -g status-style bg=default,fg=default
+# tmux 3.8 changed the default of window-status-current-style from "default"
+# to "underscore"; we draw the active tab as a filled pill, so pin it back.
+tmux set-option -g window-status-current-style default
 tmux set-option -g status-justify "absolute-centre"
 tmux set-option -g status-left "#[bg=default,fg=${surface1}] ${pane_index}${pane_icon} #{b:pane_title}"
 tmux set-option -g status-right "#[bg=default,fg=${lavender}]${user_module}${host_module}${prefix_module}${sync_module}${zoom_module}#[bg=default,fg=${surface1}]${windows_icon} #{window_panes}  ${session_icon} #S "
