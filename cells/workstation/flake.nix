@@ -30,9 +30,9 @@
     himmelblau.url = "github:himmelblau-idm/himmelblau/791372aad3c5bce2baddd5b794399f58fbd56c61";
     himmelblau.inputs.nixpkgs.follows = "nixpkgs";
     # Used only as a NixOS module (home-manager.users), never standalone
-    # (utils.mkHome is broken upstream). release-25.05 against an unstable
+    # (utils.mkHome is broken upstream). release-26.05 against an unstable
     # nixpkgs is intentional, home.enableNixpkgsReleaseCheck = false.
-    home-manager.url = "github:nix-community/home-manager/release-25.05";
+    home-manager.url = "github:nix-community/home-manager/release-26.05";
     home-manager.inputs.nixpkgs.follows = "nixpkgs";
     # CachyOS kernel + matching zfs_cachyos, pre-built on nyx-cache.chaotic.cx.
     # Branch, not a rev: the cache tracks this branch's head, and nixpkgs
