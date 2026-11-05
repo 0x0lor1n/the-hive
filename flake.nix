@@ -2,7 +2,13 @@
   description = "One flake for the fleet, on rensa";
 
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    # Pinned to the SAME rev as cells/workstation's nixpkgs (which follows
+    # chaotic/nixpkgs): one nixpkgs -> one nix -> one nix-plugins for the
+    # devshell and every host. A root `follows` cannot reach a cell input, so
+    # the rev is copied here and in cells/{server,repo}/flake.nix; the
+    # nixpkgs-sync lefthook check fails the commit if they drift. Bump with
+    # `nix flake update chaotic` in cells/workstation, then paste the rev.
+    nixpkgs.url = "github:NixOS/nixpkgs/1c89083e451e891152365b799595cf7790a43325";
     ren.url = "gitlab:rensa-nix/core/v0.2.0?dir=lib";
     # Pinned by rev on purpose: colmenaHive below reads colmena's internal
     # __schema from this source and the CLI (same input, in the devshell)

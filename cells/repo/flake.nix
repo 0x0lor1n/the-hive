@@ -18,7 +18,7 @@
 
     # agenix CLI for every agenix host. Pins match the host cells' (the modules
     # come from there); nixpkgs is only the follows target.
-    nixpkgs.url = "github:NixOS/nixpkgs/34ab99075ac4f7e40cf037eef32cb1c360bb85e9";
+    nixpkgs.url = "github:NixOS/nixpkgs/1c89083e451e891152365b799595cf7790a43325";
     agenix-rekey.url = "github:oddlama/agenix-rekey/8b9c179bc1300ab130c90f2d25426bf0e7a2b58d";
     agenix-rekey.inputs.nixpkgs.follows = "nixpkgs";
   };

@@ -51,6 +51,39 @@
     '';
   };
 
+  # The root and cells/{server,repo} copy the workstation's locked nixpkgs rev
+  # by hand (a root `follows` cannot reach a cell input). One nix, one
+  # nix-plugins everywhere only holds while the four locks agree, so the
+  # commit fails when they drift. Nix-free, reads the locks directly.
+  nixpkgs-sync = pkgs.writeShellApplication {
+    name = "nixpkgs-sync";
+    runtimeInputs = [pkgs.jq pkgs.git];
+    text = ''
+      root=$(git rev-parse --show-toplevel)
+      rev() {
+        # inputs.X is a node name, or a follows path ["chaotic","nixpkgs"].
+        jq -r '
+          def walk($node; $path):
+            if $path == [] then $node
+            else .nodes[$node].inputs[$path[0]] as $next
+              | if ($next|type) == "array" then walk("root"; $next + $path[1:])
+                else walk($next; $path[1:]) end
+            end;
+          walk("root"; ["nixpkgs"]) as $n | .nodes[$n].locked.rev' "$root/$1"
+      }
+      want=$(rev cells/workstation/flake.lock)
+      status=0
+      for lock in flake.lock cells/repo/flake.lock cells/server/flake.lock; do
+        got=$(rev "$lock")
+        if [ "$got" != "$want" ]; then
+          echo "nixpkgs-sync: $lock pins nixpkgs $got, cells/workstation has $want" >&2
+          status=1
+        fi
+      done
+      exit $status
+    '';
+  };
+
   # pkgs.nix and pkgs.nix-plugins are pinned to one version by the overlay in
   # flake.nix (transformInputs) — same nix here and as every host's
   # nix.package, so the plugin dlopens under nixos-rebuild too.
@@ -174,6 +207,7 @@ in {
 
       treefmtWrapper
       go-test-all
+      nixpkgs-sync
       pkgs.go
       pkgs.gitleaks
     ];
@@ -208,6 +242,11 @@ in {
             stage_fixed = true;
             env.TERM = "dumb";
           }
+          {
+            # The four nixpkgs pins must agree (see flake.nix inputs).
+            name = "nixpkgs-sync";
+            run = "${nixpkgs-sync}/bin/nixpkgs-sync";
+          }
         ];
       };
       pre-push.jobs = [
@@ -231,6 +270,7 @@ in {
       echo "  rtk <cmd>        compact git/ls/…; agents get nixq as nix (NIXQ=off to bypass)"
       echo "  treefmt         alejandra + deadnix + gofumpt + shfmt; runs on pre-commit (LEFTHOOK=0 to skip)"
       echo "  go-test-all     go test every module; runs on pre-push"
+      echo "  nixpkgs-sync    the four nixpkgs locks agree; runs on pre-commit"
     '';
   };
 }
