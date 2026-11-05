@@ -1,8 +1,8 @@
 # The local (non-Entra) unix user: account, sudo policy, and the carve-outs
 # that survive the @blank rollback of its home.
 #
-# Workstation-only: osgiliath is root-key-only and stops at
-# common/layer-users-root.
+# Workstation-only: the servers get their local user from
+# server/layer-users-admin (same keys, no home carve-outs).
 {
   inputs,
   cell,
@@ -25,6 +25,10 @@
   peers =
     lib.filterAttrs (n: h: n != host.hostName && !h.isVm && h.accounts != [])
     globals.hosts;
+
+  # globals holds "a.b.c.d/24" (encrypted half); ssh wants the bare address.
+  # Same split as server/profiles/monitoring-server.nix.
+  osgiliathAddr = lib.head (lib.splitString "/" globals.hosts.osgiliath.ipv4.address);
 in {
   # tss owns /dev/tpmrm0 (0660) when himmelblau's udev rule does not.
   security.tpm2.enable = !config.services.himmelblau.enable;
@@ -183,6 +187,11 @@ in {
           hostNames = ["imladris" "192.168.10.10"];
           publicKeyFile = inputs.self.outPath + "/secrets/hosts/imladris/ssh_host_ed25519_key.pub";
         };
+        # VPS; pubkey pinned in globals (no secrets/hosts/osgiliath/).
+        osgiliath = {
+          hostNames = ["osgiliath" osgiliathAddr];
+          publicKey = globals.hosts.osgiliath.sshHostPubkey;
+        };
       }
       # Pinned from globals (sshHostPubkey), same key the --extra-files
       # install shipped; HostKeyAlias below keeps the .local name out of it.
@@ -208,6 +217,12 @@ in {
           IdentitiesOnly yes
         Host imladris
           HostName 192.168.10.10
+          User ${host.userName}
+          IdentityFile /run/agenix/user-ssh-key
+          IdentitiesOnly yes
+        # VPS (hisilo.me). Unprivileged; root is deploy-key only (deploy-key).
+        Host osgiliath
+          HostName ${osgiliathAddr}
           User ${host.userName}
           IdentityFile /run/agenix/user-ssh-key
           IdentitiesOnly yes

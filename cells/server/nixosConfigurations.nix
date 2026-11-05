@@ -92,6 +92,9 @@ in {
     modules =
       btrfs
       ++ [
+        # `ssh osgiliath` from a workstation (unprivileged, key-only), as the
+        # router. root stays deploy-key only.
+        p.layer-users-admin
         p.layer-server-hardening
         p.platform-virtio
         p.net-osgiliath

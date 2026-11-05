@@ -39,7 +39,11 @@
               email = "0xolorin@users.noreply.github.com";
             };
 
-            hosts.osgiliath.diskDevice = "/dev/vda";
+            hosts.osgiliath = {
+              diskDevice = "/dev/vda";
+              # Pinned for the workstations' known_hosts (layer-users-local).
+              sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINKK3VXSY8JxgelHf+8U7XEOCYrjCAB81Xme7eoNkP6v root@osgiliath";
+            };
 
             # Playground workstation VM (cells/workstation). Public throwaway
             # identity: the hashes are for `vmuser`/root on a disposable image
