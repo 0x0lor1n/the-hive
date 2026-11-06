@@ -96,6 +96,7 @@ in {
         p.platform-virtio
         p.net-osgiliath
         p.site-hisilome
+        p.ygg-osgiliath
         p.deploy-osgiliath
       ];
   };

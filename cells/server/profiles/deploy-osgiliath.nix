@@ -17,7 +17,10 @@
   # The PIN prompt is drawn on the tty and colmena's progress bar overwrites
   # it, so "Uploading key" looks hung. Deploy with `colmena apply --verbose`
   # (disables the bar) or type the PIN blind.
-  icecastKey = file: {
+  hisilomeKey = file: {
+    user,
+    group,
+  }: {
     keyCommand = [
       "bash"
       "-c"
@@ -25,11 +28,15 @@
       "${inputs.self}/secrets/hisilome/${file}.age"
     ];
     destDir = "/run/keys";
-    user = "hisilome";
-    group = "hisilome";
+    inherit user group;
     permissions = "0400";
     uploadAt = "pre-activation";
   };
+  icecastKey = file:
+    hisilomeKey file {
+      user = "hisilome";
+      group = "hisilome";
+    };
 in {
   # hive's colmena transformer added this; colmena's own evaluator does not.
   environment.etc."nixos/configuration.nix".text = ''
@@ -47,6 +54,12 @@ in {
     keys = {
       "icecast-source-password" = icecastKey "icecast-source-password";
       "icecast-admin-password" = icecastKey "icecast-admin-password";
+      # yggdrasil runs as a DynamicUser and gets the file via LoadCredential,
+      # which systemd reads as root: root-owned 0400 is the right shape.
+      "yggdrasil-private.pem" = hisilomeKey "yggdrasil-private.pem" {
+        user = "root";
+        group = "root";
+      };
     };
   };
 }
