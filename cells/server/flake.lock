@@ -196,17 +196,17 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1793977275,
-        "narHash": "sha256-iYsA6Coxi5xb2nV3WpBcjaEwG2cuvmac3n7fmBQDn9k=",
+        "lastModified": 1793998466,
+        "narHash": "sha256-gPsef+Y//zlutZ+xQJSd9bHO21a6OVsYiT25nQSgyz8=",
         "owner": "0x0lor1n",
         "repo": "hisilome",
-        "rev": "84ea998482be7414ec6957af4ee3b01d8d1be223",
+        "rev": "b0b7e81c40322b32d8d03582d9fb9a7cedf10aa7",
         "type": "github"
       },
       "original": {
         "owner": "0x0lor1n",
         "repo": "hisilome",
-        "rev": "84ea998482be7414ec6957af4ee3b01d8d1be223",
+        "rev": "b0b7e81c40322b32d8d03582d9fb9a7cedf10aa7",
         "type": "github"
       }
     },
