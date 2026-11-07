@@ -60,6 +60,11 @@ in {
         user = "root";
         group = "root";
       };
+      # tor's root ExecStartPre installs it into /run/tor/onion/ as tor:tor.
+      "onion-hs_ed25519_secret_key" = hisilomeKey "onion-hs_ed25519_secret_key" {
+        user = "root";
+        group = "root";
+      };
     };
   };
 }

@@ -97,6 +97,7 @@ in {
         p.net-osgiliath
         p.site-hisilome
         p.ygg-osgiliath
+        p.onion-osgiliath
         p.deploy-osgiliath
       ];
   };
