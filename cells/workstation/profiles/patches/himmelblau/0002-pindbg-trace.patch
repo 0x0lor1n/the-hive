@@ -1,0 +1,124 @@
+diff --git a/src/common/src/auth.rs b/src/common/src/auth.rs
+index 314e9bc..d0a33f4 100644
+--- a/src/common/src/auth.rs
++++ b/src/common/src/auth.rs
+@@ -51,6 +51,7 @@ use libwebauthn::webauthn::WebAuthn;
+ use rpassword::prompt_password;
+ use serde_json::{json, to_string as json_to_string};
+ use sha2::{Digest, Sha256};
++use crate::idprovider::common::pindbg_sha8;
+ use std::sync::mpsc::{channel, RecvError, Sender};
+ use tokio::runtime::Runtime;
+ 
+@@ -1079,6 +1080,7 @@ fn handle_pam_auth_response_pin(state: &mut AuthenticateState) -> PamWhatNext {
+     // If it's already been swapped, we are just swapping two null pointers
+     // here effectively.
+     std::mem::swap(&mut state.authtok, &mut consume_authtok);
++    let cred_from_authtok = consume_authtok.is_some();
+     let cred = if let Some(cred) = consume_authtok {
+         cred
+     } else {
+@@ -1109,6 +1111,19 @@ fn handle_pam_auth_response_pin(state: &mut AuthenticateState) -> PamWhatNext {
+     };
+ 
+     // Now setup the request for the next loop.
++    // PINDBG: never log the PIN itself — only length, a short hash, and whether
++    // it came pre-filled (PAM_AUTHTOK) or from our own prompt.
++    {
++        let hash = pindbg_sha8(&cred);
++        error!(
++            "PINDBG pam: pin_len={} pin_sha8={} from_authtok={} digits_only={} has_ctrl={}",
++            cred.chars().count(),
++            &hash,
++            cred_from_authtok,
++            cred.chars().all(|c| c.is_ascii_digit()),
++            cred.chars().any(|c| c.is_control()),
++        );
++    }
+     let req = ClientRequest::PamAuthenticateStep(PamAuthRequest::Pin { cred });
+     PamWhatNext::Next(req)
+ }
+diff --git a/src/common/src/idprovider/common.rs b/src/common/src/idprovider/common.rs
+index 6416da7..fdcedaa 100644
+--- a/src/common/src/idprovider/common.rs
++++ b/src/common/src/idprovider/common.rs
+@@ -323,7 +323,7 @@ macro_rules! handle_hello_bad_pin_count {
+     }};
+ }
+ 
+-#[derive(PartialEq)]
++#[derive(PartialEq, Debug)]
+ pub(crate) enum KeyType {
+     Hello,
+     Decoupled,
+@@ -1177,3 +1177,10 @@ mod tests {
+         assert!(should_block_hello_pin_attempts(1, 0));
+     }
+ }
++
++/// PINDBG: first 4 bytes of sha256 as hex — enough to compare attempts, useless to recover the PIN.
++pub fn pindbg_sha8(s: &str) -> String {
++    use sha2::Digest;
++    let d = sha2::Sha256::digest(s.as_bytes());
++    d.iter().take(4).map(|b| format!("{:02x}", b)).collect()
++}
+diff --git a/src/common/src/idprovider/himmelblau.rs b/src/common/src/idprovider/himmelblau.rs
+index 16445b6..c5fb04c 100644
+--- a/src/common/src/idprovider/himmelblau.rs
++++ b/src/common/src/idprovider/himmelblau.rs
+@@ -73,6 +73,7 @@ use libc::getpwnam;
+ use libkrimes::proto::KerberosCredentials;
+ use rand::RngExt;
+ use reqwest::Url;
++use super::common::pindbg_sha8;
+ use std::collections::HashMap;
+ use std::ffi::CString;
+ use std::sync::Arc;
+@@ -2720,6 +2721,12 @@ impl IdProvider for HimmelblauProvider {
+                     Ok(pin) => pin,
+                     Err(e) => {
+                         error!("Failed setting pin value: {:?}", e);
++                        error!(
++                            "PINDBG daemon: PinValue::new failed pin_len={} pin_sha8={} keytype={:?}",
++                            $cred.chars().count(),
++                            &pindbg_sha8(&$cred),
++                            $keytype,
++                        );
+                         handle_hello_bad_pin_count!(self, account_id, keystore, |msg: &str| {
+                             Ok((AuthResult::Denied(msg.to_string()), AuthCacheAction::None))
+                         });
+@@ -2729,8 +2736,21 @@ impl IdProvider for HimmelblauProvider {
+                         ));
+                     }
+                 };
++                {
++                    let bad_count = self.bad_pin_counter.bad_pin_count(account_id).await;
++                    error!(
++                        "PINDBG daemon: pin_len={} pin_sha8={} digits_only={} has_ctrl={} keytype={:?} bad_pin_count_before={}",
++                        $cred.chars().count(),
++                        &pindbg_sha8(&$cred),
++                        $cred.chars().all(|c| c.is_ascii_digit()),
++                        $cred.chars().any(|c| c.is_control()),
++                        $keytype,
++                        bad_count,
++                    );
++                }
+                 if let Err(e) = tpm.ms_hello_key_load(machine_key, &$hello_key, &pin) {
+                     error!("{:?}", e);
++                    error!("PINDBG daemon: ms_hello_key_load FAILED keytype={:?}", $keytype);
+                     handle_hello_bad_pin_count!(self, account_id, keystore, |msg: &str| {
+                         Ok((AuthResult::Denied(msg.to_string()), AuthCacheAction::None))
+                     });
+@@ -3591,6 +3611,12 @@ impl IdProvider for HimmelblauProvider {
+ 
+         match (&mut *cred_handler, pam_next_req) {
+             (AuthCredHandler::SetupPin { token }, PamAuthRequest::SetupPin { pin }) => {
++                error!(
++                    "PINDBG daemon: SetupPin pin_len={} pin_sha8={} digits_only={}",
++                    pin.chars().count(),
++                    &pindbg_sha8(&pin),
++                    pin.chars().all(|c| c.is_ascii_digit()),
++                );
+                 let token = match token.as_ref().clone() {
+                     Some(t) => t,
+                     None => {

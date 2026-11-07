@@ -17,6 +17,10 @@
     # benign TOCTOU race where exec on a just-written temp file intermittently fails.
     patch -p1 -d $out < ${./patches/himmelblau/0001-custom-compliance-retry-enoent.patch}
 
+    # TEMP (PIN-after-upgrade diagnosis): logs PIN length/sha8/source at the PAM
+    # side and at the daemon's TPM unseal, never the PIN itself. Grep PINDBG.
+    patch -p1 -d $out < ${./patches/himmelblau/0002-pindbg-trace.patch}
+
     # Bumps libhimmelblau 0.8.30 -> 0.8.39; the pinned himmelblau commit wants
     # 0.8.30, upstream main's 0.8.37 is a bigger jump than this needs.
     # 0.8.39 (2026-09-04) is the fix: Intune check-in started answering
@@ -128,6 +132,8 @@ in {
     services.himmelblau = {
       enable = true;
       daemonPackage = lib.mkForce patchedHimmelblau.packages.daemon;
+      # Same patched tree for the PAM module so the PINDBG trace covers both ends.
+      pamPackage = lib.mkForce patchedHimmelblau.packages.pam;
 
       # swaylock: Entra users have no shadow entry for pam_unix. greetd is a substack of
       # `login` (useDefaultRules = false), inherits himmelblau there and has no unix rule.
