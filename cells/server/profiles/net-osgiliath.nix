@@ -7,26 +7,37 @@
 {
   inputs,
   cell,
-}: {host, ...}: {
+}: {
+  host,
+  lib,
+  ...
+}: {
   networking.useNetworkd = true;
   networking.useDHCP = false;
 
   systemd.network.networks."10-wan" = {
     matchConfig.Type = "ether";
-    address = [host.ipv4.address];
-    routes = [
-      {
-        Gateway = host.ipv4.gateway;
-        # Mirrors the onlink flag on Debian's default route.
+    address = [host.ipv4.address] ++ lib.optional (host.ipv6 != null) host.ipv6.address;
+    routes =
+      [
+        {
+          Gateway = host.ipv4.gateway;
+          # Mirrors the onlink flag on Debian's default route.
+          GatewayOnLink = true;
+        }
+      ]
+      ++ lib.optional (host.ipv6 != null) {
+        Gateway = host.ipv6.gateway;
         GatewayOnLink = true;
-      }
-    ];
+      };
     dns = [
       "8.8.8.8"
       "8.8.4.4"
     ];
-    # RA advertises prefixes but assigns no global address; nothing may depend
-    # on v6 for reachability.
+    # RA advertises prefixes but assigns no global address: v6 is static
+    # (globals ipv6, set once the provider enables it) or absent. The AAAA
+    # record follows the same value (dns.nix), so v6 is never advertised
+    # before it answers.
     networkConfig.IPv6AcceptRA = true;
     linkConfig.RequiredForOnline = "routable";
   };

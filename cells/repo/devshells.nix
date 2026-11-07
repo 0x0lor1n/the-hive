@@ -197,6 +197,8 @@ in {
       pkgs.nixos-anywhere
       cell.packages.agenix
       deploy-key
+      # Public DNS (cells/server/dns.nix); needs the token's TPM PIN.
+      inputs.cells.server.dns.cli
       agents-bump
       dev
       cell.packages.rtk
@@ -265,6 +267,7 @@ in {
       echo "nix-rensa: colmena, nixos-anywhere, rage, extra-builtins loaded"
       echo "  deploy-key      load the fleet deploy key (TPM PIN, 15-min TTL)"
       echo "  agenix edit|generate|rekey|view   host secrets (generated/ + rekeyed/<host>)"
+      echo "  dns ids|plan|apply|import   hisilo.me records at Njalla (terranix + opentofu, TPM PIN)"
       echo "  agents-bump     bump hermes/claude/opencode/herdr, check, snapshot hermes state; prints the switch"
       echo "  dev <cell>      switch devshell; cd \"\$(dev <cell>)\" to also cd"
       echo "  rtk <cmd>        compact git/ls/…; agents get nixq as nix (NIXQ=off to bypass)"

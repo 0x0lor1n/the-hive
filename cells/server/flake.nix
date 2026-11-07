@@ -15,6 +15,10 @@
     # source, pinned by rev: a bump re-applies every CF on the next deploy.
     trash-guides.url = "github:TRaSH-Guides/Guides/529bd9c29eb41f38e36c14c41a137f4d5d824c99";
     trash-guides.flake = false;
+    # Njalla DNS for the public site as a terraform JSON module (dns.nix). Lib
+    # only: nothing from it enters a host closure.
+    terranix.url = "github:terranix/terranix/b6c05a45b2435cb3471d6f135ddb0b3c2934cc45";
+    terranix.inputs.nixpkgs.follows = "nixpkgs";
 
     # agenix for ZFS hosts; pins match cells/workstation, else a second copy.
     nixpkgs.url = "github:NixOS/nixpkgs/1c89083e451e891152365b799595cf7790a43325";

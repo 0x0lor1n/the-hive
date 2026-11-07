@@ -87,6 +87,23 @@
                     );
                   };
 
+                  # Encrypted half. Same readers as ipv4 plus dns.nix (AAAA).
+                  # null = provider has not handed out a v6 address yet.
+                  ipv6 = lib.mkOption {
+                    default = null;
+                    type = lib.types.nullOr (
+                      lib.types.submodule {
+                        options = {
+                          address = lib.mkOption {
+                            type = lib.types.str;
+                            description = "With prefix length, e.g. 2a01:db8::2/64.";
+                          };
+                          gateway = lib.mkOption {type = lib.types.str;};
+                        };
+                      }
+                    );
+                  };
+
                   # nixos-anywhere has no --disk override for --store-paths, so
                   # this is the real device. Never /dev/sda on osgiliath: that is
                   # the provider's config drive.

@@ -34,6 +34,7 @@
         (simple "profiles")
         (simple "disks")
         (simple "nixosConfigurations")
+        (simple "dns")
         (simple "packages")
         (simple "nixosModules")
         (simple "homeModules")
