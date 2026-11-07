@@ -22,6 +22,11 @@ in {
   # leaving the audio graph without realtime scheduling.
   security.rtkit.enable = true;
 
+  # pipewire 1.6.9 segfaults in mod.x11-bell when Xwayland goes away (wlroots
+  # starts it with -terminate); clients that don't reconnect (Chromium/Electron:
+  # Teams, Slack) are left with no audio devices. Nothing here needs the X bell.
+  services.pipewire.extraConfig.pipewire."90-no-x11-bell"."context.properties"."module.x11.bell" = false;
+
   # Any local active session may power off / reboot / suspend without the
   # admin password. The default is active=yes only for the single-session
   # case; with the local user's SSH session or a second seat open, logind
