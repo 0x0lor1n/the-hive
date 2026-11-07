@@ -42,7 +42,7 @@
       };
       deck = inputs.cells.deck.homeModules;
       agentPkgs = {
-        inherit (inputs.cells.repo.packages) claude-code opencode oh-my-opencode rtk;
+        inherit (inputs.cells.repo.packages) claude-code opencode oh-my-opencode rtk git-hooks;
         inherit (cell.packages) herdr herdr-integrations;
       };
     };

@@ -31,7 +31,8 @@
   deck ? {},
   # cells/repo/packages: claude-code, opencode, oh-my-opencode, rtk -- the
   # agent CLIs dev/agents.nix installs -- plus herdr and its generated
-  # integrations (cells/workstation). Same reason as deck: no `inputs` here.
+  # integrations (cells/workstation), and git-hooks, the global core.hooksPath
+  # below. Same reason as deck: no `inputs` here.
   agentPkgs ? {},
   # Where a plain login shell lands (tty, ssh, `su -`). null keeps $HOME.
   startDir ? null,
@@ -101,6 +102,11 @@ in
         # which has no glob support. No boundary lost -- both accounts already
         # have group rwx on all of /srv (srv-the-hive.nix, srv-workspace.nix).
         safe.directory = ["*"];
+        # Every commit on the box, from either account, human or agent, goes
+        # through the dispatcher in repo/packages.nix: the box-wide rules
+        # (commit-message lint) first, then the repo's own hooks. Projects keep
+        # their lefthook.yml / .git/hooks as they are; the dispatcher reaches them.
+        core.hooksPath = "${agentPkgs.git-hooks}";
       };
     };
 

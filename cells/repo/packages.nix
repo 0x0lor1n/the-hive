@@ -113,4 +113,110 @@ in {
       ${pkgs.lib.getExe cell.packages.rtk} init -g --agent hermes >/dev/null
       cp -r "$HOME/.hermes/plugins/rtk-rewrite" "$out"
     '';
+
+  # Commit-message rules every commit on the box has to meet, human or agent
+  # (skill code-comments-for-seniors, "Fix commits"). Lints a message file:
+  # one line per violation, exit 1 on any.
+  commit-msg-lint = pkgs.writeShellApplication {
+    name = "commit-msg-lint";
+    text = ''
+      f="''${1:?message file}"
+      fail=0
+      say() { echo "commit-msg: $*" >&2; fail=1; }
+      # Drop comment lines and the scissors block git appends on -v.
+      msg=$(sed -e '/^# ------------------------ >8 ------------------------$/,$d' -e '/^#/d' "$f")
+      subject=$(printf '%s\n' "$msg" | sed -n '1p')
+      [ -n "$subject" ] || { say "empty subject"; exit 1; }
+      # Conventional-commit shape with repo-local types: `<type>(<scope>)!?: <what>`
+      # or the hive's `<cell>/<area>: <what>`. Lower-case first word, no trailing period.
+      printf '%s' "$subject" | grep -Eq '^[a-z][a-z0-9/_.-]*(\([^)]+\))?!?: [^ ]' \
+        || say "subject is not '<type>(<scope>): <what>' -- got: $subject"
+      printf '%s' "$subject" | grep -Eq '\.$' && say "subject ends with a period"
+      [ "''${#subject}" -le 72 ] || say "subject is ''${#subject} chars (max 72)"
+      line2=$(printf '%s\n' "$msg" | sed -n '2p')
+      [ -z "$line2" ] || say "second line must be blank"
+      # The agent is the author, not a co-author.
+      printf '%s\n' "$msg" | grep -Eqi '^(co-authored-by|generated-by|signed-off-by: .*(claude|hermes|anthropic))' \
+        && say "drop the Co-authored-by / Generated-by trailer"
+      printf '%s\n' "$msg" | grep -Eqi 'noreply@anthropic\.com|🤖' \
+        && say "agent attribution in the message"
+      # Narration instead of facts.
+      printf '%s' "$subject" | grep -Eqi '^(feat|fix|chore|refactor|docs|wip)?(\([^)]*\))?:? *(update|updates|changes|misc|various|stuff|fixes|tweaks|improvements)( |$)' \
+        && say "subject names nothing ('$subject')"
+      printf '%s\n' "$msg" | grep -Eqi '^(this (commit|change)|in this (commit|pr)|i (have|added|changed))' \
+        && say "body narrates ('this commit…'/'I added…'); state the fact and the why"
+      exit "$fail"
+    '';
+  };
+
+  # Global git hooks: core.hooksPath for the dev account points here
+  # (workstation/home/dev/default.nix). Two layers per hook, in order:
+  #
+  #   1. the box-wide rule set in this derivation's lefthook.yaml;
+  #   2. the project's own hooks, untouched -- `<git-dir>/hooks/<name>` when the
+  #      repo installs them itself (devtools-lib symlinks, husky, anything), else
+  #      `lefthook run <name>` against the repo's lefthook.yml, so a project only
+  #      has to ship its config and never call `lefthook install`.
+  #
+  # Git honours hooksPath over <git-dir>/hooks, so the hook file a project
+  # writes there is reachable only through this dispatcher. lefthook refuses to
+  # sync hooks while hooksPath is set; --no-auto-install keeps `run` from
+  # trying. LEFTHOOK=0 skips both layers, as it does with lefthook alone.
+  git-hooks = let
+    inherit (pkgs) lib;
+    globalConfig = (pkgs.formats.yaml {}).generate "global-lefthook.yaml" {
+      commit-msg.jobs = [
+        {
+          name = "commit-msg-lint";
+          run = "${lib.getExe cell.packages.commit-msg-lint} {1}";
+        }
+      ];
+    };
+    hookNames = [
+      "applypatch-msg"
+      "pre-applypatch"
+      "post-applypatch"
+      "pre-commit"
+      "pre-merge-commit"
+      "prepare-commit-msg"
+      "commit-msg"
+      "post-commit"
+      "pre-rebase"
+      "post-checkout"
+      "post-merge"
+      "pre-push"
+      "post-rewrite"
+      "pre-auto-gc"
+    ];
+    dispatch = pkgs.writeShellScript "git-hook-dispatch" ''
+      [ "''${LEFTHOOK:-}" = "0" ] && exit 0
+      hook=$(basename "$0")
+      lefthook=${lib.getExe pkgs.lefthook}
+
+      # Layer 1: the box-wide rules. Failures only, the git output is enough.
+      LEFTHOOK_CONFIG=${globalConfig} LEFTHOOK_OUTPUT=failure \
+        "$lefthook" run --no-auto-install "$hook" "$@" || exit 1
+
+      # Layer 2: the project's. A hook of its own wins over its lefthook.yml.
+      # `rev-parse --git-path hooks` answers with hooksPath while it is set,
+      # i.e. this very file: resolve the real directory instead.
+      local_hook="$(git rev-parse --absolute-git-dir)/hooks/$hook"
+      if [ -x "$local_hook" ]; then
+        exec "$local_hook" "$@"
+      fi
+      top=$(git rev-parse --show-toplevel 2>/dev/null || pwd)
+      for f in lefthook.yml lefthook.yaml .lefthook.yml .lefthook.yaml; do
+        if [ -f "$top/$f" ]; then
+          exec "$lefthook" run --no-auto-install "$hook" "$@"
+        fi
+      done
+      exit 0
+    '';
+  in
+    pkgs.runCommand "git-hooks" {} ''
+      mkdir -p $out
+      for h in ${lib.escapeShellArgs hookNames}; do
+        ln -s ${dispatch} "$out/$h"
+      done
+    '';
 }
