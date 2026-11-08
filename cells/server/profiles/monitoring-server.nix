@@ -537,8 +537,12 @@ in {
       (job "smartctl" "imladris" ["${imladris}:9633"])
       (job "node" "minas-tirith" ["127.0.0.1:9100"])
       (job "zfs" "minas-tirith" ["127.0.0.1:9134"])
-      # No exporter on the public VPS yet: is ssh reachable from here. Over
-      # ygg, so this doubles as "the mesh path to the VPS is alive".
+      # Over ygg (telemetry-osgiliath.nix): the box, and the access log
+      # folded to status x method x page x entry. The hisilome_* station
+      # series ride node's textfile collector.
+      (job "node" "osgiliath" ["[${osgiliathYgg}]:9100"])
+      (job "nginxlog" "osgiliath" ["[${osgiliathYgg}]:4040"])
+      # ssh on the mesh, separately: node up but 22 gone is its own failure.
       (probeJob "probe-osgiliath" "tcp_connect" [
         {
           targets = ["[${osgiliathYgg}]:22"];

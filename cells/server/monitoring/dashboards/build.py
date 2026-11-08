@@ -336,7 +336,7 @@ def hive():
         ("asus-ap", "192.168.10.2", "-"),
     ]
     # A host without a dashboard of its own links back to this one.
-    dash_hosts = ("imladris", "minas-tirith")
+    dash_hosts = ("imladris", "minas-tirith", "osgiliath")
     facts = static_rows({"host": n, "lan": ip, "other": o,
                          "dash": f"/d/{n}" if n in dash_hosts else "/d/hive"}
                         for n, ip, o in hosts)
@@ -346,7 +346,7 @@ def hive():
         # host; a host with no sample keeps its row through `facts` (ref C).
         return f"max by (host) ({expr}) + on (host) group_left (lan, other, dash) ({facts})"
     host_status = ('max by (host) (probe_success{job=~"icmp-lan|probe-osgiliath"}) '
-                   'or max by (host) (up{job="node-minas-tirith"})')
+                   'or max by (host) (up{job=~"node-(minas-tirith|osgiliath)"})')
     host_table = table("Hosts", 13, 8, targets(
         (per_host(host_status), ""),
         (per_host("time() - node_boot_time_seconds"), ""),
@@ -396,12 +396,16 @@ def hive():
         ],
         description="warm1 health reads \"exported\" outside its 03:00 run.")
 
+    # The nightly log pull from the VPS sits in the same table as the
+    # backups: same stamp shape, same 36 h alert.
     age = thresholds("green", 26 * H, "orange", 36 * H, "red")
     backups = table("Backups", 10, 6, targets(
-        ("time() - backup_last_success_seconds", ""),
-        ("backup_last_duration_seconds", ""),
+        ('time() - backup_last_success_seconds '
+         'or label_replace(time() - logpull_last_success_seconds, "tier", "log pull", "", "")', ""),
+        ('backup_last_duration_seconds '
+         'or label_replace(logpull_last_duration_seconds, "tier", "log pull", "", "")', ""),
         instant=True, table=True),
-        exclude=["instance", "job"], merge=True, sort="tier",
+        exclude=["instance", "job", "source"], merge=True, sort="tier",
         rename={"Value #A": "since last", "Value #B": "last run took"},
         order=["tier", "host", "since last", "last run took"],
         overrides=[
@@ -410,12 +414,14 @@ def hive():
             by_name("last run took", unit="s", decimals=0),
         ],
         description="hot = nightly copy while the system runs (imladris local, "
-                    "router push); warm = warm1, imported only for the run.")
+                    "router push); warm = warm1, imported only for the run; "
+                    "log pull = hisilo.me access log from osgiliath over ygg.")
 
     host_panels = [host_table, pool_table,
                    state_timeline("Up/down, 24 h", 14, 6, targets(
                        ('probe_success{job=~"icmp-lan|probe-osgiliath"}', "{{host}}"),
                        ('up{job="node-minas-tirith"}', "minas-tirith"),
+                       ('hisilome_station_up', "hisilo.me stream"),
                    ), UP_DOWN),
                    backups]
     snapshots = [
@@ -607,7 +613,7 @@ def hive():
         row("Network", lan),
         row("Services", services),
         row("Auxiliary", aux, collapsed=True),
-    ], "Home: hosts, pools, backups, network, services. Per-host detail: imladris, minas-tirith.")
+    ], "Home: hosts, pools, backups, network, services. Per-host detail: imladris, minas-tirith, osgiliath.")
 
 
 # ------------------------------------------------------------ imladris ----
@@ -798,6 +804,85 @@ def minas_tirith():
         row("System", system),
         row("WAN/LAN", net),
     ], "Router: thermal, ONU stick, system, per-port traffic.")
+
+
+# ----------------------------------------------------------- osgiliath ----
+# The VPS, seen over ygg: the station (hisilome_* textfile), the three doors
+# (nginxlog, status x method x page x entry), the box. Nothing here carries
+# an address or an agent; those are in the pulled log at home.
+def osgiliath():
+    h = 'host="osgiliath"'
+    req = f"hisilome_http_response_count_total{{{h}}}"
+
+    station = [
+        stat("Stream", 4, 4, [target(f"hisilome_station_up{{{h}}} * hisilome_icecast_up{{{h}}}", "stream")],
+             steps=thresholds("red", 1, "green"), mappings=value_map((0, "OFF AIR", "red"), (1, "ON AIR", "green")),
+             description="liquidsoap feeding icecast (status.html empty and /admin/stats answering)."),
+        stat("Listening now", 4, 4, [target(f"sum(hisilome_listeners{{{h}}})", "now")],
+             steps=thresholds("blue"), decimals=0,
+             description="Summed over /stream.mp3 and /stream.opus: <audio> offers opus first, so one person is one mount."),
+        stat("Peak", 4, 4, [target(f"hisilome_listeners_peak{{{h}}}", "peak")],
+             steps=thresholds("blue"), decimals=0,
+             description="High-water mark kept in listener-peak.txt; survives icecast restarts."),
+        stat("Queue", 4, 4, [target(f"hisilome_queue_tracks{{{h}}}", "tracks")],
+             steps=thresholds("green", 1, "orange", 50, "green"), decimals=0,
+             description="Tracks in queue.m3u; reshuffled daily."),
+        stat("Sent to listeners, 24 h", 4, 4, [target(
+            f"sum(increase(hisilome_bytes_sent_total{{{h}}}[24h]))", "sent")],
+             unit="bytes", steps=thresholds("blue"), decimals=1),
+        stat("Listener connects, 24 h", 4, 4, [target(
+            f"sum(increase(hisilome_listener_connections_total{{{h}}}[24h]))", "connects")],
+             steps=thresholds("blue"), decimals=0,
+             description="Every accepted /stream.* connection, reconnects included."),
+        ts("Listeners", 24, 8, [target(f"hisilome_listeners{{{h}}}", "{{mount}}")],
+           min_=0, decimals=0, line_steps=False),
+    ]
+
+    doors = [
+        ts("Requests/min by door", 8, 8, [target(
+            f"sum by (entry) (rate({req}[5m])) * 60", "{{entry}}")], min_=0),
+        ts("Requests/min by status", 8, 8, [target(
+            f"sum by (status) (rate({req}[5m])) * 60", "{{status}}")], min_=0,
+           description="429 = nginx limit_conn/limit_req (TooMany429 alert at 30/min)."),
+        ts("Requests/min by page", 8, 8, [target(
+            f"sum by (page) (rate({req}[5m])) * 60", "{{page}}")], min_=0,
+           description="Only whitelisted paths get a label; the rest is `other`."),
+        table("Last hour", 12, 9, targets(
+            (f"sum by (entry, page, status) (increase({req}[1h]))", ""),
+            instant=True, table=True),
+            exclude=["Time"], rename={"Value": "requests"},
+            order=["entry", "page", "status", "requests"], sort="requests",
+            overrides=[by_name("requests", decimals=0)]),
+        bargauge("Response time p95, 1 h", 12, 9, [target(
+            f"histogram_quantile(0.95, sum by (le, page) "
+            f'(rate(hisilome_http_response_time_seconds_bucket{{{h},page!~"/stream.*"}}[1h])))', "{{page}}")],
+            "s", thresholds("green", 0.5, "orange", 2, "red"), max_=None,
+            description="Static files on 1 vCPU. /stream.* left out: a request lasts as long as the listener stays."),
+    ]
+
+    system = host_system(h, cores=1)[:2] + [
+        bargauge("Free space", 8, 4, [target(
+            f'node_filesystem_avail_bytes{{{h},mountpoint=~"/|/persist|/state"}}', "{{mountpoint}}")],
+            "bytes", thresholds("blue")),
+        stat("Exporter freshness", 8, 4, targets(
+            (f'up{{job="node-osgiliath"}}', "node"),
+            (f'up{{job="nginxlog-osgiliath"}}', "nginxlog"),
+            (f'probe_success{{job="probe-osgiliath"}}', "ssh"),
+        ), steps=thresholds("red", 1, "green"), mappings=UP_DOWN,
+             description="All three over ygg: node and the log exporter on the mesh address, ssh on 22."),
+        cpu_busy(h, 12),
+        ts("Network (bit/s)", 12, 8, targets(
+            (bps(f'node_network_receive_bytes_total{{{h},device!~"lo|ygg0"}}'), "rx {{device}}"),
+            (bps(f'node_network_transmit_bytes_total{{{h},device!~"lo|ygg0"}}'), "tx {{device}}"),
+        ), unit="bps", min_=0,
+           description="WAN only; ygg0 is the scrape and pull path itself."),
+    ]
+
+    return dashboard("osgiliath", "osgiliath", [
+        row("Station", station),
+        row("Doors", doors),
+        row("System", system),
+    ], "VPS: hisilo.me station, the three doors, the box. Addresses and agents never leave the box.")
 
 
 # ---------------------------------------------------------------- city ----
@@ -993,7 +1078,7 @@ def city():
 
 
 DASHBOARDS = {"hive.json": hive, "imladris.json": imladris, "minas-tirith.json": minas_tirith,
-              "city.json": city}
+              "osgiliath.json": osgiliath, "city.json": city}
 
 
 def render(fn):

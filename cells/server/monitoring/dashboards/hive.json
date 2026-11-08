@@ -1,7 +1,7 @@
 {
   "uid": "hive",
   "title": "hive",
-  "description": "Home: hosts, pools, backups, network, services. Per-host detail: imladris, minas-tirith.",
+  "description": "Home: hosts, pools, backups, network, services. Per-host detail: imladris, minas-tirith, osgiliath.",
   "tags": [
     "hive"
   ],
@@ -60,7 +60,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (host) (max by (host) (probe_success{job=~\"icmp-lan|probe-osgiliath\"}) or max by (host) (up{job=\"node-minas-tirith\"})) + on (host) group_left (lan, other, dash) (label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"imladris\", \"\", \"\"), \"lan\", \"192.168.10.10\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/imladris\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"minas-tirith\", \"\", \"\"), \"lan\", \"192.168.10.1\", \"\", \"\"), \"other\", \"Yggdrasil\", \"\", \"\"), \"dash\", \"/d/minas-tirith\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"osgiliath\", \"\", \"\"), \"lan\", \"-\", \"\", \"\"), \"other\", \"WAN\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"vontar\", \"\", \"\"), \"lan\", \"192.168.10.103\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"asus-ap\", \"\", \"\"), \"lan\", \"192.168.10.2\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\"))",
+          "expr": "max by (host) (max by (host) (probe_success{job=~\"icmp-lan|probe-osgiliath\"}) or max by (host) (up{job=~\"node-(minas-tirith|osgiliath)\"})) + on (host) group_left (lan, other, dash) (label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"imladris\", \"\", \"\"), \"lan\", \"192.168.10.10\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/imladris\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"minas-tirith\", \"\", \"\"), \"lan\", \"192.168.10.1\", \"\", \"\"), \"other\", \"Yggdrasil\", \"\", \"\"), \"dash\", \"/d/minas-tirith\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"osgiliath\", \"\", \"\"), \"lan\", \"-\", \"\", \"\"), \"other\", \"WAN\", \"\", \"\"), \"dash\", \"/d/osgiliath\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"vontar\", \"\", \"\"), \"lan\", \"192.168.10.103\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"asus-ap\", \"\", \"\"), \"lan\", \"192.168.10.2\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\"))",
           "legendFormat": "",
           "instant": true,
           "range": false,
@@ -72,7 +72,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "max by (host) (time() - node_boot_time_seconds) + on (host) group_left (lan, other, dash) (label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"imladris\", \"\", \"\"), \"lan\", \"192.168.10.10\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/imladris\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"minas-tirith\", \"\", \"\"), \"lan\", \"192.168.10.1\", \"\", \"\"), \"other\", \"Yggdrasil\", \"\", \"\"), \"dash\", \"/d/minas-tirith\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"osgiliath\", \"\", \"\"), \"lan\", \"-\", \"\", \"\"), \"other\", \"WAN\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"vontar\", \"\", \"\"), \"lan\", \"192.168.10.103\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"asus-ap\", \"\", \"\"), \"lan\", \"192.168.10.2\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\"))",
+          "expr": "max by (host) (time() - node_boot_time_seconds) + on (host) group_left (lan, other, dash) (label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"imladris\", \"\", \"\"), \"lan\", \"192.168.10.10\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/imladris\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"minas-tirith\", \"\", \"\"), \"lan\", \"192.168.10.1\", \"\", \"\"), \"other\", \"Yggdrasil\", \"\", \"\"), \"dash\", \"/d/minas-tirith\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"osgiliath\", \"\", \"\"), \"lan\", \"-\", \"\", \"\"), \"other\", \"WAN\", \"\", \"\"), \"dash\", \"/d/osgiliath\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"vontar\", \"\", \"\"), \"lan\", \"192.168.10.103\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"asus-ap\", \"\", \"\"), \"lan\", \"192.168.10.2\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\"))",
           "legendFormat": "",
           "instant": true,
           "range": false,
@@ -84,7 +84,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"imladris\", \"\", \"\"), \"lan\", \"192.168.10.10\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/imladris\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"minas-tirith\", \"\", \"\"), \"lan\", \"192.168.10.1\", \"\", \"\"), \"other\", \"Yggdrasil\", \"\", \"\"), \"dash\", \"/d/minas-tirith\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"osgiliath\", \"\", \"\"), \"lan\", \"-\", \"\", \"\"), \"other\", \"WAN\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"vontar\", \"\", \"\"), \"lan\", \"192.168.10.103\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"asus-ap\", \"\", \"\"), \"lan\", \"192.168.10.2\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\")",
+          "expr": "label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"imladris\", \"\", \"\"), \"lan\", \"192.168.10.10\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/imladris\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"minas-tirith\", \"\", \"\"), \"lan\", \"192.168.10.1\", \"\", \"\"), \"other\", \"Yggdrasil\", \"\", \"\"), \"dash\", \"/d/minas-tirith\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"osgiliath\", \"\", \"\"), \"lan\", \"-\", \"\", \"\"), \"other\", \"WAN\", \"\", \"\"), \"dash\", \"/d/osgiliath\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"vontar\", \"\", \"\"), \"lan\", \"192.168.10.103\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\") or label_replace(label_replace(label_replace(label_replace(vector(0), \"host\", \"asus-ap\", \"\", \"\"), \"lan\", \"192.168.10.2\", \"\", \"\"), \"other\", \"-\", \"\", \"\"), \"dash\", \"/d/hive\", \"\", \"\")",
           "legendFormat": "",
           "instant": true,
           "range": false,
@@ -223,7 +223,7 @@
           }
         }
       ],
-      "description": "Host name opens its dashboard (imladris, minas-tirith).",
+      "description": "Host name opens its dashboard (imladris, minas-tirith, osgiliath).",
       "gridPos": {
         "x": 0,
         "y": 1,
@@ -492,6 +492,15 @@
           },
           "expr": "up{job=\"node-minas-tirith\"}",
           "legendFormat": "minas-tirith"
+        },
+        {
+          "refId": "C",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "hisilome_station_up",
+          "legendFormat": "hisilo.me stream"
         }
       ],
       "fieldConfig": {
@@ -572,7 +581,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "time() - backup_last_success_seconds",
+          "expr": "time() - backup_last_success_seconds or label_replace(time() - logpull_last_success_seconds, \"tier\", \"log pull\", \"\", \"\")",
           "legendFormat": "",
           "instant": true,
           "range": false,
@@ -584,7 +593,7 @@
             "type": "prometheus",
             "uid": "prometheus"
           },
-          "expr": "backup_last_duration_seconds",
+          "expr": "backup_last_duration_seconds or label_replace(logpull_last_duration_seconds, \"tier\", \"log pull\", \"\", \"\")",
           "legendFormat": "",
           "instant": true,
           "range": false,
@@ -689,7 +698,8 @@
           "options": {
             "excludeByName": {
               "instance": true,
-              "job": true
+              "job": true,
+              "source": true
             },
             "renameByName": {
               "Value #A": "since last",
@@ -704,7 +714,7 @@
           }
         }
       ],
-      "description": "hot = nightly copy while the system runs (imladris local, router push); warm = warm1, imported only for the run.",
+      "description": "hot = nightly copy while the system runs (imladris local, router push); warm = warm1, imported only for the run; log pull = hisilo.me access log from osgiliath over ygg.",
       "gridPos": {
         "x": 14,
         "y": 9,

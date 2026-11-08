@@ -143,6 +143,16 @@ in
               quota = "2G";
             };
           };
+        # hisilo.me access log pulled from the VPS (log-pull-osgiliath.nix):
+        # kept for good here, so a quota rather than a rotation.
+        "logs/hisilome" =
+          legacy "/var/log/hisilome"
+          // {
+            options = {
+              mountpoint = "legacy";
+              quota = "20G"; # ~200 B/line raw; years at today's traffic
+            };
+          };
       };
     };
   }

@@ -285,3 +285,52 @@ tests:
           - exp_labels: {severity: warning, name: fast/downloads, pool: fast, type: filesystem, host: imladris}
             exp_annotations:
               summary: "imladris fast/downloads (incomplete torrents) is 95% of quota"
+
+  # hisilo.me: liquidsoap crash-looping (station_up flaps 1/0 every 5 s
+  # reads as 0 at a 1m eval), then off for good -> one critical after 2 m.
+  # A 5 s restart gap alone (one 0 sample) never reaches `for`.
+  - interval: 1m
+    input_series:
+      - series: 'hisilome_station_up{host="osgiliath",instance="[201::1]:9100",job="node-osgiliath"}'
+        values: '1x10 0 1x10 0x10'
+      - series: 'hisilome_icecast_up{host="osgiliath",instance="[201::1]:9100",job="node-osgiliath"}'
+        values: '1x32'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: StreamDown
+        exp_alerts: []
+      - eval_time: 26m
+        alertname: StreamDown
+        exp_alerts:
+          - exp_labels: {severity: critical, host: osgiliath, instance: "[201::1]:9100", job: node-osgiliath}
+            exp_annotations:
+              summary: "hisilo.me: station off air for 2 m (liquidsoap or icecast down); journalctl -u liquidsoap -u icecast on osgiliath"
+
+  # 429s: a player reconnecting (~2/min) stays quiet; one client hammering
+  # /stream.* (60/min across two pages) pages after 5 m, summed over labels.
+  - interval: 1m
+    input_series:
+      - series: 'hisilome_http_response_count_total{host="osgiliath",entry="clearnet",method="GET",page="/stream.opus",status="429"}'
+        values: '0+30x20'
+      - series: 'hisilome_http_response_count_total{host="osgiliath",entry="clearnet",method="GET",page="other",status="429"}'
+        values: '0+30x20'
+      - series: 'hisilome_http_response_count_total{host="osgiliath",entry="tor",method="GET",page="/",status="200"}'
+        values: '0+100x20'
+    alert_rule_test:
+      - eval_time: 3m
+        alertname: TooMany429
+        exp_alerts: []
+      - eval_time: 12m
+        alertname: TooMany429
+        exp_alerts:
+          - exp_labels: {severity: warning, host: osgiliath}
+            exp_annotations:
+              summary: "hisilo.me: 60 x 429/min for 5 m: a client is being rate-limited hard"
+  - interval: 1m
+    input_series:
+      - series: 'hisilome_http_response_count_total{host="osgiliath",entry="clearnet",method="GET",page="/stream.opus",status="429"}'
+        values: '0+2x20'
+    alert_rule_test:
+      - eval_time: 12m
+        alertname: TooMany429
+        exp_alerts: []

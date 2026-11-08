@@ -249,6 +249,17 @@ groups:
         annotations:
           summary: "last successful {{ $labels.tier }} backup on {{ $labels.host }} was {{ $value | humanizeDuration }} ago"
 
+      # Nightly rsync of the VPS access log (log-pull-osgiliath.nix). The
+      # VPS forgets after 14 days, so a week of silence is still no loss;
+      # 36 h like the backups, it is the same kind of stamp.
+      - alert: LogPullStale
+        expr: time() - logpull_last_success_seconds > 36 * 3600
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "last access-log pull from {{ $labels.source }} was {{ $value | humanizeDuration }} ago"
+
       # Newest sanoid snapshot per dataset (snapshot-age, backup-hot.nix).
       # Received copies under tank/backups/<host>/ lag their source by a day
       # by design and are BackupStale's job; the empty containers there get
@@ -260,6 +271,60 @@ groups:
           severity: warning
         annotations:
           summary: "{{ $labels.host }} {{ $labels.dataset }}: newest snapshot is {{ $value | humanizeDuration }} old"
+
+  # hisilo.me on osgiliath: hisilome_* from the station poller via node's
+  # textfile collector, hisilome_http_* from the access log via nginxlog
+  # (telemetry-osgiliath.nix). Both scraped over ygg; when the mesh is down
+  # OsgiliathUnreachable owns the page and these go stale, not red.
+  - name: hisilome
+    rules:
+      # liquidsoap stopped feeding icecast: the site is up, the player is a
+      # dead button. Restart=always covers a crash in 5 s; 2 m is a loop.
+      - alert: StreamDown
+        expr: hisilome_station_up * hisilome_icecast_up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "hisilo.me: station off air for 2 m (liquidsoap or icecast down); journalctl -u liquidsoap -u icecast on osgiliath"
+
+      # 1 vCPU: one encoder pair idles at ~15 %. Sustained saturation is a
+      # listener storm, a bot, or liquidsoap re-decoding in a loop.
+      - alert: VpsCpuSaturated
+        expr: 1 - avg(rate(node_cpu_seconds_total{host="osgiliath",mode="idle"}[5m])) > 0.9
+        for: 15m
+        labels:
+          severity: warning
+          host: osgiliath
+        annotations:
+          summary: "osgiliath CPU {{ $value | humanizePercentage }} busy for 15 m (1 vCPU; encoders idle at ~15 %)"
+
+      # nginx's limit_conn/limit_req answer 429. A trickle is a reconnecting
+      # player; a flood is one client holding /stream.* open hundreds of
+      # times, which is what took the station down once.
+      - alert: TooMany429
+        expr: sum(rate(hisilome_http_response_count_total{status="429"}[5m])) * 60 > 30
+        for: 5m
+        labels:
+          severity: warning
+          host: osgiliath
+        annotations:
+          summary: "hisilo.me: {{ $value | printf \"%.0f\" }} x 429/min for 5 m: a client is being rate-limited hard"
+
+      # The log exporter is up but counts nothing while the site clearly
+      # serves (node up): the log path changed, or rotation left it on a
+      # stale inode.
+      - alert: AccessLogSilent
+        expr: |
+          sum(increase(hisilome_http_response_count_total[2h])) == 0
+            and on() up{job="nginxlog-osgiliath"} == 1
+            and on() up{job="node-osgiliath"} == 1
+        for: 30m
+        labels:
+          severity: warning
+          host: osgiliath
+        annotations:
+          summary: "hisilo.me: nginxlog exporter up but no request counted in 2 h"
 
   - name: network
     rules:
