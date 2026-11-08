@@ -98,6 +98,7 @@ in {
         p.site-hisilome
         p.ygg-osgiliath
         p.onion-osgiliath
+        p.telemetry-osgiliath
         p.deploy-osgiliath
       ];
   };
@@ -115,6 +116,7 @@ in {
         p.fiber-bypass
         p.monitoring-server
         p.backup-push
+        p.log-pull-osgiliath
         p.monitoring-probes
         # phone -> Jellyfin/Immich on imladris over ygg0 (TCP relay, :8096/:2283)
         p.ygg-relay

@@ -54,10 +54,13 @@ in {
     {
       addr = "[${yggAddr}]";
       port = 80;
+      entry = "ygg";
     }
   ];
 
-  # Only the mesh may log in. No source filter on 22: an allowlist would put
-  # a home ygg address on the box. Mesh down = ssh down = provider console.
+  # Only the mesh may log in: root with the deploy key, and `logpull` with
+  # a forced read-only rsync (telemetry-osgiliath.nix). No source filter on
+  # 22: an allowlist would put a home ygg address on the box. Mesh down =
+  # ssh down = provider console.
   networking.firewall.interfaces.ygg0.allowedTCPPorts = [80 22];
 }
