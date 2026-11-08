@@ -6,7 +6,7 @@
     # Its NixOS module builds with the host's pkgs (i.parent.pkgs), so its own
     # nixpkgs is lock-only: nothing in the osgiliath closure comes from it.
     # Pinned by rev; bump deliberately after `nix build github:0x0lor1n/hisilome`.
-    hisilome.url = "github:0x0lor1n/hisilome/03d3fddf2a16a591344a7e18d4d9d8c1da7b5d5c";
+    hisilome.url = "github:0x0lor1n/hisilome/0ef78dfb6a33e53d90cad4db95726a49d99cc1a7";
     # NAS power button/watchdog (profiles/atx-watchdog.nix); module only.
     atx-watchdog.url = "github:0x0lor1n/atx-watchdog/908c11486eafe5710e8c2129ce5d4a812ed21f69";
     atx-watchdog.inputs.nixpkgs.follows = "nixpkgs";
