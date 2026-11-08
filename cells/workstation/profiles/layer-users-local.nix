@@ -29,6 +29,7 @@
   # globals holds "a.b.c.d/24" (encrypted half); ssh wants the bare address.
   # Same split as server/profiles/monitoring-server.nix.
   osgiliathAddr = lib.head (lib.splitString "/" globals.hosts.osgiliath.ipv4.address);
+  osgiliathYgg = "201:f885:7585:1739:35f4:1185:b21e:967d";
 in {
   # tss owns /dev/tpmrm0 (0660) when himmelblau's udev rule does not.
   security.tpm2.enable = !config.services.himmelblau.enable;
@@ -224,6 +225,12 @@ in {
         # ssh never offers the local username to a public box.
         Host osgiliath ${osgiliathAddr}
           HostName ${osgiliathAddr}
+          User root
+          IdentityFile ${inputs.self.outPath + "/secrets/deploy.pub"}
+          IdentitiesOnly yes
+        Host osgiliath-ygg ${osgiliathYgg}
+          HostName ${osgiliathYgg}
+          HostKeyAlias osgiliath
           User root
           IdentityFile ${inputs.self.outPath + "/secrets/deploy.pub"}
           IdentitiesOnly yes
