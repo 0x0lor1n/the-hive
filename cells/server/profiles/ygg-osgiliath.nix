@@ -55,6 +55,7 @@ in {
       addr = "[${yggAddr}]";
       port = 80;
       entry = "ygg";
+      origin = "http://[${yggAddr}]";
     }
   ];
 

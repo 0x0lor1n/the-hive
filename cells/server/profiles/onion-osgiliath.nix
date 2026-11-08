@@ -54,6 +54,7 @@ in {
       addr = "127.0.0.1";
       port = onionPort;
       entry = "tor";
+      origin = "http://${onion}";
     }
   ];
 
