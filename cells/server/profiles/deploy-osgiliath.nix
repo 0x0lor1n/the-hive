@@ -2,14 +2,10 @@
   inputs,
   cell,
   ...
-}: {
-  globals,
-  lib,
-  ...
-}: let
-  # globals holds "a.b.c.d/24"; colmena wants the bare address. Derived, not
-  # stored twice.
-  addressOf = h: lib.head (lib.splitString "/" globals.hosts.${h}.ipv4.address);
+}: {lib, ...}: let
+  # Same literal as ygg-osgiliath.nix / workstation ssh config: derived from
+  # the pinned key, public, not a secret.
+  yggAddr = "201:f885:7585:1739:35f4:1185:b21e:967d";
 
   # Decrypted on the deploying workstation with its own TPM PIN identity
   # (same prompt as the deploy key). rage stops at the first TPM identity it
@@ -46,8 +42,15 @@ in {
   '';
 
   deployment = {
-    targetHost = addressOf "osgiliath";
+    # Over the mesh, not the WAN: 22 is closed there (net-osgiliath.nix), so
+    # the encrypted globals are no longer needed to reach the box. Bare v6,
+    # no brackets: colmena builds `user@host` for ssh and nix-copy-closure
+    # alike and ssh takes it as is.
+    targetHost = yggAddr;
     targetUser = "root";
+    # The workstation's own ygg tunnel is off by default (`vpn up yggdrasil`);
+    # the router always sits on the mesh, so jump through it.
+    sshOptions = ["-o" "ProxyJump=minas-tirith"];
     # 1 vCPU / 1.9 GB / no swap cannot build a NixOS closure.
     buildOnTarget = false;
     tags = ["vps"];

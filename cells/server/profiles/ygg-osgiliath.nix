@@ -1,8 +1,9 @@
 # hisilo.me over Yggdrasil: a second, plain-HTTP door to the same site for
-# people who already sit on the mesh. Separate node with its own key; it is
-# NOT the home junction (minas-tirith yggdrasil.nix) and peers with public
-# nodes only -- a tunnel to the home network from the public box would be the
-# inbound path the launch plan forbids.
+# people who already sit on the mesh, and the ONLY door for ssh: the WAN
+# carries 80/443 and nothing else (net-osgiliath.nix). Separate node with its
+# own key; it is NOT the home junction (minas-tirith yggdrasil.nix) and peers
+# with public nodes only -- a tunnel to the home network from the public box
+# would be the inbound path the launch plan forbids.
 #
 # The 201: address derives from the key, so the key is pinned: colmena uploads
 # secrets/hisilome/yggdrasil-private.pem.age to /persist (deploy-osgiliath.nix).
@@ -56,6 +57,7 @@ in {
     }
   ];
 
-  # No source filter on 22: an allowlist would put a home ygg address on the box.
+  # Only the mesh may log in. No source filter on 22: an allowlist would put
+  # a home ygg address on the box. Mesh down = ssh down = provider console.
   networking.firewall.interfaces.ygg0.allowedTCPPorts = [80 22];
 }

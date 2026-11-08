@@ -44,5 +44,9 @@
 
   services.resolved.enable = true;
 
-  networking.firewall.allowedTCPPorts = [22];
+  # WAN carries the site only (80/443 from site-hisilome.nix). ssh rides the
+  # mesh: ygg-osgiliath.nix opens 22 on ygg0 and colmena deploys over it.
+  # openssh's own openFirewall would put 22 back on the WAN -- same pin as
+  # net-router-wan.nix.
+  services.openssh.openFirewall = false;
 }

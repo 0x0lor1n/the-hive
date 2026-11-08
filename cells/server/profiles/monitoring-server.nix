@@ -11,9 +11,9 @@
   ...
 }: let
   imladris = "192.168.10.10";
-  # Same split as deploy-osgiliath.nix: the encrypted half stores it with a
-  # prefix length.
-  osgiliath = lib.head (lib.splitString "/" globals.hosts.osgiliath.ipv4.address);
+  # The VPS answers ssh on the mesh only (ygg-osgiliath.nix); same public
+  # literal as deploy-osgiliath.nix.
+  osgiliathYgg = "201:f885:7585:1739:35f4:1185:b21e:967d";
 
   ntfyPort = 2586;
   grafanaPort = 3000;
@@ -537,10 +537,11 @@ in {
       (job "smartctl" "imladris" ["${imladris}:9633"])
       (job "node" "minas-tirith" ["127.0.0.1:9100"])
       (job "zfs" "minas-tirith" ["127.0.0.1:9134"])
-      # No exporter on the public VPS: is ssh reachable from here.
+      # No exporter on the public VPS yet: is ssh reachable from here. Over
+      # ygg, so this doubles as "the mesh path to the VPS is alive".
       (probeJob "probe-osgiliath" "tcp_connect" [
         {
-          targets = ["${osgiliath}:22"];
+          targets = ["[${osgiliathYgg}]:22"];
           labels.host = "osgiliath";
         }
       ])
