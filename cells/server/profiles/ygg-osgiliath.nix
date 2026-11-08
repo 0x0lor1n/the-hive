@@ -5,9 +5,9 @@
 # inbound path the launch plan forbids.
 #
 # The 201: address derives from the key, so the key is pinned: colmena uploads
-# secrets/hisilome/yggdrasil-private.pem.age to /run/keys at deploy (see
-# deploy-osgiliath.nix), same path as the icecast passwords. A new VPS with the
-# same key keeps the address printed in the post.
+# secrets/hisilome/yggdrasil-private.pem.age to /persist (deploy-osgiliath.nix).
+# Not /run/keys: ssh rides this tunnel, so after a reboot ygg must come up
+# before colmena can reach the box again.
 #
 # Address: 201:f885:7585:1739:35f4:1185:b21e:967d  (public key
 # 41dea29e…699ede; both are derived, not secret, and may be published.)
@@ -26,7 +26,7 @@ in {
     # Not `persistentKeys`: that generates on first boot, i.e. a new address
     # on every reinstall.
     settings = {
-      PrivateKeyPath = "/run/keys/yggdrasil-private.pem";
+      PrivateKeyPath = "/persist/var/lib/yggdrasil/private.pem";
       IfName = "ygg0";
       IfMTU = 1280;
       NodeInfoPrivacy = true;
@@ -38,10 +38,7 @@ in {
     };
   };
 
-  # The key is uploaded pre-activation by colmena (keyServiceModule orders
-  # yggdrasil after yggdrasil-private.pem-key.service); the nixpkgs module
-  # hands it to the DynamicUser through LoadCredential. No key = unit fails =
-  # no silently regenerated address.
+  # No key = unit fails = no silently regenerated address.
 
   systemd.network.networks."50-ygg0" = {
     matchConfig.Name = "ygg0";
@@ -59,8 +56,6 @@ in {
     }
   ];
 
-  # Port 80 on ygg0 only. The WAN firewall rules (site-hisilome.nix) are
-  # per-port, not per-interface, so 80 there is already open; this adds no
-  # WAN exposure. ssh stays WAN-only: nothing on the mesh may log in.
-  networking.firewall.interfaces.ygg0.allowedTCPPorts = [80];
+  # No source filter on 22: an allowlist would put a home ygg address on the box.
+  networking.firewall.interfaces.ygg0.allowedTCPPorts = [80 22];
 }

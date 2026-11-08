@@ -5,4 +5,7 @@
   "tls://ygg1.mk16.de:1338?key=0000000087ee9949eeab56bd430ee8f324cad55abf3993ed9b9be63ce693e18a"
   "tls://s2.i2pd.xyz:39575"
   "tls://51.15.204.214:54321"
+  "tls://ygg-kcmo.incognet.io:8884"
+  "tls://mn.us.ygg.triplebit.org:993"
+  "tls://yg-tyo.magicum.net:32333"
 ]

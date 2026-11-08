@@ -56,10 +56,15 @@ in {
       "icecast-admin-password" = icecastKey "icecast-admin-password";
       # yggdrasil runs as a DynamicUser and gets the file via LoadCredential,
       # which systemd reads as root: root-owned 0400 is the right shape.
-      "yggdrasil-private.pem" = hisilomeKey "yggdrasil-private.pem" {
-        user = "root";
-        group = "root";
-      };
+      "yggdrasil-private.pem" =
+        hisilomeKey "yggdrasil-private.pem" {
+          user = "root";
+          group = "root";
+        }
+        // {
+          name = "private.pem";
+          destDir = "/persist/var/lib/yggdrasil";
+        };
       # tor's root ExecStartPre installs it into /run/tor/onion/ as tor:tor.
       "onion-hs_ed25519_secret_key" = hisilomeKey "onion-hs_ed25519_secret_key" {
         user = "root";
