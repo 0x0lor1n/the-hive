@@ -217,16 +217,16 @@
         "nixpkgs": "nixpkgs_2"
       },
       "locked": {
-        "lastModified": 1794154022,
-        "narHash": "sha256-LpbqeVV4C7deNryG72dUyKJvjr3ioTwSjXW6tsxGg4c=",
+        "lastModified": 1794177224,
+        "narHash": "sha256-1vqA/O4RLy0UrWM5WLaqpiw2v7BP6FfG/C4gUjyhXx8=",
         "owner": "0x0lor1n",
         "repo": "hisilome",
-        "rev": "d21dddf2b501f29dfd6975a6580f2103e175e033",
+        "rev": "bda4189bdd9ce4e4735bcca224500e9104881d4f",
         "type": "github"
       },
       "original": {
         "owner": "0x0lor1n",
-        "ref": "d21dddf",
+        "ref": "bda4189",
         "repo": "hisilome",
         "type": "github"
       }
