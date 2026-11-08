@@ -613,6 +613,113 @@
     },
     {
       "id": 13,
+      "type": "timeseries",
+      "title": "Requests/min by agent",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (agent) (rate(hisilome_http_response_count_total{host=\"osgiliath\"}[5m])) * 60",
+          "legendFormat": "{{agent}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "lineWidth": 1,
+            "fillOpacity": 0,
+            "spanNulls": false
+          },
+          "min": 0
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "list",
+          "placement": "bottom",
+          "calcs": []
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "desc"
+        }
+      },
+      "description": "A class nginx derives from the UA, not the string: browser / feed / player (mpv, vlc, …) / bot (declared crawlers) / tool (curl, requests) / none (no UA at all). `other` = claims nothing nginx knows.",
+      "gridPos": {
+        "x": 0,
+        "y": 22,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "id": 14,
+      "type": "bargauge",
+      "title": "Who, 24 h",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "expr": "sum by (entry, agent) (increase(hisilome_http_response_count_total{host=\"osgiliath\"}[24h]))",
+          "legendFormat": "{{entry}} {{agent}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short",
+          "min": 0,
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "#7fb4ca",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "orientation": "horizontal",
+        "displayMode": "basic",
+        "showUnfilled": true,
+        "valueMode": "color",
+        "namePlacement": "left",
+        "sizing": "auto",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        }
+      },
+      "description": "Door × agent class. Tor and ygg visitors show up here; clearnet bot vs browser is the ratio worth watching.",
+      "gridPos": {
+        "x": 12,
+        "y": 22,
+        "w": 12,
+        "h": 8
+      }
+    },
+    {
+      "id": 15,
       "type": "table",
       "title": "Last hour",
       "datasource": {
@@ -688,13 +795,13 @@
       ],
       "gridPos": {
         "x": 0,
-        "y": 22,
+        "y": 30,
         "w": 12,
         "h": 9
       }
     },
     {
-      "id": 14,
+      "id": 16,
       "type": "bargauge",
       "title": "Response time p95, 1 h",
       "datasource": {
@@ -754,26 +861,26 @@
       "description": "Static files on 1 vCPU. /stream.* left out: a request lasts as long as the listener stays.",
       "gridPos": {
         "x": 12,
-        "y": 22,
+        "y": 30,
         "w": 12,
         "h": 9
       }
     },
     {
-      "id": 15,
+      "id": 17,
       "type": "row",
       "title": "System",
       "collapsed": false,
       "gridPos": {
         "x": 0,
-        "y": 31,
+        "y": 39,
         "w": 24,
         "h": 1
       },
       "panels": []
     },
     {
-      "id": 16,
+      "id": 18,
       "type": "gauge",
       "title": "RAM used",
       "datasource": {
@@ -828,13 +935,13 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 32,
+        "y": 40,
         "w": 4,
         "h": 4
       }
     },
     {
-      "id": 17,
+      "id": 19,
       "type": "stat",
       "title": "Load / core",
       "datasource": {
@@ -890,13 +997,13 @@
       },
       "gridPos": {
         "x": 4,
-        "y": 32,
+        "y": 40,
         "w": 4,
         "h": 4
       }
     },
     {
-      "id": 18,
+      "id": 20,
       "type": "bargauge",
       "title": "Free space",
       "datasource": {
@@ -947,13 +1054,13 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 32,
+        "y": 40,
         "w": 8,
         "h": 4
       }
     },
     {
-      "id": 19,
+      "id": 21,
       "type": "stat",
       "title": "Exporter freshness",
       "datasource": {
@@ -1040,13 +1147,13 @@
       "description": "All three over ygg: node and the log exporter on the mesh address, ssh on 22.",
       "gridPos": {
         "x": 16,
-        "y": 32,
+        "y": 40,
         "w": 8,
         "h": 4
       }
     },
     {
-      "id": 20,
+      "id": 22,
       "type": "timeseries",
       "title": "CPU busy",
       "datasource": {
@@ -1090,13 +1197,13 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 36,
+        "y": 44,
         "w": 12,
         "h": 8
       }
     },
     {
-      "id": 21,
+      "id": 23,
       "type": "timeseries",
       "title": "Network (bit/s)",
       "datasource": {
@@ -1149,7 +1256,7 @@
       "description": "WAN only; ygg0 is the scrape and pull path itself.",
       "gridPos": {
         "x": 12,
-        "y": 36,
+        "y": 44,
         "w": 12,
         "h": 8
       }

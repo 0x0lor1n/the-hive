@@ -847,6 +847,16 @@ def osgiliath():
         ts("Requests/min by page", 8, 8, [target(
             f"sum by (page) (rate({req}[5m])) * 60", "{{page}}")], min_=0,
            description="Only whitelisted paths get a label; the rest is `other`."),
+        ts("Requests/min by agent", 12, 8, [target(
+            f"sum by (agent) (rate({req}[5m])) * 60", "{{agent}}")], min_=0,
+           description="A class nginx derives from the UA, not the string: browser / feed / "
+                       "player (mpv, vlc, …) / bot (declared crawlers) / tool (curl, requests) / "
+                       "none (no UA at all). `other` = claims nothing nginx knows."),
+        bargauge("Who, 24 h", 12, 8, [target(
+            f"sum by (entry, agent) (increase({req}[24h]))", "{{entry}} {{agent}}")],
+            "short", thresholds("blue"), max_=None,
+            description="Door × agent class. Tor and ygg visitors show up here; "
+                        "clearnet bot vs browser is the ratio worth watching."),
         table("Last hour", 12, 9, targets(
             (f"sum by (entry, page, status) (increase({req}[1h]))", ""),
             instant=True, table=True),
