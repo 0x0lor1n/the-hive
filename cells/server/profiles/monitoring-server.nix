@@ -583,7 +583,9 @@ in {
   services.grafana = {
     enable = true;
     # Plugins come from the store only; nothing is installed from the UI.
-    declarativePlugins = [neonCityPanel];
+    # Since 13.x the prometheus datasource is no longer core: this list
+    # overrides what grafana would preinstall, so it has to be named here.
+    declarativePlugins = [neonCityPanel pkgs.grafanaPlugins.prometheus];
     settings = {
       plugins.allow_loading_unsigned_plugins = neonCityPanel.pname;
       server = {
