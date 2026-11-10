@@ -15,6 +15,11 @@ the API key travels in each request -- so sharing it leaks nothing. The
 profile also pins `pxpipe.anthropic.com` to `127.0.0.1` so the `/anthropic`
 suffix survives Hermes' base_url handling.
 
+The build carries one local patch, `cells/repo/pxpipe-opening-task.patch`: a
+long opening task (over 2000 chars) keeps its head and tail when history
+collapses instead of a 300-char preview. It backports a fix the Go port has
+not picked up yet and stops applying once it does; drop it then.
+
 ```bash
 journalctl -u pxpipe -f              # per-request: applied= saved= cache_read=
 ```

@@ -1,0 +1,32 @@
+Backport of teamchong/pxpipe a61aed3 (#250) to evan-choi/pxpipe-go v0.4.20,
+which is still pinned to the TypeScript reference at 0.13.2.
+
+When history collapses, the protected opening user turn is demoted to a
+tombstone that keeps only a 300-char preview. A long opening task (over
+userTextMaxChars = 2000) is exactly the contract the session runs on, so keep
+the bounded head+tail form (verbatim up to 4000 chars, else 2600 + 1400)
+that the library already uses for the latest collapsed user turn.
+
+Drop this patch when the Go port advances its baseline past a61aed3; it will
+stop applying at that point.
+
+--- a/history.go
++++ b/history.go
+@@ -433,7 +433,16 @@
+ 	}
+ 	demoteText := func(text string, cc any, hasCC bool) []any {
+ 		reminders, rest := splitStandingInstructions(text)
+-		preview := compactPreview(rest)
++		// A protected opening turn above the normal native-text budget is exactly
++		// where a long task contract lives. Keep its existing bounded head+tail
++		// representation instead of reducing the whole contract to 300 chars.
++		// (teamchong/pxpipe a61aed3, #250)
++		var preview string
++		if u16len(rest) > userTextMaxChars {
++			preview = verbatimTaskText(rest)
++		} else {
++			preview = compactPreview(rest)
++		}
+ 		if len(reminders) == 0 {
+ 			if preview == "" {
+ 				return nil

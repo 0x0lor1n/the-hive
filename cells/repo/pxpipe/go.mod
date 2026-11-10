@@ -2,7 +2,7 @@ module github.com/0x0lor1n/nix-rensa/pxpipe
 
 go 1.26.5
 
-require github.com/evan-choi/pxpipe-go v0.4.19
+require github.com/evan-choi/pxpipe-go v0.4.20
 
 require (
 	github.com/bytedance/gopkg v0.1.3 // indirect

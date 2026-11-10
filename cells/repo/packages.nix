@@ -75,9 +75,16 @@ in {
   # from imaged history are a confabulation risk; fresh tool output stays text.
   pxpipe = pkgs.buildGoModule {
     pname = "pxpipe";
-    version = "0.4.19";
+    version = "0.4.20";
     src = ./pxpipe;
-    vendorHash = "sha256-c+gc91FSkIegK3G+rZPjhV69vmvhZ6uLju4mO9h9IRQ=";
+    vendorHash = "sha256-VTQVkyg5NMgWv/Ia0QOt72CBYq31b1a7Gn+NyormWPk=";
+    # The library is a vendored Go module, not our src, so `patches` cannot
+    # reach it: patch the vendor tree once configurePhase has copied it in
+    # (read-only, hence the chmod). vendorHash is unaffected.
+    postConfigure = ''
+      chmod -R u+w vendor/github.com/evan-choi/pxpipe-go
+      patch -p1 -d vendor/github.com/evan-choi/pxpipe-go < ${./pxpipe-opening-task.patch}
+    '';
     meta.mainProgram = "pxpipe";
   };
 

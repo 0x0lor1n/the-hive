@@ -11,8 +11,8 @@ github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
 github.com/dlclark/regexp2/v2 v2.5.1 h1:E5Ug7Dh264W1ymdySmiHNcDG7fmsR307APCE5R07a20=
 github.com/dlclark/regexp2/v2 v2.5.1/go.mod h1:avUrQvPaLz2DrFNHJF0taWAFFX2C1GMSSoeiqFjcBmU=
-github.com/evan-choi/pxpipe-go v0.4.19 h1:dTzEyY4iSHdRo9MaAfe3I7UEBw7Ql2PcJOBQNpdMxlE=
-github.com/evan-choi/pxpipe-go v0.4.19/go.mod h1:f/eS/AfXpthkYfMRTy0bhDaAgoUjPta6zFoQTVTnle4=
+github.com/evan-choi/pxpipe-go v0.4.20 h1:cwgFQseezTUipGCFOM4Vv/pTkclAHoEJovR6s2aAFV8=
+github.com/evan-choi/pxpipe-go v0.4.20/go.mod h1:f/eS/AfXpthkYfMRTy0bhDaAgoUjPta6zFoQTVTnle4=
 github.com/klauspost/compress v1.19.1 h1:VsB4HPswih7mmZ8WleSFQ75c/Ui1M4trX5oAsJnhSlk=
 github.com/klauspost/compress v1.19.1/go.mod h1:cwPg85FWrGar70rWktvGQj8/hthj3wpl0PGDogxkrSQ=
 github.com/klauspost/cpuid/v2 v2.2.9 h1:66ze0taIn2H33fBvCkXuv9BmCwDfafmiIVpKV9kKGuY=
