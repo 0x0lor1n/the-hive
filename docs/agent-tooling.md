@@ -20,6 +20,11 @@ long opening task (over 2000 chars) keeps its head and tail when history
 collapses instead of a 300-char preview. It backports a fix the Go port has
 not picked up yet and stops applying once it does; drop it then.
 
+Imaging is on for `claude-fable-5*` and `claude-opus-5-5`. Opus 5.5 and
+Fable 5.1/5.2 read renders for gist, not exact IDs, so requests without
+`tools` (Hermes' context compression) always go as text: `reason=no_tools`.
+`PXPIPE_MODELS` overrides the model list, `PXPIPE_MODELS=off` disables.
+
 ```bash
 journalctl -u pxpipe -f              # per-request: applied= saved= cache_read=
 ```

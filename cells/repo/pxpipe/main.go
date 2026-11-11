@@ -4,9 +4,12 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -18,6 +21,32 @@ import (
 )
 
 type ctxKey struct{}
+
+// toolless reports a POST Messages request without tools, e.g. Hermes'
+// context compression: one user turn holding the whole conversation, and the
+// summary keeps whatever IDs the model reads off it. Gist-tier readers
+// misread those and nothing re-checks them, so such requests stay text.
+// The body is buffered and put back; on a read error the request is left to
+// the handler, which fails it the same way.
+func toolless(r *http.Request) (string, bool) {
+	if r.Method != http.MethodPost || r.Body == nil {
+		return "", false
+	}
+	body, err := io.ReadAll(r.Body)
+	r.Body.Close()
+	r.Body = io.NopCloser(bytes.NewReader(body))
+	if err != nil {
+		return "", false
+	}
+	var req struct {
+		Model string            `json:"model"`
+		Tools []json.RawMessage `json:"tools"`
+	}
+	if json.Unmarshal(body, &req) != nil {
+		return "", false
+	}
+	return req.Model, len(req.Tools) == 0
+}
 
 type observation struct {
 	model   string
@@ -39,15 +68,16 @@ func main() {
 		}
 		upstream = u
 	}
-	// Only image context for models that read dense renders reliably.
-	// Upstream evals (teamchong/pxpipe README): Fable 5 recalls 12-char hex
-	// 13/15 on dense renders; Opus 0/15, gpt-5.6-sol 0/15 — for those the
-	// transform silently corrupts identifiers, so they stay plain text.
-	// Matching is prefix-based ("claude-fable-5" also hits "claude-fable-5-1"
-	// and dated snapshots); "-1" is listed explicitly for clarity.
+	// Upstream tiers (teamchong/pxpipe README, "The honest part"): Fable 5
+	// reads dense renders at full fidelity (hex 13/15); Opus 5.5 and Fable
+	// 5.1/5.2 keep gist (up to 98/98) but not exact IDs (hex 0-14/15, log IDs
+	// 0/20). Upstream defaults them on for live agent sessions only: the agent
+	// can re-fetch exact values with tools. Tool-less requests are therefore
+	// never imaged, see toolless below. Prefix match: "claude-fable-5" also
+	// hits 5-1, 5-2 and dated snapshots.
 	// PXPIPE_MODELS overrides this list; PXPIPE_MODELS=off disables.
 	if os.Getenv("PXPIPE_MODELS") == "" {
-		pxpipe.SetAllowedModelBases([]string{"claude-fable-5", "claude-fable-5-1"})
+		pxpipe.SetAllowedModelBases([]string{"claude-fable-5", "claude-opus-5-5"})
 	}
 
 	// A VPN up/down re-routes the pooled HTTP/2 connection without a RST, so
@@ -113,9 +143,14 @@ func main() {
 	log.Printf("listening on %s; model.base_url: http://%s/anthropic", addr, addr)
 	log.Fatal(http.ListenAndServe(addr, http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// Usage is read from the response body; a compressed stream would hide it.
+		o := &observation{}
 		if strings.HasSuffix(r.URL.Path, "/messages") {
 			r.Header.Set("Accept-Encoding", "identity")
+			if model, ok := toolless(r); ok {
+				r.Header.Set("X-Pxpipe-Bypass", "1")
+				o.model, o.reason = model, "no_tools"
+			}
 		}
-		handler.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, &observation{})))
+		handler.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), ctxKey{}, o)))
 	})))
 }
