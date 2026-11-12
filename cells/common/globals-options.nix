@@ -116,17 +116,10 @@
                     default = [];
                   };
 
-                  # Workstation axes (cells/workstation). Server hosts keep the
-                  # defaults.
-                  isVm = lib.mkOption {
-                    type = lib.types.bool;
-                    default = false;
-                    description = "QEMU guest: forces the ZFS import, no autoScrub.";
-                  };
                   hasTpm = lib.mkOption {
                     type = lib.types.nullOr lib.types.bool;
                     default = null;
-                    description = "TPM 2.0 present (swtpm counts). null = unknown.";
+                    description = "TPM 2.0 present. null = unknown.";
                   };
                   maintenance = lib.mkOption {
                     type = lib.types.bool;
@@ -135,17 +128,12 @@
                   };
 
                   # Per-host local user. null falls back to the encrypted
-                  # globals.user.*; the playground VMs carry a public throwaway
-                  # identity so nothing secret is needed to boot them.
+                  # globals.user.*.
                   userName = lib.mkOption {
                     type = lib.types.nullOr lib.types.str;
                     default = null;
                   };
                   homeDir = lib.mkOption {
-                    type = lib.types.nullOr lib.types.str;
-                    default = null;
-                  };
-                  hashedPassword = lib.mkOption {
                     type = lib.types.nullOr lib.types.str;
                     default = null;
                   };

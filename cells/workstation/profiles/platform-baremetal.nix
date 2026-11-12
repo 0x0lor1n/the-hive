@@ -1,5 +1,4 @@
-# Physical x86 machine -- the counterpart to platform-virtio.nix. Generic
-# "it is real hardware" facts only; the GPU and the laptop shape are their own
+# Physical x86 machine. Generic "it is real hardware" facts only; the GPU and the laptop shape are their own
 # profiles (gpu-intel.nix, laptop.nix).
 #
 # The initrd module list is the common set for any NVMe laptop with a Realtek
@@ -13,8 +12,8 @@
   ...
 }: {
   # The disk (nvme, or SATA via ahci -- penrose boots from a 2.5" SSD in the
-  # bay) and the keyboard (xhci) must be visible before stage 2, same
-  # reasoning as virtio_blk in platform-virtio.nix.
+  # bay) and the keyboard (xhci) must be visible before stage 2: the root
+  # mount waits on the disk, an initrd prompt on the keyboard.
   boot.initrd.availableKernelModules = [
     "xhci_pci"
     "nvme"

@@ -13,8 +13,7 @@
 }: let
   router = globals.hosts.minas-tirith.yggAddress;
 in
-  # The VM has no user-ssh-key and no `vpn` to start it with.
-  lib.mkIf (router != null && !host.isVm) {
+  lib.mkIf (router != null) {
     hive.tunnels.yggdrasil = "yggdrasil.service";
 
     services.yggdrasil = {

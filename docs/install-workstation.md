@@ -33,8 +33,7 @@ Everything flows through `agenix-rekey`; per-host rekeyed files land in
 - Hardware profiles (`platform-*`, `gpu-*`, `laptop`) are split per hardware, not
   per host; `host-<host>.nix` holds the rest.
 - Register in `nixosConfigurations` and run `agenix generate && agenix rekey`
-  from the workstation devshell (`nix develop .#workstation`). Commit the
-  generated secrets.
+  from the repo devshell (`nix develop`). Commit the generated secrets.
 
 ## 2. Bootstrap files
 

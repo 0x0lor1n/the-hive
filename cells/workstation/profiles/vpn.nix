@@ -42,7 +42,7 @@ in {
     default = {};
   };
 
-  config = lib.mkIf (!host.isVm) {
+  config = {
     environment.systemPackages = [vpn];
 
     security.polkit.extraConfig = ''

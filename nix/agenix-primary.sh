@@ -1,4 +1,4 @@
-# Sourced by both devshells (repo + workstation). Pin agenix-rekey to the TPM
+# Sourced by the repo devshell. Pin agenix-rekey to the TPM
 # identity of the host we are running on: rage aborts on the first TPM
 # identity it cannot open ("unable to acquire SRK"), so with two TPM master
 # identities `agenix rekey/generate` must never be handed the foreign one.

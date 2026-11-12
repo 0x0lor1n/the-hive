@@ -171,6 +171,6 @@ in
       log "  <this command> > ${credDir}/$cred_name.cred"
       log ""
       log "No rebuild needed -- the initrd mounts the ESP and reads it directly."
-      log "Do NOT put it in the repo or on the 9p share; nothing reads it there."
+      log "Do NOT put it in the repo; nothing reads it there."
     '';
   }

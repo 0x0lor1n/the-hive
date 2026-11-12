@@ -14,7 +14,7 @@
 
   programmer = "ft2232_spi:type=2232H,port=A,divisor=8";
 
-  # Same switcher as the repo/workstation shells: `cd "$(dev)"` gets back out.
+  # Same switcher as the repo shell: `cd "$(dev)"` gets back out.
   dev = pkgs.writeShellApplication {
     name = "dev";
     runtimeInputs = with pkgs; [git direnv coreutils];

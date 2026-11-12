@@ -16,8 +16,8 @@
     boot.zfs.package = lib.mkForce pkgs.zfs;
   };
 
-  # Guest nix daemon: fetch the kernel from nyx instead of rebuilding it on a
-  # `nixos-rebuild` inside the VM. Same values as nyx's flake.nix nixConfig.
+  # Host nix daemon: fetch the kernel from nyx instead of rebuilding it on a
+  # local `nixos-rebuild`. Same values as nyx's flake.nix nixConfig.
   nix.settings = {
     extra-substituters = ["https://nyx-cache.chaotic.cx/"];
     extra-trusted-public-keys = ["nyx-cache.chaotic.cx:dJxTrgMC3V3cFfyIiBQDQorG6k1LsqurH/srpMSq7qk="];

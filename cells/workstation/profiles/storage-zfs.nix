@@ -59,20 +59,16 @@ in {
   # to detect. Consequence: renaming a host orphans its pool (forceImportRoot).
   networking.hostId = lib.substring 0 8 (builtins.hashString "sha256" config.networking.hostName);
 
-  # Default /dev/disk/by-id doesn't populate for virtio disks (no hardware
-  # serial); the disko-created pool's vdev label uses by-partlabel, which
-  # udev does populate. GPT partlabels exist on bare metal too, so this is
-  # correct for both.
+  # The disko-created pool's vdev label uses by-partlabel, which udev always
+  # populates (by-id needs a hardware serial).
   boot.zfs.devNodes = "/dev/disk/by-partlabel";
 
-  # VM only: disko's image builder leaves a mismatched /etc/hostid. On hardware
-  # this disables the guard against a pool open elsewhere.
-  boot.zfs.forceImportRoot = host.isVm;
-  boot.kernelParams = lib.optionals host.isVm ["zfs_force=1"];
+  # Off: it disables the guard against a pool open elsewhere. The NixOS
+  # default is true.
+  boot.zfs.forceImportRoot = false;
 
-  # No autoScrub on the VMs (ephemeral, scrubs are noise). Real hardware
-  # gets it -- a laptop pool that is never scrubbed silently rots.
-  services.zfs.autoScrub = lib.mkIf (!host.isVm) {
+  # A laptop pool that is never scrubbed silently rots.
+  services.zfs.autoScrub = {
     enable = true;
     interval = "monthly";
   };

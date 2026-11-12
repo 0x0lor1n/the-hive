@@ -192,7 +192,8 @@ in {
       };
     };
 
-    # WebKitGTK (aad-tool, Hello enrollment) renders blank on virtio-GPU with DMA-BUF.
+    # WebKitGTK (aad-tool, Hello enrollment) rendered blank with DMA-BUF on
+    # virtio-GPU; not re-checked on the Intel/NVIDIA laptops, so it stays.
     # himmelblau-broker is a systemd --user unit and does not see sessionVariables.
     environment.sessionVariables.WEBKIT_DISABLE_DMABUF_RENDERER = "1";
     systemd.user.services.himmelblau-broker.environment.WEBKIT_DISABLE_DMABUF_RENDERER = "1";

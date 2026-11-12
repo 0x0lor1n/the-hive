@@ -25,7 +25,7 @@ in {
       enable = true;
 
       # Required on real hardware — some signed option ROMs depend on
-      # Microsoft's trust anchors. No harm on the VM either way.
+      # Microsoft's trust anchors.
       includeMicrosoftKeys = lib.mkDefault true;
 
       # Manual reboot so the operator can verify the enrollment

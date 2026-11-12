@@ -79,7 +79,6 @@
       nixosConfigurations = nodes // workstations;
       devShells.x86_64-linux =
         ren.get self [["repo" "devshells"]]
-        // ren.get self [["workstation" "devshells"]]
         // ren.get self [["wintermute" "devshells"]];
       packages.x86_64-linux = ren.get self [["wintermute" "packages"]];
       # `agenix` (agenix-rekey CLI) runs `nix run .#agenix-rekey.<system>.<app>`.

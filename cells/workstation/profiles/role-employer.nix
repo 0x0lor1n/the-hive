@@ -14,7 +14,7 @@
 }: let
   vpn = import ./__vpn-lib.nix {inherit inputs config;};
 in
-  lib.mkIf (!host.isVm && config.hive.roleHolders.employer != []) {
+  lib.mkIf (config.hive.roleHolders.employer != []) {
     hive.tunnels = {
       vpn-o = "wg-quick-o.service";
       vpn-t = "openvpn-t.service";

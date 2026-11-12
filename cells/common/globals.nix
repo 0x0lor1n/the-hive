@@ -45,30 +45,6 @@
               sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAINKK3VXSY8JxgelHf+8U7XEOCYrjCAB81Xme7eoNkP6v root@osgiliath";
             };
 
-            # Playground workstation VM (cells/workstation). Public throwaway
-            # identity: the hashes are for `vmuser`/root on a disposable image
-            # and exist so the VM boots without the encrypted half.
-            hosts.sevastopol = {
-              diskDevice = "/dev/vda";
-              isVm = true;
-              hasTpm = true; # swtpm
-              userName = "vmuser";
-              hashedPassword = "$y$j9T$z/Vdo8yMPLoQ9PEXJDj7//$6BuWjVnrKNXrYiXOSmWReG3Iji0JZXUjAqiIUtb7hj/";
-              rootHashedPassword = "$y$j9T$46atH3AmHBsnheSr3VdkW/$qaal/LB3V26HiltSiVTtd6DP3DZVJEmo24AO8EN2311";
-              # Persisted in the image (/persist/etc/ssh); a new `ws-image` changes it.
-              sshHostPubkey = "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIJEkHLFGCFphGyc0GGyxCENyE/762o1ZPOVa1Ar15ee5 root@sevastopol";
-              accounts = [
-                {
-                  auth = "local";
-                  roles = ["admin" "dev"];
-                }
-                {
-                  auth = "entra";
-                  roles = ["dev" "freelance" "employer"];
-                }
-              ];
-            };
-
             # Dell Latitude 5580. Whole disk, nothing else on it. User + hashes
             # come from the encrypted half (fleet user).
             hosts.penrose = {
@@ -143,8 +119,8 @@
       ];
     }).config.globals;
 in
-  # Resolve the per-host user: a host either names its own (playground) or
-  # inherits the encrypted fleet user. After this, host.userName/homeDir are
+  # Resolve the per-host user: a host either names its own or inherits the
+  # encrypted fleet user. After this, host.userName/homeDir are
   # always strings.
   merged
   // {

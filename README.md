@@ -15,7 +15,6 @@ Every host: impermanence (ephemeral root, state in `/state` and `/persist`).
 Storage: ZFS with native encryption and TPM-sealed unlock on the workstations
 and minas-tirith, plain ZFS on imladris (no TPM), btrfs with rollback on
 osgiliath. Workstations add Secure Boot (lanzaboote) and the CachyOS kernel.
-**sevastopol** is the retired QEMU rehearsal of the workstation config.
 
 ## Monitoring
 
@@ -92,9 +91,6 @@ the machine itself (`sudo` drops `NIX_CONFIG`, `--sudo` keeps it):
 nixos-rebuild switch --sudo --flake .#elster
 ```
 
-The VM is built and booted from `cells/workstation/devshells.nix` (`ws-image`,
-`ws-vm-run`, `ws-switch` -> `/mnt/share/activate.sh` inside the guest).
-
 Workstations run the CachyOS kernel + `zfs_cachyos` from the pinned `chaotic`
 input (`cells/workstation/profiles/layer-kernel.nix`); `specialisation.safe` is stock nixpkgs
 kernel + ZFS as a boot fallback. Prebuilt binaries come from
@@ -108,8 +104,8 @@ the kernel builds from source.
 
 ```bash
 dev                    # deploy shell
-dev workstation        # or any other cell with a devshell
-cd "$(dev workstation)" # also cd into the cell
+dev wintermute         # or any other cell with a devshell
+cd "$(dev wintermute)"  # also cd into the cell
 ```
 
 `dev` is a PATH binary in every cell's shell (`nix/dev.sh`), not a shellHook
@@ -147,8 +143,7 @@ accounts. Development state is shared on purpose (the `hive` group,
 - `rensa-nix/utils` `mkHome.nix:25` references `config.bee.home`, which does not
   exist in `ren-module.nix`; `mkHome` is unusable until fixed upstream.
 - `networking.hostId` is derived from the hostname and ZFS pools remember it:
-  after a rename the pool imports only with force (`storage-zfs.nix` sets
-  `boot.zfs.forceImportRoot` for VMs; a real host would need it once).
+  after a rename the pool imports once with force (`zpool import -f`).
 - `environment.sessionVariables` / greetd env do not reach the compositor
   session; `XDG_CURRENT_DESKTOP` must be exported by the launcher script itself
   (`layer-compositor.nix`'s `dwl-session`), or dbus/xdg-desktop-portal see nothing.

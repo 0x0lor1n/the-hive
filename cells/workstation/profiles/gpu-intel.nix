@@ -1,5 +1,4 @@
-# Intel iGPU (i915) as the display device. Counterpart to gpu-virtio.nix:
-# nothing here about cursors or output modes -- a real panel has a real EDID.
+# Intel iGPU (i915) as the display device.
 {
   inputs,
   cell,

@@ -7,7 +7,8 @@
   imports = [./languages.nix ./agents.nix];
 
   # Public repos' lefthook reads this; the agenix copy outlives the ephemeral
-  # home (profiles/secrets.nix). Dangling on the VM, which the hook tolerates.
+  # home (profiles/secrets.nix). Dangling where no account holds dev, which the
+  # hook tolerates.
   xdg.configFile."gitleaks/personal.toml".source =
     config.lib.file.mkOutOfStoreSymlink "/run/agenix/gitleaks-personal";
 }

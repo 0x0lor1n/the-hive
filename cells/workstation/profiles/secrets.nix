@@ -46,9 +46,7 @@
       then id // {"${name}" = shared id.${name};}
       else id
     );
-  # Real hosts only: the VM rehearsal has its own host key and no business
-  # holding these, so no rekeyed bundle exists for it (eval would assert).
-  sshIdentities = lib.optionals (!host.isVm) (
+  sshIdentities =
     [
       # Personal GitHub key: this flake, the-hive tooling, public repos.
       # Passphrase-protected: typed once per session into the agent.
@@ -61,12 +59,11 @@
     # Letter = organisation (o employer, t its client, w freelance); which one
     # is behind a letter lives only in the encrypted user secrets.
     ++ map (mkRoleIdentity "employer") ["ssh-ogh" "ssh-oaz" "ssh-tgl" "ssh-tprod"]
-    ++ map (mkRoleIdentity "freelance") ["ssh-wgl" "ssh-w"]
-  );
+    ++ map (mkRoleIdentity "freelance") ["ssh-wgl" "ssh-w"];
   # gitleaks rule naming the user, for public repos' pre-commit. Encrypted
   # because the regex is the list of names it hunts for. dev commits to those
   # repos; home/dev links it into ~/.config, which does not survive a relogin.
-  gitleaksPersonal = lib.optionalAttrs (!host.isVm && holders.dev != []) {
+  gitleaksPersonal = lib.optionalAttrs (holders.dev != []) {
     gitleaks-personal = shared {
       rekeyFile = "${flakeRoot}/secrets/gitleaks/personal.toml.age";
       owner = lib.head holders.dev;
@@ -124,8 +121,8 @@ in {
   # Consumed by zfs-key-sync.service: the pool is rotated to this value and
   # the TPM credential re-sealed from it. Rotate with
   # `agenix generate --force zfs-rpool-passphrase` (rekey never changes the
-  # value). Entropy on every host, playground included: the VM's pool is
-  # unlocked by the TPM, nobody types this.
+  # value). Entropy on every host: the pool is unlocked by the TPM, nobody
+  # types this.
   age.secrets = lib.mkMerge ([
       {
         zfs-rpool-passphrase.generator.script = {pkgs, ...}: ''

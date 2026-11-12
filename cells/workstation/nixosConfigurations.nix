@@ -93,14 +93,7 @@
       p.cpu-governor
     ];
 
-  # Hardware: exactly one per host. The playground VMs mount the host's flake
-  # at /mnt/share over 9p, a real machine has no such thing.
-  vmGuest = [
-    p.platform-virtio
-    p.gpu-virtio
-    p.dev-9p-share
-  ];
-
+  # Hardware: exactly one per host.
   # Intel laptop, iGPU scanout (penrose's dGPU: render offload, gpu-intel).
   intelLaptop = [
     p.platform-baremetal
@@ -154,34 +147,12 @@
       _module.args.inputs = inputs;
 
       disko.devices = utilsLib.collectDisks {${hostKey} = cell.disks.${hostKey};};
-      # Only consumed by the disko image builder.
-      disko.memSize = 4096;
-      # nixpkgs >= 2026-08 vmTools requires `kernel.target`, but disko (through
-      # master ff8702b) passes an aggregateModules buildEnv as `kernel`, which
-      # has none. The buildEnv still symlinks bzImage from the real kernel, so
-      # naming the image explicitly restores the old behaviour. Drop once disko
-      # passes `kernelModules` instead.
-      disko.imageBuilder.pkgs =
-        pkgs
-        // {
-          vmTools = pkgs.vmTools.override {kernelImage = "bzImage";};
-        };
 
       networking.hostName = host.hostName;
       system.stateVersion = "24.11";
     };
 in {
-  # QEMU rehearsal: native ZFS encryption behind a pre-unseal PCR 15 gate with
-  # anti-replay, Secure Boot, impermanence.
-  sevastopol = mkHost {
-    hostKey = "sevastopol";
-    base = workstation;
-    hardware = vmGuest;
-    encryption = zfsNative;
-  };
-
-  # Dell Latitude 5580: what sevastopol rehearsed, on the real disk. Same base
-  # and encryption stack, only the hardware list differs.
+  # Dell Latitude 5580.
   penrose = mkHost {
     hostKey = "penrose";
     base = workstation;

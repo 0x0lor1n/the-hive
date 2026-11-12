@@ -12,7 +12,7 @@
 }: let
   vpn = import ./__vpn-lib.nix {inherit inputs config;};
 in
-  lib.mkIf (!host.isVm && config.hive.roleHolders.freelance != []) {
+  lib.mkIf (config.hive.roleHolders.freelance != []) {
     hive.tunnels.vpn-w = "openvpn-w.service";
 
     age.secrets = {

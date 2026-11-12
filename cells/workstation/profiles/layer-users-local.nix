@@ -18,12 +18,11 @@
   has = role: lib.elem role roles;
 
   # The other bare-metal workstations: every one authorises every other one's
-  # user-ssh-key and gets a `Host <name>` for it. The VM is left out both
-  # ways (its key is a throwaway, its address is whatever QEMU hands it).
+  # user-ssh-key and gets a `Host <name>` for it.
   # mDNS, not an address: both are DHCP laptops; laptop.nix runs avahi with
   # nssmdns4, so <name>.local resolves without a lease on the router.
   peers =
-    lib.filterAttrs (n: h: n != host.hostName && !h.isVm && h.accounts != [])
+    lib.filterAttrs (n: h: n != host.hostName && h.accounts != [])
     globals.hosts;
 
   # globals holds "a.b.c.d/24" (encrypted half); ssh wants the bare address.
@@ -56,22 +55,16 @@ in {
       then ["himmelblaud"]
       else ["tss"];
 
-    # Fleet default from the encrypted half of globals, per-host public
-    # override for the playground VMs (AGENTS.md documents the passphrase).
-    # The encrypted value must satisfy the tenant's Intune Linux password
-    # policy (>=8 chars, digit + lowercase + symbol) or enrolment reports the
-    # device non-compliant.
-    hashedPassword =
-      if host.hashedPassword != null
-      then host.hashedPassword
-      else globals.user.hashedPassword;
+    # From the encrypted half of globals. It must satisfy the tenant's Intune
+    # Linux password policy (>=8 chars, digit + lowercase + symbol) or
+    # enrolment reports the device non-compliant.
+    inherit (globals.user) hashedPassword;
     home = host.homeDir;
     # deck/homeModules/zsh.nix writes the rc files; the login shell is a system
     # setting and HM alone would leave the account on bash.
     shell = pkgs.zsh;
 
-    # Per host, matching secrets.nix's generatedSecretsDir, so a playground
-    # key can never be authorised on real hardware. Plus the other laptops'
+    # Per host, matching secrets.nix's generatedSecretsDir. Plus the other laptops'
     # keys (peers above): the same user on either machine reaches the other.
     openssh.authorizedKeys.keyFiles =
       map (n: inputs.self.outPath + "/secrets/generated/${n}/user-ssh-key.pub")
