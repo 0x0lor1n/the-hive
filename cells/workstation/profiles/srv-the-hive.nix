@@ -15,7 +15,8 @@ in {
 
   systemd.tmpfiles.rules = [
     # `z`, not `d`: a dir created before the clone makes `git clone` refuse it.
-    "z /srv/the-hive 0750 ${admin} hive -"
+    # 0770, not 0750: with an ACL the group bits are the mask, so 0750 caps group:hive at r-x.
+    "z /srv/the-hive 0770 ${admin} hive -"
     # Default ACL instead of setgid/umask/core.sharedRepository: inherited under any umask.
     # Lowercase `a+` is non-recursive; a recursive walk cost 10+ min per boot on /srv/workspace.
     "a+ /srv/the-hive - - - - d:group:hive:rwx,group:hive:rwx"
