@@ -106,7 +106,8 @@
     p.platform-baremetal
     p.gpu-intel
     p.laptop
-    # the WD19TBS moves between both laptops; udev authorises it by unique_id
+    # the WD19TBS moves between both laptops: udev authorises it by
+    # unique_id, kanshi `home` for the LG behind it
     p.device-dock-wd19tbs
   ];
 
@@ -119,6 +120,7 @@
       p.device-dac-dawn-pro
       p.device-fingerprint-synaptics
       p.device-printer-office-hp
+      p.device-dock-office-hp
     ];
 
   # Encryption + unlock; must match what the host's disk file created.

@@ -27,7 +27,7 @@
   }:
     import ../home {
       inherit userName homeDir theme roles desktop secrets startDir;
-      inherit (config.session) idleLock workMonitor;
+      inherit (config.session) idleLock outputProfiles;
       roleInputs = {
         # nixpak apps bind the account's canonical home, so they are built per account.
         packages =
@@ -245,10 +245,10 @@ in {
     default = true;
     description = "swayidle locks the session and suspends; false keeps only the screen blanking.";
   };
-  options.session.workMonitor = lib.mkOption {
-    type = lib.types.bool;
-    default = false;
-    description = "kanshi gets the `work` profile (the HP at the office desk; home/desktop/outputs.nix).";
+  options.session.outputProfiles = lib.mkOption {
+    type = lib.types.listOf lib.types.attrs;
+    default = [];
+    description = "kanshi profiles for monitors that sit behind a dock; each device-dock-*.nix appends its own. home/desktop/outputs.nix adds `undocked` after them.";
   };
 
   config = {

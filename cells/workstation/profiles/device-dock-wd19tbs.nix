@@ -12,6 +12,10 @@
 # reads the dock's real UUID; penrose's TB3 (Alpine Ridge) host gets none, so
 # the kernel builds one from the 64-bit DROM uid padded with ffff. Both are
 # stable for this dock.
+#
+# kanshi `home`: the LG 4K on this dock. Its EDID tops out at 3840x2160@60
+# (range 56-61 Hz), so the mode is pinned there. The laptop panel goes dark
+# while docked.
 {
   inputs,
   cell,
@@ -23,4 +27,27 @@
   rule = id: ''ACTION=="add", SUBSYSTEM=="thunderbolt", ATTR{unique_id}=="${id}", ATTR{authorized}=="0", ATTR{authorized}="1"'';
 in {
   services.udev.extraRules = lib.concatMapStringsSep "\n" rule ids + "\n";
+
+  # First, as before the split; module merge order would put elster's office
+  # dock ahead of it. Harmless (the criteria never overlap) but keeps the
+  # generated kanshi config stable.
+  session.outputProfiles = lib.mkBefore [
+    {
+      profile.name = "home";
+      profile.outputs = [
+        {
+          # Make/serial strings depend on libdisplay-info (PNP GSM, no
+          # serial descriptor in the EDID); match the model name only.
+          criteria = "*LG Ultra HD*";
+          status = "enable";
+          mode = "3840x2160@60Hz";
+          position = "0,0";
+        }
+        {
+          criteria = "eDP-1";
+          status = "disable";
+        }
+      ];
+    }
+  ];
 }

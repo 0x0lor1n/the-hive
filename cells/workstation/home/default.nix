@@ -38,8 +38,10 @@
   startDir ? null,
   # swayidle lock + suspend (./desktop/idle.nix); off leaves only screen blanking.
   idleLock ? true,
-  # kanshi `work` profile (./desktop/outputs.nix): elster only.
-  workMonitor ? false,
+  # kanshi profiles of the monitors behind this host's docks, from
+  # session.outputProfiles (one per device-dock-*.nix); ./desktop/outputs.nix
+  # appends `undocked`.
+  outputProfiles ? [],
 }: {lib, ...}: let
   sec = secrets;
   known = ["admin" "dev" "freelance" "employer"];
@@ -55,7 +57,7 @@ in
     _module.args.accountRoles = roles;
     _module.args.roleInputs = roleInputs;
     _module.args.idleLock = idleLock;
-    _module.args.workMonitor = workMonitor;
+    _module.args.outputProfiles = outputProfiles;
 
     home.username = userName;
     home.homeDirectory = homeDir;
