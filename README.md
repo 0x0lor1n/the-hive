@@ -66,6 +66,15 @@ instantiation (root `transformInputs`); `inputs.nixpkgs` is the flake, not a
 package set. `inputs.self` is sourceInfo only. `inputs.cells.<c>.<block>` reads
 another cell; a cell's own siblings are `cell.<block>`.
 
+Workstation profiles are named by prefix. A `device-*.nix` file holds
+everything that exists only because of one physical device: its udev rules,
+vendor tool or service, firmware updates, persisted state, the kanshi profile
+of a monitor behind a dock. Unplug or sell the device and you delete one file.
+Class-wide shape stays in `laptop.nix` and `gpu-*` (radios, lid, CUPS, avahi),
+facts about the machine itself stay in `host-*`. The prefix is `device-`, not
+`dev-`, because `dev` already means development (`role-dev`, `home/dev/`, the
+`dev` shell command).
+
 ## Running
 
 Everything that evaluates `globals` needs the deploy shell: the encrypted half
