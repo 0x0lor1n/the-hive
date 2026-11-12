@@ -112,7 +112,14 @@
 
   # HP ZBook Firefly 16 G10 (Raptor Lake, iGPU only, TB4 dock): the same
   # laptop shape plus what only this host needs (docker).
-  raptorLaptop = intelLaptop ++ [p.host-elster p.device-dac-dawn-pro];
+  raptorLaptop =
+    intelLaptop
+    ++ [
+      p.host-elster
+      p.device-dac-dawn-pro
+      p.device-fingerprint-synaptics
+      p.device-printer-office-hp
+    ];
 
   # Encryption + unlock; must match what the host's disk file created.
   zfsNative = [
@@ -176,7 +183,7 @@ in {
   penrose = mkHost {
     hostKey = "penrose";
     base = workstation;
-    hardware = intelLaptop ++ [p.host-penrose p.device-battery-dell-ec p.gaming-steam];
+    hardware = intelLaptop ++ [p.host-penrose p.device-battery-dell-ec p.device-gpu-quadro-m620 p.gaming-steam];
     encryption = zfsNative;
   };
 
