@@ -28,4 +28,7 @@
   # (local_groups_reconcile_interval), same path as `hive`/`networkmanager`
   # in auth-entra.nix.
   services.himmelblau.settings.local_groups = ["dialout"];
+
+  # The HP E27u at the office desk (kanshi `work`, home/desktop/outputs.nix).
+  session.workMonitor = true;
 }

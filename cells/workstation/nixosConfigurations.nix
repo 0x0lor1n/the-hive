@@ -18,7 +18,7 @@
   # (pkgs.phoenix, pkgs.withPhoenix); the browser profile applies withPhoenix
   # itself, since Phoenix's own module would go through the ignored path.
   pkgs =
-    (((inputs.pkgs.extend inputs.chaotic.overlays.default).extend inputs.phoenix.overlays.default).extend evdiOverlay).extend xdpwOverlay;
+    ((inputs.pkgs.extend inputs.chaotic.overlays.default).extend inputs.phoenix.overlays.default).extend xdpwOverlay;
 
   # xdg-desktop-portal-wlr snapshots toplevels before running the chooser, so
   # a window the chooser maps itself is "unknown". share-chooser
@@ -30,17 +30,6 @@
     });
   };
 
-  # evdi (DisplayLink DRM shim, dock-displaylink) in the cachyos set: nyx's
-  # llvm-module-overlay empties postBuild ("Don't build userspace stuff"),
-  # but nixpkgs' postInstall still copies library/libevdi.so, so the
-  # derivation dies at install. Drop the copy to match; dock-displaylink
-  # borrows the library from the stock linuxPackages set anyway. Kernel drv
-  # untouched (nyx cache hits).
-  evdiOverlay = _final: prev: {
-    linuxPackages_cachyos = prev.linuxPackages_cachyos.extend (_: kprev: {
-      evdi = kprev.evdi.overrideAttrs (_: {postInstall = "";});
-    });
-  };
   globals = inputs.cells.common.globals;
   common = inputs.cells.common.profiles;
   p = cell.profiles;
@@ -117,8 +106,8 @@
     p.platform-baremetal
     p.gpu-intel
     p.laptop
-    # both laptops dock through DisplayLink (elster at work, penrose at home)
-    p.dock-displaylink
+    # the WD19TBS moves between both laptops; udev authorises it by unique_id
+    p.dock-wd19tb
   ];
 
   # HP ZBook Firefly 16 G10 (Raptor Lake, iGPU only, TB4 dock): the same
