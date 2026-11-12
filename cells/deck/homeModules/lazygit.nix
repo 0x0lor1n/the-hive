@@ -9,7 +9,8 @@ in {
   programs.lazygit = {
     enable = true;
     # Unset, lazygit hashes each author name into a truecolor off the palette.
-    settings.gui.authorColors."*" = "#${r.info}";
+    # Moved under gui.theme in lazygit 0.66.
+    settings.gui.theme.authorColors."*" = "#${r.info}";
     settings.git = {
       # NOTE: camelCase matters. lazygit parses with yaml.v3, which is
       # case-sensitive and silently ignores unknown keys -- the old
