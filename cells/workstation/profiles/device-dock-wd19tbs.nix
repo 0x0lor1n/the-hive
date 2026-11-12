@@ -28,6 +28,9 @@
 in {
   services.udev.extraRules = lib.concatMapStringsSep "\n" rule ids + "\n";
 
+  services.fwupd.enable = true;
+  environment.persistence."/persist".directories = ["/var/lib/fwupd"];
+
   # First, as before the split; module merge order would put elster's office
   # dock ahead of it. Harmless (the criteria never overlap) but keeps the
   # generated kanshi config stable.
