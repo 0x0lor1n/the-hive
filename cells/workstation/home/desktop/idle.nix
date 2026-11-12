@@ -10,16 +10,10 @@
 in {
   services.swayidle = {
     enable = true;
-    events = lib.optionals idleLock [
-      {
-        event = "before-sleep";
-        command = lock;
-      }
-      {
-        event = "lock";
-        command = lock;
-      }
-    ];
+    events = lib.optionalAttrs idleLock {
+      before-sleep = lock;
+      lock = lock;
+    };
     timeouts =
       lib.optional idleLock {
         timeout = 300;

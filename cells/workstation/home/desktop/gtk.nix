@@ -4,6 +4,7 @@
 # palette from common/theme.nix injected via libadwaita named colours -- same
 # source as foot/waybar/tuigreet.
 {
+  config,
   pkgs,
   theme,
   ...
@@ -81,6 +82,9 @@ in {
     gtk3.extraConfig.gtk-application-prefer-dark-theme = 1;
     gtk3.extraCss = kanagawaCss;
     gtk4.extraConfig.gtk-application-prefer-dark-theme = 1;
+    # Keeps the pre-26.05 behaviour (HM default became null): the theme's
+    # gtk-4.0 CSS under ours.
+    gtk4.theme = config.gtk.theme;
     gtk4.extraCss = kanagawaCss;
   };
 

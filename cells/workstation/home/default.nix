@@ -80,7 +80,6 @@ in
     '');
 
     # Declared, not `git config --global`: ~/.gitconfig is not persisted.
-    # userName/userEmail/extraConfig: the release-25.05 API (settings is 25.11+).
     # No author here: roles/dev.nix sets the default one; the includeIf
     # blocks below override it per work remote.
     programs.git = {
@@ -93,7 +92,7 @@ in
       # skills) is per-checkout scratch: never committed, in any repo. Global so
       # a fresh clone needs no per-repo .gitignore line.
       ignores = [".hermes/"];
-      extraConfig = {
+      settings = {
         init.defaultBranch = "main";
         pull.rebase = true;
         push.autoSetupRemote = true;
@@ -119,7 +118,9 @@ in
     # use and the passphrase is typed once per session.
     programs.ssh = {
       enable = true;
-      addKeysToAgent = "yes";
+      # The HM `*` defaults restate OpenSSH's own; only the agent differs.
+      enableDefaultConfig = false;
+      settings."*".AddKeysToAgent = "yes";
       # Globs relative to ~/.ssh, read before the blocks below. The files they
       # name are plaintext and not managed here: a per-pod HostName/Port can be
       # rewritten between jobs without a TPM PIN. An unmatched glob is fine.

@@ -20,8 +20,8 @@
 
   # Default author; the includeIf blocks (secrets, per remote glob) come
   # later in the file and override it on work remotes.
-  programs.git = {
-    userName = roleInputs.git.name;
-    userEmail = roleInputs.git.email;
+  programs.git.settings.user = {
+    name = roleInputs.git.name;
+    email = roleInputs.git.email;
   };
 }

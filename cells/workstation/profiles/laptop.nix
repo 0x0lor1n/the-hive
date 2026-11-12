@@ -61,9 +61,9 @@
     openFirewall = true;
     # Announce ourselves too (off by default): the `Host <peer>` entries in
     # layer-users-local point at <name>.local, both laptops are DHCP.
-    publish = {
-      enable = true;
-      addresses = true;
+    settings.publish = {
+      disable-publishing = false;
+      publish-addresses = true;
     };
   };
   # `lp` group: add/remove printers and use the CUPS web UI without root.
