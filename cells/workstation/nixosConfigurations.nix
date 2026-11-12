@@ -62,7 +62,7 @@
       # Entra ID login via himmelblau
       p.auth-entra
       # the user's split keyboard follows them to every machine
-      p.input-vial
+      p.device-keyboard-ergohaven
       # firefox + Phoenix: system package (Entra users have no HM profile)
       p.browser-firefox
       # `vpn` over hive.tunnels; the tunnels come with their roles
@@ -107,12 +107,12 @@
     p.gpu-intel
     p.laptop
     # the WD19TBS moves between both laptops; udev authorises it by unique_id
-    p.dock-wd19tb
+    p.device-dock-wd19tbs
   ];
 
   # HP ZBook Firefly 16 G10 (Raptor Lake, iGPU only, TB4 dock): the same
   # laptop shape plus what only this host needs (docker).
-  raptorLaptop = intelLaptop ++ [p.host-elster p.audio-dawnctl];
+  raptorLaptop = intelLaptop ++ [p.host-elster p.device-dac-dawn-pro];
 
   # Encryption + unlock; must match what the host's disk file created.
   zfsNative = [
@@ -176,7 +176,7 @@ in {
   penrose = mkHost {
     hostKey = "penrose";
     base = workstation;
-    hardware = intelLaptop ++ [p.host-penrose p.battery-charge-hold p.gaming-steam];
+    hardware = intelLaptop ++ [p.host-penrose p.device-battery-dell-ec p.gaming-steam];
     encryption = zfsNative;
   };
 

@@ -2,6 +2,7 @@
 # tokens went with its SMM, and the pack ignores the EC's own start/stop, so
 # a timer toggles the EC's Peak Shift hold (__ec-charge.py). Every boot
 # starts in `limit`; `charge-mode full` lasts until reboot.
+# Penrose only: elster's BAT0 exposes no charge_control_* to hold.
 {
   inputs,
   cell,

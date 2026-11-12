@@ -63,7 +63,7 @@
     # nixpkgs, so this one follows covers the toolchain too.
     herdr.url = "github:herdrdev/herdr/v0.9.3";
     herdr.inputs.nixpkgs.follows = "nixpkgs";
-    # Moondrop DAWN PRO 2 CLI + udev uaccess (profiles/audio-dawnctl.nix).
+    # Moondrop DAWN PRO 2 CLI + udev uaccess (profiles/device-dac-dawn-pro.nix).
     # A local checkout, so elster-only: no other host has this path. The lock
     # pins its rev; bump with `nix flake update dawnctl` in this cell.
     dawnctl.url = "git+file:///srv/workspace/projects/dawnctl";

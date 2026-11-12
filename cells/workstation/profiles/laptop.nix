@@ -1,5 +1,5 @@
 # Laptop shape: radios, lid, and the things a VM or a VPS never has.
-# Battery charge limit: battery-charge-hold.nix (penrose).
+# Battery charge limit: device-battery-dell-ec.nix (penrose).
 #
 # NetworkManager rather than iwd; wpa_supplicant is NM's default backend.
 {

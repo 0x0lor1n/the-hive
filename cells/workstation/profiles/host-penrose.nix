@@ -31,7 +31,7 @@
   # btop dlopens libnvidia-ml only with the driver runpath patched in.
   security.wrappers.btop.source = lib.mkForce "${pkgs.btop.override {cudaSupport = true;}}/bin/btop";
 
-  # The firmware leaves TB3 at SL1; the dock is authorised by dock-wd19tb.nix.
+  # The firmware leaves TB3 at SL1; the dock is authorised by device-dock-wd19tbs.nix.
   # Authorisation only gates the tunnel; an authorised device still DMAs
   # anywhere without VT-d. The coreboot DMAR has no opt-in flag, so it stays
   # off by default.
