@@ -1,5 +1,5 @@
 # wintermute shell: the LA-E152P port, dump to build to flash. Everything
-# from recon to flash-bios lives here. Dumps never enter git: recon/ is
+# from recon to flash lives here. Dumps never enter git: recon/ is
 # gitignored except the text reports.
 # Programmer: ESP-Prog (FT2232H). Port A = JTAG header, MPSSE mode.
 #   TCK->CLK  TDI->MOSI  TDO->MISO  TMS->CS#  GND  3.3V->VCC+WP#+HOLD#
@@ -24,8 +24,9 @@
   # Default board is xeon (LA-E152P, the port target). i7u = the spare board,
   # only for optional recon of the old board; pass BOARD=i7u explicitly for it.
   prologue = ''
+    # Root's git rejects a checkout it does not own, so under sudo the shell's path stands in.
     # shellcheck disable=SC2034
-    root=$(git rev-parse --show-toplevel)
+    root=''${WINTERMUTE_ROOT:-$(git rev-parse --show-toplevel)}
     recon="$root/cells/wintermute/recon/''${BOARD:-xeon}"
     mkdir -p "$recon"
   '';
@@ -40,7 +41,7 @@
       prologue
       + ''
         if [ "$(id -u)" -ne 0 ]; then
-          echo "recon: run as root (sudo --preserve-env=BOARD recon)" >&2
+          echo "recon: run as root (sudo --preserve-env=BOARD,WINTERMUTE_ROOT recon)" >&2
           exit 1
         fi
         cd "$recon"
@@ -86,15 +87,30 @@
     text =
       prologue
       + ''
-        out="$recon/stock-$(date +%Y%m%d).bin"
+        tag="''${1:?usage: dump <tag>   e.g. stock | live | pre43}"
+        out="$recon/$tag-$(date +%Y%m%d-%H%M).bin"
+        # An earlier dump may be the only way back to that chip state.
+        if [ -e "$out" ]; then
+          echo "dump: $out exists, not overwriting" >&2
+          exit 1
+        fi
         chip=""
         [ -n "''${CHIP:-}" ] && chip="-c $CHIP"
         # shellcheck disable=SC2086
         flashrom -p ${programmer} $chip -r "$out.1"
         # shellcheck disable=SC2086
         flashrom -p ${programmer} $chip -r "$out.2"
-        cmp "$out.1" "$out.2" && mv "$out.1" "$out" && rm "$out.2"
+        if ! cmp "$out.1" "$out.2"; then
+          echo "dump: the two reads differ, kept as $out.1 and $out.2" >&2
+          exit 1
+        fi
+        # Plain mv -n skips an existing target and still exits 0.
+        mv --update=none-fail "$out.1" "$out"
+        rm "$out.2"
         sha256sum "$out" | tee "$out.sha256"
+        if [ -n "''${SUDO_UID:-}" ]; then
+          chown "$SUDO_UID:''${SUDO_GID:-0}" "$out" "$out.sha256"
+        fi
         echo "dump: $out — copy to KeePass attachment + own hardware (never a VPS) NOW, before anything else."
       '';
   };
@@ -118,18 +134,33 @@
       '';
   };
 
-  # Phase 1.5+: BIOS region only. Descriptor/ME/GbE stay stock until Phase 3.4.
-  flash-bios = pkgs.writeShellApplication {
-    name = "flash-bios";
+  # COREBOOT only by default: the rest of the BIOS region holds SMMSTORE (Secure Boot
+  # keys, setup password hash, boot order) and the MRC cache. Descriptor/ME/GbE/EC are
+  # never written from here.
+  flash = pkgs.writeShellApplication {
+    name = "flash";
     runtimeInputs = with pkgs; [git coreutils flashrom];
     text =
       prologue
       + ''
-        img="''${1:?usage: flash-bios <coreboot.rom>}"
-        [ -e "$recon/layout.txt" ] || { echo "flash-bios: no $recon/layout.txt — run inspect first" >&2; exit 1; }
-        echo "flash-bios: writing BIOS region only from $img (board=''${BOARD:-xeon}). Ctrl-C within 5s to abort."
+        usage="usage: flash [--bios] <coreboot.rom>"
+        region=COREBOOT
+        if [ "''${1:-}" = "--bios" ]; then
+          region=bios
+          shift
+        fi
+        img="''${1:?$usage}"
+        if [ "$region" = bios ]; then
+          [ -e "$recon/layout.txt" ] || { echo "flash: no $recon/layout.txt — run inspect first" >&2; exit 1; }
+          echo "flash: --bios erases SMMSTORE (Secure Boot keys, setup password, boot order) and the MRC cache."
+          layout=(-l "$recon/layout.txt")
+        else
+          # flashrom refuses unless the chip's FMAP equals the image's: a moved COREBOOT would land on SMMSTORE.
+          layout=(--fmap-verify)
+        fi
+        echo "flash: writing $region from $img (board=''${BOARD:-xeon}). Ctrl-C within 5s to abort."
         sleep 5
-        flashrom -p ${programmer} -l "$recon/layout.txt" -i bios -w "$img"
+        flashrom -p ${programmer} "''${layout[@]}" -i "$region" -w "$img"
       '';
   };
 
@@ -144,7 +175,7 @@
       + ''
         tag="''${1:?usage: bench <tag>   e.g. stock | coreboot | coreboot-uv}"
         if [ "$(id -u)" -ne 0 ]; then
-          echo "bench: run as root (sudo --preserve-env=BOARD bench $tag)" >&2
+          echo "bench: run as root (sudo --preserve-env=BOARD,WINTERMUTE_ROOT bench $tag)" >&2
           exit 1
         fi
         if ! grep -qs 1 /sys/class/power_supply/AC*/online; then
@@ -160,7 +191,11 @@
           trap 'set_gov "$gov"' EXIT
         fi
         n=$(nproc)
-        out="$recon/bench-$tag-$(date +%Y%m%d).txt"
+        out="$recon/bench-$tag-$(date +%Y%m%d-%H%M).txt"
+        if [ -e "$out" ]; then
+          echo "bench: $out exists, not overwriting" >&2
+          exit 1
+        fi
         ts="turbostat --quiet --Summary --show Busy%,Bzy_MHz,CoreTmp,PkgTmp,PkgWatt"
         {
           echo "== bench tag=$tag board=''${BOARD:-xeon} $(date -Is)"
@@ -275,7 +310,7 @@ in {
       dump
       inspect
       extract-vbios
-      flash-bios
+      flash
       bench
       dev
       alejandra
@@ -284,12 +319,15 @@ in {
       export COREBOOT_SRC=${inputs.coreboot}
       export DEGUARD_SRC=${inputs.deguard}
       export FLASHROM_PROGRAMMER="${programmer}"
+      WINTERMUTE_ROOT="''${WINTERMUTE_ROOT:-$(git rev-parse --show-toplevel 2>/dev/null)}"
+      export WINTERMUTE_ROOT
       echo "wintermute: LA-E152P firmware shell (BOARD=''${BOARD:-xeon}; set BOARD=i7u for the old spare board)"
-      echo "  sudo --preserve-env=BOARD recon   phase A: live-system recon -> cells/wintermute/recon/\$BOARD/"
-      echo "  dump                              phase 1: 2x SPI read + cmp via ESP-Prog (EXTERNAL 3.3 V to clip!)"
+      echo "  recon                             phase A: live-system recon -> cells/wintermute/recon/\$BOARD/"
+      echo "  dump <tag>                        phase 1: 2x SPI read + cmp via ESP-Prog (EXTERNAL 3.3 V to clip!)"
       echo "  inspect <stock.bin>               phase 1.5: ifdtool layout/regions, me_cleaner -c"
       echo "  extract-vbios <stock.bin>         phase 4.7: M620 VBIOS from the dump into the store (build needs it)"
-      echo "  flash-bios <coreboot.rom>         phase 3: write BIOS region only (after deguard, phase D)"
+      echo "  flash <coreboot.rom>              COREBOOT region only; --bios = whole BIOS region, erases SMMSTORE"
+      echo "  as root: sudo --preserve-env=BOARD,WINTERMUTE_ROOT <command>"
       echo "  coreboot src: \$COREBOOT_SRC (read-only; cp -r to work on it)"
       echo "  deguard src:  \$DEGUARD_SRC (read-only; generatedelta.py / finalimage.py for phase D)"
     '';
