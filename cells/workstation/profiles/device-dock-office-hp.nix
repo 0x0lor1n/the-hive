@@ -1,6 +1,6 @@
-# The HP dock at elster's office desk and the HP E27u on it. Only the
-# monitor is configured: the dock needs nothing else here (model and any
-# authorise rule unrecorded, recon 0.4 in .hermes/state/device-profiles.md).
+# HP Thunderbolt Dock G4 at elster's office desk and the HP E27u on it.
+# No authorise rule: unauthorised, its USB hub enumerates on the host xHCI
+# and the monitor runs over DP alt mode; elster stays on Wi-Fi there.
 #
 # kanshi `work`: the laptop panel goes dark while docked.
 {
