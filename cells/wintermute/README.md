@@ -19,6 +19,11 @@ Board
   does): until then the EC reads no PECI and the fan never spins. Then cmd
   0x60 arg 1: the EC keeps the speakers muted until the BIOS unmutes them
   (headphones play either way).
+- `ramstage.c` sets Dell token 0x612 (mailbox cmd 0x1c) to 1 when it reads 0
+  and does a full reset: the EC keeps it in VBAT RAM, the coin cell takes it
+  with it, and at 0 the WD19TBS leaves its USB ports dead. The EC hands it to
+  the dock's PD on attach or a 0xcf9 = 0x0e reset only, so the first boot after
+  a cell-out resets once.
 - `hda_verb.c`: stock pin defaults + codec SSID, so the kernel picks the Dell
   ALC3246 fixup by pin match (headset mic). Dell's PEIM coef writes are left
   out: the kernel fixup programs the codec itself.
@@ -32,7 +37,8 @@ Board
 - `ec.c` is the one mailbox (0x910/0x911) driver for ramstage and SMM:
   `ec_mailbox_cmd()` writes arguments and command, polls index 0 and returns
   index 0x11 (each command's own reply; there is no common status byte) or -1
-  on timeout. CPU id, thermal mode and unmute in `ramstage.c` go through it.
+  on timeout. CPU id, thermal mode and unmute in `ramstage.c` go through it;
+  `ec_property()` (cmd 0x1c) serves the dock token and the SMM charge hold.
 - `smihandler.c` answers the EC's eSPI SMI with mailbox cmd 0x04 (fetch +
   ack, as Dell's SMM does), with the index the OS may have left in 0x910 saved
   and restored, and raises SWGPE; `_L62` in `acpi/ec.asl` notifies LID0 and

@@ -13,6 +13,16 @@
  * own reply (0x1c status, 0x04 first event byte, 0xa6 get mode mask), not a common status.
  */
 int ec_mailbox_cmd(u8 cmd, const u8 *args, size_t n);
+u8 ec_mailbox_read(u8 index);
+
+#define CMD_PROPERTY		0x1c	/* Wilco property interface: op, PID LE32, length, data */
+#define PROPERTY_GET		0
+#define PROPERTY_SET		1
+#define PROPERTY_DATA		0x18	/* mailbox index of the first data byte */
+#define PROPERTY_MAX_LEN	4
+
+/* Returns the EC status (0 ok) or -1; a get leaves the value at PROPERTY_DATA. */
+int ec_property(u8 op, u16 pid, const u8 *data, u8 len);
 
 /*
  * Charge hold for the OS: request byte to APM_STS, APM_CNT_EC_HOLD to APM_CNT, result read from

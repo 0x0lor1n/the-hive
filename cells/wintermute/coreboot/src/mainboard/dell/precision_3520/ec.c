@@ -25,3 +25,20 @@ int ec_mailbox_cmd(u8 cmd, const u8 *args, size_t n)
 	outb(0x11, MAILBOX_INDEX);
 	return inb(MAILBOX_DATA);
 }
+
+u8 ec_mailbox_read(u8 index)
+{
+	outb(index, MAILBOX_INDEX);
+	return inb(MAILBOX_DATA);
+}
+
+int ec_property(u8 op, u16 pid, const u8 *data, u8 len)
+{
+	u8 args[6 + PROPERTY_MAX_LEN] = {op, pid & 0xff, pid >> 8, 0, 0, len};
+
+	if (len > PROPERTY_MAX_LEN)
+		return -1;
+	for (u8 i = 0; i < len; i++)
+		args[6 + i] = data[i];
+	return ec_mailbox_cmd(CMD_PROPERTY, args, 6 + len);
+}

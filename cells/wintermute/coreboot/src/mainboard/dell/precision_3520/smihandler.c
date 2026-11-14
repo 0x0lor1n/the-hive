@@ -8,10 +8,6 @@
 #include "ec.h"
 
 #define CMD_GET_EVENT	0x04
-#define CMD_PROPERTY	0x1c	/* Wilco property interface: op, PID LE32, length, data */
-#define PROPERTY_GET	0
-#define PROPERTY_SET	1
-#define PROPERTY_DATA	0x18	/* mailbox index of the first data byte */
 
 /* Peak Shift, the one EC charge control the pack obeys (PIDs as Linux wilco-charger). */
 #define PID_PEAK_SHIFT_ENABLE	0x4ea
@@ -29,21 +25,6 @@ void mainboard_smi_espi_handler(void)
 	outb(index, MAILBOX_INDEX);
 
 	outb(inb(ACPI_BASE_ADDRESS + GPE_CNTL) | SWGPE_CTRL, ACPI_BASE_ADDRESS + GPE_CNTL);
-}
-
-static u8 ec_mailbox_read(u8 index)
-{
-	outb(index, MAILBOX_INDEX);
-	return inb(MAILBOX_DATA);
-}
-
-static int ec_property(u8 op, u16 pid, const u8 *data, u8 len)
-{
-	u8 args[6 + PEAK_SHIFT_SLOT_LEN] = {op, pid & 0xff, pid >> 8, 0, 0, len};
-
-	for (u8 i = 0; i < len; i++)
-		args[6 + i] = data[i];
-	return ec_mailbox_cmd(CMD_PROPERTY, args, 6 + len);
 }
 
 static u8 ec_hold_service(u8 request)

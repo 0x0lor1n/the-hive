@@ -1,6 +1,7 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/cpu.h>
+#include <cf9_reset.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <intelblocks/cpulib.h>
@@ -15,6 +16,7 @@
 #define CMD_THERMAL_MODE	0xa6
 #define THERMAL_MODE_SET	1
 #define THERMAL_MODE_QUIET	(1 << 2)
+#define PID_DOCK_USB		0x612
 
 /*
  * The EC polls PECI and runs the fan only after the BIOS names the CPU: one byte,
@@ -48,6 +50,33 @@ static void ec_send_cpu_id(void)
 	ec_mailbox_cmd(CMD_CPU_ID, &arg, 1);
 }
 
+/*
+ * Dell token 0x612 is in EC VBAT RAM; at 0 (coin cell out) the WD19TBS keeps its USB ports off.
+ * The EC pushes it to the dock's PD on attach or a 0xcf9 = 0x0e reset, not on 0x06.
+ */
+static void ec_enable_dock_usb(void)
+{
+	const u8 on = 1, off = 0;
+
+	if (ec_property(PROPERTY_GET, PID_DOCK_USB, &off, 1) != 0) {
+		printk(BIOS_ERR, "EC: dock cfg %#x not readable\n", PID_DOCK_USB);
+		return;
+	}
+	const u8 value = ec_mailbox_read(PROPERTY_DATA);
+	printk(BIOS_INFO, "EC: dock cfg %#x = %u\n", PID_DOCK_USB, value);
+	if (value != 0)
+		return;
+
+	if (ec_property(PROPERTY_SET, PID_DOCK_USB, &on, 1) != 0 ||
+	    ec_property(PROPERTY_GET, PID_DOCK_USB, &off, 1) != 0 ||
+	    ec_mailbox_read(PROPERTY_DATA) != 1) {
+		printk(BIOS_ERR, "EC: dock cfg %#x not set\n", PID_DOCK_USB);
+		return;
+	}
+	printk(BIOS_INFO, "EC: dock cfg %#x = 1, full reset\n", PID_DOCK_USB);
+	full_reset();
+}
+
 void mainboard_silicon_init_params(FSP_SIL_UPD *params)
 {
 	gpio_configure_pads(gpio_table, ARRAY_SIZE(gpio_table));
@@ -68,6 +97,7 @@ static void mainboard_enable(struct device *dev)
 	ec_mailbox_cmd(CMD_THERMAL_MODE, quiet, sizeof(quiet));
 	/* The EC keeps the speakers muted until the BIOS sends unmute. */
 	ec_mailbox_cmd(CMD_HW_MUTE, &unmute, 1);
+	ec_enable_dock_usb();
 }
 
 struct chip_operations mainboard_ops = {
