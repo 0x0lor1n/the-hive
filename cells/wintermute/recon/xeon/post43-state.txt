@@ -1,0 +1,34 @@
+  sha256:
+    0 : 0x0000000000000000000000000000000000000000000000000000000000000000
+    2 : 0x0000000000000000000000000000000000000000000000000000000000000000
+    4 : 0x0000000000000000000000000000000000000000000000000000000000000000
+    7 : 0x0000000000000000000000000000000000000000000000000000000000000000
+    15: 0x247766A4C44A2A4D977D5A9CE7871CF3C9772799B3E1481C20241F042A706F4B
+Installed:	✓ sbctl is installed
+Owner GUID:	7e873344-8fb3-4283-ade2-64f53f407cfb
+Setup Mode:	✓ Disabled
+Secure Boot:	✓ Enabled
+Vendor Keys:	none
+      Firmware: UEFI 2.70 (EDK II 1.00)
+ Firmware Arch: x64
+   Secure Boot: enabled (user)
+  TPM2 Support: driver only, firmware unavailable
+                 ✓ Loader reports active TPM2 PCR banks
+ls: cannot access '/sys/kernel/security/tpm0/binary_bios_measurements': No such file or directory
+[INFO ]  TPM: setup succeeded
+[INFO ]  \_SB_.PCI0.TPM: LPC TPM PNP: 0c31.0
+[DEBUG]  TPM2 log created at 0x7a9db000
+[DEBUG]  ACPI:    * TPM2
+[DEBUG]  TPM2 TCGLOG15. 0x7a9db000 0x00010000
+[DEBUG]    TPM PPI     8. 0x7affe7e0 0x0000015a
+[INFO ]  EC: CPU id 0x6d (TDP 45 W)
+[INFO ]  Found TPM 2.0 0x00fe by Nuvoton (0x1050)
+[INFO ]  EC: CPU id 0x6d (TDP 45 W)
+[INFO ]  Found TPM 2.0 0x00fe by Nuvoton (0x1050)
+[INFO ]  TPM: setup succeeded
+[INFO ]  \_SB_.PCI0.TPM: LPC TPM PNP: 0c31.0
+[DEBUG]  TPM2 log created at 0x7a9db000
+[DEBUG]  ACPI:    * TPM2
+[DEBUG]  TPM2 TCGLOG15. 0x7a9db000 0x00010000
+[DEBUG]    TPM PPI     8. 0x7affe7e0 0x0000015a
+BootOrder: 0001,0000
