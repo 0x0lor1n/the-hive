@@ -130,7 +130,9 @@ nixos-install → reboot.
 ZFS auto-unlock survives all of this: `__mkzfscreds.nix` seals against **PCR 15
 only** (pool fingerprint), not PCR 7 (SB state), so toggling SB or updating
 firmware does not invalidate `rpool.cred`. Anti-replay/gate is in
-`hardware-zfs-unlock.nix`, not in SB.
+`hardware-zfs-unlock.nix`, not in SB. penrose is the exception
+(`zfsUnlock.pcrIds = "7,15"`): SB off prompts, and `zfs-key-sync` seals only
+once SB is on in User Mode.
 
 If boot 3 fails with `Security Violation`: BIOS → SB off, boot, `sbctl verify`
 to find the unsigned component.

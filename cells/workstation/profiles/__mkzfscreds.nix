@@ -9,19 +9,15 @@
   # prints the real destination derived from the config, which cannot go
   # stale the way a separate runbook does.
   credDir,
+  defaultPcrIds,
 }: let
   zfsFingerprint = import ./__zfs-fingerprint.nix {
     inherit pkgs zfsPackage;
   };
 
   mkcredsBin = "${mkcredsPackage}/bin/mkcreds";
-
-  # Divergence 1: upstream defaults to "0,1,2,3,5,7,15". PCR 15 alone is what
-  # hardware-zfs-unlock.nix measures. Broadening to firmware and Secure Boot
-  # state (0-7) is strictly stronger but strictly more brittle — a firmware or
-  # kernel update moves those PCRs and the credential stops unsealing. That is
-  # a threat-model change; pass --pcr-ids to opt in per invocation.
-  defaultPcrIds = "15";
+  # Divergence 1: upstream defaults to "0,1,2,3,5,7,15"; here the default is
+  # per host, zfsUnlock.pcrIds (hardware-zfs-tpm.nix), "15" unless set.
 in
   pkgs.writeShellApplication {
     name = "mkzfscreds";

@@ -32,6 +32,9 @@
     includeMicrosoftKeys = false;
     allowBrickingMyMachine = true;
   };
+  # edk2 measures SB state and these keys into PCR 7; SB off or a foreign key
+  # then asks for the passphrase.
+  zfsUnlock.pcrIds = "7,15";
   # sbctl create-keys takes the cert CN from keys.*.description.
   environment.etc."sbctl/sbctl.conf".source = let
     dir = config.boot.lanzaboote.pkiBundle;
