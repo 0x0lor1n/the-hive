@@ -13,7 +13,9 @@
   # Authorisation only gates the tunnel; an authorised device still DMAs
   # anywhere without VT-d. The coreboot DMAR has no opt-in flag, so it stays
   # off by default.
-  boot.kernelParams = ["intel_iommu=on"];
+  # i915 MST on KBL blanks the WD19TBS's 4K60 output every 15-30 s; SST is clean
+  # (same on stock BIOS). Costs the dock's second display output.
+  boot.kernelParams = ["intel_iommu=on" "i915.enable_dp_mst=0"];
 
   # Boot default only; the powermenu still flips it (cpu-governor.nix).
   powerManagement.cpuFreqGovernor = "performance";
