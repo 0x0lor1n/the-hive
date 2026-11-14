@@ -104,6 +104,9 @@ Board
   the Alpine Ridge upstream port logs ~4 BadDLLP per MB of host-to-dock
   traffic, none at 5 GT/s. FSP's Gen3 software EQ search did not change it.
   Lifts when a Gen3 EQ setting is found that runs clean.
+- `POWER_STATE_OFF_AFTER_FAILURE` (Skylake defaults to on): the EC cuts PCH
+  power in S5, so AC or dock plug looked like a G3 exit and booted the laptop.
+  Off is Dell's default too.
 
 Payload
 - edk2 is MrChromebox `uefipayload_2605`, built as its own derivation:
