@@ -74,10 +74,11 @@ func main() {
 	// 0/20). Upstream defaults them on for live agent sessions only: the agent
 	// can re-fetch exact values with tools. Tool-less requests are therefore
 	// never imaged, see toolless below. Prefix match: "claude-fable-5" also
-	// hits 5-1, 5-2 and dated snapshots.
+	// hits 5-1, 5-2 and dated snapshots. Opus 5.5 is deliberately left out:
+	// its requests pass through as text.
 	// PXPIPE_MODELS overrides this list; PXPIPE_MODELS=off disables.
 	if os.Getenv("PXPIPE_MODELS") == "" {
-		pxpipe.SetAllowedModelBases([]string{"claude-fable-5", "claude-opus-5-5"})
+		pxpipe.SetAllowedModelBases([]string{"claude-fable-5"})
 	}
 
 	// A VPN up/down re-routes the pooled HTTP/2 connection without a RST, so
