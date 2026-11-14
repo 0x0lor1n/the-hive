@@ -104,7 +104,8 @@ Payload
   coreboot's edk2 Makefile clones into the tree, which the sandbox forbids.
 - `PcdPs2KbdExtendedVerification=FALSE`: the EC answers the 8042 interface test
   with 0x08, so Ps2KeyboardDxe never binds and the boot menu has no keyboard.
-- edk2 TPM and LVGL off: one of them reset-loops edk2 here, not bisected.
+- LVGL off: with it and edk2 TPM both on, edk2 reset-looped here. TPM is on
+  again so that edk2 measures Secure Boot state into PCR 7; LVGL stays off.
 - Secure Boot: on a board in Setup Mode with no KEK, `EnrollDefaultKeys` enrols
   the Microsoft set on every boot. Delete only PK in setup, then systemd-boot's
   auto-enrol replaces PK/KEK/db; deleting all keys brings Microsoft back.
