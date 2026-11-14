@@ -67,7 +67,13 @@ Board
 - Core+cache undervolt −90 mV via the OC mailbox driver, values as CBFS
   `option/oc_undervolt_*` integers (`mkRom` `options`): the board has no CFR
   menu, so they are fixed per build. Measured live: all-core holds the 3.6 GHz
-  ratio ceiling inside the EC's 35 W limit.
+  ratio ceiling (4-core turbo ratio, MSR 0x1AD) inside the EC's 35 W limit.
+  Each 10 mV step down to −100 passed 15 min `stress-ng --verify`, no MCE.
+- Package power averages 35 W although MSR 0x610 and MCHBAR both say PL1 = 45 W
+  (cTDP off). MSR at 30 W holds 29.9 W; back to 45 W gives a 42 W / 3545 MHz
+  burst, then 34.8 W. So a second averaged limiter sits above the MSR, likely
+  the EC over PECI. Stock is the same: Dell's performance / balanced / cool
+  profiles give 3390 / 3374 / 3378 MHz at 34.9 W with an identical 0x610.
 - Thunderbolt 3 (Alpine Ridge 2C on RP5) via upstream `drivers/intel/dtbt`,
   with `TBT_FORCE_PWR` (`GPP_D4`) held high and PCIe hotplug padding. With D4
   low the controller powers off and comes back on a plug masked again, with
@@ -118,6 +124,14 @@ ME / Boot Guard
   X11SSH-F (deguard CL 91226). Delta: `deguard/precision_3520`.
 
 EC firmware
+- Fan tables: one per sensor and thermal mode, six steps; a step is rpm, an
+  "up" temperature to the next step and a "down" one back. The fan runs at the
+  highest rpm any sensor asks for. Stock quiet, first step 2300 rpm at CPU 64,
+  skin 51, memory 40, M.2 40, GPU 58 °C.
+- The patch is 54 bytes: 22 in the tables, 32 the payload digest the EC checks.
+  Chronology: `cb32-ecquiet.bin` (CPU table only, 31.10: other sensors took
+  over at 3000/3700) → `ecquiet2-dry.bin` (CPU, memory, M.2; live since 01.11,
+  sha256 65f9b5bf…).
 - The EC region (0x700000–0x74FFFF) on this board is not stock: the quiet
   mode's fan tables are rewritten. CPU: 2500 rpm above 75 °C (off below 60),
   3000 above 84, 3700 above 94, 4400 above 96; memory and M.2 sensors start
