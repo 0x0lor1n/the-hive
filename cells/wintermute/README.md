@@ -29,9 +29,18 @@ Board
 - TPM: the NPCT650 sits on SPI CS#2 behind the PCH's TIS MMIO window
   (0xfed40000, stock `MSFT0101`), so `MEMORY_MAPPED_TPM` + `drivers/pc80/tpm`,
   not the SPI TPM driver. USB2 port 8 (touchscreen, not fitted) is off.
+- `ec.c` is the one mailbox (0x910/0x911) driver for ramstage and SMM:
+  `ec_mailbox_cmd()` writes arguments and command, polls index 0 and returns
+  index 0x11 (each command's own reply; there is no common status byte) or -1
+  on timeout. CPU id, thermal mode and unmute in `ramstage.c` go through it.
 - `smihandler.c` answers the EC's eSPI SMI with mailbox cmd 0x04 (fetch +
-  ack, as Dell's SMM does) and raises SWGPE; `_L62` in `acpi/ec.asl` notifies
-  LID0 and diffs EC 0x06 for AC/BAT0. The EC never raises its ACPI SCI on its own.
+  ack, as Dell's SMM does), with the index the OS may have left in 0x910 saved
+  and restored, and raises SWGPE; `_L62` in `acpi/ec.asl` notifies LID0 and
+  diffs EC 0x06 for AC/BAT0. The EC never raises its ACPI SCI on its own.
+  It also serves the charge hold, so the OS never shares the mailbox with the
+  SMI handler: SW SMI 0x5A with the request in APM_STS (0xC0 get, 0xC1/0xC2
+  hold on/off, 0xC8+day = Peak Shift slot "no charging all day"), result back
+  in APM_STS (0x00 off, 0x01 on/done, 0xE0 timeout, 0xE1 EC status != 0).
 - Own `acpi/ec.asl` (EC at 0x930/0x934, GPE 0x6E, LID0, AC, BAT0, `\_TZ.THRM`
   from the EC CPU sensor at 0x33/0x34): upstream
   `ec/dell/mec5035/acpi` is newer than the pin, and its SCI switch does not stop
