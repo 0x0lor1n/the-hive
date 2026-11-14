@@ -159,9 +159,11 @@ Tools
 OS side (penrose)
 - Charge limit: stock does it with Dell SMBIOS tokens through its SMM, which
   coreboot lacks, and the pack ignores the EC's custom start/stop (PIDs
-  0x710..0x712). `cells/workstation/profiles/battery-charge-hold.nix` toggles
-  the EC's Peak Shift hold (mailbox cmd 0x1C, PIDs 0x4EA/0x4EE..0x4F4) from a
-  timer: on at 80 %, off at 75 %. `charge-mode full` until reboot.
+  0x710..0x712). `cells/workstation/profiles/device-battery-dell-ec.nix` toggles
+  the EC's Peak Shift hold (PIDs 0x4EA/0x4EE..0x4F4) from a timer: on at 80 %,
+  off at 75 %, through the SW SMI 0x5A service of `smihandler.c` only; on
+  firmware without it (the request byte reads back unchanged) the script
+  refuses, it never drives the mailbox itself. `charge-mode full` until reboot.
 
 ## Known, untested
 

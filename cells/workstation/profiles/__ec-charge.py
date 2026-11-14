@@ -1,91 +1,59 @@
-"""Battery charge hold over the Precision 3520 EC mailbox (0x910/0x911).
+"""Battery charge hold on the Precision 3520, through coreboot's SMM.
 
-Mailbox cmd 0x1C is the EC's property interface (Wilco protocol, same PIDs
-as Linux wilco-charger.c): index 0x12 op (0 get, 1 set), 0x13..0x16 PID LE,
-0x17 length, 0x18.. data, 0x11 status.
+Dell's custom start/stop (EC PIDs 0x710..0x712) is synced to the pack, which
+ignores it. The hold uses the EC's Peak Shift instead: enable 0x4EA plus one
+slot per weekday 0x4EE..0x4F4 set to "on AC, no charging" all day.
 
-Dell's custom start/stop (PIDs 0x710..0x712) is synced to the pack, which
-ignores it. The hold uses Peak Shift instead: enable 0x4EA plus one slot per
-weekday 0x4EE..0x4F4 [start, end, charge-start, ?] (hour << 2 | quarter).
-00:00 / 00:00 / 23:45 keeps the EC in "on AC, no charging" all day.
+The EC mailbox (0x910/0x911) has one owner, the firmware's SMI handler: it
+fetches the EC's events from there and would race any OS writer. So the hold
+is a SW SMI service (mainboard smihandler.c): request byte to port 0xB3, 0x5A
+to 0xB2, result read from 0xB3. A request that reads back unchanged is
+firmware without the service; this script then refuses, it never touches the
+mailbox itself.
 
     ec-charge status            mode, hold, BAT0 (no root needed)
     ec-charge limit | full      daemon mode, until reboot (boot = limit)
     ec-charge tick              limit: hold on at >= STOP %, off at <= START %
     ec-charge hold on|off       raw hold
-    ec-charge peak              read Peak Shift PIDs
-    ec-charge dell-mode [1..5]  Dell charge mode (4 adaptive = stock)
 """
 import fcntl
 import os
 import sys
 
-IDX, DATA = 0x910, 0x911
-CMD_PROP = 0x1C
-PID_DELL_MODE = 0x710
-PID_PS_EN, PID_PS_FLOOR = 0x4EA, 0x4EB
-PID_PS_DAYS = range(0x4EE, 0x4F5)
+APM_CNT, APM_STS = 0xB2, 0xB3
+APM_CNT_EC_HOLD = 0x5A
+HOLD_GET, HOLD_ON, HOLD_OFF, HOLD_DAY = 0xC0, 0xC1, 0xC2, 0xC8
+HOLD_RESULT = {0x00: "off", 0x01: "on", 0xE0: "EC timeout", 0xE1: "EC error"}
 RUN = "/run/charge-mode"
 BAT = "/sys/class/power_supply/BAT0"
 
 
-def port_wr(p, v):
-    with open("/dev/port", "r+b", buffering=0) as f:
-        f.seek(p)
-        f.write(bytes([v]))
-
-
-def port_rd(p):
-    with open("/dev/port", "rb", buffering=0) as f:
-        f.seek(p)
-        return f.read(1)[0]
-
-
-def mb_wr(i, v):
-    port_wr(IDX, i)
-    port_wr(DATA, v)
-
-
-def mb_rd(i):
-    port_wr(IDX, i)
-    return port_rd(DATA)
-
-
-def prop(op, pid, data):
-    mb_wr(0x12, op)
-    for n in range(4):
-        mb_wr(0x13 + n, (pid >> (8 * n)) & 0xFF)
-    mb_wr(0x17, len(data))
-    for n, b in enumerate(data):
-        mb_wr(0x18 + n, b)
-    port_wr(IDX, 0)
-    port_wr(DATA, CMD_PROP)
-    for _ in range(100000):
-        port_wr(IDX, 0)
-        if port_rd(DATA) == 0:
-            break
-    else:
-        sys.exit(f"cmd 0x1C timeout (pid {pid:#x})")
-    status = mb_rd(0x11)
-    if status:
-        sys.exit(f"pid {pid:#x}: EC status {status:#x}")
-    return bytes(mb_rd(0x18 + i) for i in range(min(mb_rd(0x17), 4)))
-
-
-def get1(pid):
-    return prop(0, pid, [0])[0]
+def smm(port, request):
+    """One APM_CNT_EC_HOLD request on an open /dev/port; returns 0 (off) or 1 (on / done)."""
+    port.seek(APM_STS)
+    port.write(bytes([request]))
+    port.seek(APM_CNT)
+    port.write(bytes([APM_CNT_EC_HOLD]))
+    port.seek(APM_STS)
+    result = port.read(1)[0]
+    if result == request:
+        sys.exit("firmware has no hold service")
+    if result not in (0x00, 0x01):
+        sys.exit(f"hold {request:#x}: {HOLD_RESULT.get(result, hex(result))}")
+    return result
 
 
 def hold_get():
-    return get1(PID_PS_EN) == 1
+    with open("/dev/port", "r+b", buffering=0) as port:
+        return smm(port, HOLD_GET) == 1
 
 
 def hold_set(on):
-    if on:
-        for pid in PID_PS_DAYS:
-            slot = prop(0, pid, [0, 0, 0, 0])
-            prop(1, pid, [0x00, 0x00, 0x5F, slot[3]])
-    prop(1, PID_PS_EN, [1 if on else 0])
+    with open("/dev/port", "r+b", buffering=0) as port:
+        if on:
+            for day in range(7):
+                smm(port, HOLD_DAY + day)
+        smm(port, HOLD_ON if on else HOLD_OFF)
     record("hold", "on" if on else "off")
 
 
@@ -126,17 +94,6 @@ def tick():
         print(f"{cap} %: charging under hold, re-armed")
 
 
-def hhmm(t):
-    return f"{t >> 2:02d}:{(t & 3) * 15:02d}"
-
-
-def peak():
-    for pid in (PID_PS_EN, PID_PS_FLOOR, *PID_PS_DAYS):
-        data = prop(0, pid, [0, 0, 0, 0])
-        times = " / ".join(hhmm(t) for t in data[:3]) if len(data) == 4 else ""
-        print(f"pid {pid:#06x}  {data.hex(' ')}  {times}")
-
-
 def status():
     print(f"mode {mode()}  hold {read(f'{RUN}/hold')}  "
           f"BAT0 {read(f'{BAT}/capacity')} % {read(f'{BAT}/status')}")
@@ -161,13 +118,6 @@ def main():
             return
         elif args[0] == "hold" and args[1:] in (["on"], ["off"]):
             hold_set(args[1] == "on")
-        elif args == ["peak"]:
-            peak()
-        elif args == ["dell-mode"]:
-            print(get1(PID_DELL_MODE))
-        elif args[0] == "dell-mode" and args[1:] in [[str(n)] for n in range(1, 6)]:
-            prop(1, PID_DELL_MODE, [int(args[1])])
-            print(get1(PID_DELL_MODE))
         else:
             sys.exit(__doc__)
     status()
