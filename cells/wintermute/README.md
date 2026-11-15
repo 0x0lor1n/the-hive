@@ -180,9 +180,8 @@ OS side (penrose)
 
 ## Known, untested
 
-- Thunderbolt 3 PCIe tunnel: nothing TB-native has been plugged in yet (no
-  eGPU, NVMe enclosure or TB dock on hand). What works is the USB-C side of
-  Alpine Ridge (USB 3.1 Gen 2 xHCI, DP alt mode, a DisplayLink dock). Unknown:
-  boltd enrolment of a real device (SL1), PCIe hotplug of a tunnelled bridge
-  into the hotplug padding, and whether the RP5 Gen2 cap holds for one. With
-  the cap a tunnel gets ~16 Gb/s instead of ~32 Gb/s.
+- Thunderbolt 3 PCIe tunnel: tested with a WD19TBS dock only (cold boot and
+  hot replug into the hotplug padding; authorised by a udev rule, not boltd).
+  Unknown: boltd enrolment (SL1), an eGPU or NVMe enclosure, and whether the
+  RP5 Gen2 cap holds under one. With the cap a tunnel gets ~16 Gb/s instead
+  of ~32 Gb/s.
