@@ -92,7 +92,7 @@ Board
 - Thunderbolt 3 (Alpine Ridge 2C on RP5) via upstream `drivers/intel/dtbt`,
   with `TBT_FORCE_PWR` (`GPP_D4`) held high and PCIe hotplug padding. With D4
   low the controller powers off and comes back on a plug masked again, with
-  nobody to send BOOT_ON; stock re-runs it from the plug event. Two
+  nobody to send BOOT_ON; stock re-runs it from the plug event. Three
   patches on dtbt.c: SL1 (user authorisation, bolt on the OS side) where
   upstream hardcodes SL0; and BOOT_ON/USB_ON sent before enumeration over a
   temporary bus on the root port. This controller reads VID 0xffff until
@@ -100,6 +100,9 @@ Board
   sets no DONE bit, so the VID unmask is the success signal. After a warm
   reset with nothing plugged in the first BOOT_ON is dropped; it is resent
   until the VID unmasks.
+  The third adds `\TBOS`, which `\_SB._INI` calls to send OS_UP as the
+  stock DSDT does: without it the ICM stays in pre-boot mode and builds no
+  PCIe tunnel for a hot-plugged dock (USB behind a replugged WD19TBS dead).
 - RP5 capped at Gen2 (`PcieRpPcieSpeed[4] = 2` in `ramstage.c`): at 8 GT/s
   the Alpine Ridge upstream port logs ~4 BadDLLP per MB of host-to-dock
   traffic, none at 5 GT/s. FSP's Gen3 software EQ search did not change it.

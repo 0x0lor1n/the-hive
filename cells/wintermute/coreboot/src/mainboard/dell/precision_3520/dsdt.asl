@@ -14,6 +14,8 @@ DefinitionBlock(
 	#include <soc/intel/common/block/acpi/acpi/globalnvs.asl>
 	#include <cpu/intel/common/acpi/cpu.asl>
 
+	External (\TBOS, MethodObj)
+
 	Scope (\_SB)
 	{
 		/*
@@ -36,6 +38,9 @@ DefinitionBlock(
 				If (_OSI ("Windows 2015")) {
 					OSYS = 2015
 				}
+			}
+			If (CondRefOf (\TBOS)) {
+				\TBOS ()
 			}
 		}
 

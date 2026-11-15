@@ -1,0 +1,53 @@
+--- a/src/drivers/intel/dtbt/dtbt.c
++++ b/src/drivers/intel/dtbt/dtbt.c
+@@ -162,6 +162,38 @@
+ 	acpigen_write_debug_namestr("TB2P");
+ 
+ 	acpigen_write_method_end();
++
++	/* Without OS_UP the ICM stays in pre-boot mode and builds no PCIe tunnel on hotplug. */
++	acpigen_write_method_serialized("OSUP", 0);
++	acpigen_write_debug_string("dTBT OS up");
++	acpigen_write_store_int_to_namestr((PCIE2TBT_OS_UP << 1) | PCIE2TBT_VALID, "P2TB");
++	/* Alpine Ridge may only echo the command in TBT2PCIE and never set DONE. */
++	acpigen_write_store_int_to_op(MBOX_TIMEOUT_MS / 2, LOCAL7_OP);
++	acpigen_emit_byte(WHILE_OP);
++	acpigen_write_len_f();
++	acpigen_emit_byte(LGREATER_OP);
++	acpigen_emit_byte(LOCAL7_OP);
++	acpigen_emit_byte(ZERO_OP);
++	acpigen_write_store_namestr_to_op("TB2P", LOCAL0_OP);
++	acpigen_write_and(LOCAL0_OP, ONE_OP, LOCAL1_OP);
++	acpigen_write_if_lequal_op_int(LOCAL1_OP, TBT2PCIE_DONE);
++	acpigen_emit_byte(BREAK_OP);
++	acpigen_write_if_end();
++	acpigen_emit_byte(AND_OP);
++	acpigen_emit_byte(LOCAL0_OP);
++	acpigen_write_integer(0xfe);
++	acpigen_emit_byte(LOCAL1_OP);
++	acpigen_write_if_lequal_op_int(LOCAL1_OP, PCIE2TBT_OS_UP << 1);
++	acpigen_emit_byte(BREAK_OP);
++	acpigen_write_if_end();
++	acpigen_write_sleep(2);
++	acpigen_emit_byte(DECREMENT_OP);
++	acpigen_emit_byte(LOCAL7_OP);
++	acpigen_pop_len(); /* While */
++	acpigen_write_debug_namestr("TB2P");
++	acpigen_write_store_int_to_namestr(0, "P2TB");
++	acpigen_write_method_end();
++
+ 	acpigen_write_device_end();
+ 	acpigen_write_scope_end();
+ 
+@@ -170,6 +202,11 @@
+ 	acpigen_write_method("TBTS", 0);
+ 	acpigen_emit_namestring(acpi_device_path_join(dev, "PTS"));
+ 	acpigen_write_method_end();
++
++	/* \.TBOS Method: mainboard calls this from \_SB._INI, as the stock DSDT does */
++	acpigen_write_method("TBOS", 0);
++	acpigen_emit_namestring(acpi_device_path_join(dev, "OSUP"));
++	acpigen_write_method_end();
+ 	acpigen_write_scope_end();
+ 
+ 	printk(BIOS_INFO, "%s.%s %s\n", parent_scope, dev_name, dev_path(dev));
