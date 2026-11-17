@@ -1,10 +1,13 @@
 /* SPDX-License-Identifier: GPL-2.0-only */
 
 #include <arch/cpu.h>
+#include <bootmode.h>
+#include <bootstate.h>
 #include <cf9_reset.h>
 #include <console/console.h>
 #include <device/device.h>
 #include <intelblocks/cpulib.h>
+#include <intelblocks/graphics.h>
 #include <pc80/keyboard.h>
 #include <soc/gpio.h>
 #include <soc/ramstage.h>
@@ -17,6 +20,13 @@
 #define THERMAL_MODE_SET	1
 #define THERMAL_MODE_QUIET	(1 << 2)
 #define PID_DOCK_USB		0x612
+
+#define CDCLK_CTL		0x46000
+#define SWF18			0x4f060
+#define TRANSCONF_ENABLE	(1u << 31)
+
+/* PIPECONF of transcoders A, B, C, eDP */
+static const u32 transconf[] = {0x70008, 0x71008, 0x72008, 0x7f008};
 
 /*
  * The EC polls PECI and runs the fan only after the BIOS names the CPU: one byte,
@@ -103,3 +113,25 @@ static void mainboard_enable(struct device *dev)
 struct chip_operations mainboard_ops = {
 	.enable_dev = mainboard_enable,
 };
+
+/*
+ * i915 on SKL/KBL reprograms CDCLK to its minimum when SWF18 reads 0, under the pipes libgfxinit
+ * left lit, and does not raise it again for a 4K pipe: FIFO underruns until the kernel stops.
+ */
+static void gma_mark_preos_display(void *unused)
+{
+	u32 lit = 0;
+
+	if (!gfx_get_init_done())
+		return;
+	for (size_t i = 0; i < ARRAY_SIZE(transconf); i++)
+		if (graphics_gtt_read(transconf[i]) & TRANSCONF_ENABLE)
+			lit |= 1 << i;
+	graphics_gtt_write(SWF18, lit);
+
+	const u32 cdclk = graphics_gtt_read(CDCLK_CTL);
+	printk(BIOS_INFO, "GMA: CDCLK_CTL %#x (%u kHz), SWF18 %#x\n", cdclk,
+	       (cdclk & 0x7ff) * 500 + 1000, graphics_gtt_read(SWF18));
+}
+
+BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, gma_mark_preos_display, NULL);
