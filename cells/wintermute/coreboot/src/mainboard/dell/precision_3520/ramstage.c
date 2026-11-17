@@ -24,6 +24,11 @@
 #define CDCLK_CTL		0x46000
 #define SWF18			0x4f060
 #define TRANSCONF_ENABLE	(1u << 31)
+#define DPLL_CTRL1		0x6c058
+#define DPLL0_OVERRIDE		(1 << 0)
+#define DPLL0_LINK_RATE_810	(2 << 1)
+#define DPLL0_LINK_RATE_MASK	(7 << 1)
+#define DPLL0_SSC_HDMI		(3 << 4)
 
 /* PIPECONF of transcoders A, B, C, eDP */
 static const u32 transconf[] = {0x70008, 0x71008, 0x72008, 0x7f008};
@@ -115,8 +120,8 @@ struct chip_operations mainboard_ops = {
 };
 
 /*
- * i915 on SKL/KBL reprograms CDCLK to its minimum when SWF18 reads 0, under the pipes libgfxinit
- * left lit, and does not raise it again for a 4K pipe: FIFO underruns until the kernel stops.
+ * i915 on SKL/KBL drops CDCLK to its minimum under the lit pipes unless SWF18 != 0 and DPLL0 has
+ * its override set (libgfxinit does neither), and never raises it for a 4K pipe: FIFO underruns.
  */
 static void gma_mark_preos_display(void *unused)
 {
@@ -127,11 +132,23 @@ static void gma_mark_preos_display(void *unused)
 	for (size_t i = 0; i < ARRAY_SIZE(transconf); i++)
 		if (graphics_gtt_read(transconf[i]) & TRANSCONF_ENABLE)
 			lit |= 1 << i;
+
+	/*
+	 * CDCLK 540 MHz is only reachable from VCO 8100, so link rates 2700/1350/810/1620 (0-3) are
+	 * what DPLL0 runs at; any of them is kept, 810 is i915's own pick otherwise.
+	 */
+	const u32 dpll = graphics_gtt_read(DPLL_CTRL1);
+	u32 dpll0 = (dpll & DPLL0_LINK_RATE_MASK) <= (3 << 1) ? dpll & DPLL0_LINK_RATE_MASK
+							       : DPLL0_LINK_RATE_810;
+	dpll0 |= DPLL0_OVERRIDE;
+	graphics_gtt_write(DPLL_CTRL1, (dpll & ~(DPLL0_SSC_HDMI | DPLL0_LINK_RATE_MASK |
+						 DPLL0_OVERRIDE)) | dpll0);
 	graphics_gtt_write(SWF18, lit);
 
 	const u32 cdclk = graphics_gtt_read(CDCLK_CTL);
-	printk(BIOS_INFO, "GMA: CDCLK_CTL %#x (%u kHz), SWF18 %#x\n", cdclk,
-	       (cdclk & 0x7ff) * 500 + 1000, graphics_gtt_read(SWF18));
+	printk(BIOS_INFO, "GMA: CDCLK_CTL %#x (%u kHz), DPLL_CTRL1 %#x -> %#x, SWF18 %#x\n",
+	       cdclk, (cdclk & 0x7ff) * 500 + 1000, dpll, graphics_gtt_read(DPLL_CTRL1),
+	       graphics_gtt_read(SWF18));
 }
 
 BOOT_STATE_INIT_ENTRY(BS_DEV_INIT, BS_ON_EXIT, gma_mark_preos_display, NULL);

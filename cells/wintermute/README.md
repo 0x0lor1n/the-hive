@@ -55,10 +55,11 @@ Board
   backlight PWM stays off and the panel is dark until i915 loads. i915 inherits
   the period, so `intel_backlight` runs 0..937.
 - `ramstage.c` writes the lit transcoders into SWF18 after libgfxinit, as a
-  VBIOS/GOP does. At 0, i915 drops CDCLK to 337.5 MHz under the inherited
-  pipes and never raises it for a 4K60 external (529.2 MHz): FIFO underruns
-  in a modeset loop until the kernel hangs. libgfxinit already sets 540 MHz
-  for that mode, so i915 only has to keep it.
+  VBIOS/GOP does, and sets DPLL0's override bit in DPLL_CTRL1 (libgfxinit
+  leaves it clear). Missing either, i915 drops CDCLK to 337.5 MHz under the
+  inherited pipes and never raises it for a 4K60 external (529.2 MHz): FIFO
+  underruns in a modeset loop until the kernel hangs. libgfxinit already sets
+  540 MHz for that mode, so i915 only has to keep it.
 - Brightness keys: the EC reports Fn+F11/F12 in the SMI event block (byte 0
   bit 1, byte 2 = Set 1 code 0x57/0x58); `HKEY` in `acpi/ec.asl` notifies
   `GFX0.LCD0` (from `GMA_STATIC_DISPLAYS`) with 0x87/0x86. Notify only, no
