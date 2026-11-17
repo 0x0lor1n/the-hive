@@ -15,7 +15,10 @@
   # off by default.
   # i915 MST on KBL blanks the WD19TBS's 4K60 output every 15-30 s; SST is clean
   # (same on stock BIOS). Costs the dock's second display output.
-  boot.kernelParams = ["intel_iommu=on" "i915.enable_dp_mst=0"];
+  # A cold boot with the LG lit on the dock stops the kernel in a pipe B
+  # underrun flood (3 of 3). Trial: DP-1 stays off until
+  # `echo detect > /sys/class/drm/card1-DP-1/status`.
+  boot.kernelParams = ["intel_iommu=on" "i915.enable_dp_mst=0" "video=DP-1:d"];
 
   # Boot default only; the powermenu still flips it (cpu-governor.nix).
   powerManagement.cpuFreqGovernor = "performance";
