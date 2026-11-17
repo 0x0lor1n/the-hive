@@ -31,6 +31,16 @@ in {
   services.fwupd.enable = true;
   environment.persistence."/persist".directories = ["/var/lib/fwupd"];
 
+  # penrose's card (snd_hda_intel, ACP) has either the speakers or the LG, and
+  # the speakers win by priority. A profile picked by hand still wins. elster's
+  # SOF card has no profile of this name: both sinks coexist there.
+  services.pipewire.wireplumber.extraConfig."51-monitor-audio"."device.profile.priority.rules" = [
+    {
+      matches = [{"device.name" = "~alsa_card.pci-*";}];
+      actions.update-props.priorities = ["output:hdmi-stereo+input:analog-stereo"];
+    }
+  ];
+
   # First, as before the split; module merge order would put elster's office
   # dock ahead of it. Harmless (the criteria never overlap) but keeps the
   # generated kanshi config stable.
