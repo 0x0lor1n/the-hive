@@ -1,0 +1,78 @@
+diff --git a/3rdparty/libgfxinit/common/hw-gfx-edid.adb b/3rdparty/libgfxinit/common/hw-gfx-edid.adb
+index 57e0c7e..40bd630 100644
+--- a/3rdparty/libgfxinit/common/hw-gfx-edid.adb
++++ b/3rdparty/libgfxinit/common/hw-gfx-edid.adb
+@@ -157,9 +157,9 @@ package body HW.GFX.EDID is
+                  (Raw_EDID (INPUT) and INPUT_DIGITAL_DEPTH_MASK,
+                   INPUT_DIGITAL_DEPTH_SHIFT))));
+ 
+-      -- Clamp to 8-bit for compatibility and to conserve bandwidth
+-      if Mode.BPC > 8 then
+-         Mode.BPC := 8;
++      -- 12 is the deepest pipe format; Fill_Port_Config clamps further
++      if Mode.BPC > 12 then
++         Mode.BPC := 12;
+       end if;
+ 
+       -- Calculate absolute values from EDID relative values.
+diff --git a/3rdparty/libgfxinit/common/hw-gfx-gma-config_helpers.adb b/3rdparty/libgfxinit/common/hw-gfx-gma-config_helpers.adb
+index 348c3e2..def592a 100644
+--- a/3rdparty/libgfxinit/common/hw-gfx-gma-config_helpers.adb
++++ b/3rdparty/libgfxinit/common/hw-gfx-gma-config_helpers.adb
+@@ -219,6 +219,14 @@ is
+             Port_Cfg.Mode.BPC := Connector_Info.Default_BPC (Port_Cfg);
+          end if;
+ 
++         -- External DP keeps the EDID depth, as Linux does, so it can take
++         -- over the pipe without a modeset; Enable_Output steps it down.
++         if Port_Cfg.Mode.BPC > 8 and
++            (Port_Cfg.Display /= DP or Port_Cfg.Is_eDP or Port_Cfg.Is_FDI)
++         then
++            Port_Cfg.Mode.BPC := 8;
++         end if;
++
+          if Port_Cfg.Display = HDMI then
+             declare
+                pragma Assert (Config.HDMI_Max_Clock_24bpp * 8
+diff --git a/3rdparty/libgfxinit/common/hw-gfx-gma-pipe_setup.adb b/3rdparty/libgfxinit/common/hw-gfx-gma-pipe_setup.adb
+index 7b79fc4..e126fc2 100644
+--- a/3rdparty/libgfxinit/common/hw-gfx-gma-pipe_setup.adb
++++ b/3rdparty/libgfxinit/common/hw-gfx-gma-pipe_setup.adb
+@@ -954,9 +954,9 @@ package body HW.GFX.GMA.Pipe_Setup is
+       Pipe_Cfg    : Pipe_Config;
+       Mode        : Mode_Type)
+    is
+-      -- Enable dithering if framebuffer BPC differs from port BPC,
++      -- Enable dithering if framebuffer BPC exceeds port BPC,
+       -- as smooth gradients look really bad without.
+-      Dither : constant Boolean := Pipe_Cfg.Framebuffer.BPC /= Mode.BPC;
++      Dither : constant Boolean := Pipe_Cfg.Framebuffer.BPC > Mode.BPC;
+    begin
+       pragma Debug (Debug.Put_Line (GNAT.Source_Info.Enclosing_Entity));
+ 
+@@ -983,7 +983,7 @@ package body HW.GFX.GMA.Pipe_Setup is
+       Transcoder.On
+         (Pipe     => Pipe,
+          Port_Cfg => Port_Cfg,
+-         Dither   => Pipe_Cfg.Framebuffer.BPC /= Port_Cfg.Mode.BPC,
++         Dither   => Pipe_Cfg.Framebuffer.BPC > Port_Cfg.Mode.BPC,
+          Scale    => Requires_Scaling (Pipe_Cfg.Framebuffer, Port_Cfg.Mode));
+    end On;
+ 
+diff --git a/3rdparty/libgfxinit/common/hw-gfx-gma.adb b/3rdparty/libgfxinit/common/hw-gfx-gma.adb
+index 449f7b3..7e12aa3 100644
+--- a/3rdparty/libgfxinit/common/hw-gfx-gma.adb
++++ b/3rdparty/libgfxinit/common/hw-gfx-gma.adb
+@@ -160,7 +160,11 @@ is
+       end if;
+ 
+       if Success then
+-         Connector_Info.Preferred_Link_Setting (Port_Cfg, Success);
++         loop
++            Connector_Info.Preferred_Link_Setting (Port_Cfg, Success);
++            exit when Success or Port_Cfg.Mode.BPC <= 8;
++            Port_Cfg.Mode.BPC := Port_Cfg.Mode.BPC - 2;
++         end loop;
+       end if;
+ 
+       if Success then

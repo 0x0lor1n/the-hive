@@ -60,6 +60,10 @@ Board
   inherited pipes and never raises it for a 4K60 external (529.2 MHz): FIFO
   underruns in a modeset loop until the kernel hangs. libgfxinit already sets
   540 MHz for that mode, so i915 only has to keep it.
+- libgfxinit carries upstream 7ac11bc (fixed M/N denominators, as i915) and
+  drives external DP at the EDID depth up to 12 bpc, stepping down when the
+  link is short; upstream clamps to 8. i915 then computes the same M/N and
+  pipe bpp and takes the lit pipes over by fastset, without the blank.
 - Brightness keys: the EC reports Fn+F11/F12 in the SMI event block (byte 0
   bit 1, byte 2 = Set 1 code 0x57/0x58); `HKEY` in `acpi/ec.asl` notifies
   `GFX0.LCD0` (from `GMA_STATIC_DISPLAYS`) with 0x87/0x86. Notify only, no

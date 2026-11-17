@@ -19,6 +19,10 @@
     patch -d $out -p1 < ${./patches/dtbt-boot-on-before-scan.patch}
     # Stock sends OS_UP from \_SB._INI; without it the ICM builds no PCIe tunnel on hotplug.
     patch -d $out -p1 < ${./patches/dtbt-os-up.patch}
+    # libgfxinit 7ac11bc (newer than the pin) plus EDID depth on external DP: i915 then
+    # computes the same M/N and pipe bpp and takes the lit pipes over with a fastset.
+    patch -d $out -p1 < ${./patches/libgfxinit-fixed-m-n.patch}
+    patch -d $out -p1 < ${./patches/libgfxinit-dp-edid-bpc.patch}
     substituteInPlace $out/util/genbuild_h/genbuild_h.sh \
       --replace-fail 'DATE=0' 'DATE=${toString inputs.coreboot.lastModified}'
   '';
