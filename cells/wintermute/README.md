@@ -64,6 +64,9 @@ Board
   drives external DP at the EDID depth up to 12 bpc, stepping down when the
   link is short; upstream clamps to 8. i915 then computes the same M/N and
   pipe bpp and takes the lit pipes over by fastset, without the blank.
+- On external DP whose base EDID gives no depth (1.3), libgfxinit reads the
+  CEA extension over AUX and takes the HDMI VSDB deep-colour depth, as i915
+  does; upstream reads the extension only on HDMI ports, for the HDMI flag.
 - Brightness keys: the EC reports Fn+F11/F12 in the SMI event block (byte 0
   bit 1, byte 2 = Set 1 code 0x57/0x58); `HKEY` in `acpi/ec.asl` notifies
   `GFX0.LCD0` (from `GMA_STATIC_DISPLAYS`) with 0x87/0x86. Notify only, no

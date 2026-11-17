@@ -23,6 +23,8 @@
     # computes the same M/N and pipe bpp and takes the lit pipes over with a fastset.
     patch -d $out -p1 < ${./patches/libgfxinit-fixed-m-n.patch}
     patch -d $out -p1 < ${./patches/libgfxinit-dp-edid-bpc.patch}
+    # EDID 1.3 has no depth field; i915 then takes it from the HDMI VSDB (LG 4K: 10 bpc).
+    patch -d $out -p1 < ${./patches/libgfxinit-dp-deep-color.patch}
     substituteInPlace $out/util/genbuild_h/genbuild_h.sh \
       --replace-fail 'DATE=0' 'DATE=${toString inputs.coreboot.lastModified}'
   '';
