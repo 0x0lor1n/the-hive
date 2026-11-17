@@ -102,6 +102,19 @@ in {
       '';
   });
 
+  # Render XRGB2101010 when the output takes it, else XRGB8888. wlroots sets the
+  # connector's max bpc from the primary format, so a 10-bpc pipe the firmware
+  # lit (penrose's dock DP) is kept by a fastset instead of a full modeset.
+  # libdrm for drm_fourcc.h; wlroots has it only in Requires.private.
+  dwl-10bpc = cell.packages.dwl.overrideAttrs (old: {
+    patches = old.patches ++ [./packages/dwl/patches/render-10bpc.patch];
+    buildInputs = old.buildInputs ++ [pkgs.libdrm];
+  });
+  cage-10bpc = pkgs.cage.overrideAttrs (old: {
+    patches = (old.patches or []) ++ [./packages/cage/render-10bpc.patch];
+    buildInputs = old.buildInputs ++ [pkgs.libdrm];
+  });
+
   inherit (sandboxedApps) telegram-desktop slack;
 
   # Horizon for gm: its SAML would hit linux-entra-sso (our PRT), so https goes

@@ -10,6 +10,10 @@
   ...
 }: let
   theme = inputs.cells.common.theme;
+  dwl =
+    if config.session.render10bpc
+    then cell.packages.dwl-10bpc
+    else cell.packages.dwl;
   # Per-role encrypted attrsets; flakeRoot as in cells/common/globals.nix.
   userSecrets = roles:
     import ../home/secrets.nix {
@@ -223,9 +227,9 @@
     # Without $HOME yet (first Entra login after boot) dwl logs to the journal. Not exec: BindsTo
     # is one-way, PartOf= units would crash-loop into their start limit unless the target stops.
     if mkdir -p "$HOME/.cache/dwl" 2>/dev/null; then
-      ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
+      ${dwl}/bin/dwl -s ${dwl-startup-with-bar} 2> "$HOME/.cache/dwl/last.log"
     else
-      ${cell.packages.dwl}/bin/dwl -s ${dwl-startup-with-bar}
+      ${dwl}/bin/dwl -s ${dwl-startup-with-bar}
     fi
     rc=$?
     ${pkgs.systemd}/bin/systemctl --user stop graphical-session.target dwl-session-bridge.service 2>/dev/null || true
@@ -244,6 +248,11 @@ in {
     type = lib.types.bool;
     default = true;
     description = "swayidle locks the session and suspends; false keeps only the screen blanking.";
+  };
+  options.session.render10bpc = lib.mkOption {
+    type = lib.types.bool;
+    default = false;
+    description = "Greeter in cage instead of the VT; cage and dwl render XRGB2101010 where the output takes it.";
   };
   options.session.outputProfiles = lib.mkOption {
     type = lib.types.listOf lib.types.attrs;
@@ -297,7 +306,7 @@ in {
     environment.systemPackages =
       [
         # System package: greetd runs /etc/dwl/session before any HM activation.
-        cell.packages.dwl
+        dwl
         # whisper.cpp on Vulkan; parakeet is faster, CPU-only, clean speech only.
         cell.packages.transcribe
         cell.packages.transcribe-parakeet

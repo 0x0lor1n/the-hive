@@ -1,0 +1,24 @@
+diff --git a/dwl.c b/dwl.c
+index 4fe9558..7c021a6 100644
+--- a/dwl.c
++++ b/dwl.c
+@@ -40,6 +40,7 @@
+ #include <wlr/types/wlr_layer_shell_v1.h>
+ #include <wlr/types/wlr_linux_dmabuf_v1.h>
+ #include <wlr/types/wlr_linux_drm_syncobj_v1.h>
++#include <libdrm/drm_fourcc.h>
+ #include <wlr/types/wlr_output.h>
+ #include <wlr/types/wlr_output_layout.h>
+ #include <wlr/types/wlr_output_management_v1.h>
+@@ -1196,6 +1197,11 @@ createmon(struct wl_listener *listener, void *data)
+ 	 * monitor's preferred mode; a more sophisticated compositor would let
+ 	 * the user configure it. */
+ 	wlr_output_state_set_mode(&state, wlr_output_preferred_mode(wlr_output));
++	/* max bpc follows the primary format; 10 bpc lets i915 fastset a deep-colour firmware pipe. */
++	wlr_output_state_set_render_format(&state, DRM_FORMAT_XRGB2101010);
++	wlr_output_state_set_enabled(&state, 1);
++	if (!wlr_output_test_state(wlr_output, &state))
++		wlr_output_state_set_render_format(&state, DRM_FORMAT_XRGB8888);
+ 
+ 	/* Set up event listeners */
+ 	LISTEN(&wlr_output->events.frame, &m->frame, rendermon);
