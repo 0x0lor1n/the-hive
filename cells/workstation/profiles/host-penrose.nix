@@ -16,23 +16,12 @@
   # i915 MST on KBL blanks the WD19TBS's 4K60 output every 15-30 s; SST is clean
   # (same on stock BIOS). Costs the dock's second display output.
   # A cold boot with the LG lit on the dock stops the kernel in a pipe B
-  # underrun flood (3 of 3). Trial: DP-1 is forced off on the cmdline and
-  # re-probed once the greeter is up; a hot-plug there lights it cleanly.
-  boot.kernelParams = ["intel_iommu=on" "i915.enable_dp_mst=0" "video=DP-1:d"];
+  # underrun flood (3 of 3). Capture boot, expected to hang: DP-1 stays on
+  # and i915 logs what it reads from the firmware's pipe.
+  boot.kernelParams = ["intel_iommu=on" "i915.enable_dp_mst=0" "drm.debug=0x6" "log_buf_len=8M"];
 
-  # By PCI address: the iGPU's card number follows probe order with nvidia.
-  # No match leaves the glob literal and the unit fails.
-  systemd.services.dock-dp-detect = {
-    description = "Re-probe the dock's DP output forced off at boot";
-    wantedBy = ["graphical.target"];
-    after = ["graphical.target"];
-    serviceConfig.Type = "oneshot";
-    script = ''
-      for s in /sys/bus/pci/devices/0000:00:02.0/drm/card*/card*-DP-1/status; do
-        echo detect > "$s"
-      done
-    '';
-  };
+  # A hard hang loses the journal after its last sync, 5 min apart by default.
+  services.journald.settings.Journal.SyncIntervalSec = "1s";
 
   # Boot default only; the powermenu still flips it (cpu-governor.nix).
   powerManagement.cpuFreqGovernor = "performance";
