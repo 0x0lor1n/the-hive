@@ -16,9 +16,9 @@
   # i915 MST on KBL blanks the WD19TBS's 4K60 output every 15-30 s; SST is clean
   # (same on stock BIOS). Costs the dock's second display output.
   # A cold boot with the LG lit on the dock stops the kernel in a pipe B
-  # underrun flood (3 of 3). Capture boot, expected to hang: DP-1 stays on
-  # and i915 logs what it reads from the firmware's pipe.
-  boot.kernelParams = ["intel_iommu=on" "i915.enable_dp_mst=0" "drm.debug=0x6" "log_buf_len=8M"];
+  # underrun flood (3 of 3), logged CDCLK 337500 under a 529200 kHz pipe.
+  # Trial: DP-1 taken over at 1080p, below that clock.
+  boot.kernelParams = ["intel_iommu=on" "i915.enable_dp_mst=0" "drm.debug=0x6" "log_buf_len=8M" "video=DP-1:1920x1080@60"];
 
   # A hard hang loses the journal after its last sync, 5 min apart by default.
   services.journald.settings.Journal.SyncIntervalSec = "1s";
