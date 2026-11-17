@@ -268,6 +268,8 @@ in {
         (entraHome ".local/share/keepassxc")
         (entraHome ".config/qBittorrent")
         (entraHome ".local/share/qBittorrent")
+        (entraHome ".config/onlyoffice")
+        (entraHome ".local/share/onlyoffice")
         (entraHome ".local/share/Grayjay")
         (entraHome ".config/herdr")
         (entraHome ".local/state/herdr")

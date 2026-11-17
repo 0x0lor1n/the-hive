@@ -143,6 +143,9 @@ in {
         # home/desktop/torrent.nix: settings, resume data (BT_backup).
         ".config/qBittorrent"
         ".local/share/qBittorrent"
+        # home/desktop/office.nix: settings, recent files, plugins.
+        ".config/onlyoffice"
+        ".local/share/onlyoffice"
         # home/dev/agents.nix: herdr keeps session.json (workspaces, cwds,
         # agent names + native session ids) in .config/herdr, next to the
         # config.toml symlink and the sockets. Without it every reboot starts
