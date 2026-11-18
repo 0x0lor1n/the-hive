@@ -252,7 +252,7 @@ in {
   options.session.render10bpc = lib.mkOption {
     type = lib.types.bool;
     default = false;
-    description = "Greeter in cage instead of the VT; cage and dwl render XRGB2101010 where the output takes it.";
+    description = "dwl renders XRGB2101010 where the output takes it.";
   };
   options.session.outputProfiles = lib.mkOption {
     type = lib.types.listOf lib.types.attrs;

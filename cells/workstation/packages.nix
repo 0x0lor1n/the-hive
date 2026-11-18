@@ -110,10 +110,6 @@ in {
     patches = old.patches ++ [./packages/dwl/patches/render-10bpc.patch];
     buildInputs = old.buildInputs ++ [pkgs.libdrm];
   });
-  cage-10bpc = pkgs.cage.overrideAttrs (old: {
-    patches = (old.patches or []) ++ [./packages/cage/render-10bpc.patch];
-    buildInputs = old.buildInputs ++ [pkgs.libdrm];
-  });
 
   inherit (sandboxedApps) telegram-desktop slack;
 

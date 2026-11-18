@@ -15,10 +15,12 @@
   # off by default.
   # i915 MST on KBL blanks the WD19TBS's 4K60 output every 15-30 s; SST is clean
   # (same on stock BIOS). Costs the dock's second display output.
+  # No video=DP-1: it full-modesets the pipe the firmware lit (dark gap), so the
+  # VT keeps the panel's 1920x1080 and tuigreet fills a quarter of the LG at 4K.
   boot.kernelParams = ["intel_iommu=on" "i915.enable_dp_mst=0"];
 
   # libgfxinit lights the dock's DP at the sink's 10 bpc; an 8-bpc compositor
-  # would full-modeset it (dark gap) at greeter start and again at login.
+  # would full-modeset it (dark gap) at login.
   session.render10bpc = true;
 
   # Boot default only; the powermenu still flips it (cpu-governor.nix).

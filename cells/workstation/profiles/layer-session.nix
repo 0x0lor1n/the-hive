@@ -11,37 +11,6 @@
   ...
 }: let
   theme = inputs.cells.common.theme;
-  tuigreet = lib.concatStringsSep " " [
-    "${pkgs.tuigreet}/bin/tuigreet"
-    "--time --remember --asterisks"
-    # ratatui slot names -> console.colors below. Roles mirror hisilome
-    # style.css: white=fujiWhite fg, darkgray=fujiGray muted,
-    # blue=crystalBlue link, lightyellow=carpYellow highlight,
-    # lightgreen=springGreen accent, magenta=oniViolet hover.
-    # (gray is slot 7 = oldWhite, not fujiGray.)
-    "--theme 'border=blue;text=white;prompt=lightyellow;time=darkgray;action=lightgreen;button=magenta;container=black;input=white'"
-    "--cmd /etc/dwl/session"
-  ];
-  # The VT's palette for tuigreet's ANSI names; dpi-aware sizes the font per output.
-  greeterFoot = (pkgs.formats.ini {}).generate "greeter-foot.ini" {
-    main = {
-      font = "monospace:size=11";
-      dpi-aware = "yes";
-    };
-    colors-dark =
-      {
-        foreground = theme.roles.fg;
-        background = theme.roles.bg;
-      }
-      // builtins.listToAttrs (lib.imap0 (i: c: {
-          name =
-            if i < 8
-            then "regular${toString i}"
-            else "bright${toString (i - 8)}";
-          value = c;
-        })
-        theme.ansi);
-  };
 in {
   # wlroots takes the seat from logind. Enabling seatd as well would contend
   # for seat0.
@@ -135,11 +104,17 @@ in {
     settings.default_session = {
       # /etc/dwl/session (layer-compositor.nix) runs `dwl -s <startup>`; dwl's
       # own pipe feeds dwl-status, so nothing here may sit between them.
-      # cage -m last: the dock's monitor alone when present, else the panel.
-      command =
-        if config.session.render10bpc
-        then "${cell.packages.cage-10bpc}/bin/cage -s -m last -- ${pkgs.foot}/bin/foot -c ${greeterFoot} ${tuigreet}"
-        else tuigreet;
+      command = lib.concatStringsSep " " [
+        "${pkgs.tuigreet}/bin/tuigreet"
+        "--time --remember --asterisks"
+        # ratatui slot names -> console.colors above. Roles mirror hisilome
+        # style.css: white=fujiWhite fg, darkgray=fujiGray muted,
+        # blue=crystalBlue link, lightyellow=carpYellow highlight,
+        # lightgreen=springGreen accent, magenta=oniViolet hover.
+        # (gray is slot 7 = oldWhite, not fujiGray.)
+        "--theme 'border=blue;text=white;prompt=lightyellow;time=darkgray;action=lightgreen;button=magenta;container=black;input=white'"
+        "--cmd /etc/dwl/session"
+      ];
       user = "greeter";
     };
   };
