@@ -32,6 +32,9 @@
       "auxiliary.compression.provider" = "anthropic";
       "auxiliary.compression.model" = "claude-opus-5-5";
       "auxiliary.compression.timeout" = "300";
+      # Not in hermes' catalog and not detected through the proxy: it would get
+      # the 200K catch-all for any "claude*".
+      "model_overrides.anthropic.claude-mythos-5-2.context_window" = "1000000";
     };
   # Missing keys inherit hermes' gold default skin (skin_engine.py:831), so
   # every key it reads is set. Unreachable: diff line bgs are derived from
