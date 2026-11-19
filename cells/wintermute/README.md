@@ -94,14 +94,15 @@ Board
   D3, so the M620 would never reach D3cold.
 - Core+cache undervolt −90 mV via the OC mailbox driver, values as CBFS
   `option/oc_undervolt_*` integers (`mkRom` `options`): the board has no CFR
-  menu, so they are fixed per build. Measured live: all-core holds the 3.6 GHz
-  ratio ceiling (4-core turbo ratio, MSR 0x1AD) inside the EC's 35 W limit.
+  menu, so they are fixed per build. Measured live: all-core `stress-ng` holds
+  the 3.6 GHz ratio ceiling (4-core turbo ratio, MSR 0x1AD) at 34.5–34.9 W.
   Each 10 mV step down to −100 passed 15 min `stress-ng --verify`, no MCE.
-- Package power averages 35 W although MSR 0x610 and MCHBAR both say PL1 = 45 W
-  (cTDP off). MSR at 30 W holds 29.9 W; back to 45 W gives a 42 W / 3545 MHz
-  burst, then 34.8 W. So a second averaged limiter sits above the MSR, likely
-  the EC over PECI. Stock is the same: Dell's performance / balanced / cool
-  profiles give 3390 / 3374 / 3378 MHz at 34.9 W with an identical 0x610.
+- Sustained package power is set by the EC, not by MSR 0x610 or MCHBAR (both
+  say PL1 = 45 W, cTDP off): it writes PL1 / PL2 over PECI from a table row
+  picked by adapter watts. The stock rows for the 130 W adapter are 35 / 43 W,
+  so stock holds 34.9 W in Dell's performance / balanced / cool profiles alike
+  (3390 / 3374 / 3378 MHz). A lower MSR still wins: 30 W there holds 29.9 W.
+  This board's EC region carries 45 / 45 W in those rows (EC firmware, below).
 - Thunderbolt 3 (Alpine Ridge 2C on RP5) via upstream `drivers/intel/dtbt`,
   with `TBT_FORCE_PWR` (`GPP_D4`) held high and PCIe hotplug padding. With D4
   low the controller powers off and comes back on a plug masked again, with
@@ -172,12 +173,23 @@ EC firmware
   3000 above 84, 3700 above 94, 4400 above 96; memory and M.2 sensors start
   the fan at 48 °C instead of 40, so it stops at idle. Skin and GPU tables are
   stock. Stock quiet runs 2300 rpm at idle on the memory/M.2 steps.
-  Measured cover on: 0 rpm idle, 3700 rpm at 35 W sustained, pkg 86–88 °C.
+  Measured cover on, 2026-11-01, with the 35 W rows: 0 rpm idle, 3700 rpm
+  sustained, pkg 86–88 °C.
   The quiet mode is lost with the RTC cell (default balanced), so `ramstage.c`
   sets it at every boot (mailbox cmd 0xA6 sub 1, mask 4); a mode picked from
   the OS lasts until the next boot. The patch tool
   is not in this repo yet; restore the EC region only from a dump taken after
   the patch.
+- Power limit: PL1 / PL2 45 / 45 W instead of 35 / 43 in the 20 rows a 130 W
+  adapter selects (rows 35–39 of tables 3, 7, 11, 15), on top of the fan
+  patch: 72 bytes, 40 in the rows, 32 the digest (`ec-51-pl45.bin`).
+  Measured at −90 mV, quiet mode, lid closed, docked; the loaded mean on the
+  35 W rows (bottom cover off) is in brackets. x265 4K: 43.1 W, 3581 MHz
+  (35.4 W, 3354 MHz). ffmpeg build: 38.0 W, 3617 MHz (33.5 W, 3487 MHz), no
+  longer power-limited. `stress-ng` is unchanged: it holds the ratio ceiling
+  below 35 W. The fan sits at 4400 rpm for most of either load. Upright in a
+  stand pkg stays at 81–87 °C; on the desk both reach 97 °C within five
+  minutes.
 
 Tools
 - `patches/inteltool-cm238-gpio.patch`: stock inteltool has no CM238 GPIO dump.
