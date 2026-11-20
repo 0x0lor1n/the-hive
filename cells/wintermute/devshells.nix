@@ -134,33 +134,71 @@
       '';
   };
 
+  ecTool = name:
+    pkgs.writeShellApplication {
+      inherit name;
+      runtimeInputs = [pkgs.python3];
+      text = ''exec python3 ${./scripts/ec}/${name}.py "$@"'';
+    };
+  ec-tables = ecTool "ec-tables";
+  ec-digest = ecTool "ec-digest";
+
+  ec-pl-build = pkgs.writeShellApplication {
+    name = "ec-pl-build";
+    runtimeInputs = with pkgs; [git coreutils diffutils gawk gnugrep flashrom ec-tables ec-digest];
+    text = prologue + builtins.readFile ./scripts/ec/ec-pl-build.sh;
+  };
+
   # COREBOOT only by default: the rest of the BIOS region holds SMMSTORE (Secure Boot
-  # keys, setup password hash, boot order) and the MRC cache. Descriptor/ME/GbE/EC are
-  # never written from here.
+  # keys, setup password hash, boot order) and the MRC cache. Descriptor, ME and GbE
+  # are never written from here; the EC region only from a slice, with --ec.
   flash = pkgs.writeShellApplication {
     name = "flash";
-    runtimeInputs = with pkgs; [git coreutils flashrom];
+    runtimeInputs = with pkgs; [git coreutils flashrom ec-digest];
     text =
       prologue
       + ''
-        usage="usage: flash [--bios] <coreboot.rom>"
+        usage="usage: flash [--bios] <coreboot.rom> | flash --ec <ec-slice.bin>"
         region=COREBOOT
-        if [ "''${1:-}" = "--bios" ]; then
-          region=bios
-          shift
-        fi
+        case "''${1:-}" in
+          --bios)
+            region=bios
+            shift
+            ;;
+          --ec)
+            region=ec
+            shift
+            ;;
+        esac
         img="''${1:?$usage}"
-        if [ "$region" = bios ]; then
+        if [ "$region" != COREBOOT ]; then
           [ -e "$recon/layout.txt" ] || { echo "flash: no $recon/layout.txt — run inspect first" >&2; exit 1; }
-          echo "flash: --bios erases SMMSTORE (Secure Boot keys, setup password, boot order) and the MRC cache."
-          layout=(-l "$recon/layout.txt")
-        else
-          # flashrom refuses unless the chip's FMAP equals the image's: a moved COREBOOT would land on SMMSTORE.
-          layout=(--fmap-verify)
         fi
+        case "$region" in
+          bios)
+            echo "flash: --bios erases SMMSTORE (Secure Boot keys, setup password, boot order) and the MRC cache."
+            args=(-l "$recon/layout.txt" -i bios -w "$img")
+            ;;
+          ec)
+            # A full-chip file here would put its first 0x50000 bytes into the EC region.
+            if [ "$(stat -c %s "$img")" -ne 327680 ]; then
+              echo "flash: not started, $img is not a 0x50000-byte EC region slice" >&2
+              exit 1
+            fi
+            if ! ec-digest check "$img" 0; then
+              echo "flash: not started, $img fails its EC digests" >&2
+              exit 1
+            fi
+            args=(-l "$recon/layout.txt" -i "ec:$img" -w)
+            ;;
+          *)
+            # flashrom refuses unless the chip's FMAP equals the image's: a moved COREBOOT would land on SMMSTORE.
+            args=(--fmap-verify -i COREBOOT -w "$img")
+            ;;
+        esac
         echo "flash: writing $region from $img (board=''${BOARD:-xeon}). Ctrl-C within 5s to abort."
         sleep 5
-        flashrom -p ${programmer} "''${layout[@]}" -i "$region" -w "$img"
+        flashrom -p ${programmer} "''${args[@]}"
       '';
   };
 
@@ -311,6 +349,9 @@ in {
       inspect
       extract-vbios
       flash
+      ec-tables
+      ec-digest
+      ec-pl-build
       bench
       dev
       alejandra
@@ -327,6 +368,9 @@ in {
       echo "  inspect <stock.bin>               phase 1.5: ifdtool layout/regions, me_cleaner -c"
       echo "  extract-vbios <stock.bin>         phase 4.7: M620 VBIOS from the dump into the store (build needs it)"
       echo "  flash <coreboot.rom>              COREBOOT region only; --bios = whole BIOS region, erases SMMSTORE"
+      echo "  flash --ec <ec-slice.bin>         EC region from a 0x50000-byte slice with valid digests"
+      echo "  ec-tables | ec-digest             EC image: power-limit and fan tables, the two digests (no arguments = usage)"
+      echo "  ec-pl-build                       EC slice with new PL1 / PL2 from this session's dump + rollback slice"
       echo "  as root: sudo --preserve-env=BOARD,WINTERMUTE_ROOT <command>"
       echo "  coreboot src: \$COREBOOT_SRC (read-only; cp -r to work on it)"
       echo "  deguard src:  \$DEGUARD_SRC (read-only; generatedelta.py / finalimage.py for phase D)"
