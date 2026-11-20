@@ -1,0 +1,28 @@
+# LA-E152P, Xeon E3-1505M v6 board. EC offsets read from the EC build whose
+# header digest is below; another build has other tables.
+name = "xeon"
+dmi_product = "Precision 3520"
+
+[ec]
+header_sha256 = "240c139628e7a7a9c04cef84a153bd06691c87360199776a32781f7d8db220c6"
+region = 0x700000
+size = 0x50000
+banks = 0x45000        # the EC rewrites its log and settings banks from here up
+header = [0x1000, 0x1040]
+body = [0x1080, 0x27240]
+load_va = 0xD0000      # the body loads here; VA - file offset = load_va - body[0]
+pl_ptrs = 0xF2168      # 16 pointers to the power-limit row tables
+fan_ptrs = 0xF3BF8     # 320 pointers to the fan curve structs
+ac_tables = [3, 7, 11, 15]   # this board on AC; the battery strap picks one of four copies
+k1_130w = 20           # row key of a 130 W adapter
+rows_130w = 20
+quiet_cpu = [230, 310] # the two quiet-mode CPU curves, rows 11 and 15
+canary = { va = 0xEFBB0, value = 0xD0100 }
+mailbox = { idx = 0x910, data = 0x911 }
+
+# Payload digests this board has run, newest last.
+[ec.payloads]
+fced1fc9cb617c7740ac44e04eac2425f4f96fc24fce229e9a294db559b3caa4 = "stock"
+747b89198a856a0001036110120c287d693cd17470bca54a87c1090dbdfa411b = "quiet CPU curve, flashed 2026-10-31"
+92b62e04638d9e8b2a98ef29ab7181c90bc309215021a268dd7486c245efb0ef = "quiet curves, memory and M.2 from 48 C, flashed 2026-11-01"
+a3a6fec674cdf354a1566ab7080f36554237524a9b6577aac6d29f766c7c57a2 = "45 / 45 W rows on the quiet curves, flash #51"

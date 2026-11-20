@@ -1,14 +1,7 @@
-# Body of the ec-pl-build devshell command; devshells.nix sets $recon ahead of it.
+# Body of the ec-pl-build devshell command; devshells.nix sets $recon and $board ahead of it.
 
-REGION=7340032   # 0x700000
-SIZE=327680      # 0x50000
-BANKS=282624     # 0x45000: the EC rewrites its log and settings banks from here up
-DIGEST=160320    # 0x27240: the payload digest, 32 bytes
-TABLES=3,7,11,15 # this board on AC; the battery strap picks one of four copies
-K1=20            # row key of a 130 W adapter
-ROWS=20
-# The EC build these offsets were read from; another build has other tables.
-HEADER=240c139628e7a7a9c04cef84a153bd06691c87360199776a32781f7d8db220c6
+REGION=7340032 # 0x700000
+SIZE=327680    # 0x50000
 
 usage() {
   cat <<'EOF'
@@ -29,9 +22,15 @@ EOF
 }
 
 work=
+copied=
+# Before the first write nothing is left behind; after it the dump copy in the archive stays.
+refuse() {
+  echo "ec-pl-build: not started, $*" >&2
+  exit 1
+}
 die() {
   [ -z "$work" ] || rm -rf "$work"
-  echo "ec-pl-build: STOPPED: $*"
+  echo "ec-pl-build: STOPPED: $*${copied:+; the dump copy $copied stays}"
   exit 1
 }
 sha() { sha256sum "$1" | cut -d' ' -f1; }
@@ -40,25 +39,31 @@ slice() { head -c $((REGION + SIZE)) "$1" | tail -c "$SIZE" >"$2"; }
 ndiff() { { cmp -l "$@" || true; } | wc -l; }
 
 if [ $# -lt 5 ] || [ $# -gt 6 ]; then
-  usage
+  usage >&2
   exit 2
 fi
 for a in "$1" "$3" "$4"; do
   case "$a" in
   "" | 0?* | *[!0-9]*)
-    usage
+    usage >&2
     exit 2
     ;;
   esac
 done
 n=$1 ref=$2 pl1=$3 pl2=$4 fw=$5
-[ "$pl1" -le "$pl2" ] || die "PL1 $pl1 W above PL2 $pl2 W"
+# From the board file: the banks the EC rewrites, the payload digest offset, the
+# tables a 130 W adapter selects on AC and the header digest of this EC build.
+vals=$(python3 "$board" ec-pl-build ec.banks ec.body.1 ec.ac_tables ec.k1_130w ec.rows_130w ec.header_sha256) || exit 1
+read -r BANKS DIGEST TABLES K1 ROWS HEADER <<EOF
+$(printf '%s\n' "$vals" | tr '\n' ' ')
+EOF
+[ "$pl1" -le "$pl2" ] || refuse "PL1 $pl1 W above PL2 $pl2 W"
 if [ $# -eq 6 ]; then
   dump=$6
 else
   set -- "$recon"/pre"$n"-*.bin
-  [ -e "$1" ] || die "no $recon/pre$n-*.bin; run dump pre$n first"
-  [ $# -eq 1 ] || die "$# dumps match $recon/pre$n-*.bin; name one as the last argument"
+  [ -e "$1" ] || refuse "no $recon/pre$n-*.bin; run dump pre$n first"
+  [ $# -eq 1 ] || refuse "$# dumps match $recon/pre$n-*.bin; name one as the last argument"
   dump=$1
 fi
 what=pl$pl1
@@ -68,17 +73,17 @@ new=$recon/ec-$n-$what.bin
 layout=$recon/layout.txt
 
 for f in "$dump" "$dump.sha256" "$ref" "$layout"; do
-  [ -r "$f" ] || die "cannot read $f"
+  [ -r "$f" ] || refuse "cannot read $f"
 done
-{ [ -d "$fw" ] && [ -w "$fw" ]; } || die "$fw is not a writable directory"
+{ [ -d "$fw" ] && [ -w "$fw" ]; } || refuse "$fw is not a writable directory"
 for f in "$pre" "$new" "$fw/${pre##*/}" "$fw/${new##*/}"; do
-  [ ! -e "$f" ] || die "$f exists, not overwriting"
+  [ ! -e "$f" ] || refuse "$f exists, not overwriting"
 done
-[ "$(stat -c %s "$dump")" -eq 16777216 ] || die "$dump is not 16 MiB"
-[ "$(stat -c %s "$ref")" -eq "$SIZE" ] || die "$ref is not a $SIZE-byte EC region slice"
+[ "$(stat -c %s "$dump")" -eq 16777216 ] || refuse "$dump is not 16 MiB"
+[ "$(stat -c %s "$ref")" -eq "$SIZE" ] || refuse "$ref is not a $SIZE-byte EC region slice"
 # Not sha256sum -c: the file names the path dump wrote to, which a copy is not.
 read -r want _ <"$dump.sha256" || true
-[ "$want" = "$(sha "$dump")" ] || die "$dump does not match its .sha256"
+[ "$want" = "$(sha "$dump")" ] || refuse "$dump does not match its .sha256"
 
 echo "== dump $dump"
 echo "== sha256 $(sha "$dump")"
@@ -88,6 +93,7 @@ name=${dump##*/}
 if [ ! -e "$fw/$name" ]; then
   cp "$dump" "$fw/$name"
   cp "$dump.sha256" "$fw/$name.sha256"
+  copied=$fw/$name
 fi
 [ "$(sha "$fw/$name")" = "$(sha "$dump")" ] || die "$fw/$name differs from the dump"
 echo "== copy $fw/$name: same sha256"
@@ -136,7 +142,7 @@ fi
 # fix exits 1 whenever the payload digest was stale on entry, which it always is here; the check decides.
 ec-digest fix "$work/new.bin" 0 >/dev/null || true
 ec-digest check "$work/new.bin" 0 || die "the patched region fails its digests"
-ec-tables dump "$work/new.bin" 0 | grep -E '^ *(3|7|11|15) ' || die "no table lines in the dump of the build"
+ec-tables dump "$work/new.bin" 0 | grep -E "^ *(${TABLES//,/|}) " || die "no table lines in the dump of the build"
 
 { cmp -l "$work/pre.bin" "$work/new.bin" || true; } >"$work/diff.txt"
 count=$(wc -l <"$work/diff.txt")

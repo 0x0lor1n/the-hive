@@ -195,6 +195,9 @@ EC firmware
 
 Tools
 - `patches/inteltool-cm238-gpio.patch`: stock inteltool has no CM238 GPIO dump.
+- `scripts/`: the EC image tools behind the devshell's `ec-tables`, `ec-digest`
+  and `ec-pl-build`; `scripts/README.md` has the contract, `scripts/boards/`
+  every value they take from the board (`BOARD`, default `xeon`).
 
 OS side (penrose)
 - Charge limit: stock does it with Dell SMBIOS tokens through its SMM, which

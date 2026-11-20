@@ -138,15 +138,15 @@
     pkgs.writeShellApplication {
       inherit name;
       runtimeInputs = [pkgs.python3];
-      text = ''exec python3 ${./scripts/ec}/${name}.py "$@"'';
+      text = ''exec python3 ${./scripts}/ec/${name}.py "$@"'';
     };
   ec-tables = ecTool "ec-tables";
   ec-digest = ecTool "ec-digest";
 
   ec-pl-build = pkgs.writeShellApplication {
     name = "ec-pl-build";
-    runtimeInputs = with pkgs; [git coreutils diffutils gawk gnugrep flashrom ec-tables ec-digest];
-    text = prologue + builtins.readFile ./scripts/ec/ec-pl-build.sh;
+    runtimeInputs = with pkgs; [git coreutils diffutils gawk gnugrep flashrom python3 ec-tables ec-digest];
+    text = prologue + ''board=${./scripts}/lib/board.py'' + "\n" + builtins.readFile ./scripts/ec/ec-pl-build.sh;
   };
 
   # COREBOOT only by default: the rest of the BIOS region holds SMMSTORE (Secure Boot
