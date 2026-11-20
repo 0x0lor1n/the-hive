@@ -19,14 +19,17 @@ Layout (all VAs; file offset = VA - 0xCF000):
         replace one field in the rows of the given tables whose key k1 matches,
         in place; refuses unless every such row holds <old-W>, their number is
         <rows>, and no row ends with PL1 above PL2
-    ec-tables fan <image> [offset]                     dump our quiet CPU curves
+    ec-tables fan <image> [offset] [idx,idx..]
+        dump fan curves, default our two quiet CPU ones: idx, row, mode,
+        sensor, VA, crit, the steps as down/up:rpm, and the 24 step bytes in
+        the form fan-set takes
     ec-tables fan-set <image> <offset> <idx,idx..> <old-hex> <new-hex>
         replace the 24 step bytes (+8..+32) of the given structs, in place;
         refuses unless every struct holds exactly <old-hex>
 
 Fan curves: 0xF3BF8 holds 320 pointers, idx = row*20 + mode*5 + sensor with
 row = (batt << 2) | (board << 1) | ac (0xECD30), mode 0 bal 1 cool 2 quiet 3
-perf. Struct 0x28: +8 six {s8 down, s8 up, u16 rpm (low 14 bits)}, +0x27 crit.
+perf, sensor 0 cpu 1 skin 2 mem 3 ngff 4 gpu. Struct 0x28: +8 six {s8 down, s8 up, u16 rpm (low 14 bits)}, +0x27 crit.
 Our board on AC is row 11 or 15 (batt = ADC strap via 0xDF0A0); their quiet
 CPU structs are byte-identical, so both get the same edit.
 """
@@ -37,6 +40,8 @@ PTRS = 0xF2168
 FAN_PTRS = 0xF3BF8
 B = 0xD0000 - 0x1080  # VA - file offset: the body at 0x1080 loads to 0xD0000
 QUIET_CPU = (11 * 20 + 2 * 5, 15 * 20 + 2 * 5)
+MODES = ("bal", "cool", "quiet", "perf")
+SENSORS = ("cpu", "skin", "mem", "ngff", "gpu")
 
 
 def fan_struct(d, o, idx):
@@ -49,11 +54,13 @@ def fan_steps(d, p):
              struct.unpack_from("<H", d, p + 10 + 4 * k)[0] & 0x3FFF) for k in range(6)]
 
 
-def fan(d, o):
-    for idx in QUIET_CPU:
+def fan(d, o, idxs):
+    for idx in idxs:
+        if not 0 <= idx < 320:
+            sys.exit(f"idx {idx}: the pointer table has 320 entries, refusing")
         va, p = fan_struct(d, o, idx)
-        print(f"row {idx // 20} quiet cpu {va:#x} crit {d[p + 0x27]}  "
-              + " ".join(f"{a}/{b}:{r}" for a, b, r in fan_steps(d, p)))
+        print(f"idx {idx} row {idx // 20} {MODES[idx % 20 // 5]} {SENSORS[idx % 5]} {va:#x} crit {d[p + 0x27]}  "
+              + " ".join(f"{a}/{b}:{r}" for a, b, r in fan_steps(d, p)) + f"  {d[p + 8:p + 32].hex()}")
 
 
 def tables(d, o):
@@ -138,7 +145,8 @@ def main():
         print("written; now run ec-digest fix")
         return
     if cmd == "fan":
-        fan(d, int(sys.argv[3], 0) if len(sys.argv) > 3 else 0)
+        idxs = [int(i) for i in sys.argv[4].split(",")] if len(sys.argv) > 4 else QUIET_CPU
+        fan(d, int(sys.argv[3], 0) if len(sys.argv) > 3 else 0, idxs)
         return
     if cmd != "patch":
         sys.exit(__doc__)

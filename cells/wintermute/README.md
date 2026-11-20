@@ -177,9 +177,9 @@ EC firmware
   sustained, pkg 86–88 °C.
   The quiet mode is lost with the RTC cell (default balanced), so `ramstage.c`
   sets it at every boot (mailbox cmd 0xA6 sub 1, mask 4); a mode picked from
-  the OS lasts until the next boot. The tables are edited with `ec-tables
-  fan-set` and `ec-digest fix` from the devshell; restore the EC region only
-  from a dump taken after the patch.
+  the OS lasts until the next boot. `ec-tables fan` prints a curve with its
+  step bytes, `ec-tables fan-set` replaces them, `ec-digest fix` rewrites the
+  digest; restore the EC region only from a dump taken after the patch.
 - Power limit: PL1 / PL2 45 / 45 W instead of 35 / 43 in the 20 rows a 130 W
   adapter selects (rows 35–39 of tables 3, 7, 11, 15), on top of the fan
   patch: 72 bytes, 40 in the rows, 32 the digest (`ec-51-pl45.bin`).
